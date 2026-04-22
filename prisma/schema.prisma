@@ -1,0 +1,26 @@
+// Schema inicial do Prisma para o Painel Juridico.
+// Ajuste o datasource para o banco que voce usar (PostgreSQL, MySQL, SQLite, etc).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Processo {
+  id          String   @id @default(cuid())
+  numero      String   @unique
+  cliente     String
+  status      String   @default("em_andamento")
+  tribunal    String?
+  comarca     String?
+  resumo      String?
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([status])
+  @@index([cliente])
+}
