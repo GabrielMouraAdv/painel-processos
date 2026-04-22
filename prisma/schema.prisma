@@ -1,6 +1,3 @@
-// Schema inicial do Prisma para o Painel Juridico.
-// Ajuste o datasource para o banco que voce usar (PostgreSQL, MySQL, SQLite, etc).
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,17 +7,167 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Processo {
-  id          String   @id @default(cuid())
-  numero      String   @unique
-  cliente     String
-  status      String   @default("em_andamento")
-  tribunal    String?
-  comarca     String?
-  resumo      String?
-  criadoEm    DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
+enum Role {
+  ADMIN
+  ADVOGADO
+  SECRETARIA
+  LEITURA
+}
 
-  @@index([status])
-  @@index([cliente])
+enum TipoProcesso {
+  IMPROBIDADE
+  ACP
+  CRIMINAL
+}
+
+enum Tribunal {
+  TJPE
+  TRF5
+  TRF1
+  STJ
+  STF
+  OUTRO
+}
+
+enum Grau {
+  PRIMEIRO
+  SEGUNDO
+  SUPERIOR
+}
+
+enum Risco {
+  ALTO
+  MEDIO
+  BAIXO
+}
+
+model Escritorio {
+  id        String   @id @default(cuid())
+  nome      String
+  cnpj      String   @unique
+  createdAt DateTime @default(now())
+
+  usuarios  User[]
+  gestores  Gestor[]
+  processos Processo[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  nome         String
+  senha        String
+  role         Role     @default(LEITURA)
+  escritorioId String
+  createdAt    DateTime @default(now())
+
+  escritorio            Escritorio  @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  processosComoAdvogado Processo[]  @relation("ProcessoAdvogado")
+  andamentos            Andamento[]
+  documentos            Documento[]
+
+  @@index([escritorioId])
+}
+
+model Gestor {
+  id           String   @id @default(cuid())
+  nome         String
+  cpf          String   @unique
+  municipio    String
+  cargo        String
+  observacoes  String?
+  escritorioId String
+  createdAt    DateTime @default(now())
+
+  escritorio Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  processos  Processo[]
+
+  @@index([escritorioId])
+}
+
+model Processo {
+  id               String       @id @default(cuid())
+  numero           String       @unique
+  tipo             TipoProcesso
+  tribunal         Tribunal
+  juizo            String
+  grau             Grau
+  fase             String
+  resultado        String?
+  risco            Risco
+  valor            Decimal?     @db.Decimal(15, 2)
+  dataDistribuicao DateTime
+  objeto           String       @db.Text
+  gestorId         String
+  advogadoId       String
+  escritorioId     String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  gestor     Gestor      @relation(fields: [gestorId], references: [id])
+  advogado   User        @relation("ProcessoAdvogado", fields: [advogadoId], references: [id])
+  escritorio Escritorio  @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  andamentos Andamento[]
+  prazos     Prazo[]
+  documentos Documento[]
+
+  @@index([escritorioId])
+  @@index([gestorId])
+  @@index([advogadoId])
+  @@index([tipo])
+  @@index([risco])
+}
+
+model Andamento {
+  id         String   @id @default(cuid())
+  processoId String
+  data       DateTime
+  grau       Grau
+  fase       String
+  resultado  String?
+  texto      String   @db.Text
+  autorId    String
+  createdAt  DateTime @default(now())
+
+  processo Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  autor    User     @relation(fields: [autorId], references: [id])
+
+  @@index([processoId])
+  @@index([autorId])
+}
+
+model Prazo {
+  id          String   @id @default(cuid())
+  processoId  String
+  tipo        String
+  data        DateTime
+  hora        String?
+  observacoes String?
+  cumprido    Boolean  @default(false)
+  geradoAuto  Boolean  @default(false)
+  origemFase  String?
+  createdAt   DateTime @default(now())
+
+  processo Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  @@index([processoId])
+  @@index([data])
+  @@index([cumprido])
+}
+
+model Documento {
+  id         String   @id @default(cuid())
+  processoId String
+  nome       String
+  url        String
+  tipo       String
+  tamanho    Int
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  processo       Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  uploadedByUser User     @relation(fields: [uploadedBy], references: [id])
+
+  @@index([processoId])
+  @@index([uploadedBy])
 }
