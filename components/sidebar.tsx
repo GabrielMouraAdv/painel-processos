@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { LogoutButton } from "@/components/logout-button";
 
 type NavItem = {
   label: string;
@@ -17,12 +18,12 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Painel", href: "/", icon: LayoutDashboard },
-  { label: "Processos", href: "/processos", icon: Scale },
-  { label: "Clientes", href: "/clientes", icon: Users },
-  { label: "Agenda", href: "/agenda", icon: CalendarDays },
-  { label: "Documentos", href: "/documentos", icon: FileText },
-  { label: "Configuracoes", href: "/configuracoes", icon: Settings },
+  { label: "Painel", href: "/app", icon: LayoutDashboard },
+  { label: "Processos", href: "/app/processos", icon: Scale },
+  { label: "Clientes", href: "/app/clientes", icon: Users },
+  { label: "Agenda", href: "/app/agenda", icon: CalendarDays },
+  { label: "Documentos", href: "/app/documentos", icon: FileText },
+  { label: "Configuracoes", href: "/app/configuracoes", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -60,9 +61,12 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-white/10 px-6 py-4 text-xs text-slate-300">
-        <p className="font-semibold text-slate-100">Painel Juridico</p>
-        <p>v0.1.0</p>
+      <div className="space-y-3 border-t border-white/10 px-6 py-4 text-xs text-slate-300">
+        <LogoutButton />
+        <div>
+          <p className="font-semibold text-slate-100">Painel Juridico</p>
+          <p>v0.1.0</p>
+        </div>
       </div>
     </aside>
   );
