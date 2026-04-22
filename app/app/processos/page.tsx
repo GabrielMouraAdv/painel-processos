@@ -1,0 +1,147 @@
+import { Plus } from "lucide-react";
+import { getServerSession } from "next-auth";
+import {
+  Grau,
+  type Prisma,
+  Risco,
+  TipoProcesso,
+  Tribunal,
+} from "@prisma/client";
+
+import { Button } from "@/components/ui/button";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { fasesEmPauta } from "@/lib/processo-labels";
+
+import { KpiCards } from "./kpi-cards";
+import { Pagination } from "./pagination";
+import { ProcessosFilters } from "./processos-filters";
+import { ProcessosTable } from "./processos-table";
+
+const PAGE_SIZE = 20;
+
+function asString(v: string | string[] | undefined): string | undefined {
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+function parseEnum<T extends string>(v: string | undefined, allowed: readonly T[]): T | undefined {
+  if (!v) return undefined;
+  return (allowed as readonly string[]).includes(v) ? (v as T) : undefined;
+}
+
+export default async function ProcessosPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  const session = await getServerSession(authOptions);
+  const escritorioId = session!.user.escritorioId;
+
+  const q = asString(searchParams.q);
+  const tribunal = parseEnum(asString(searchParams.tribunal), Object.values(Tribunal));
+  const tipo = parseEnum(asString(searchParams.tipo), Object.values(TipoProcesso));
+  const risco = parseEnum(asString(searchParams.risco), Object.values(Risco));
+  const grau = parseEnum(asString(searchParams.grau), Object.values(Grau));
+  const status = asString(searchParams.status);
+  const page = Math.max(1, Number(asString(searchParams.page) ?? "1") || 1);
+
+  const sessentaDiasAtras = new Date();
+  sessentaDiasAtras.setDate(sessentaDiasAtras.getDate() - 60);
+
+  const where: Prisma.ProcessoWhereInput = {
+    escritorioId,
+    ...(tribunal && { tribunal }),
+    ...(tipo && { tipo }),
+    ...(risco && { risco }),
+    ...(grau && { grau }),
+    ...(status === "parados" && {
+      andamentos: { none: { data: { gte: sessentaDiasAtras } } },
+    }),
+    ...(status === "em-pauta" && { fase: { in: fasesEmPauta } }),
+    ...(q && {
+      OR: [
+        { numero: { contains: q, mode: "insensitive" } },
+        { gestor: { is: { nome: { contains: q, mode: "insensitive" } } } },
+        { gestor: { is: { observacoes: { contains: q, mode: "insensitive" } } } },
+      ],
+    }),
+  };
+
+  const baseEscritorio: Prisma.ProcessoWhereInput = { escritorioId };
+
+  const [total, processos, totalKpi, altoKpi, medioKpi, paradosKpi, emPautaKpi] = await Promise.all([
+    prisma.processo.count({ where }),
+    prisma.processo.findMany({
+      where,
+      orderBy: { dataDistribuicao: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        numero: true,
+        tipo: true,
+        tribunal: true,
+        risco: true,
+        grau: true,
+        fase: true,
+        gestor: { select: { nome: true, municipio: true } },
+      },
+    }),
+    prisma.processo.count({ where: baseEscritorio }),
+    prisma.processo.count({ where: { ...baseEscritorio, risco: Risco.ALTO } }),
+    prisma.processo.count({ where: { ...baseEscritorio, risco: Risco.MEDIO } }),
+    prisma.processo.count({
+      where: {
+        ...baseEscritorio,
+        andamentos: { none: { data: { gte: sessentaDiasAtras } } },
+      },
+    }),
+    prisma.processo.count({
+      where: { ...baseEscritorio, fase: { in: fasesEmPauta } },
+    }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  return (
+    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 md:px-8">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
+            Processos
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Gerencie e acompanhe todos os processos do escritorio.
+          </p>
+        </div>
+        <Button
+          disabled
+          className="bg-brand-navy hover:bg-brand-navy/90"
+          title="Em breve"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Processo
+        </Button>
+      </header>
+
+      <KpiCards
+        total={totalKpi}
+        riscoAlto={altoKpi}
+        riscoMedio={medioKpi}
+        parados={paradosKpi}
+        emPauta={emPautaKpi}
+      />
+
+      <ProcessosFilters />
+
+      <ProcessosTable processos={processos} />
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        searchParams={searchParams}
+      />
+    </div>
+  );
+}
