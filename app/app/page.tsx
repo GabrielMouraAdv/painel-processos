@@ -4,6 +4,8 @@ import {
   ArrowRight,
   CalendarClock,
   CalendarDays,
+  CalendarRange,
+  ChevronLeft,
   ChevronRight,
   Clock,
   Gavel,
@@ -13,7 +15,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { getServerSession } from "next-auth";
-import { Risco, Role } from "@prisma/client";
+import { CamaraTce, Risco, Role } from "@prisma/client";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,15 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { diasAte, urgenciaDe } from "@/lib/prazos";
 import { faseLabel, fasesEmPauta } from "@/lib/processo-labels";
+import {
+  addDaysIso,
+  endOfWeekUTC,
+  formatDayMonthBR,
+  isoDay,
+  parseISODate,
+  startOfWeekUTC,
+} from "@/lib/semana";
+import { TCE_CAMARA_LABELS } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 
 function formatDate(d: Date): string {
@@ -61,13 +72,45 @@ function diasDesde(d: Date): number {
   return Math.max(0, Math.floor((hoje.getTime() - ref.getTime()) / 86_400_000));
 }
 
-export default async function AppHome() {
+function formatDiaSemanaShort(iso: string): string {
+  const d = parseISODate(iso.slice(0, 10));
+  if (!d) return iso;
+  const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${weekdays[d.getUTCDay()]} ${day}/${month}`;
+}
+
+const CAMARA_DOT: Record<CamaraTce, string> = {
+  PRIMEIRA: "bg-[#1e40af]",
+  SEGUNDA: "bg-[#047857]",
+  PLENO: "bg-[#6b21a8]",
+};
+
+function asString(v: string | string[] | undefined): string {
+  return typeof v === "string" ? v : "";
+}
+
+export default async function AppHome({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
   const nome = session?.user?.name ?? "usuario";
   const escritorioId = session!.user.escritorioId;
   const userId = session!.user.id;
   const role = session!.user.role;
   const isAdvogado = role === Role.ADVOGADO;
+
+  const pautaSemanaParam = asString(searchParams.pautaSemana);
+  const pautaRef = parseISODate(pautaSemanaParam) ?? new Date();
+  const pautaWeekStart = startOfWeekUTC(pautaRef);
+  const pautaWeekEnd = endOfWeekUTC(pautaWeekStart);
+  const pautaWeekStartIso = isoDay(pautaWeekStart);
+  const pautaWeekEndIso = isoDay(pautaWeekEnd);
+  const pautaPrev = addDaysIso(pautaWeekStartIso, -7);
+  const pautaNext = addDaysIso(pautaWeekStartIso, 7);
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -97,6 +140,7 @@ export default async function AppHome() {
     paradosLista,
     prazosProximos,
     ultimosAndamentos,
+    pautaSessoes,
   ] = await Promise.all([
     prisma.processo.count({ where: base }),
     prisma.processo.count({ where: { ...base, risco: Risco.ALTO } }),
@@ -179,6 +223,16 @@ export default async function AppHome() {
             gestor: { select: { nome: true } },
           },
         },
+      },
+    }),
+    prisma.sessaoPauta.findMany({
+      where: {
+        escritorioId,
+        data: { gte: pautaWeekStart, lte: pautaWeekEnd },
+      },
+      orderBy: [{ data: "asc" }, { camara: "asc" }],
+      include: {
+        _count: { select: { itens: true } },
       },
     }),
   ]);
@@ -367,6 +421,80 @@ export default async function AppHome() {
           <KpiCard key={k.label} {...k} />
         ))}
       </section>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CalendarRange className="h-4 w-4 text-brand-navy" />
+            Proxima Pauta TCE
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Button asChild variant="outline" size="icon" className="h-7 w-7">
+              <Link
+                href={`/app?pautaSemana=${pautaPrev}`}
+                aria-label="Semana anterior"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+            <span className="px-1 text-xs font-medium text-brand-navy">
+              {formatDayMonthBR(pautaWeekStartIso)} a{" "}
+              {formatDayMonthBR(pautaWeekEndIso)}
+            </span>
+            <Button asChild variant="outline" size="icon" className="h-7 w-7">
+              <Link
+                href={`/app?pautaSemana=${pautaNext}`}
+                aria-label="Semana seguinte"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="-mr-2">
+              <Link href={`/app/tce/pauta?semana=${pautaWeekStartIso}`}>
+                Ver pauta completa
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {pautaSessoes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma sessao cadastrada para esta semana.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {pautaSessoes.map((s) => (
+                <li key={s.id}>
+                  <Link
+                    href={`/app/tce/pauta?semana=${pautaWeekStartIso}`}
+                    className="flex items-center justify-between gap-3 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span
+                        className={cn(
+                          "inline-block h-2.5 w-2.5 rounded-full",
+                          CAMARA_DOT[s.camara],
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {formatDiaSemanaShort(s.data.toISOString())}
+                      </span>
+                      <span className="text-sm font-medium text-brand-navy">
+                        {TCE_CAMARA_LABELS[s.camara]}
+                      </span>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       {isAdvogado && (
         <Card>

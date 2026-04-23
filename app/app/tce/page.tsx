@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { CamaraTce, Role, TipoProcessoTce } from "@prisma/client";
+import { CamaraTce, Role } from "@prisma/client";
 import {
   AlertTriangle,
   ArrowRight,
   CalendarClock,
   CalendarDays,
+  CalendarRange,
+  ChevronLeft,
   ChevronRight,
   FileText,
   Gavel,
+  Plus,
   Scale,
   StickyNote,
   UserCheck,
@@ -25,15 +28,17 @@ import {
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
-import { computeTceAlertas } from "@/lib/tce-alertas";
 import {
-  TCE_CAMARA_LABELS,
-  TCE_TIPO_LABELS,
-  faseTceLabel,
-} from "@/lib/tce-config";
+  addDaysIso,
+  endOfWeekUTC,
+  formatDayMonthBR,
+  isoDay,
+  parseISODate,
+  startOfWeekUTC,
+} from "@/lib/semana";
+import { computeTceAlertas } from "@/lib/tce-alertas";
+import { TCE_CAMARA_LABELS, faseTceLabel } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
-
-import { CamaraBarChart, TipoPieChart } from "./dashboard-tce-charts";
 
 function formatDate(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -49,20 +54,58 @@ function countdownUteis(dias: number): string {
   return `${dias} dias uteis`;
 }
 
-const TIPO_CORES: Record<TipoProcessoTce, string> = {
-  PRESTACAO_CONTAS_GOVERNO: "#1e3a8a",
-  PRESTACAO_CONTAS_GESTAO: "#6366f1",
-  AUDITORIA_ESPECIAL: "#0ea5e9",
-  RGF: "#14b8a6",
-  AUTO_INFRACAO: "#f59e0b",
-  MEDIDA_CAUTELAR: "#ef4444",
+function formatDiaSemana(iso: string): string {
+  const d = parseISODate(iso.slice(0, 10));
+  if (!d) return iso;
+  const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${weekdays[d.getUTCDay()]} ${day}/${month}`;
+}
+
+const CAMARA_ACCENT: Record<
+  CamaraTce,
+  { badge: string; border: string; bg: string }
+> = {
+  PRIMEIRA: {
+    badge: "bg-[#1e40af] text-white",
+    border: "border-l-[#1e40af]",
+    bg: "bg-blue-50",
+  },
+  SEGUNDA: {
+    badge: "bg-[#047857] text-white",
+    border: "border-l-[#047857]",
+    bg: "bg-emerald-50",
+  },
+  PLENO: {
+    badge: "bg-[#6b21a8] text-white",
+    border: "border-l-[#6b21a8]",
+    bg: "bg-purple-50",
+  },
 };
 
-export default async function TceDashboardPage() {
+function asString(v: string | string[] | undefined): string {
+  return typeof v === "string" ? v : "";
+}
+
+export default async function TceDashboardPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
   const userId = session!.user.id;
   const isAdvogado = session!.user.role === Role.ADVOGADO;
+
+  const semanaParam = asString(searchParams.pautaSemana);
+  const ref = parseISODate(semanaParam) ?? new Date();
+  const weekStart = startOfWeekUTC(ref);
+  const weekEnd = endOfWeekUTC(weekStart);
+  const weekStartIso = isoDay(weekStart);
+  const weekEndIso = isoDay(weekEnd);
+  const prevWeek = addDaysIso(weekStartIso, -7);
+  const nextWeek = addDaysIso(weekStartIso, 7);
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -77,12 +120,11 @@ export default async function TceDashboardPage() {
     contrarrazoesNt,
     contrarrazoesMpco,
     semDespacho,
-    porCamara,
-    porTipo,
     proximosPrazos,
     ultimosAndamentos,
     alertasProcessos,
     meusPrazos,
+    sessoesSemana,
   ] = await Promise.all([
     prisma.processoTce.count({ where: base }),
     prisma.processoTce.count({
@@ -105,16 +147,6 @@ export default async function TceDashboardPage() {
     }),
     prisma.processoTce.count({
       where: { ...base, despachadoComRelator: false },
-    }),
-    prisma.processoTce.groupBy({
-      by: ["camara"],
-      where: base,
-      _count: { _all: true },
-    }),
-    prisma.processoTce.groupBy({
-      by: ["tipo"],
-      where: base,
-      _count: { _all: true },
     }),
     prisma.prazoTce.findMany({
       where: {
@@ -191,6 +223,25 @@ export default async function TceDashboardPage() {
           },
         })
       : Promise.resolve([]),
+    prisma.sessaoPauta.findMany({
+      where: {
+        escritorioId,
+        data: { gte: weekStart, lte: weekEnd },
+      },
+      orderBy: [{ data: "asc" }, { camara: "asc" }],
+      include: {
+        _count: { select: { itens: true } },
+        itens: {
+          orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
+          take: 3,
+          select: {
+            id: true,
+            numeroProcesso: true,
+            municipio: true,
+          },
+        },
+      },
+    }),
   ]);
 
   const totalAlertas = alertasProcessos.reduce(
@@ -272,17 +323,6 @@ export default async function TceDashboardPage() {
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-800",
   };
 
-  const camaraData = Object.values(CamaraTce).map((c) => ({
-    name: TCE_CAMARA_LABELS[c],
-    value: porCamara.find((x) => x.camara === c)?._count._all ?? 0,
-  }));
-
-  const tipoData = Object.values(TipoProcessoTce).map((t) => ({
-    name: TCE_TIPO_LABELS[t],
-    value: porTipo.find((x) => x.tipo === t)?._count._all ?? 0,
-    color: TIPO_CORES[t],
-  }));
-
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 md:px-8">
       <header className="flex flex-col gap-2">
@@ -296,6 +336,118 @@ export default async function TceDashboardPage() {
           Visao consolidada dos processos do Tribunal de Contas.
         </p>
       </header>
+
+      <Card className="border-brand-navy/20">
+        <CardHeader className="border-b bg-brand-navy/5 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CalendarRange className="h-4 w-4 text-brand-navy" />
+              <CardTitle className="text-base">
+                Pauta — Semana de {formatDayMonthBR(weekStartIso)} a{" "}
+                {formatDayMonthBR(weekEndIso)}
+              </CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="icon" className="h-8 w-8">
+                <Link
+                  href={`/app/tce?pautaSemana=${prevWeek}`}
+                  aria-label="Semana anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="icon" className="h-8 w-8">
+                <Link
+                  href={`/app/tce?pautaSemana=${nextWeek}`}
+                  aria-label="Semana seguinte"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link href={`/app/tce/pauta?semana=${weekStartIso}`}>
+                  Ver pauta completa
+                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {sessoesSemana.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <CalendarRange
+                className="h-8 w-8 text-slate-400"
+                aria-hidden="true"
+              />
+              <p className="text-sm text-muted-foreground">
+                Nenhuma sessao cadastrada para esta semana.
+              </p>
+              <Button asChild size="sm" className="bg-brand-navy hover:bg-brand-navy/90">
+                <Link href={`/app/tce/pauta?semana=${weekStartIso}`}>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Adicionar Pauta
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              {sessoesSemana.map((s) => {
+                const accent = CAMARA_ACCENT[s.camara];
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/app/tce/pauta?semana=${weekStartIso}`}
+                    className={cn(
+                      "flex flex-col gap-2 rounded-md border border-l-4 p-3 text-sm transition-colors hover:shadow-md",
+                      accent.border,
+                      accent.bg,
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          accent.badge,
+                        )}
+                      >
+                        {TCE_CAMARA_LABELS[s.camara]}
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {formatDiaSemana(s.data.toISOString())}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {s._count.itens} item{s._count.itens === 1 ? "" : "s"} na pauta
+                    </p>
+                    {s.itens.length > 0 && (
+                      <ul className="flex flex-col gap-1 border-t border-white/40 pt-2">
+                        {s.itens.map((it) => (
+                          <li key={it.id} className="text-xs">
+                            <span className="font-mono font-medium text-brand-navy">
+                              {it.numeroProcesso}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {" "}
+                              — {it.municipio}
+                            </span>
+                          </li>
+                        ))}
+                        {s._count.itens > s.itens.length && (
+                          <li className="text-[10px] italic text-muted-foreground">
+                            +{s._count.itens - s.itens.length} outro
+                            {s._count.itens - s.itens.length === 1 ? "" : "s"}
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {totalAlertas > 0 && (
         <div className="flex gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
@@ -348,32 +500,6 @@ export default async function TceDashboardPage() {
             </Link>
           );
         })}
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Processos por camara</CardTitle>
-            <CardDescription>
-              Distribuicao dos processos TCE entre Primeira, Segunda e Pleno.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CamaraBarChart data={camaraData} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Distribuicao por tipo</CardTitle>
-            <CardDescription>
-              Proporcao dos tipos de processo TCE no portfolio.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TipoPieChart data={tipoData} />
-          </CardContent>
-        </Card>
       </section>
 
       {isAdvogado && (

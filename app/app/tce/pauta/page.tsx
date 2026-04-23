@@ -3,6 +3,12 @@ import { CamaraTce, Role, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  endOfWeekUTC,
+  isoDay,
+  parseISODate,
+  startOfWeekUTC,
+} from "@/lib/semana";
 import { CONSELHEIROS_SUBSTITUTOS, TCE_CAMARAS } from "@/lib/tce-config";
 
 import { PautaTceView, type SessaoRow } from "./pauta-tce-view";
@@ -16,36 +22,6 @@ function parseEnum<T extends string>(
   v: string,
 ): T | undefined {
   return values.includes(v as T) ? (v as T) : undefined;
-}
-
-function parseISODate(v: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
-  const d = new Date(`${v}T00:00:00Z`);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-function startOfWeekUTC(ref: Date): Date {
-  const d = new Date(
-    Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate()),
-  );
-  const day = d.getUTCDay();
-  const diff = (day + 6) % 7;
-  d.setUTCDate(d.getUTCDate() - diff);
-  return d;
-}
-
-function endOfWeekUTC(start: Date): Date {
-  const d = new Date(start);
-  d.setUTCDate(d.getUTCDate() + 6);
-  d.setUTCHours(23, 59, 59, 999);
-  return d;
-}
-
-function isoDay(d: Date): string {
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }
 
 export default async function PautaTcePage({
