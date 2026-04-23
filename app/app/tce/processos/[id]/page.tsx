@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 import {
+  AlertTriangle,
   ArrowLeft,
   CalendarDays,
   Check,
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { computeTceAlertas } from "@/lib/tce-alertas";
 import {
   TCE_CAMARAS,
   TCE_CAMARA_LABELS,
@@ -115,12 +117,21 @@ export default async function ProcessoTceDetailPage({
     dataVencimento: p.dataVencimento.toISOString(),
     diasUteis: p.diasUteis,
     prorrogavel: p.prorrogavel,
+    prorrogacaoPedida: p.prorrogacaoPedida,
+    dataProrrogacao: p.dataProrrogacao ? p.dataProrrogacao.toISOString() : null,
     cumprido: p.cumprido,
     observacoes: p.observacoes,
     advogadoResp: p.advogadoResp
       ? { id: p.advogadoResp.id, nome: p.advogadoResp.nome }
       : null,
   }));
+
+  const alertas = computeTceAlertas({
+    notaTecnica: processo.notaTecnica,
+    parecerMpco: processo.parecerMpco,
+    despachadoComRelator: processo.despachadoComRelator,
+    memorialPronto: processo.memorialPronto,
+  });
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 md:px-8">
@@ -161,6 +172,34 @@ export default async function ProcessoTceDetailPage({
           <BoolBadge label="Memorial" value={processo.memorialPronto} />
         </div>
       </header>
+
+      {alertas.length > 0 && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base text-amber-900">
+              <AlertTriangle className="h-4 w-4" />
+              Alertas automaticos
+            </CardTitle>
+            <CardDescription className="text-amber-800">
+              Acoes sugeridas com base nos marcadores do processo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {alertas.map((a) => (
+              <div
+                key={a.key}
+                className="flex items-start gap-2 rounded-md border border-amber-200 bg-white p-3 text-sm"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <div>
+                  <p className="font-medium text-amber-900">{a.titulo}</p>
+                  <p className="text-xs text-amber-800">{a.descricao}</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
@@ -263,6 +302,7 @@ export default async function ProcessoTceDetailPage({
           <CardContent>
             <PrazosTceCardActions
               processoId={processo.id}
+              processoTipo={processo.tipo}
               prazos={prazos}
               advogados={advogados}
             />
@@ -282,6 +322,7 @@ export default async function ProcessoTceDetailPage({
             processoId={processo.id}
             tipo={processo.tipo}
             faseAtual={processo.faseAtual}
+            advogados={advogados}
           />
         </CardContent>
       </Card>

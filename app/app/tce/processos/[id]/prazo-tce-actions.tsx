@@ -2,13 +2,27 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, Check, Trash2 } from "lucide-react";
+import type { TipoProcessoTce } from "@prisma/client";
+import { CalendarClock, Check, ListChecks, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { diasUteisEntre } from "@/lib/dias-uteis";
 import { cn } from "@/lib/utils";
-
-import { PrazoTceFormDialog } from "./prazo-tce-form";
+import { EditPrazosTceDialog } from "@/components/tce/edit-prazos-tce-dialog";
+import {
+  PrazoTceForm,
+  type AdvogadoOption,
+  type PrazoTceInitial,
+} from "@/components/tce/prazo-tce-form";
 
 export type PrazoTceItem = {
   id: string;
@@ -17,48 +31,56 @@ export type PrazoTceItem = {
   dataVencimento: string;
   diasUteis: number;
   prorrogavel: boolean;
+  prorrogacaoPedida: boolean;
+  dataProrrogacao: string | null;
   cumprido: boolean;
   observacoes: string | null;
   advogadoResp: { id: string; nome: string } | null;
 };
 
-export type AdvogadoOption = { id: string; nome: string };
-
 function formatDate(d: string): string {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(d));
-}
-
-function diasUteisRestantes(ate: string): number {
-  const a = new Date();
-  a.setHours(0, 0, 0, 0);
-  const b = new Date(ate);
-  b.setHours(0, 0, 0, 0);
-  const sinal = b.getTime() < a.getTime() ? -1 : 1;
-  const inicio = sinal === 1 ? a : b;
-  const fim = sinal === 1 ? b : a;
-  let dias = 0;
-  const cursor = new Date(inicio);
-  while (cursor.getTime() < fim.getTime()) {
-    cursor.setDate(cursor.getDate() + 1);
-    const dow = cursor.getDay();
-    if (dow !== 0 && dow !== 6) dias++;
-  }
-  return dias * sinal;
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(
+    new Date(d),
+  );
 }
 
 export function PrazosTceCardActions({
   processoId,
+  processoTipo,
   prazos,
   advogados,
 }: {
   processoId: string;
+  processoTipo: TipoProcessoTce;
   prazos: PrazoTceItem[];
   advogados: AdvogadoOption[];
 }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [open, setOpen] = React.useState(false);
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [editAllOpen, setEditAllOpen] = React.useState(false);
   const [busy, setBusy] = React.useState<string | null>(null);
+  const [prorrogarConfirm, setProrrogarConfirm] =
+    React.useState<PrazoTceItem | null>(null);
+  const isCautelar = processoTipo === "MEDIDA_CAUTELAR";
+
+  const prazosParaEdicao: PrazoTceInitial[] = React.useMemo(
+    () =>
+      prazos.map((p) => ({
+        id: p.id,
+        tipo: p.tipo,
+        dataIntimacao: p.dataIntimacao,
+        dataVencimento: p.dataVencimento,
+        diasUteis: p.diasUteis,
+        prorrogavel: p.prorrogavel,
+        prorrogacaoPedida: p.prorrogacaoPedida,
+        dataProrrogacao: p.dataProrrogacao,
+        cumprido: p.cumprido,
+        observacoes: p.observacoes,
+        advogadoResp: p.advogadoResp,
+      })),
+    [prazos],
+  );
 
   async function toggleCumprido(p: PrazoTceItem) {
     setBusy(p.id);
@@ -100,6 +122,31 @@ export function PrazosTceCardActions({
     }
   }
 
+  async function confirmarProrrogacao() {
+    if (!prorrogarConfirm) return;
+    const p = prorrogarConfirm;
+    setBusy(p.id);
+    try {
+      const res = await fetch(`/api/tce/prazos/${p.id}/prorrogacao`, {
+        method: "POST",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao pedir prorrogacao",
+          description: json.error ?? "Tente novamente.",
+        });
+        return;
+      }
+      toast({ title: "Prorrogacao pedida — +15 dias uteis adicionados" });
+      setProrrogarConfirm(null);
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -107,32 +154,44 @@ export function PrazosTceCardActions({
           {prazos.length} prazo{prazos.length === 1 ? "" : "s"} registrado
           {prazos.length === 1 ? "" : "s"}.
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setOpen(true)}
-        >
-          <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
-          Adicionar prazo
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+          >
+            <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+            Adicionar prazo
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setEditAllOpen(true)}
+            disabled={prazos.length === 0}
+          >
+            <ListChecks className="mr-1.5 h-3.5 w-3.5" />
+            Editar prazos
+          </Button>
+        </div>
       </div>
 
       {prazos.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Sem prazos registrados.
-        </p>
+        <p className="text-sm text-muted-foreground">Sem prazos registrados.</p>
       ) : (
         <ul className="space-y-2">
           {prazos.map((p) => {
-            const dias = p.cumprido ? 0 : diasUteisRestantes(p.dataVencimento);
+            const dias = p.cumprido
+              ? 0
+              : diasUteisEntre(new Date(), new Date(p.dataVencimento));
             const cor = p.cumprido
               ? "bg-emerald-100 text-emerald-800"
               : dias < 0
                 ? "bg-red-200 text-red-900"
-                : dias <= 7
+                : dias <= 3
                   ? "bg-red-100 text-red-800"
-                  : dias <= 15
+                  : dias <= 7
                     ? "bg-yellow-100 text-yellow-800"
                     : "bg-slate-100 text-slate-700";
             const badgeLabel = p.cumprido
@@ -142,6 +201,8 @@ export function PrazosTceCardActions({
                 : dias === 0
                   ? "hoje"
                   : `${dias}d uteis`;
+            const podeProrrogar =
+              !p.cumprido && !isCautelar && p.prorrogavel && !p.prorrogacaoPedida;
             return (
               <li
                 key={p.id}
@@ -167,9 +228,16 @@ export function PrazosTceCardActions({
                     >
                       {badgeLabel}
                     </span>
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {p.prorrogavel ? "prorrogavel" : "improrrogavel"}
-                    </span>
+                    {(isCautelar || !p.prorrogavel) && (
+                      <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-800">
+                        improrrogavel
+                      </span>
+                    )}
+                    {p.prorrogacaoPedida && (
+                      <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-800">
+                        prorrogacao pedida
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     Intimacao {formatDate(p.dataIntimacao)} • vencimento{" "}
@@ -180,6 +248,18 @@ export function PrazosTceCardActions({
                   )}
                 </div>
                 <div className="flex items-center gap-1">
+                  {podeProrrogar && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px]"
+                      disabled={busy === p.id}
+                      onClick={() => setProrrogarConfirm(p)}
+                    >
+                      Pedir prorrogacao
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
@@ -213,12 +293,67 @@ export function PrazosTceCardActions({
         </ul>
       )}
 
-      <PrazoTceFormDialog
-        processoId={processoId}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Novo prazo TCE</DialogTitle>
+            <DialogDescription>
+              Informe a intimacao e o prazo em dias uteis.
+            </DialogDescription>
+          </DialogHeader>
+          <PrazoTceForm
+            mode="create"
+            processoId={processoId}
+            advogados={advogados}
+            onSuccess={() => {
+              setCreateOpen(false);
+              router.refresh();
+            }}
+            onCancel={() => setCreateOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <EditPrazosTceDialog
+        open={editAllOpen}
+        onOpenChange={setEditAllOpen}
+        prazos={prazosParaEdicao}
         advogados={advogados}
-        open={open}
-        onOpenChange={setOpen}
       />
+
+      <Dialog
+        open={!!prorrogarConfirm}
+        onOpenChange={(o) => !o && setProrrogarConfirm(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pedir prorrogacao?</DialogTitle>
+            <DialogDescription>
+              {prorrogarConfirm
+                ? `Serao adicionados 15 dias uteis ao vencimento do prazo "${prorrogarConfirm.tipo}". Esta acao so pode ser realizada uma vez.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setProrrogarConfirm(null)}
+              disabled={prorrogarConfirm ? busy === prorrogarConfirm.id : false}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmarProrrogacao}
+              disabled={prorrogarConfirm ? busy === prorrogarConfirm.id : false}
+              className="bg-brand-navy hover:bg-brand-navy/90"
+            >
+              {prorrogarConfirm && busy === prorrogarConfirm.id
+                ? "Salvando..."
+                : "Confirmar prorrogacao"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

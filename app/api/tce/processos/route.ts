@@ -2,20 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { calcularDataVencimento } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 import { processoTceInputSchema } from "@/lib/schemas";
 import { prazoAutomaticoDaFase } from "@/lib/tce-config";
-
-function addDiasUteis(from: Date, diasUteis: number): Date {
-  const d = new Date(from);
-  let restantes = diasUteis;
-  while (restantes > 0) {
-    d.setDate(d.getDate() + 1);
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) restantes--;
-  }
-  return d;
-}
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -99,7 +89,10 @@ export async function POST(req: Request) {
           processoId: processo.id,
           tipo: prazoConfig.tipo,
           dataIntimacao: data.dataIntimacao,
-          dataVencimento: addDiasUteis(data.dataIntimacao, prazoConfig.diasUteis),
+          dataVencimento: calcularDataVencimento(
+            data.dataIntimacao,
+            prazoConfig.diasUteis,
+          ),
           diasUteis: prazoConfig.diasUteis,
           prorrogavel: prazoConfig.prorrogavel,
           advogadoRespId: userId,

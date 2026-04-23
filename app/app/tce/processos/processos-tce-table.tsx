@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { diasUteisEntre } from "@/lib/dias-uteis";
 import {
   TCE_CAMARA_LABELS,
   TCE_TIPO_LABELS,
@@ -38,24 +39,6 @@ export type ProcessoTceRow = {
     diasUteisRestantes: number;
   } | null;
 };
-
-function diasUteisEntre(hoje: Date, ate: Date): number {
-  const a = new Date(hoje);
-  a.setHours(0, 0, 0, 0);
-  const b = new Date(ate);
-  b.setHours(0, 0, 0, 0);
-  const sinal = b.getTime() < a.getTime() ? -1 : 1;
-  const inicio = sinal === 1 ? a : b;
-  const fim = sinal === 1 ? b : a;
-  let dias = 0;
-  const cursor = new Date(inicio);
-  while (cursor.getTime() < fim.getTime()) {
-    cursor.setDate(cursor.getDate() + 1);
-    const dow = cursor.getDay();
-    if (dow !== 0 && dow !== 6) dias++;
-  }
-  return dias * sinal;
-}
 
 function StatusIcon({ active }: { active: boolean }) {
   return active ? (

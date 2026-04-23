@@ -179,6 +179,9 @@ export const andamentoTceInputSchema = z.object({
   fase: z.string().min(1, "Selecione a fase"),
   descricao: z.string().min(1, "Descreva o andamento"),
   atualizarFaseProcesso: z.boolean().optional().default(true),
+  gerarPrazoAutomatico: z.boolean().optional().default(false),
+  dataIntimacao: optionalDate,
+  advogadoRespId: z.string().optional().nullable(),
 });
 
 export type AndamentoTceInput = z.infer<typeof andamentoTceInputSchema>;

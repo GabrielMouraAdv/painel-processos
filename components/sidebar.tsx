@@ -19,6 +19,7 @@ type NavItem = {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
+  badgeTone?: "red" | "navy";
 };
 
 type NavGroup = {
@@ -28,9 +29,15 @@ type NavGroup = {
 
 type Props = {
   prazosUrgentes?: number;
+  prazosTceUrgentes?: number;
+  processosTceTotal?: number;
 };
 
-export function Sidebar({ prazosUrgentes = 0 }: Props) {
+export function Sidebar({
+  prazosUrgentes = 0,
+  prazosTceUrgentes = 0,
+  processosTceTotal = 0,
+}: Props) {
   const groups: NavGroup[] = [
     {
       title: "Judicial",
@@ -42,6 +49,7 @@ export function Sidebar({ prazosUrgentes = 0 }: Props) {
           href: "/app/prazos",
           icon: CalendarClock,
           badge: prazosUrgentes > 0 ? prazosUrgentes : undefined,
+          badgeTone: "red",
         },
         { label: "Gestores", href: "/app/gestores", icon: Users },
         { label: "Relatorios", href: "/app/relatorios", icon: BarChart3 },
@@ -51,10 +59,22 @@ export function Sidebar({ prazosUrgentes = 0 }: Props) {
       title: "Tribunal de Contas",
       items: [
         { label: "Dashboard TCE", href: "/app/tce", icon: LayoutDashboard },
-        { label: "Processos TCE", href: "/app/tce/processos", icon: Gavel },
+        {
+          label: "Processos TCE",
+          href: "/app/tce/processos",
+          icon: Gavel,
+          badge: processosTceTotal > 0 ? processosTceTotal : undefined,
+          badgeTone: "navy",
+        },
         { label: "Municipios", href: "/app/tce/municipios", icon: Building2 },
         { label: "Interessados", href: "/app/tce/interessados", icon: UserCheck },
-        { label: "Prazos TCE", href: "/app/tce/prazos", icon: CalendarClock },
+        {
+          label: "Prazos TCE",
+          href: "/app/tce/prazos",
+          icon: CalendarClock,
+          badge: prazosTceUrgentes > 0 ? prazosTceUrgentes : undefined,
+          badgeTone: "red",
+        },
       ],
     },
   ];
@@ -100,7 +120,14 @@ export function Sidebar({ prazosUrgentes = 0 }: Props) {
                       <span>{item.label}</span>
                     </span>
                     {item.badge !== undefined && (
-                      <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold leading-none text-white">
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none text-white",
+                          item.badgeTone === "navy"
+                            ? "bg-white/15 text-slate-100"
+                            : "bg-red-500",
+                        )}
+                      >
                         {item.badge}
                       </span>
                     )}
