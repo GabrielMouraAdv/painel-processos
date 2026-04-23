@@ -6,6 +6,7 @@ import {
   CalendarClock,
   CalendarDays,
   FileText,
+  BarChart3,
   Settings,
 } from "lucide-react";
 
@@ -36,6 +37,7 @@ export function Sidebar({ prazosUrgentes = 0 }: Props) {
     { label: "Clientes", href: "/app/gestores", icon: Users },
     { label: "Agenda", href: "/app/agenda", icon: CalendarDays },
     { label: "Documentos", href: "/app/documentos", icon: FileText },
+    { label: "Relatorios", href: "/app/relatorios", icon: BarChart3 },
     { label: "Configuracoes", href: "/app/configuracoes", icon: Settings },
   ];
 
