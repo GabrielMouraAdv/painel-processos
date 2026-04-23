@@ -33,7 +33,7 @@ export function Sidebar({ prazosUrgentes = 0 }: Props) {
       icon: CalendarClock,
       badge: prazosUrgentes > 0 ? prazosUrgentes : undefined,
     },
-    { label: "Clientes", href: "/app/clientes", icon: Users },
+    { label: "Clientes", href: "/app/gestores", icon: Users },
     { label: "Agenda", href: "/app/agenda", icon: CalendarDays },
     { label: "Documentos", href: "/app/documentos", icon: FileText },
     { label: "Configuracoes", href: "/app/configuracoes", icon: Settings },
