@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -69,6 +70,7 @@ type Filters = {
   municipioId: string;
   status: string;
   camara: string;
+  numero: string;
 };
 
 type Props = {
@@ -122,6 +124,7 @@ export function PrazosTceView({
   const router = useRouter();
   const { toast } = useToast();
   const [filters, setFilters] = React.useState(initialFilters);
+  const [numeroDraft, setNumeroDraft] = React.useState(initialFilters.numero);
   const [toggling, setToggling] = React.useState<Record<string, boolean>>({});
   const [prorrogando, setProrrogando] = React.useState<Record<string, boolean>>({});
   const [createOpen, setCreateOpen] = React.useState(false);
@@ -162,6 +165,7 @@ export function PrazosTceView({
     if (next.municipioId) params.set("municipioId", next.municipioId);
     if (next.status) params.set("status", next.status);
     if (next.camara) params.set("camara", next.camara);
+    if (next.numero) params.set("numero", next.numero);
     const qs = params.toString();
     router.push(qs ? `/app/tce/prazos?${qs}` : "/app/tce/prazos");
   }
@@ -170,13 +174,21 @@ export function PrazosTceView({
     applyFilters({ ...filters, [key]: value });
   }
 
+  function applyNumeroFilter() {
+    const next = { ...filters, numero: numeroDraft.trim() };
+    if (next.numero === filters.numero) return;
+    applyFilters(next);
+  }
+
   function clearFilters() {
+    setNumeroDraft("");
     applyFilters({
       advogadoRespId: "",
       tipo: "",
       municipioId: "",
       status: "",
       camara: "",
+      numero: "",
     });
   }
 
@@ -392,6 +404,21 @@ export function PrazosTceView({
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
+          <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+            <Label className="text-xs">Numero do processo</Label>
+            <Input
+              value={numeroDraft}
+              onChange={(e) => setNumeroDraft(e.target.value)}
+              onBlur={applyNumeroFilter}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyNumeroFilter();
+                }
+              }}
+              placeholder="Buscar por numero do processo"
+            />
+          </div>
           <div className="flex min-w-[180px] flex-col gap-1">
             <Label className="text-xs">Advogado responsavel</Label>
             <Select

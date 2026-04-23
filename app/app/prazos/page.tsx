@@ -30,11 +30,13 @@ export default async function PrazosPage({
   const status = asString(searchParams.status);
   const de = asString(searchParams.de);
   const ate = asString(searchParams.ate);
+  const numero = asString(searchParams.numero).trim();
 
   const processoFilter: Prisma.ProcessoWhereInput = {
     escritorioId,
     ...(tribunal && { tribunal }),
     ...(advogadoId && { advogadoId }),
+    ...(numero && { numero: { contains: numero, mode: "insensitive" } }),
     prazos: { some: { cumprido: false } },
   };
 
@@ -128,6 +130,7 @@ export default async function PrazosPage({
           status,
           de,
           ate,
+          numero,
         }}
       />
     </div>

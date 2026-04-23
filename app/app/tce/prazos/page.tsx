@@ -29,6 +29,7 @@ export default async function TcePrazosPage({
   const tipo = asString(searchParams.tipo);
   const municipioId = asString(searchParams.municipioId);
   const status = asString(searchParams.status);
+  const numero = asString(searchParams.numero).trim();
   const camara = parseEnum(
     Object.values(CamaraTce),
     asString(searchParams.camara),
@@ -41,6 +42,7 @@ export default async function TcePrazosPage({
     escritorioId,
     ...(municipioId && { municipioId }),
     ...(camara && { camara }),
+    ...(numero && { numero: { contains: numero, mode: "insensitive" } }),
   };
 
   const where: Prisma.PrazoTceWhereInput = {
@@ -148,6 +150,7 @@ export default async function TcePrazosPage({
           municipioId,
           status,
           camara: camara ?? "",
+          numero,
         }}
       />
     </div>

@@ -71,6 +71,7 @@ type Filters = {
   status: string;
   de: string;
   ate: string;
+  numero: string;
 };
 
 type Props = {
@@ -116,6 +117,7 @@ export function PrazosView({
   const router = useRouter();
   const { toast } = useToast();
   const [filters, setFilters] = React.useState(initialFilters);
+  const [numeroDraft, setNumeroDraft] = React.useState(initialFilters.numero);
   const [toggling, setToggling] = React.useState<Record<string, boolean>>({});
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<PrazoItem | null>(null);
@@ -154,6 +156,7 @@ export function PrazosView({
     if (next.status) params.set("status", next.status);
     if (next.de) params.set("de", next.de);
     if (next.ate) params.set("ate", next.ate);
+    if (next.numero) params.set("numero", next.numero);
     const qs = params.toString();
     router.push(qs ? `/app/prazos?${qs}` : "/app/prazos");
   }
@@ -162,7 +165,14 @@ export function PrazosView({
     applyFilters({ ...filters, [key]: value });
   }
 
+  function applyNumeroFilter() {
+    const next = { ...filters, numero: numeroDraft.trim() };
+    if (next.numero === filters.numero) return;
+    applyFilters(next);
+  }
+
   function clearFilters() {
+    setNumeroDraft("");
     applyFilters({
       tribunal: "",
       advogadoId: "",
@@ -170,6 +180,7 @@ export function PrazosView({
       status: "",
       de: "",
       ate: "",
+      numero: "",
     });
   }
 
@@ -319,6 +330,21 @@ export function PrazosView({
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
+          <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+            <Label className="text-xs">Numero do processo</Label>
+            <Input
+              value={numeroDraft}
+              onChange={(e) => setNumeroDraft(e.target.value)}
+              onBlur={applyNumeroFilter}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyNumeroFilter();
+                }
+              }}
+              placeholder="Buscar por numero do processo"
+            />
+          </div>
           <div className="flex min-w-[160px] flex-col gap-1">
             <Label className="text-xs">Tribunal</Label>
             <Select
