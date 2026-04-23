@@ -31,10 +31,38 @@ export async function PATCH(
       { status: 400 },
     );
   }
+  const data = parsed.data;
+
+  if (data.advogadoRedatorId) {
+    const redator = await prisma.user.findFirst({
+      where: {
+        id: data.advogadoRedatorId,
+        escritorioId: session.user.escritorioId,
+      },
+      select: { id: true },
+    });
+    if (!redator) {
+      return NextResponse.json(
+        { error: "Advogado redator nao encontrado" },
+        { status: 400 },
+      );
+    }
+  }
 
   await prisma.prazo.update({
     where: { id: params.id },
-    data: { ...(parsed.data.cumprido !== undefined && { cumprido: parsed.data.cumprido }) },
+    data: {
+      ...(data.cumprido !== undefined && { cumprido: data.cumprido }),
+      ...(data.tipo !== undefined && { tipo: data.tipo }),
+      ...(data.data !== undefined && { data: data.data }),
+      ...(data.hora !== undefined && { hora: data.hora || null }),
+      ...(data.observacoes !== undefined && {
+        observacoes: data.observacoes || null,
+      }),
+      ...(data.advogadoRedatorId !== undefined && {
+        advogadoRedatorId: data.advogadoRedatorId || null,
+      }),
+    },
   });
   return NextResponse.json({ ok: true });
 }

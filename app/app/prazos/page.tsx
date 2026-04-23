@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { Tribunal, type Prisma } from "@prisma/client";
+import { Role, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -26,6 +26,7 @@ export default async function PrazosPage({
 
   const tribunal = parseTribunal(asString(searchParams.tribunal));
   const advogadoId = asString(searchParams.advogadoId);
+  const advogadoRedatorId = asString(searchParams.advogadoRedatorId);
   const status = asString(searchParams.status);
   const de = asString(searchParams.de);
   const ate = asString(searchParams.ate);
@@ -34,10 +35,12 @@ export default async function PrazosPage({
     escritorioId,
     ...(tribunal && { tribunal }),
     ...(advogadoId && { advogadoId }),
+    prazos: { some: { cumprido: false } },
   };
 
   const where: Prisma.PrazoWhereInput = {
     processo: processoFilter,
+    ...(advogadoRedatorId && { advogadoRedatorId }),
     ...(status === "cumprido" && { cumprido: true }),
     ...(status === "pendente" && { cumprido: false }),
     ...((de || ate) && {
@@ -48,11 +51,12 @@ export default async function PrazosPage({
     }),
   };
 
-  const [prazos, processos, advogados] = await Promise.all([
+  const [prazos, processos, advogados, advogadosRedatores] = await Promise.all([
     prisma.prazo.findMany({
       where,
       orderBy: { data: "asc" },
       include: {
+        advogadoRedator: { select: { id: true, nome: true } },
         processo: {
           select: {
             id: true,
@@ -78,6 +82,11 @@ export default async function PrazosPage({
       orderBy: { nome: "asc" },
       select: { id: true, nome: true },
     }),
+    prisma.user.findMany({
+      where: { escritorioId, role: Role.ADVOGADO },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true },
+    }),
   ]);
 
   const items: PrazoItem[] = prazos.map((p) => ({
@@ -89,6 +98,9 @@ export default async function PrazosPage({
     cumprido: p.cumprido,
     geradoAuto: p.geradoAuto,
     origemFase: p.origemFase,
+    advogadoRedator: p.advogadoRedator
+      ? { id: p.advogadoRedator.id, nome: p.advogadoRedator.nome }
+      : null,
     processo: {
       id: p.processo.id,
       numero: p.processo.numero,
@@ -108,9 +120,11 @@ export default async function PrazosPage({
           gestor: p.gestor.nome,
         }))}
         advogados={advogados}
+        advogadosRedatores={advogadosRedatores}
         initialFilters={{
           tribunal: tribunal ?? "",
           advogadoId,
+          advogadoRedatorId,
           status,
           de,
           ate,

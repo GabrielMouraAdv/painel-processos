@@ -64,6 +64,7 @@ model User {
 
   escritorio            Escritorio  @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
   processosComoAdvogado Processo[]  @relation("ProcessoAdvogado")
+  prazosComoRedator     Prazo[]     @relation("PrazoRedator")
   andamentos            Andamento[]
   documentos            Documento[]
 
@@ -138,22 +139,25 @@ model Andamento {
 }
 
 model Prazo {
-  id          String   @id @default(cuid())
-  processoId  String
-  tipo        String
-  data        DateTime
-  hora        String?
-  observacoes String?
-  cumprido    Boolean  @default(false)
-  geradoAuto  Boolean  @default(false)
-  origemFase  String?
-  createdAt   DateTime @default(now())
+  id                String   @id @default(cuid())
+  processoId        String
+  tipo              String
+  data              DateTime
+  hora              String?
+  observacoes       String?
+  cumprido          Boolean  @default(false)
+  geradoAuto        Boolean  @default(false)
+  origemFase        String?
+  advogadoRedatorId String?
+  createdAt         DateTime @default(now())
 
-  processo Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  processo        Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  advogadoRedator User?    @relation("PrazoRedator", fields: [advogadoRedatorId], references: [id])
 
   @@index([processoId])
   @@index([data])
   @@index([cumprido])
+  @@index([advogadoRedatorId])
 }
 
 model Documento {

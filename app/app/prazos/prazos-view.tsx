@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { Tribunal } from "@prisma/client";
 import { z } from "zod";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -46,6 +46,7 @@ export type PrazoItem = {
   cumprido: boolean;
   geradoAuto: boolean;
   origemFase: string | null;
+  advogadoRedator: { id: string; nome: string } | null;
   processo: {
     id: string;
     numero: string;
@@ -69,6 +70,7 @@ export type AdvogadoOption = {
 type Filters = {
   tribunal: string;
   advogadoId: string;
+  advogadoRedatorId: string;
   status: string;
   de: string;
   ate: string;
@@ -78,18 +80,20 @@ type Props = {
   prazos: PrazoItem[];
   processos: ProcessoOption[];
   advogados: AdvogadoOption[];
+  advogadosRedatores: AdvogadoOption[];
   initialFilters: Filters;
 };
 
-const createSchema = z.object({
+const prazoFormSchema = z.object({
   processoId: z.string().min(1, "Selecione o processo"),
   tipo: z.string().min(1, "Informe o tipo"),
   data: z.string().min(1, "Informe a data"),
   hora: z.string().optional(),
   observacoes: z.string().optional(),
+  advogadoRedatorId: z.string().optional(),
 });
 
-type CreateForm = z.infer<typeof createSchema>;
+type PrazoFormValues = z.infer<typeof prazoFormSchema>;
 
 function formatDateDay(d: string | Date): { dia: string; mes: string } {
   const date = d instanceof Date ? d : new Date(d);
@@ -120,6 +124,7 @@ export function PrazosView({
   prazos,
   processos,
   advogados,
+  advogadosRedatores,
   initialFilters,
 }: Props) {
   const router = useRouter();
@@ -127,12 +132,15 @@ export function PrazosView({
   const [filters, setFilters] = React.useState(initialFilters);
   const [toggling, setToggling] = React.useState<Record<string, boolean>>({});
   const [createOpen, setCreateOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<PrazoItem | null>(null);
 
   function applyFilters(next: Filters) {
     setFilters(next);
     const params = new URLSearchParams();
     if (next.tribunal) params.set("tribunal", next.tribunal);
     if (next.advogadoId) params.set("advogadoId", next.advogadoId);
+    if (next.advogadoRedatorId)
+      params.set("advogadoRedatorId", next.advogadoRedatorId);
     if (next.status) params.set("status", next.status);
     if (next.de) params.set("de", next.de);
     if (next.ate) params.set("ate", next.ate);
@@ -145,7 +153,14 @@ export function PrazosView({
   }
 
   function clearFilters() {
-    applyFilters({ tribunal: "", advogadoId: "", status: "", de: "", ate: "" });
+    applyFilters({
+      tribunal: "",
+      advogadoId: "",
+      advogadoRedatorId: "",
+      status: "",
+      de: "",
+      ate: "",
+    });
   }
 
   async function toggleCumprido(p: PrazoItem) {
@@ -212,8 +227,10 @@ export function PrazosView({
                 Vincule o prazo a um processo existente.
               </DialogDescription>
             </DialogHeader>
-            <CreatePrazoForm
+            <PrazoForm
+              mode="create"
               processos={processos}
+              advogadosRedatores={advogadosRedatores}
               onSuccess={() => {
                 setCreateOpen(false);
                 router.refresh();
@@ -222,6 +239,30 @@ export function PrazosView({
           </DialogContent>
         </Dialog>
       </header>
+
+      <Dialog
+        open={!!editing}
+        onOpenChange={(open) => !open && setEditing(null)}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar prazo</DialogTitle>
+            <DialogDescription>Atualize os dados do prazo.</DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <PrazoForm
+              mode="edit"
+              prazo={editing}
+              processos={processos}
+              advogadosRedatores={advogadosRedatores}
+              onSuccess={() => {
+                setEditing(null);
+                router.refresh();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
@@ -260,6 +301,27 @@ export function PrazosView({
               <SelectContent>
                 <SelectItem value="__all__">Todos</SelectItem>
                 {advogados.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex min-w-[180px] flex-col gap-1">
+            <Label className="text-xs">Advogado Redator</Label>
+            <Select
+              value={filters.advogadoRedatorId || "__all__"}
+              onValueChange={(v) =>
+                updateFilter("advogadoRedatorId", v === "__all__" ? "" : v)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos</SelectItem>
+                {advogadosRedatores.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
                     {a.nome}
                   </SelectItem>
@@ -322,6 +384,7 @@ export function PrazosView({
                 prazo={p}
                 loading={!!toggling[p.id]}
                 onToggle={() => toggleCumprido(p)}
+                onEdit={() => setEditing(p)}
               />
             ))
           )}
@@ -366,10 +429,12 @@ function PrazoCard({
   prazo,
   loading,
   onToggle,
+  onEdit,
 }: {
   prazo: PrazoItem;
   loading: boolean;
   onToggle: () => void;
+  onEdit: () => void;
 }) {
   const data = new Date(prazo.data);
   const dias = diasAte(data);
@@ -456,6 +521,17 @@ function PrazoCard({
         <p className="text-xs text-muted-foreground capitalize">
           {formatDateFull(data)}
         </p>
+        <p
+          className={cn(
+            "text-xs",
+            prazo.advogadoRedator
+              ? "text-slate-700"
+              : "italic text-muted-foreground",
+          )}
+        >
+          <span className="font-medium">Redator:</span>{" "}
+          {prazo.advogadoRedator?.nome ?? "nao atribuido"}
+        </p>
         {prazo.observacoes && (
           <p
             className={cn(
@@ -468,25 +544,45 @@ function PrazoCard({
         )}
       </div>
 
-      <div className="flex flex-col items-end justify-center">
-        <span className={cn("text-lg font-semibold", countdownClass)}>
-          {countdownLabel(dias, prazo.cumprido)}
-        </span>
-        {!prazo.cumprido && (
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            restantes
+      <div className="flex flex-col items-end justify-between gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-brand-navy"
+          onClick={onEdit}
+          title="Editar prazo"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+        <div className="flex flex-col items-end">
+          <span className={cn("text-lg font-semibold", countdownClass)}>
+            {countdownLabel(dias, prazo.cumprido)}
           </span>
-        )}
+          {!prazo.cumprido && (
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              restantes
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function CreatePrazoForm({
+const UNASSIGNED = "__none__";
+
+function PrazoForm({
+  mode,
+  prazo,
   processos,
+  advogadosRedatores,
   onSuccess,
 }: {
+  mode: "create" | "edit";
+  prazo?: PrazoItem;
   processos: ProcessoOption[];
+  advogadosRedatores: AdvogadoOption[];
   onSuccess: () => void;
 }) {
   const { toast } = useToast();
@@ -495,37 +591,46 @@ function CreatePrazoForm({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<CreateForm>({
-    resolver: zodResolver(createSchema),
+  } = useForm<PrazoFormValues>({
+    resolver: zodResolver(prazoFormSchema),
     defaultValues: {
-      processoId: "",
-      tipo: "",
-      data: "",
-      hora: "",
-      observacoes: "",
+      processoId: prazo?.processo.id ?? "",
+      tipo: prazo?.tipo ?? "",
+      data: prazo ? prazo.data.slice(0, 10) : "",
+      hora: prazo?.hora ?? "",
+      observacoes: prazo?.observacoes ?? "",
+      advogadoRedatorId: prazo?.advogadoRedator?.id ?? "",
     },
   });
 
-  async function onSubmit(values: CreateForm) {
-    const res = await fetch("/api/prazos", {
-      method: "POST",
+  async function onSubmit(values: PrazoFormValues) {
+    const redatorId =
+      !values.advogadoRedatorId || values.advogadoRedatorId === UNASSIGNED
+        ? null
+        : values.advogadoRedatorId;
+    const payload = {
+      ...values,
+      hora: values.hora || null,
+      observacoes: values.observacoes || null,
+      advogadoRedatorId: redatorId,
+    };
+    const url =
+      mode === "edit" && prazo ? `/api/prazos/${prazo.id}` : "/api/prazos";
+    const res = await fetch(url, {
+      method: mode === "edit" ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...values,
-        hora: values.hora || null,
-        observacoes: values.observacoes || null,
-      }),
+      body: JSON.stringify(payload),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar prazo",
+        title: mode === "edit" ? "Erro ao atualizar prazo" : "Erro ao criar prazo",
         description: json.error ?? "Tente novamente.",
       });
       return;
     }
-    toast({ title: "Prazo cadastrado" });
+    toast({ title: mode === "edit" ? "Prazo atualizado" : "Prazo cadastrado" });
     onSuccess();
   }
 
@@ -537,7 +642,11 @@ function CreatePrazoForm({
           control={control}
           name="processoId"
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+              disabled={mode === "edit"}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o processo" />
               </SelectTrigger>
@@ -572,6 +681,31 @@ function CreatePrazoForm({
         </div>
       </div>
       <div className="space-y-1.5">
+        <Label>Advogado Redator</Label>
+        <Controller
+          control={control}
+          name="advogadoRedatorId"
+          render={({ field }) => (
+            <Select
+              value={field.value || UNASSIGNED}
+              onValueChange={(v) => field.onChange(v === UNASSIGNED ? "" : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o redator" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNASSIGNED}>Nao atribuido</SelectItem>
+                {advogadosRedatores.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
+      <div className="space-y-1.5">
         <Label>Observacoes</Label>
         <Textarea rows={2} {...register("observacoes")} />
       </div>
@@ -581,7 +715,11 @@ function CreatePrazoForm({
           disabled={isSubmitting}
           className="bg-brand-navy hover:bg-brand-navy/90"
         >
-          {isSubmitting ? "Salvando..." : "Cadastrar prazo"}
+          {isSubmitting
+            ? "Salvando..."
+            : mode === "edit"
+              ? "Salvar alteracoes"
+              : "Cadastrar prazo"}
         </Button>
       </DialogFooter>
     </form>

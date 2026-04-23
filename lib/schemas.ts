@@ -70,11 +70,20 @@ export const prazoCreateSchema = z.object({
     .transform((v) => (v instanceof Date ? v : new Date(v))),
   hora: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
+  advogadoRedatorId: z.string().optional().nullable(),
 });
 
 export type PrazoCreateInput = z.infer<typeof prazoCreateSchema>;
 
 export const prazoUpdateSchema = z.object({
   cumprido: z.boolean().optional(),
+  tipo: z.string().min(1).optional(),
+  data: z
+    .union([z.string(), z.date()])
+    .transform((v) => (v instanceof Date ? v : new Date(v)))
+    .optional(),
+  hora: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  advogadoRedatorId: z.string().optional().nullable(),
 });
 
