@@ -8,7 +8,10 @@ import {
   CalendarRange,
   ChevronLeft,
   ChevronRight,
+  Copy,
+  Download,
   Eye,
+  MessageCircle,
   Pencil,
   Plus,
   Trash2,
@@ -156,6 +159,10 @@ export function PautaTceView({
   const [editarSessao, setEditarSessao] = React.useState<SessaoRow | null>(null);
   const [excluirSessao, setExcluirSessao] = React.useState<SessaoRow | null>(null);
   const [sessaoPending, setSessaoPending] = React.useState(false);
+  const [exportando, setExportando] = React.useState<
+    "docx" | "whatsapp" | null
+  >(null);
+  const [whatsappTexto, setWhatsappTexto] = React.useState<string | null>(null);
   const [itemDialog, setItemDialog] = React.useState<{
     mode: "create" | "edit";
     sessaoId: string;
@@ -246,6 +253,61 @@ export function PautaTceView({
     }
   }
 
+  async function exportarDocx() {
+    setExportando("docx");
+    try {
+      const res = await fetch(
+        `/api/tce/pauta/export?semana=${weekStart}&format=docx`,
+      );
+      if (!res.ok) {
+        toast({ variant: "destructive", title: "Erro ao exportar DOCX" });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pauta-tce-${weekStart}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportando(null);
+    }
+  }
+
+  async function exportarWhatsApp() {
+    setExportando("whatsapp");
+    try {
+      const res = await fetch(
+        `/api/tce/pauta/export?semana=${weekStart}&format=whatsapp`,
+      );
+      if (!res.ok) {
+        toast({ variant: "destructive", title: "Erro ao gerar texto" });
+        return;
+      }
+      const texto = await res.text();
+      setWhatsappTexto(texto);
+    } finally {
+      setExportando(null);
+    }
+  }
+
+  async function copiarWhatsApp() {
+    if (!whatsappTexto) return;
+    try {
+      await navigator.clipboard.writeText(whatsappTexto);
+      toast({ title: "Texto copiado para a area de transferencia" });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Nao foi possivel copiar",
+        description: "Selecione manualmente o texto e copie.",
+      });
+    }
+  }
+
   const temFiltroAtivo =
     !!filters.camara ||
     !!filters.relator ||
@@ -266,13 +328,31 @@ export function PautaTceView({
             Acompanhamento semanal das sessoes das Camaras e Pleno.
           </p>
         </div>
-        <Button
-          onClick={() => setNovaSessaoOpen(true)}
-          className="bg-brand-navy hover:bg-brand-navy/90"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Sessao de Pauta
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={exportarDocx}
+            disabled={exportando === "docx"}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {exportando === "docx" ? "Gerando..." : "Exportar semana"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={exportarWhatsApp}
+            disabled={exportando === "whatsapp"}
+          >
+            <MessageCircle className="mr-2 h-4 w-4" />
+            {exportando === "whatsapp" ? "Gerando..." : "Exportar WhatsApp"}
+          </Button>
+          <Button
+            onClick={() => setNovaSessaoOpen(true)}
+            className="bg-brand-navy hover:bg-brand-navy/90"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Sessao de Pauta
+          </Button>
+        </div>
       </header>
 
       <Card>
@@ -522,6 +602,38 @@ export function PautaTceView({
           processosTce={processosTce}
         />
       )}
+
+      <Dialog
+        open={whatsappTexto !== null}
+        onOpenChange={(v) => !v && setWhatsappTexto(null)}
+      >
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Exportar para WhatsApp</DialogTitle>
+            <DialogDescription>
+              Texto formatado pronto para colar no WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            readOnly
+            value={whatsappTexto ?? ""}
+            rows={18}
+            className="font-mono text-xs"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setWhatsappTexto(null)}>
+              Fechar
+            </Button>
+            <Button
+              onClick={copiarWhatsApp}
+              className="bg-brand-navy hover:bg-brand-navy/90"
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Copiar texto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
