@@ -1,4 +1,11 @@
-import { Grau, Risco, TipoProcesso, Tribunal } from "@prisma/client";
+import {
+  CamaraTce,
+  Grau,
+  Risco,
+  TipoProcesso,
+  TipoProcessoTce,
+  Tribunal,
+} from "@prisma/client";
 import { z } from "zod";
 
 export const processoInputSchema = z.object({
@@ -85,5 +92,129 @@ export const prazoUpdateSchema = z.object({
   hora: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
   advogadoRedatorId: z.string().optional().nullable(),
+});
+
+const dateInput = z
+  .union([z.string(), z.date()])
+  .transform((v) => (v instanceof Date ? v : new Date(v)));
+
+const optionalDate = z
+  .union([z.string(), z.date(), z.null()])
+  .nullish()
+  .transform((v) => {
+    if (v === null || v === undefined || v === "") return null;
+    return v instanceof Date ? v : new Date(v);
+  });
+
+const optionalDecimal = z
+  .union([z.string(), z.number(), z.null()])
+  .nullish()
+  .transform((v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n =
+      typeof v === "number"
+        ? v
+        : Number(String(v).replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  });
+
+export const municipioInputSchema = z.object({
+  nome: z.string().min(1, "Informe o nome"),
+  uf: z.string().min(2, "UF invalida").max(2, "UF deve ter 2 letras"),
+  cnpjPrefeitura: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+});
+
+export type MunicipioInput = z.infer<typeof municipioInputSchema>;
+
+const interessadoItemSchema = z.object({
+  gestorId: z.string().min(1, "Selecione o gestor"),
+  cargo: z.string().min(1, "Informe o cargo"),
+});
+
+export const processoTceInputSchema = z.object({
+  numero: z.string().min(1, "Informe o numero"),
+  tipo: z.nativeEnum(TipoProcessoTce),
+  municipioId: z.string().optional().nullable(),
+  relator: z.string().optional().nullable(),
+  camara: z.nativeEnum(CamaraTce),
+  faseAtual: z.string().min(1, "Selecione a fase"),
+  conselheiroSubstituto: z.string().optional().nullable(),
+  notaTecnica: z.boolean().optional().default(false),
+  parecerMpco: z.boolean().optional().default(false),
+  despachadoComRelator: z.boolean().optional().default(false),
+  memorialPronto: z.boolean().optional().default(false),
+  exercicio: z.string().optional().nullable(),
+  valorAutuado: optionalDecimal,
+  objeto: z.string().min(1, "Informe o objeto"),
+  dataAutuacao: optionalDate,
+  dataIntimacao: optionalDate,
+  interessados: z.array(interessadoItemSchema).optional().default([]),
+});
+
+export type ProcessoTceInput = z.infer<typeof processoTceInputSchema>;
+
+export const processoTceUpdateSchema = z.object({
+  numero: z.string().min(1).optional(),
+  tipo: z.nativeEnum(TipoProcessoTce).optional(),
+  municipioId: z.string().optional().nullable(),
+  relator: z.string().optional().nullable(),
+  camara: z.nativeEnum(CamaraTce).optional(),
+  faseAtual: z.string().min(1).optional(),
+  conselheiroSubstituto: z.string().optional().nullable(),
+  notaTecnica: z.boolean().optional(),
+  parecerMpco: z.boolean().optional(),
+  despachadoComRelator: z.boolean().optional(),
+  memorialPronto: z.boolean().optional(),
+  exercicio: z.string().optional().nullable(),
+  valorAutuado: optionalDecimal,
+  objeto: z.string().min(1).optional(),
+  dataAutuacao: optionalDate,
+  dataIntimacao: optionalDate,
+});
+
+export const andamentoTceInputSchema = z.object({
+  processoId: z.string().min(1),
+  data: dateInput,
+  fase: z.string().min(1, "Selecione a fase"),
+  descricao: z.string().min(1, "Descreva o andamento"),
+  atualizarFaseProcesso: z.boolean().optional().default(true),
+});
+
+export type AndamentoTceInput = z.infer<typeof andamentoTceInputSchema>;
+
+export const prazoTceCreateSchema = z.object({
+  processoId: z.string().min(1),
+  tipo: z.string().min(1, "Informe o tipo"),
+  dataIntimacao: dateInput,
+  dataVencimento: dateInput,
+  diasUteis: z.coerce.number().int().min(1, "Dias uteis invalidos"),
+  prorrogavel: z.boolean().optional().default(true),
+  prorrogacaoPedida: z.boolean().optional().default(false),
+  dataProrrogacao: optionalDate,
+  cumprido: z.boolean().optional().default(false),
+  advogadoRespId: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+});
+
+export type PrazoTceCreateInput = z.infer<typeof prazoTceCreateSchema>;
+
+export const prazoTceUpdateSchema = z.object({
+  tipo: z.string().min(1).optional(),
+  dataIntimacao: dateInput.optional(),
+  dataVencimento: dateInput.optional(),
+  diasUteis: z.coerce.number().int().min(1).optional(),
+  prorrogavel: z.boolean().optional(),
+  prorrogacaoPedida: z.boolean().optional(),
+  dataProrrogacao: optionalDate,
+  cumprido: z.boolean().optional(),
+  advogadoRespId: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+});
+
+export const interessadoTceInputSchema = z.object({
+  processoId: z.string().min(1),
+  gestorId: z.string().min(1),
+  cargo: z.string().min(1, "Informe o cargo"),
 });
 
