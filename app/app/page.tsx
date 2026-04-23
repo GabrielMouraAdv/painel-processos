@@ -269,6 +269,16 @@ export default async function AppHome({
       orderBy: [{ data: "asc" }],
       include: {
         _count: { select: { itens: true } },
+        itens: {
+          orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
+          take: 3,
+          select: {
+            id: true,
+            numeroProcesso: true,
+            tituloProcesso: true,
+            partes: true,
+          },
+        },
       },
     }),
   ]);
@@ -506,42 +516,70 @@ export default async function AppHome({
               {pautaSessoesTjpeOrdenadas.map((s) => {
                 const categoria = categoriaOrgaoTjpe(s.orgaoJulgador);
                 const tipo = TIPO_SESSAO_TJPE[s.tipoSessao];
+                const restantes = s._count.itens - s.itens.length;
                 return (
                   <li key={s.id}>
                     <Link
                       href={`/app/pautas?semana=${pautaWeekStartIso}`}
-                      className="flex items-start justify-between gap-3 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+                      className="flex flex-col gap-2 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
                     >
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
-                              CATEGORIA_TJPE_DOT[categoria],
-                            )}
-                            aria-hidden="true"
-                          />
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {formatDiaSemanaShort(s.data.toISOString())}
-                          </span>
-                          <span className="truncate text-sm font-medium text-brand-navy">
-                            {s.orgaoJulgador}
-                          </span>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
+                                CATEGORIA_TJPE_DOT[categoria],
+                              )}
+                              aria-hidden="true"
+                            />
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {formatDiaSemanaShort(s.data.toISOString())}
+                            </span>
+                            <span className="truncate text-sm font-medium text-brand-navy">
+                              {s.orgaoJulgador}
+                            </span>
+                          </div>
+                          {tipo && (
+                            <span
+                              className={cn(
+                                "inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium",
+                                tipo.className,
+                              )}
+                            >
+                              {tipo.label}
+                            </span>
+                          )}
                         </div>
-                        {tipo && (
-                          <span
-                            className={cn(
-                              "inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium",
-                              tipo.className,
-                            )}
-                          >
-                            {tipo.label}
-                          </span>
-                        )}
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
+                        </span>
                       </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
-                      </span>
+                      {s.itens.length > 0 && (
+                        <ul className="flex flex-col gap-1 border-t pt-2">
+                          {s.itens.map((it) => {
+                            const desc = it.partes ?? it.tituloProcesso ?? null;
+                            return (
+                              <li key={it.id} className="text-xs">
+                                <span className="font-mono font-medium text-brand-navy">
+                                  {it.numeroProcesso}
+                                </span>
+                                {desc && (
+                                  <span className="text-muted-foreground">
+                                    {" "}
+                                    — {desc}
+                                  </span>
+                                )}
+                              </li>
+                            );
+                          })}
+                          {restantes > 0 && (
+                            <li className="text-[10px] italic text-muted-foreground">
+                              +{restantes} outro{restantes === 1 ? "" : "s"}
+                            </li>
+                          )}
+                        </ul>
+                      )}
                     </Link>
                   </li>
                 );
