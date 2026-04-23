@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { CamaraTce, TipoProcessoTce, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { diasUteisRestantes } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 
 import { KpiCardsTce } from "./kpi-cards-tce";
@@ -9,7 +10,6 @@ import { NovoProcessoTceButton } from "./novo-processo-tce-button";
 import { ProcessosTceFilters } from "./processos-tce-filters";
 import {
   ProcessosTceTable,
-  calcularDiasUteisRestantes,
   type ProcessoTceRow,
 } from "./processos-tce-table";
 
@@ -178,7 +178,7 @@ export default async function TceProcessosPage({
         ? {
             tipo: primeiroPrazo.tipo,
             dataVencimento: primeiroPrazo.dataVencimento.toISOString(),
-            diasUteisRestantes: calcularDiasUteisRestantes(
+            diasUteisRestantes: diasUteisRestantes(
               primeiroPrazo.dataVencimento,
             ),
           }

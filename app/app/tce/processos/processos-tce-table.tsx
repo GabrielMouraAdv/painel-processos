@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { diasUteisEntre } from "@/lib/dias-uteis";
 import {
   TCE_CAMARA_LABELS,
   TCE_TIPO_LABELS,
@@ -178,8 +177,4 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
       </div>
     </div>
   );
-}
-
-export function calcularDiasUteisRestantes(ate: Date, hoje = new Date()): number {
-  return diasUteisEntre(hoje, ate);
 }
