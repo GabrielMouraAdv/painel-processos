@@ -36,6 +36,22 @@ export default async function ProcessoDetailPage({
 
   if (!processo) notFound();
 
+  const itensPauta = await prisma.itemPautaJudicial.findMany({
+    where: { processoId: processo.id },
+    orderBy: { sessao: { data: "desc" } },
+    include: {
+      sessao: {
+        select: {
+          id: true,
+          data: true,
+          tribunal: true,
+          orgaoJulgador: true,
+          tipoSessao: true,
+        },
+      },
+    },
+  });
+
   const [gestores, advogados, advogadosResponsaveis] = await Promise.all([
     prisma.gestor.findMany({
       where: { escritorioId },
@@ -99,6 +115,17 @@ export default async function ProcessoDetailPage({
       advogadoResp: p.advogadoResp
         ? { id: p.advogadoResp.id, nome: p.advogadoResp.nome }
         : null,
+    })),
+    historicoPauta: itensPauta.map((it) => ({
+      id: it.id,
+      data: it.sessao.data.toISOString(),
+      tribunal: it.sessao.tribunal,
+      orgaoJulgador: it.sessao.orgaoJulgador,
+      tipoSessao: it.sessao.tipoSessao,
+      relator: it.relator,
+      situacao: it.situacao,
+      retiradoDePauta: it.retiradoDePauta,
+      pedidoVistas: it.pedidoVistas,
     })),
   };
 

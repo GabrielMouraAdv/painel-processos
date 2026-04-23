@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
+import { endOfWeekUTC, startOfWeekUTC } from "@/lib/semana";
 
 export default async function AppLayout({
   children,
@@ -27,25 +28,41 @@ export default async function AppLayout({
   em15Corridos.setDate(em15Corridos.getDate() + 15);
   em15Corridos.setHours(23, 59, 59, 999);
 
-  const [prazosUrgentes, prazosTceCandidatos, processosTceTotal] =
-    await Promise.all([
-      prisma.prazo.count({
-        where: {
-          cumprido: false,
-          data: { gte: hoje, lte: em7 },
-          processo: { escritorioId },
+  const semanaStart = startOfWeekUTC(new Date());
+  const semanaEnd = endOfWeekUTC(semanaStart);
+
+  const [
+    prazosUrgentes,
+    prazosTceCandidatos,
+    processosTceTotal,
+    pautasJudiciaisTotal,
+  ] = await Promise.all([
+    prisma.prazo.count({
+      where: {
+        cumprido: false,
+        data: { gte: hoje, lte: em7 },
+        processo: { escritorioId },
+      },
+    }),
+    prisma.prazoTce.findMany({
+      where: {
+        cumprido: false,
+        dataVencimento: { gte: hoje, lte: em15Corridos },
+        processo: { escritorioId },
+      },
+      select: { dataVencimento: true },
+    }),
+    prisma.processoTce.count({ where: { escritorioId } }),
+    prisma.itemPautaJudicial.count({
+      where: {
+        sessao: {
+          escritorioId,
+          tribunal: "TJPE",
+          data: { gte: semanaStart, lte: semanaEnd },
         },
-      }),
-      prisma.prazoTce.findMany({
-        where: {
-          cumprido: false,
-          dataVencimento: { gte: hoje, lte: em15Corridos },
-          processo: { escritorioId },
-        },
-        select: { dataVencimento: true },
-      }),
-      prisma.processoTce.count({ where: { escritorioId } }),
-    ]);
+      },
+    }),
+  ]);
 
   const prazosTceUrgentes = prazosTceCandidatos.filter(
     (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
@@ -57,6 +74,7 @@ export default async function AppLayout({
         prazosUrgentes={prazosUrgentes}
         prazosTceUrgentes={prazosTceUrgentes}
         processosTceTotal={processosTceTotal}
+        pautasJudiciaisTotal={pautasJudiciaisTotal}
       />
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>

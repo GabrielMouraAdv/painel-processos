@@ -32,12 +32,14 @@ type Props = {
   prazosUrgentes?: number;
   prazosTceUrgentes?: number;
   processosTceTotal?: number;
+  pautasJudiciaisTotal?: number;
 };
 
 export function Sidebar({
   prazosUrgentes = 0,
   prazosTceUrgentes = 0,
   processosTceTotal = 0,
+  pautasJudiciaisTotal = 0,
 }: Props) {
   const groups: NavGroup[] = [
     {
@@ -52,7 +54,14 @@ export function Sidebar({
           badge: prazosUrgentes > 0 ? prazosUrgentes : undefined,
           badgeTone: "red",
         },
-        { label: "Pautas", href: "/app/pautas", icon: CalendarRange },
+        {
+          label: "Pautas",
+          href: "/app/pautas",
+          icon: CalendarRange,
+          badge:
+            pautasJudiciaisTotal > 0 ? pautasJudiciaisTotal : undefined,
+          badgeTone: "navy",
+        },
         { label: "Gestores", href: "/app/gestores", icon: Users },
         { label: "Relatorios", href: "/app/relatorios", icon: BarChart3 },
       ],

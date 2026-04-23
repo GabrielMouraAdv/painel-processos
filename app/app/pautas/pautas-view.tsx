@@ -4,12 +4,16 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   CalendarRange,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Copy,
+  Download,
   Eye,
+  MessageCircle,
   Mic,
   MonitorCheck,
   Pencil,
@@ -80,6 +84,7 @@ type Props = {
   advogadosCadastrados: string[];
   desembargadores: string[];
   processosJudiciais: ProcessoJudicialOption[];
+  canEdit: boolean;
 };
 
 type Categoria = "direito_publico" | "criminal" | "regional_caruaru" | "pleno";
@@ -174,6 +179,72 @@ function todayIso(): string {
   return `${y}-${m}-${day}`;
 }
 
+function horaDoOrgao(orgao: string): number {
+  const h = ORGAOS_JULGADORES[orgao]?.horario;
+  if (!h) return 9;
+  const m = /(\d+)/.exec(h.trim());
+  return m ? parseInt(m[1], 10) : 9;
+}
+
+function sessaoDateTimeLocal(sessaoIso: string, orgao: string): Date {
+  const day = sessaoIso.slice(0, 10);
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1, horaDoOrgao(orgao), 0, 0, 0);
+}
+
+function formatDateTimeBR(d: Date): string {
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const hour = String(d.getHours()).padStart(2, "0");
+  const minute = String(d.getMinutes()).padStart(2, "0");
+  return `${day}/${month} ${hour}:${minute}`;
+}
+
+function SustentacaoOralBadge({
+  sessaoIso,
+  orgao,
+}: {
+  sessaoIso: string;
+  orgao: string;
+}) {
+  const [now, setNow] = React.useState<Date | null>(null);
+  React.useEffect(() => {
+    setNow(new Date());
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!now) return null;
+
+  const sessaoStart = sessaoDateTimeLocal(sessaoIso, orgao);
+  const diffMs = sessaoStart.getTime() - now.getTime();
+  if (diffMs <= 0) return null;
+
+  const prazo48h = new Date(sessaoStart.getTime() - 48 * 60 * 60 * 1000);
+  const urgente = diffMs < 48 * 60 * 60 * 1000;
+
+  if (urgente) {
+    return (
+      <span
+        className="inline-flex animate-pulse items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
+        title="Prazo para inscricao de sustentacao oral vencendo"
+      >
+        <AlertTriangle className="h-2.5 w-2.5" />
+        ATENCAO: Prazo sustentacao oral vencendo!
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-900"
+      title="Prazo para inscricao de sustentacao oral"
+    >
+      <Mic className="h-2.5 w-2.5" />
+      Sustentacao oral agendada — prazo ate {formatDateTimeBR(prazo48h)}
+    </span>
+  );
+}
+
 export function PautasJudiciaisView({
   sessoes,
   weekStart,
@@ -182,11 +253,17 @@ export function PautasJudiciaisView({
   advogadosCadastrados,
   desembargadores,
   processosJudiciais,
+  canEdit,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
   const [filters, setFilters] = React.useState(initialFilters);
+  const [duplicandoId, setDuplicandoId] = React.useState<string | null>(null);
+  const [exportando, setExportando] = React.useState<
+    "docx" | "whatsapp" | null
+  >(null);
+  const [whatsappTexto, setWhatsappTexto] = React.useState<string | null>(null);
   const [relatorDraft, setRelatorDraft] = React.useState(initialFilters.relator);
   const [advDraft, setAdvDraft] = React.useState(initialFilters.advogadoResp);
   const [qDraft, setQDraft] = React.useState(initialFilters.q);
@@ -292,6 +369,84 @@ export function PautasJudiciaisView({
     }
   }
 
+  async function duplicarSessao(sessaoId: string) {
+    setDuplicandoId(sessaoId);
+    try {
+      const res = await fetch(`/api/pautas/${sessaoId}/duplicar`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        toast({
+          variant: "destructive",
+          title: "Erro ao duplicar sessao",
+          description: json.error ?? "Tente novamente.",
+        });
+        return;
+      }
+      toast({
+        title: "Sessao duplicada",
+        description: "Nova sessao criada na semana seguinte com os itens.",
+      });
+      router.refresh();
+    } finally {
+      setDuplicandoId(null);
+    }
+  }
+
+  async function exportarDocx() {
+    setExportando("docx");
+    try {
+      const res = await fetch(`/api/pautas/export?semana=${weekStart}&format=docx`);
+      if (!res.ok) {
+        toast({ variant: "destructive", title: "Erro ao exportar DOCX" });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pauta-tjpe-${weekStart}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportando(null);
+    }
+  }
+
+  async function exportarWhatsApp() {
+    setExportando("whatsapp");
+    try {
+      const res = await fetch(
+        `/api/pautas/export?semana=${weekStart}&format=whatsapp`,
+      );
+      if (!res.ok) {
+        toast({ variant: "destructive", title: "Erro ao gerar texto" });
+        return;
+      }
+      const texto = await res.text();
+      setWhatsappTexto(texto);
+    } finally {
+      setExportando(null);
+    }
+  }
+
+  async function copiarWhatsApp() {
+    if (!whatsappTexto) return;
+    try {
+      await navigator.clipboard.writeText(whatsappTexto);
+      toast({ title: "Texto copiado para a area de transferencia" });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Nao foi possivel copiar",
+        description: "Selecione manualmente o texto e copie.",
+      });
+    }
+  }
+
   const temFiltroAtivo =
     !!filters.orgaoJulgador ||
     !!filters.tipoSessao ||
@@ -313,13 +468,33 @@ export function PautasJudiciaisView({
             Acompanhamento semanal das sessoes do Tribunal.
           </p>
         </div>
-        <Button
-          onClick={() => setNovaSessaoOpen(true)}
-          className="bg-brand-navy hover:bg-brand-navy/90"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Sessao
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={exportarDocx}
+            disabled={exportando === "docx"}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {exportando === "docx" ? "Gerando..." : "Exportar semana"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={exportarWhatsApp}
+            disabled={exportando === "whatsapp"}
+          >
+            <MessageCircle className="mr-2 h-4 w-4" />
+            {exportando === "whatsapp" ? "Gerando..." : "Exportar WhatsApp"}
+          </Button>
+          {canEdit && (
+            <Button
+              onClick={() => setNovaSessaoOpen(true)}
+              className="bg-brand-navy hover:bg-brand-navy/90"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Sessao
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className="flex gap-1 border-b">
@@ -491,13 +666,15 @@ export function PautasJudiciaisView({
                   : "Lance a primeira sessao da semana para comecar o acompanhamento."}
               </p>
             </div>
-            <Button
-              onClick={() => setNovaSessaoOpen(true)}
-              className="bg-brand-navy hover:bg-brand-navy/90"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Sessao
-            </Button>
+            {canEdit && (
+              <Button
+                onClick={() => setNovaSessaoOpen(true)}
+                className="bg-brand-navy hover:bg-brand-navy/90"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Sessao
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -506,8 +683,11 @@ export function PautasJudiciaisView({
             <SessaoCard
               key={sessao.id}
               sessao={sessao}
+              canEdit={canEdit}
+              duplicando={duplicandoId === sessao.id}
               onEditar={() => setEditarSessao(sessao)}
               onExcluir={() => setExcluirSessao(sessao)}
+              onDuplicar={() => duplicarSessao(sessao.id)}
               onNovoItem={() =>
                 setItemDialog({ mode: "create", sessaoId: sessao.id })
               }
@@ -607,8 +787,41 @@ export function PautasJudiciaisView({
           advogadosCadastrados={advogadosCadastrados}
           desembargadores={desembargadores}
           processosJudiciais={processosJudiciais}
+          canEdit={canEdit}
         />
       )}
+
+      <Dialog
+        open={whatsappTexto !== null}
+        onOpenChange={(v) => !v && setWhatsappTexto(null)}
+      >
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Exportar para WhatsApp</DialogTitle>
+            <DialogDescription>
+              Texto formatado pronto para colar no WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            readOnly
+            value={whatsappTexto ?? ""}
+            rows={18}
+            className="font-mono text-xs"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setWhatsappTexto(null)}>
+              Fechar
+            </Button>
+            <Button
+              onClick={copiarWhatsApp}
+              className="bg-brand-navy hover:bg-brand-navy/90"
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Copiar texto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -629,15 +842,21 @@ function todayStartOfWeek(): string {
 
 function SessaoCard({
   sessao,
+  canEdit,
+  duplicando,
   onEditar,
   onExcluir,
+  onDuplicar,
   onNovoItem,
   onEditarItem,
   onExcluirItem,
 }: {
   sessao: SessaoRow;
+  canEdit: boolean;
+  duplicando: boolean;
   onEditar: () => void;
   onExcluir: () => void;
+  onDuplicar: () => void;
   onNovoItem: () => void;
   onEditarItem: (item: ItemPautaJudicialInitial) => void;
   onExcluirItem: (item: ItemPautaJudicialInitial) => void;
@@ -681,28 +900,41 @@ function SessaoCard({
               {tipoBadge.label}
             </span>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onEditar}
-              title="Editar sessao"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-red-700 hover:bg-red-50"
-              onClick={onExcluir}
-              title="Excluir sessao"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          {canEdit && (
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={onDuplicar}
+                disabled={duplicando}
+                title="Duplicar sessao para a semana seguinte"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={onEditar}
+                title="Editar sessao"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-red-700 hover:bg-red-50"
+                onClick={onExcluir}
+                title="Excluir sessao"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
         </div>
         {sessao.observacoesGerais && (
           <p className="text-xs italic text-slate-700">
@@ -780,16 +1012,19 @@ function SessaoCard({
                   <th className="px-3 py-2">Situacao</th>
                   <th className="px-3 py-2">Prognostico</th>
                   <th className="px-3 py-2">Flags</th>
-                  <th className="w-16 px-3 py-2 text-right">Acoes</th>
+                  <th className="w-16 px-3 py-2 text-right">
+                    {canEdit ? "Acoes" : ""}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {sessao.itens.map((item, idx) => (
                   <tr
                     key={item.id}
-                    onClick={() => onEditarItem(item)}
+                    onClick={canEdit ? () => onEditarItem(item) : undefined}
                     className={cn(
-                      "cursor-pointer border-b align-top transition-colors hover:bg-slate-50",
+                      "border-b align-top transition-colors",
+                      canEdit && "cursor-pointer hover:bg-slate-50",
                       item.retiradoDePauta && "bg-slate-100/60",
                     )}
                   >
@@ -868,6 +1103,12 @@ function SessaoCard({
                               : ""}
                           </span>
                         )}
+                        {item.sustentacaoOral && !item.retiradoDePauta && (
+                          <SustentacaoOralBadge
+                            sessaoIso={sessao.data}
+                            orgao={sessao.orgaoJulgador}
+                          />
+                        )}
                         {item.sessaoVirtual && (
                           <span
                             className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-800"
@@ -913,18 +1154,22 @@ function SessaoCard({
                       </div>
                     </td>
                     <td className="px-3 py-3 text-right">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:bg-red-50 hover:text-red-700"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onExcluirItem(item);
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      {canEdit ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:bg-red-50 hover:text-red-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onExcluirItem(item);
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -932,12 +1177,14 @@ function SessaoCard({
             </table>
           </div>
         )}
-        <div className="flex justify-end border-t bg-slate-50 px-3 py-2">
-          <Button type="button" variant="outline" size="sm" onClick={onNovoItem}>
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Adicionar Item
-          </Button>
-        </div>
+        {canEdit && (
+          <div className="flex justify-end border-t bg-slate-50 px-3 py-2">
+            <Button type="button" variant="outline" size="sm" onClick={onNovoItem}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Adicionar Item
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

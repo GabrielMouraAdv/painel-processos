@@ -3,8 +3,10 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { Grau, Risco, TipoProcesso, Tribunal } from "@prisma/client";
+import Link from "next/link";
 import {
   CalendarDays,
+  CalendarRange,
   ChevronRight,
   CircleAlert,
   ListChecks,
@@ -72,6 +74,18 @@ type Prazo = {
   advogadoResp: { id: string; nome: string } | null;
 };
 
+type HistoricoPautaItem = {
+  id: string;
+  data: string;
+  tribunal: string;
+  orgaoJulgador: string;
+  tipoSessao: string;
+  relator: string;
+  situacao: string | null;
+  retiradoDePauta: boolean;
+  pedidoVistas: boolean;
+};
+
 export type ProcessoDetail = {
   id: string;
   numero: string;
@@ -93,6 +107,7 @@ export type ProcessoDetail = {
   advogado: { id: string; nome: string; email: string };
   andamentos: Andamento[];
   prazos: Prazo[];
+  historicoPauta: HistoricoPautaItem[];
 };
 
 type Props = {
@@ -391,6 +406,96 @@ export function ProcessoView({
           </CardContent>
         </Card>
       </section>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CalendarRange className="h-4 w-4 text-brand-navy" />
+                Historico de Pauta
+              </CardTitle>
+              <CardDescription>
+                {processo.historicoPauta.length === 0
+                  ? "Este processo nunca foi pautado."
+                  : `${processo.historicoPauta.length} sessao${processo.historicoPauta.length === 1 ? "" : "oes"} em que este processo foi pautado.`}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {processo.historicoPauta.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Vincule um item de pauta a este processo para acompanhar o historico.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-slate-50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2">Data</th>
+                    <th className="px-3 py-2">Tribunal</th>
+                    <th className="px-3 py-2">Orgao julgador</th>
+                    <th className="px-3 py-2">Relator</th>
+                    <th className="px-3 py-2">Situacao</th>
+                    <th className="px-3 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {processo.historicoPauta.map((h) => (
+                    <tr
+                      key={h.id}
+                      className="border-b align-top hover:bg-slate-50"
+                    >
+                      <td className="px-3 py-2 text-xs text-slate-700">
+                        <Link
+                          href={`/app/pautas?semana=${h.data.slice(0, 10)}`}
+                          className="font-medium text-brand-navy hover:underline"
+                        >
+                          {formatDate(h.data)}
+                        </Link>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-slate-700">
+                        {h.tribunal}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-slate-700">
+                        {h.orgaoJulgador}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-slate-700">
+                        {h.relator}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-slate-700">
+                        {h.situacao ?? (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex flex-col gap-1">
+                          {h.retiradoDePauta && (
+                            <span className="inline-flex w-fit rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-800">
+                              Retirado
+                            </span>
+                          )}
+                          {h.pedidoVistas && (
+                            <span className="inline-flex w-fit rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-800">
+                              Pedido de vistas
+                            </span>
+                          )}
+                          {!h.retiradoDePauta && !h.pedidoVistas && (
+                            <span className="text-[10px] text-muted-foreground">
+                              —
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={addPrazoOpen} onOpenChange={setAddPrazoOpen}>
         <DialogContent className="max-w-lg">

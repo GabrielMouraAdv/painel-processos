@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { podeEditarPauta } from "@/lib/pauta-permissions";
 import { prisma } from "@/lib/prisma";
 import { sessaoJudicialUpdateSchema } from "@/lib/schemas";
 
@@ -19,6 +20,12 @@ export async function PATCH(
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
+  }
+  if (!podeEditarPauta(session.user.role)) {
+    return NextResponse.json(
+      { error: "Sem permissao para editar sessao" },
+      { status: 403 },
+    );
   }
   const existing = await ensureOwned(params.id, session.user.escritorioId);
   if (!existing)
@@ -58,6 +65,12 @@ export async function DELETE(
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
+  }
+  if (!podeEditarPauta(session.user.role)) {
+    return NextResponse.json(
+      { error: "Sem permissao para excluir sessao" },
+      { status: 403 },
+    );
   }
   const existing = await ensureOwned(params.id, session.user.escritorioId);
   if (!existing)

@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { Role, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { podeEditarPauta } from "@/lib/pauta-permissions";
 import { prisma } from "@/lib/prisma";
 import {
   endOfWeekUTC,
@@ -33,6 +34,7 @@ export default async function PautasJudiciaisPage({
 }) {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
+  const canEdit = podeEditarPauta(session!.user.role);
 
   const semanaParam = asString(searchParams.semana);
   const ref = parseISODate(semanaParam) ?? new Date();
@@ -167,6 +169,7 @@ export default async function PautasJudiciaisPage({
           numero: p.numero,
           gestor: p.gestor.nome,
         }))}
+        canEdit={canEdit}
       />
     </div>
   );

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +63,7 @@ type Props = {
   advogadosCadastrados: string[];
   desembargadores: string[];
   processosJudiciais: ProcessoJudicialOption[];
+  canEdit: boolean;
 };
 
 const LIST_IDS = {
@@ -81,11 +83,13 @@ export function ItemPautaJudicialDialog({
   advogadosCadastrados,
   desembargadores,
   processosJudiciais,
+  canEdit,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
   const [numeroProcesso, setNumeroProcesso] = React.useState("");
+  const [copiando, setCopiando] = React.useState(false);
   const [tituloProcesso, setTituloProcesso] = React.useState("");
   const [tipoRecurso, setTipoRecurso] = React.useState("");
   const [partes, setPartes] = React.useState("");
@@ -226,6 +230,79 @@ export function ItemPautaJudicialDialog({
     }
   }
 
+  async function copiarDePautaAnterior() {
+    const numero = numeroProcesso.trim();
+    if (!numero) {
+      toast({
+        variant: "destructive",
+        title: "Informe o numero do processo primeiro",
+      });
+      return;
+    }
+    setCopiando(true);
+    try {
+      const params = new URLSearchParams({ numero });
+      if (mode === "edit") params.set("excludeSessaoId", sessaoId);
+      const res = await fetch(
+        `/api/pautas/itens/buscar-anterior?${params.toString()}`,
+      );
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao buscar pauta anterior",
+        });
+        return;
+      }
+      const json = await res.json();
+      if (!json.found) {
+        toast({
+          title: "Nenhum item anterior encontrado",
+          description: "Nao foi achada sessao anterior com este numero.",
+        });
+        return;
+      }
+      const it = json.item as {
+        tituloProcesso: string | null;
+        tipoRecurso: string | null;
+        partes: string | null;
+        relator: string;
+        advogadoResp: string;
+        situacao: string | null;
+        prognostico: string | null;
+        observacoes: string | null;
+        providencia: string | null;
+        sustentacaoOral: boolean;
+        advogadoSustentacao: string | null;
+        sessaoVirtual: boolean;
+        pedidoRetPresencial: boolean;
+      };
+      const s = json.sessao as {
+        data: string;
+        orgaoJulgador: string;
+      };
+      setTituloProcesso(it.tituloProcesso ?? "");
+      setTipoRecurso(it.tipoRecurso ?? "");
+      setPartes(it.partes ?? "");
+      setRelator(it.relator);
+      setAdvogadoResp(it.advogadoResp);
+      setSituacao(it.situacao ?? "");
+      setPrognostico(it.prognostico ?? "");
+      setObservacoes(it.observacoes ?? "");
+      setProvidencia(it.providencia ?? "");
+      setSustentacaoOral(it.sustentacaoOral);
+      setAdvogadoSustentacao(it.advogadoSustentacao ?? "");
+      setSessaoVirtual(it.sessaoVirtual);
+      setPedidoRetPresencial(it.pedidoRetPresencial);
+      const dataFmt = s.data.slice(0, 10).split("-").reverse().join("/");
+      toast({
+        title: "Dados copiados",
+        description: `Copiado de sessao de ${s.orgaoJulgador} (${dataFmt}).`,
+      });
+    } finally {
+      setCopiando(false);
+    }
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -244,11 +321,26 @@ export function ItemPautaJudicialDialog({
                 <Label>
                   Numero do processo <span className="text-red-600">*</span>
                 </Label>
-                <Input
-                  value={numeroProcesso}
-                  onChange={(e) => setNumeroProcesso(e.target.value)}
-                  placeholder="Ex.: 0001542-12.2026.8.17.2001"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={numeroProcesso}
+                    onChange={(e) => setNumeroProcesso(e.target.value)}
+                    placeholder="Ex.: 0001542-12.2026.8.17.2001"
+                    className="flex-1"
+                  />
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={copiarDePautaAnterior}
+                      disabled={copiando || !numeroProcesso.trim()}
+                      title="Buscar dados deste processo em sessoes anteriores"
+                    >
+                      <Copy className="mr-1.5 h-3.5 w-3.5" />
+                      {copiando ? "Buscando..." : "Copiar de pauta anterior"}
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label>Tipo de recurso</Label>
