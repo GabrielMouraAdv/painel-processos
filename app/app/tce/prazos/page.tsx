@@ -1,10 +1,5 @@
 import { getServerSession } from "next-auth";
-import {
-  CamaraTce,
-  Role,
-  TipoProcessoTce,
-  type Prisma,
-} from "@prisma/client";
+import { CamaraTce, Role, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
