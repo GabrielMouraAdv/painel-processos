@@ -84,6 +84,8 @@ const CAMARA_ACCENT: Record<
   },
 };
 
+const CAMARA_ORDER: CamaraTce[] = ["PRIMEIRA", "PLENO", "SEGUNDA"];
+
 function asString(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
 }
@@ -337,6 +339,59 @@ export default async function TceDashboardPage({
         </p>
       </header>
 
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
+        {kpis.map((k) => {
+          const Icon = k.icon;
+          return (
+            <Link
+              key={k.label}
+              href={k.href}
+              className={cn(
+                "group rounded-lg border p-4 shadow-sm transition hover:shadow-md",
+                toneStyles[k.tone],
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">
+                  {k.label}
+                </p>
+                <Icon className="h-4 w-4 opacity-80" aria-hidden="true" />
+              </div>
+              <p className="mt-2 text-3xl font-semibold leading-tight">
+                {k.value}
+              </p>
+            </Link>
+          );
+        })}
+      </section>
+
+      {totalAlertas > 0 && (
+        <div className="flex gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium">
+              {totalAlertas} alerta{totalAlertas === 1 ? "" : "s"} automatico
+              {totalAlertas === 1 ? "" : "s"} ativo
+              {totalAlertas === 1 ? "" : "s"} em processos TCE.
+            </p>
+            <p className="text-amber-800">
+              Contrarrazoes pendentes e despachos ainda nao agendados.
+            </p>
+          </div>
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+          >
+            <Link href="/app/tce/processos?contrarrazoes=pendentes">
+              Ver processos
+              <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
+      )}
+
       <Card className="border-brand-navy/20">
         <CardHeader className="border-b bg-brand-navy/5 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -374,34 +429,21 @@ export default async function TceDashboardPage({
           </div>
         </CardHeader>
         <CardContent className="pt-4">
-          {sessoesSemana.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <CalendarRange
-                className="h-8 w-8 text-slate-400"
-                aria-hidden="true"
-              />
-              <p className="text-sm text-muted-foreground">
-                Nenhuma sessao cadastrada para esta semana.
-              </p>
-              <Button asChild size="sm" className="bg-brand-navy hover:bg-brand-navy/90">
-                <Link href={`/app/tce/pauta?semana=${weekStartIso}`}>
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />
-                  Adicionar Pauta
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              {sessoesSemana.map((s) => {
-                const accent = CAMARA_ACCENT[s.camara];
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {CAMARA_ORDER.map((camara) => {
+              const accent = CAMARA_ACCENT[camara];
+              const sessoesCamara = sessoesSemana.filter(
+                (s) => s.camara === camara,
+              );
+              if (sessoesCamara.length === 0) {
                 return (
                   <Link
-                    key={s.id}
+                    key={camara}
                     href={`/app/tce/pauta?semana=${weekStartIso}`}
                     className={cn(
-                      "flex flex-col gap-2 rounded-md border border-l-4 p-3 text-sm transition-colors hover:shadow-md",
+                      "flex flex-col gap-2 rounded-md border border-l-4 border-dashed p-3 text-sm transition-colors hover:shadow-md",
                       accent.border,
-                      accent.bg,
+                      "bg-slate-50/60",
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -411,96 +453,76 @@ export default async function TceDashboardPage({
                           accent.badge,
                         )}
                       >
-                        {TCE_CAMARA_LABELS[s.camara]}
-                      </span>
-                      <span className="text-[11px] font-medium text-muted-foreground">
-                        {formatDiaSemana(s.data.toISOString())}
+                        {TCE_CAMARA_LABELS[camara]}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {s._count.itens} item{s._count.itens === 1 ? "" : "s"} na pauta
+                    <p className="flex flex-1 items-center justify-center py-4 text-center text-xs italic text-muted-foreground">
+                      Sem sessao nesta semana
                     </p>
-                    {s.itens.length > 0 && (
-                      <ul className="flex flex-col gap-1 border-t border-white/40 pt-2">
-                        {s.itens.map((it) => (
-                          <li key={it.id} className="text-xs">
-                            <span className="font-mono font-medium text-brand-navy">
-                              {it.numeroProcesso}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {" "}
-                              — {it.municipio}
-                            </span>
-                          </li>
-                        ))}
-                        {s._count.itens > s.itens.length && (
-                          <li className="text-[10px] italic text-muted-foreground">
-                            +{s._count.itens - s.itens.length} outro
-                            {s._count.itens - s.itens.length === 1 ? "" : "s"}
-                          </li>
-                        )}
-                      </ul>
-                    )}
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-navy">
+                      <Plus className="h-3 w-3" />
+                      Adicionar pauta
+                    </span>
                   </Link>
                 );
-              })}
-            </div>
-          )}
+              }
+              return (
+                <div key={camara} className="flex flex-col gap-2">
+                  {sessoesCamara.map((s) => (
+                    <Link
+                      key={s.id}
+                      href={`/app/tce/pauta?semana=${weekStartIso}`}
+                      className={cn(
+                        "flex flex-col gap-2 rounded-md border border-l-4 p-3 text-sm transition-colors hover:shadow-md",
+                        accent.border,
+                        accent.bg,
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                            accent.badge,
+                          )}
+                        >
+                          {TCE_CAMARA_LABELS[s.camara]}
+                        </span>
+                        <span className="text-[11px] font-medium text-muted-foreground">
+                          {formatDiaSemana(s.data.toISOString())}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {s._count.itens} item{s._count.itens === 1 ? "" : "s"} na pauta
+                      </p>
+                      {s.itens.length > 0 && (
+                        <ul className="flex flex-col gap-1 border-t border-white/40 pt-2">
+                          {s.itens.map((it) => (
+                            <li key={it.id} className="text-xs">
+                              <span className="font-mono font-medium text-brand-navy">
+                                {it.numeroProcesso}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {" "}
+                                — {it.municipio}
+                              </span>
+                            </li>
+                          ))}
+                          {s._count.itens > s.itens.length && (
+                            <li className="text-[10px] italic text-muted-foreground">
+                              +{s._count.itens - s.itens.length} outro
+                              {s._count.itens - s.itens.length === 1 ? "" : "s"}
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
-
-      {totalAlertas > 0 && (
-        <div className="flex gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div className="flex-1">
-            <p className="font-medium">
-              {totalAlertas} alerta{totalAlertas === 1 ? "" : "s"} automatico
-              {totalAlertas === 1 ? "" : "s"} ativo
-              {totalAlertas === 1 ? "" : "s"} em processos TCE.
-            </p>
-            <p className="text-amber-800">
-              Contrarrazoes pendentes e despachos ainda nao agendados.
-            </p>
-          </div>
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
-          >
-            <Link href="/app/tce/processos?contrarrazoes=pendentes">
-              Ver processos
-              <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Link>
-          </Button>
-        </div>
-      )}
-
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
-        {kpis.map((k) => {
-          const Icon = k.icon;
-          return (
-            <Link
-              key={k.label}
-              href={k.href}
-              className={cn(
-                "group rounded-lg border p-4 shadow-sm transition hover:shadow-md",
-                toneStyles[k.tone],
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">
-                  {k.label}
-                </p>
-                <Icon className="h-4 w-4 opacity-80" aria-hidden="true" />
-              </div>
-              <p className="mt-2 text-3xl font-semibold leading-tight">
-                {k.value}
-              </p>
-            </Link>
-          );
-        })}
-      </section>
 
       {isAdvogado && (
         <Card>

@@ -1056,7 +1056,47 @@ async function main() {
         },
       ],
     },
-    // Semana 22/04 a 23/04/2026
+    // Semana 20/04 a 24/04/2026
+    {
+      data: "2026-04-20",
+      camara: CamaraTce.PRIMEIRA,
+      observacoesGerais: "Sessao ordinaria de abertura da semana.",
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 24.0047-7",
+          tituloProcesso: "RGF Campo do Horizonte - reapreciacao",
+          municipio: "Campo do Horizonte",
+          exercicio: "2024",
+          relator: "Rodrigo Novaes",
+          advogadoResp: "Mateus Lisboa",
+          situacao: "Aguardando leitura do voto apos diligencia.",
+          prognostico: "Regularidade com ressalvas",
+          providencia: "Memorial de atualizacao protocolado.",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0301-4",
+          tituloProcesso: "Defesa previa - contratacao direta",
+          municipio: "Barra do Jacare",
+          exercicio: "2024",
+          relator: "Ranilson Ramos",
+          advogadoResp: "Gabriel Moura",
+          situacao: "Defesa previa apresentada; aguardando parecer tecnico.",
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0178-2",
+          tituloProcesso: "Agravo regimental Campo do Horizonte",
+          municipio: "Campo do Horizonte",
+          exercicio: "2024",
+          relator: "Dirceu Rodolfo",
+          advogadoResp: "Carlos Porto",
+          pedidoVistas: true,
+          conselheiroVistas: "Ranilson Ramos",
+          observacoes: "Vistas solicitadas na sessao anterior; retomada agendada.",
+          vincularProcessoTce: true,
+        },
+      ],
+    },
     {
       data: "2026-04-22",
       camara: CamaraTce.PLENO,
