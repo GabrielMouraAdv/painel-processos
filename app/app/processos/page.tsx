@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getServerSession } from "next-auth";
 import {
@@ -114,13 +115,11 @@ export default async function ProcessosPage({
             Gerencie e acompanhe todos os processos do escritorio.
           </p>
         </div>
-        <Button
-          disabled
-          className="bg-brand-navy hover:bg-brand-navy/90"
-          title="Em breve"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Processo
+        <Button asChild className="bg-brand-navy hover:bg-brand-navy/90">
+          <Link href="/app/processos/novo">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Processo
+          </Link>
         </Button>
       </header>
 

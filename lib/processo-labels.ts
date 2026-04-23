@@ -33,16 +33,20 @@ const faseMap: Record<string, string> = {
   recurso_interposto: "Recurso interposto",
   contrarrazoes_apres: "Contrarrazoes apresentadas",
   prazo_provas: "Prazo de provas",
+  admissibilidade: "Juizo de admissibilidade",
   admissibilidade_sup: "Admissibilidade (superior)",
   audiencia_agendada: "Audiencia agendada",
   sentenca: "Sentenca",
+  julgamento_ed: "Julgamento de ED (2o grau)",
   julgamento_ed_2grau: "Julgamento de ED (2o grau)",
   ag_alegacoes_finais: "Aguardando alegacoes finais",
   julgamento_superior: "Julgamento superior",
   pauta_julgamento: "Pauta de julgamento",
+  julgamento: "Julgamento (2o grau)",
   julgamento_2grau: "Julgamento (2o grau)",
   alegacoes_finais_apres: "Alegacoes finais apresentadas",
   concluso_julgamento: "Concluso para julgamento",
+  transitado: "Transitado em julgado",
 };
 
 export function faseLabel(fase: string): string {
@@ -51,8 +55,10 @@ export function faseLabel(fase: string): string {
 
 export const fasesEmPauta = [
   "pauta_julgamento",
+  "julgamento",
   "julgamento_2grau",
   "julgamento_superior",
+  "julgamento_ed",
   "julgamento_ed_2grau",
   "concluso_julgamento",
 ];
