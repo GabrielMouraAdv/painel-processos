@@ -61,3 +61,20 @@ export const andamentoInputSchema = z.object({
 });
 
 export type AndamentoInput = z.infer<typeof andamentoInputSchema>;
+
+export const prazoCreateSchema = z.object({
+  processoId: z.string().min(1, "Selecione o processo"),
+  tipo: z.string().min(1, "Informe o tipo"),
+  data: z
+    .union([z.string(), z.date()])
+    .transform((v) => (v instanceof Date ? v : new Date(v))),
+  hora: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+});
+
+export type PrazoCreateInput = z.infer<typeof prazoCreateSchema>;
+
+export const prazoUpdateSchema = z.object({
+  cumprido: z.boolean().optional(),
+});
+

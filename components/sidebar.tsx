@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Scale,
   Users,
+  CalendarClock,
   CalendarDays,
   FileText,
   Settings,
@@ -15,18 +16,29 @@ type NavItem = {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  badge?: number;
 };
 
-const navItems: NavItem[] = [
-  { label: "Painel", href: "/app", icon: LayoutDashboard },
-  { label: "Processos", href: "/app/processos", icon: Scale },
-  { label: "Clientes", href: "/app/clientes", icon: Users },
-  { label: "Agenda", href: "/app/agenda", icon: CalendarDays },
-  { label: "Documentos", href: "/app/documentos", icon: FileText },
-  { label: "Configuracoes", href: "/app/configuracoes", icon: Settings },
-];
+type Props = {
+  prazosUrgentes?: number;
+};
 
-export function Sidebar() {
+export function Sidebar({ prazosUrgentes = 0 }: Props) {
+  const navItems: NavItem[] = [
+    { label: "Painel", href: "/app", icon: LayoutDashboard },
+    { label: "Processos", href: "/app/processos", icon: Scale },
+    {
+      label: "Prazos",
+      href: "/app/prazos",
+      icon: CalendarClock,
+      badge: prazosUrgentes > 0 ? prazosUrgentes : undefined,
+    },
+    { label: "Clientes", href: "/app/clientes", icon: Users },
+    { label: "Agenda", href: "/app/agenda", icon: CalendarDays },
+    { label: "Documentos", href: "/app/documentos", icon: FileText },
+    { label: "Configuracoes", href: "/app/configuracoes", icon: Settings },
+  ];
+
   return (
     <aside
       className="flex h-screen w-64 flex-col bg-brand-navy text-slate-100"
@@ -50,12 +62,19 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+                "flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium",
                 "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
               )}
             >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              <span>{item.label}</span>
+              <span className="flex items-center gap-3">
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span>{item.label}</span>
+              </span>
+              {item.badge !== undefined && (
+                <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold leading-none text-white">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -66,3 +66,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .day-urgente,
+  .day-proximo {
+    position: relative;
+  }
+  .day-urgente::after,
+  .day-proximo::after {
+    content: "";
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    pointer-events: none;
+  }
+  .day-urgente::after {
+    background-color: rgb(220 38 38);
+  }
+  .day-proximo::after {
+    background-color: rgb(234 179 8);
+  }
+}
