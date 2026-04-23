@@ -553,7 +553,7 @@ export default async function AppHome({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col gap-5">
+        <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between border-b pb-2">
               <h3 className="text-sm font-semibold text-brand-navy">TJPE</h3>
