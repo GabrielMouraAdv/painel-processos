@@ -39,6 +39,7 @@ import {
   startOfWeekUTC,
 } from "@/lib/semana";
 import { TCE_CAMARA_LABELS } from "@/lib/tce-config";
+import { ORGAOS_JULGADORES } from "@/lib/tjpe-config";
 import { cn } from "@/lib/utils";
 
 function formatDate(d: Date): string {
@@ -86,6 +87,47 @@ const CAMARA_DOT: Record<CamaraTce, string> = {
   SEGUNDA: "bg-[#047857]",
   PLENO: "bg-[#6b21a8]",
 };
+
+type CategoriaTjpe =
+  | "direito_publico"
+  | "criminal"
+  | "regional_caruaru"
+  | "pleno";
+
+function categoriaOrgaoTjpe(orgao: string): CategoriaTjpe {
+  if (orgao.includes("Regional Caruaru")) return "regional_caruaru";
+  if (orgao.includes("Pleno") || orgao === "Plenario Virtual") return "pleno";
+  if (orgao.includes("Criminal")) return "criminal";
+  return "direito_publico";
+}
+
+const CATEGORIA_TJPE_DOT: Record<CategoriaTjpe, string> = {
+  direito_publico: "bg-[#1e40af]",
+  criminal: "bg-[#b91c1c]",
+  regional_caruaru: "bg-[#047857]",
+  pleno: "bg-[#6b21a8]",
+};
+
+const TIPO_SESSAO_TJPE: Record<string, { label: string; className: string }> = {
+  presencial: {
+    label: "Presencial",
+    className: "bg-slate-200 text-slate-800",
+  },
+  virtual: {
+    label: "Virtual",
+    className: "bg-orange-100 text-orange-800",
+  },
+  plenario_virtual: {
+    label: "Plenario Virtual",
+    className: "bg-orange-100 text-orange-800",
+  },
+};
+
+function horaToNumTjpe(h?: string): number {
+  if (!h) return 999;
+  const m = /^(\d+)h/i.exec(h.trim());
+  return m ? parseInt(m[1], 10) : 999;
+}
 
 function asString(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
@@ -141,6 +183,7 @@ export default async function AppHome({
     prazosProximos,
     ultimosAndamentos,
     pautaSessoes,
+    pautaSessoesTjpe,
   ] = await Promise.all([
     prisma.processo.count({ where: base }),
     prisma.processo.count({ where: { ...base, risco: Risco.ALTO } }),
@@ -235,7 +278,27 @@ export default async function AppHome({
         _count: { select: { itens: true } },
       },
     }),
+    prisma.sessaoJudicial.findMany({
+      where: {
+        escritorioId,
+        tribunal: "TJPE",
+        data: { gte: pautaWeekStart, lte: pautaWeekEnd },
+      },
+      orderBy: [{ data: "asc" }],
+      include: {
+        _count: { select: { itens: true } },
+      },
+    }),
   ]);
+
+  const pautaSessoesTjpeOrdenadas = [...pautaSessoesTjpe].sort((a, b) => {
+    const da = a.data.getTime();
+    const db = b.data.getTime();
+    if (da !== db) return da - db;
+    const ha = horaToNumTjpe(ORGAOS_JULGADORES[a.orgaoJulgador]?.horario);
+    const hb = horaToNumTjpe(ORGAOS_JULGADORES[b.orgaoJulgador]?.horario);
+    return ha - hb;
+  });
 
   type MeuPrazo = {
     id: string;
@@ -426,7 +489,7 @@ export default async function AppHome({
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <CalendarRange className="h-4 w-4 text-brand-navy" />
-            Proxima Pauta TCE
+            Pautas da Semana
           </CardTitle>
           <div className="flex items-center gap-1">
             <Button asChild variant="outline" size="icon" className="h-7 w-7">
@@ -449,50 +512,132 @@ export default async function AppHome({
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="sm" className="-mr-2">
-              <Link href={`/app/tce/pauta?semana=${pautaWeekStartIso}`}>
-                Ver pauta completa
-                <ArrowRight className="ml-1 h-3.5 w-3.5" />
-              </Link>
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {pautaSessoes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhuma sessao cadastrada para esta semana.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {pautaSessoes.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    href={`/app/tce/pauta?semana=${pautaWeekStartIso}`}
-                    className="flex items-center justify-between gap-3 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <span
-                        className={cn(
-                          "inline-block h-2.5 w-2.5 rounded-full",
-                          CAMARA_DOT[s.camara],
-                        )}
-                        aria-hidden="true"
-                      />
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {formatDiaSemanaShort(s.data.toISOString())}
-                      </span>
-                      <span className="text-sm font-medium text-brand-navy">
-                        {TCE_CAMARA_LABELS[s.camara]}
-                      </span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
-                    </span>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <section className="flex flex-col gap-2">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h3 className="text-sm font-semibold text-brand-navy">TJPE</h3>
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {pautaSessoesTjpeOrdenadas.length} sessa
+                  {pautaSessoesTjpeOrdenadas.length === 1 ? "o" : "oes"}
+                </span>
+              </div>
+              {pautaSessoesTjpeOrdenadas.length === 0 ? (
+                <p className="py-2 text-sm text-muted-foreground">
+                  Nenhuma sessao TJPE nesta semana.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {pautaSessoesTjpeOrdenadas.map((s) => {
+                    const categoria = categoriaOrgaoTjpe(s.orgaoJulgador);
+                    const tipo = TIPO_SESSAO_TJPE[s.tipoSessao];
+                    return (
+                      <li key={s.id}>
+                        <Link
+                          href={`/app/pautas?semana=${pautaWeekStartIso}`}
+                          className="flex items-start justify-between gap-3 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+                        >
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
+                                  CATEGORIA_TJPE_DOT[categoria],
+                                )}
+                                aria-hidden="true"
+                              />
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {formatDiaSemanaShort(s.data.toISOString())}
+                              </span>
+                              <span className="truncate text-sm font-medium text-brand-navy">
+                                {s.orgaoJulgador}
+                              </span>
+                            </div>
+                            {tipo && (
+                              <span
+                                className={cn(
+                                  "inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium",
+                                  tipo.className,
+                                )}
+                              >
+                                {tipo.label}
+                              </span>
+                            )}
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div className="mt-auto pt-2">
+                <Button asChild variant="ghost" size="sm" className="-ml-2">
+                  <Link href={`/app/pautas?semana=${pautaWeekStartIso}`}>
+                    Ver pautas
+                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
                   </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                </Button>
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h3 className="text-sm font-semibold text-brand-navy">TCE</h3>
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {pautaSessoes.length} sessa
+                  {pautaSessoes.length === 1 ? "o" : "oes"}
+                </span>
+              </div>
+              {pautaSessoes.length === 0 ? (
+                <p className="py-2 text-sm text-muted-foreground">
+                  Nenhuma sessao TCE nesta semana.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {pautaSessoes.map((s) => (
+                    <li key={s.id}>
+                      <Link
+                        href={`/app/tce/pauta?semana=${pautaWeekStartIso}`}
+                        className="flex items-center justify-between gap-3 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+                      >
+                        <span className="flex min-w-0 items-center gap-2.5">
+                          <span
+                            className={cn(
+                              "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
+                              CAMARA_DOT[s.camara],
+                            )}
+                            aria-hidden="true"
+                          />
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {formatDiaSemanaShort(s.data.toISOString())}
+                          </span>
+                          <span className="truncate text-sm font-medium text-brand-navy">
+                            {TCE_CAMARA_LABELS[s.camara]}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="mt-auto pt-2">
+                <Button asChild variant="ghost" size="sm" className="-ml-2">
+                  <Link href={`/app/tce/pauta?semana=${pautaWeekStartIso}`}>
+                    Ver pautas
+                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              </div>
+            </section>
+          </div>
         </CardContent>
       </Card>
 
