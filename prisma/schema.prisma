@@ -71,6 +71,7 @@ model User {
   prazosComoResp        Prazo[]     @relation("PrazoAdvogadoResp")
   andamentos            Andamento[]
   documentos            Documento[]
+  documentosTce         DocumentoTce[]
   andamentosTce         AndamentoTce[] @relation("AutorAndamentoTce")
   prazosTceResp         PrazoTce[]     @relation("AdvogadoRespPrazoTce")
 
@@ -186,6 +187,23 @@ model Documento {
   @@index([uploadedBy])
 }
 
+model DocumentoTce {
+  id             String   @id @default(cuid())
+  processoTceId  String
+  nome           String
+  url            String
+  tipo           String
+  tamanho        Int
+  uploadedBy     String
+  createdAt      DateTime @default(now())
+
+  processo       ProcessoTce @relation(fields: [processoTceId], references: [id], onDelete: Cascade)
+  uploadedByUser User        @relation(fields: [uploadedBy], references: [id])
+
+  @@index([processoTceId])
+  @@index([uploadedBy])
+}
+
 enum TipoProcessoTce {
   PRESTACAO_CONTAS_GOVERNO
   PRESTACAO_CONTAS_GESTAO
@@ -261,6 +279,7 @@ model ProcessoTce {
   andamentos   AndamentoTce[]
   prazos       PrazoTce[]
   itensPauta   ItemPauta[]
+  documentos   DocumentoTce[]
 
   @@index([escritorioId])
   @@index([municipioId])

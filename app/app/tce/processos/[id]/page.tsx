@@ -20,7 +20,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DocumentosSection,
+  type DocumentoItem,
+} from "@/components/documentos/documentos-section";
 import { authOptions } from "@/lib/auth";
+import { TIPOS_DOCUMENTO_TCE } from "@/lib/documento-config";
 import { prisma } from "@/lib/prisma";
 import { computeTceAlertas } from "@/lib/tce-alertas";
 import {
@@ -84,6 +89,10 @@ export default async function ProcessoTceDetailPage({
         orderBy: { dataVencimento: "asc" },
         include: { advogadoResp: { select: { id: true, nome: true } } },
       },
+      documentos: {
+        orderBy: { createdAt: "desc" },
+        include: { uploadedByUser: { select: { nome: true } } },
+      },
     },
   });
 
@@ -132,6 +141,18 @@ export default async function ProcessoTceDetailPage({
     despachadoComRelator: processo.despachadoComRelator,
     memorialPronto: processo.memorialPronto,
   });
+
+  const documentos: DocumentoItem[] = processo.documentos.map((d) => ({
+    id: d.id,
+    nome: d.nome,
+    url: d.url,
+    tipo: d.tipo,
+    tamanho: d.tamanho,
+    createdAt: d.createdAt.toISOString(),
+    uploadedByNome: d.uploadedByUser.nome,
+  }));
+
+  const canDeleteDocumentos = session!.user.role === Role.ADMIN;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 md:px-8">
@@ -366,6 +387,14 @@ export default async function ProcessoTceDetailPage({
           )}
         </CardContent>
       </Card>
+
+      <DocumentosSection
+        escopo="tce"
+        processoId={processo.id}
+        documentos={documentos}
+        tiposDocumento={TIPOS_DOCUMENTO_TCE}
+        canDelete={canDeleteDocumentos}
+      />
     </div>
   );
 }

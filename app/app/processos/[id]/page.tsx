@@ -31,6 +31,10 @@ export default async function ProcessoDetailPage({
         orderBy: { data: "asc" },
         include: { advogadoResp: { select: { id: true, nome: true } } },
       },
+      documentos: {
+        orderBy: { createdAt: "desc" },
+        include: { uploadedByUser: { select: { nome: true } } },
+      },
     },
   });
 
@@ -127,6 +131,15 @@ export default async function ProcessoDetailPage({
       retiradoDePauta: it.retiradoDePauta,
       pedidoVistas: it.pedidoVistas,
     })),
+    documentos: processo.documentos.map((d) => ({
+      id: d.id,
+      nome: d.nome,
+      url: d.url,
+      tipo: d.tipo,
+      tamanho: d.tamanho,
+      createdAt: d.createdAt.toISOString(),
+      uploadedByNome: d.uploadedByUser.nome,
+    })),
   };
 
   return (
@@ -143,6 +156,7 @@ export default async function ProcessoDetailPage({
         gestores={gestores}
         advogados={advogados}
         advogadosResponsaveis={advogadosResponsaveis}
+        canDeleteDocumentos={session!.user.role === Role.ADMIN}
       />
     </div>
   );

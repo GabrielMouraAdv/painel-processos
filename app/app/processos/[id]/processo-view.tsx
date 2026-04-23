@@ -24,6 +24,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  DocumentosSection,
+  type DocumentoItem,
+} from "@/components/documentos/documentos-section";
+import {
   GrauBadge,
   RiscoBadge,
   TipoBadge,
@@ -40,6 +44,7 @@ import {
 import { EditPrazosDialog } from "@/components/prazos/edit-prazos-dialog";
 import { PrazoForm, type PrazoInitial } from "@/components/prazos/prazo-form";
 import { useToast } from "@/hooks/use-toast";
+import { TIPOS_DOCUMENTO_JUDICIAL } from "@/lib/documento-config";
 import { diasAte } from "@/lib/prazos";
 import { faseLabel } from "@/lib/processo-labels";
 import { cn } from "@/lib/utils";
@@ -108,6 +113,7 @@ export type ProcessoDetail = {
   andamentos: Andamento[];
   prazos: Prazo[];
   historicoPauta: HistoricoPautaItem[];
+  documentos: DocumentoItem[];
 };
 
 type Props = {
@@ -115,6 +121,7 @@ type Props = {
   gestores: GestorOption[];
   advogados: AdvogadoOption[];
   advogadosResponsaveis: { id: string; nome: string }[];
+  canDeleteDocumentos: boolean;
 };
 
 function formatDate(d: string | null | undefined): string {
@@ -136,6 +143,7 @@ export function ProcessoView({
   gestores,
   advogados,
   advogadosResponsaveis,
+  canDeleteDocumentos,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -406,6 +414,14 @@ export function ProcessoView({
           </CardContent>
         </Card>
       </section>
+
+      <DocumentosSection
+        escopo="judicial"
+        processoId={processo.id}
+        documentos={processo.documentos}
+        tiposDocumento={TIPOS_DOCUMENTO_JUDICIAL}
+        canDelete={canDeleteDocumentos}
+      />
 
       <Card>
         <CardHeader>

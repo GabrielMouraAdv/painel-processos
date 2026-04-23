@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Files,
   Gavel,
   Plus,
   Scale,
@@ -122,6 +123,7 @@ export default async function TceDashboardPage({
     contrarrazoesNt,
     contrarrazoesMpco,
     semDespacho,
+    documentosTceTotal,
     proximosPrazos,
     ultimosAndamentos,
     alertasProcessos,
@@ -149,6 +151,9 @@ export default async function TceDashboardPage({
     }),
     prisma.processoTce.count({
       where: { ...base, despachadoComRelator: false },
+    }),
+    prisma.documentoTce.count({
+      where: { processo: { escritorioId } },
     }),
     prisma.prazoTce.findMany({
       where: {
@@ -313,6 +318,13 @@ export default async function TceDashboardPage({
       href: "/app/tce/processos?semDespacho=1",
       icon: AlertTriangle,
       tone: "orange",
+    },
+    {
+      label: "Documentos",
+      value: documentosTceTotal,
+      href: "/app/tce/processos",
+      icon: Files,
+      tone: "slate",
     },
   ];
 
