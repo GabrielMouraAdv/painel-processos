@@ -3,7 +3,15 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { Grau, Risco, TipoProcesso, Tribunal } from "@prisma/client";
-import { CalendarDays, Check, ChevronRight, CircleAlert, Clock, Pencil, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronRight,
+  CircleAlert,
+  ListChecks,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +35,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EditPrazosDialog } from "@/components/prazos/edit-prazos-dialog";
+import { PrazoForm, type PrazoInitial } from "@/components/prazos/prazo-form";
 import { useToast } from "@/hooks/use-toast";
+import { diasAte } from "@/lib/prazos";
 import { faseLabel } from "@/lib/processo-labels";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +69,7 @@ type Prazo = {
   cumprido: boolean;
   geradoAuto: boolean;
   origemFase: string | null;
+  advogadoRedator: { id: string; nome: string } | null;
 };
 
 export type ProcessoDetail = {
@@ -109,6 +121,27 @@ export function ProcessoView({ processo, gestores, advogados }: Props) {
   const [editing, setEditing] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
+  const [addPrazoOpen, setAddPrazoOpen] = React.useState(false);
+  const [editPrazosOpen, setEditPrazosOpen] = React.useState(false);
+
+  const prazosOrdenados = React.useMemo(() => {
+    return [...processo.prazos].sort(
+      (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime(),
+    );
+  }, [processo.prazos]);
+
+  const prazosParaEdicao: PrazoInitial[] = React.useMemo(
+    () =>
+      prazosOrdenados.map((p) => ({
+        id: p.id,
+        tipo: p.tipo,
+        data: p.data,
+        hora: p.hora,
+        observacoes: p.observacoes,
+        advogadoRedator: p.advogadoRedator,
+      })),
+    [prazosOrdenados],
+  );
 
   const initial: ProcessoFormInitial = {
     numero: processo.numero,
@@ -309,58 +342,77 @@ export function ProcessoView({ processo, gestores, advogados }: Props) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Prazos</CardTitle>
-            <CardDescription>
-              {processo.prazos.length} prazo
-              {processo.prazos.length === 1 ? "" : "s"} vinculado
-              {processo.prazos.length === 1 ? "" : "s"} a este processo.
-            </CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-base">Prazos</CardTitle>
+                <CardDescription>
+                  {processo.prazos.length} prazo
+                  {processo.prazos.length === 1 ? "" : "s"} vinculado
+                  {processo.prazos.length === 1 ? "" : "s"} a este processo.
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="bg-brand-navy hover:bg-brand-navy/90"
+                  onClick={() => setAddPrazoOpen(true)}
+                >
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Adicionar Prazo
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditPrazosOpen(true)}
+                  disabled={processo.prazos.length === 0}
+                >
+                  <ListChecks className="mr-1.5 h-4 w-4" />
+                  Editar Prazos
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {processo.prazos.length === 0 ? (
+            {prazosOrdenados.length === 0 ? (
               <p className="text-sm text-muted-foreground">Sem prazos cadastrados.</p>
             ) : (
-              <ul className="space-y-3">
-                {processo.prazos.map((p) => (
-                  <li
-                    key={p.id}
-                    className={cn(
-                      "rounded-md border p-3 text-sm",
-                      p.cumprido
-                        ? "border-emerald-200 bg-emerald-50"
-                        : "border-slate-200 bg-white",
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 font-medium text-brand-navy">
-                        {p.cumprido ? (
-                          <Check className="h-4 w-4 text-emerald-700" />
-                        ) : (
-                          <Clock className="h-4 w-4 text-amber-600" />
-                        )}
-                        {p.tipo}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(p.data)}
-                        {p.hora ? ` as ${p.hora}` : ""}
-                      </span>
-                    </div>
-                    {p.observacoes && (
-                      <p className="mt-2 text-xs text-muted-foreground">{p.observacoes}</p>
-                    )}
-                    {p.geradoAuto && (
-                      <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <CircleAlert className="h-3 w-3" />
-                        Gerado automaticamente a partir da fase {p.origemFase ?? "-"}.
-                      </p>
-                    )}
-                  </li>
+              <ul className="space-y-2">
+                {prazosOrdenados.map((p) => (
+                  <PrazoLineItem key={p.id} prazo={p} />
                 ))}
               </ul>
             )}
           </CardContent>
         </Card>
       </section>
+
+      <Dialog open={addPrazoOpen} onOpenChange={setAddPrazoOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Adicionar prazo</DialogTitle>
+            <DialogDescription>
+              Cadastre um novo prazo para este processo.
+            </DialogDescription>
+          </DialogHeader>
+          <PrazoForm
+            mode="create"
+            processoId={processo.id}
+            advogados={advogados.map((a) => ({ id: a.id, nome: a.nome }))}
+            onSuccess={() => {
+              setAddPrazoOpen(false);
+              router.refresh();
+            }}
+            onCancel={() => setAddPrazoOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <EditPrazosDialog
+        open={editPrazosOpen}
+        onOpenChange={setEditPrazosOpen}
+        prazos={prazosParaEdicao}
+        advogados={advogados.map((a) => ({ id: a.id, nome: a.nome }))}
+      />
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
@@ -392,5 +444,77 @@ function Info({ label, value }: { label: string; value: string }) {
       </p>
       <p className="mt-0.5 text-sm text-slate-800">{value}</p>
     </div>
+  );
+}
+
+function PrazoLineItem({ prazo }: { prazo: Prazo }) {
+  const dias = diasAte(new Date(prazo.data));
+  const badgeClass = prazo.cumprido
+    ? "bg-emerald-100 text-emerald-800"
+    : dias <= 7
+      ? "bg-red-100 text-red-800"
+      : dias <= 15
+        ? "bg-yellow-100 text-yellow-800"
+        : "bg-slate-100 text-slate-700";
+
+  const badgeLabel = prazo.cumprido
+    ? "cumprido"
+    : dias < 0
+      ? `atrasado ${-dias}d`
+      : dias === 0
+        ? "vence hoje"
+        : `${dias}d restantes`;
+
+  return (
+    <li
+      className={cn(
+        "flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm",
+        prazo.cumprido && "opacity-70",
+      )}
+    >
+      <div className="flex flex-1 flex-col gap-0.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "font-medium text-brand-navy",
+              prazo.cumprido && "line-through text-muted-foreground",
+            )}
+          >
+            {prazo.tipo}
+          </span>
+          {prazo.geradoAuto && (
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-600">
+              auto
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+          <span>{formatDate(prazo.data)}</span>
+          {prazo.hora && <span>as {prazo.hora}</span>}
+          <span>
+            {prazo.advogadoRedator
+              ? `Responsavel: ${prazo.advogadoRedator.nome}`
+              : "Sem responsavel"}
+          </span>
+        </div>
+        {prazo.observacoes && (
+          <p className="mt-1 text-xs text-slate-600">{prazo.observacoes}</p>
+        )}
+        {prazo.geradoAuto && prazo.origemFase && (
+          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <CircleAlert className="h-3 w-3" />
+            Gerado a partir da fase {prazo.origemFase}.
+          </p>
+        )}
+      </div>
+      <span
+        className={cn(
+          "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold",
+          badgeClass,
+        )}
+      >
+        {badgeLabel}
+      </span>
+    </li>
   );
 }

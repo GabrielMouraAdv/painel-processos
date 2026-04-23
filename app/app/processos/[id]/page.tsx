@@ -26,7 +26,10 @@ export default async function ProcessoDetailPage({
         orderBy: { data: "desc" },
         include: { autor: { select: { nome: true } } },
       },
-      prazos: { orderBy: { data: "asc" } },
+      prazos: {
+        orderBy: { data: "asc" },
+        include: { advogadoRedator: { select: { id: true, nome: true } } },
+      },
     },
   });
 
@@ -87,6 +90,9 @@ export default async function ProcessoDetailPage({
       cumprido: p.cumprido,
       geradoAuto: p.geradoAuto,
       origemFase: p.origemFase,
+      advogadoRedator: p.advogadoRedator
+        ? { id: p.advogadoRedator.id, nome: p.advogadoRedator.nome }
+        : null,
     })),
   };
 

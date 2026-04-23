@@ -3,11 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
 import { Tribunal } from "@prisma/client";
-import { z } from "zod";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -31,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { PrazoForm } from "@/components/prazos/prazo-form";
 import { useToast } from "@/hooks/use-toast";
 import { tribunalLabels } from "@/lib/processo-labels";
 import { diasAte, urgenciaDe } from "@/lib/prazos";
@@ -84,17 +81,6 @@ type Props = {
   initialFilters: Filters;
 };
 
-const prazoFormSchema = z.object({
-  processoId: z.string().min(1, "Selecione o processo"),
-  tipo: z.string().min(1, "Informe o tipo"),
-  data: z.string().min(1, "Informe a data"),
-  hora: z.string().optional(),
-  observacoes: z.string().optional(),
-  advogadoRedatorId: z.string().optional(),
-});
-
-type PrazoFormValues = z.infer<typeof prazoFormSchema>;
-
 function formatDateDay(d: string | Date): { dia: string; mes: string } {
   const date = d instanceof Date ? d : new Date(d);
   const dia = new Intl.DateTimeFormat("pt-BR", { day: "2-digit" }).format(date);
@@ -133,6 +119,30 @@ export function PrazosView({
   const [toggling, setToggling] = React.useState<Record<string, boolean>>({});
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<PrazoItem | null>(null);
+  const [deleting, setDeleting] = React.useState<PrazoItem | null>(null);
+  const [deletePending, setDeletePending] = React.useState(false);
+
+  async function handleDelete() {
+    if (!deleting) return;
+    setDeletePending(true);
+    try {
+      const res = await fetch(`/api/prazos/${deleting.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir prazo",
+          description: json.error ?? "Tente novamente.",
+        });
+        return;
+      }
+      toast({ title: "Prazo excluido" });
+      setDeleting(null);
+      router.refresh();
+    } finally {
+      setDeletePending(false);
+    }
+  }
 
   function applyFilters(next: Filters) {
     setFilters(next);
@@ -230,11 +240,12 @@ export function PrazosView({
             <PrazoForm
               mode="create"
               processos={processos}
-              advogadosRedatores={advogadosRedatores}
+              advogados={advogadosRedatores}
               onSuccess={() => {
                 setCreateOpen(false);
                 router.refresh();
               }}
+              onCancel={() => setCreateOpen(false)}
             />
           </DialogContent>
         </Dialog>
@@ -252,15 +263,57 @@ export function PrazosView({
           {editing && (
             <PrazoForm
               mode="edit"
-              prazo={editing}
-              processos={processos}
-              advogadosRedatores={advogadosRedatores}
+              prazo={{
+                id: editing.id,
+                tipo: editing.tipo,
+                data: editing.data,
+                hora: editing.hora,
+                observacoes: editing.observacoes,
+                advogadoRedator: editing.advogadoRedator,
+                processo: {
+                  id: editing.processo.id,
+                  numero: editing.processo.numero,
+                },
+              }}
+              advogados={advogadosRedatores}
               onSuccess={() => {
                 setEditing(null);
                 router.refresh();
               }}
+              onCancel={() => setEditing(null)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!deleting}
+        onOpenChange={(open) => !open && setDeleting(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir prazo?</DialogTitle>
+            <DialogDescription>
+              Esta acao nao pode ser desfeita.
+              {deleting ? ` Prazo: ${deleting.tipo}.` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setDeleting(null)}
+              disabled={deletePending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletePending}
+            >
+              {deletePending ? "Excluindo..." : "Confirmar exclusao"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -385,6 +438,7 @@ export function PrazosView({
                 loading={!!toggling[p.id]}
                 onToggle={() => toggleCumprido(p)}
                 onEdit={() => setEditing(p)}
+                onDelete={() => setDeleting(p)}
               />
             ))
           )}
@@ -430,11 +484,13 @@ function PrazoCard({
   loading,
   onToggle,
   onEdit,
+  onDelete,
 }: {
   prazo: PrazoItem;
   loading: boolean;
   onToggle: () => void;
   onEdit: () => void;
+  onDelete: () => void;
 }) {
   const data = new Date(prazo.data);
   const dias = diasAte(data);
@@ -545,16 +601,28 @@ function PrazoCard({
       </div>
 
       <div className="flex flex-col items-end justify-between gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-brand-navy"
-          onClick={onEdit}
-          title="Editar prazo"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-brand-navy"
+            onClick={onEdit}
+            title="Editar prazo"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:bg-red-50 hover:text-red-700"
+            onClick={onDelete}
+            title="Excluir prazo"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
         <div className="flex flex-col items-end">
           <span className={cn("text-lg font-semibold", countdownClass)}>
             {countdownLabel(dias, prazo.cumprido)}
@@ -570,158 +638,3 @@ function PrazoCard({
   );
 }
 
-const UNASSIGNED = "__none__";
-
-function PrazoForm({
-  mode,
-  prazo,
-  processos,
-  advogadosRedatores,
-  onSuccess,
-}: {
-  mode: "create" | "edit";
-  prazo?: PrazoItem;
-  processos: ProcessoOption[];
-  advogadosRedatores: AdvogadoOption[];
-  onSuccess: () => void;
-}) {
-  const { toast } = useToast();
-  const {
-    control,
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<PrazoFormValues>({
-    resolver: zodResolver(prazoFormSchema),
-    defaultValues: {
-      processoId: prazo?.processo.id ?? "",
-      tipo: prazo?.tipo ?? "",
-      data: prazo ? prazo.data.slice(0, 10) : "",
-      hora: prazo?.hora ?? "",
-      observacoes: prazo?.observacoes ?? "",
-      advogadoRedatorId: prazo?.advogadoRedator?.id ?? "",
-    },
-  });
-
-  async function onSubmit(values: PrazoFormValues) {
-    const redatorId =
-      !values.advogadoRedatorId || values.advogadoRedatorId === UNASSIGNED
-        ? null
-        : values.advogadoRedatorId;
-    const payload = {
-      ...values,
-      hora: values.hora || null,
-      observacoes: values.observacoes || null,
-      advogadoRedatorId: redatorId,
-    };
-    const url =
-      mode === "edit" && prazo ? `/api/prazos/${prazo.id}` : "/api/prazos";
-    const res = await fetch(url, {
-      method: mode === "edit" ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      toast({
-        variant: "destructive",
-        title: mode === "edit" ? "Erro ao atualizar prazo" : "Erro ao criar prazo",
-        description: json.error ?? "Tente novamente.",
-      });
-      return;
-    }
-    toast({ title: mode === "edit" ? "Prazo atualizado" : "Prazo cadastrado" });
-    onSuccess();
-  }
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-      <div className="space-y-1.5">
-        <Label>Processo</Label>
-        <Controller
-          control={control}
-          name="processoId"
-          render={({ field }) => (
-            <Select
-              value={field.value}
-              onValueChange={field.onChange}
-              disabled={mode === "edit"}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o processo" />
-              </SelectTrigger>
-              <SelectContent>
-                {processos.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.numero} — {p.gestor}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-        {errors.processoId && (
-          <p className="text-xs text-red-600">{errors.processoId.message}</p>
-        )}
-      </div>
-      <div className="space-y-1.5">
-        <Label>Tipo</Label>
-        <Input placeholder="Ex.: Contestacao, Audiencia..." {...register("tipo")} />
-        {errors.tipo && <p className="text-xs text-red-600">{errors.tipo.message}</p>}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>Data</Label>
-          <Input type="date" {...register("data")} />
-          {errors.data && <p className="text-xs text-red-600">{errors.data.message}</p>}
-        </div>
-        <div className="space-y-1.5">
-          <Label>Hora</Label>
-          <Input type="time" {...register("hora")} />
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <Label>Advogado Redator</Label>
-        <Controller
-          control={control}
-          name="advogadoRedatorId"
-          render={({ field }) => (
-            <Select
-              value={field.value || UNASSIGNED}
-              onValueChange={(v) => field.onChange(v === UNASSIGNED ? "" : v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o redator" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNASSIGNED}>Nao atribuido</SelectItem>
-                {advogadosRedatores.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label>Observacoes</Label>
-        <Textarea rows={2} {...register("observacoes")} />
-      </div>
-      <DialogFooter>
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-brand-navy hover:bg-brand-navy/90"
-        >
-          {isSubmitting
-            ? "Salvando..."
-            : mode === "edit"
-              ? "Salvar alteracoes"
-              : "Cadastrar prazo"}
-        </Button>
-      </DialogFooter>
-    </form>
-  );
-}
