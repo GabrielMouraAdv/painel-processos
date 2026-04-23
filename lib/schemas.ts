@@ -221,3 +221,56 @@ export const interessadoTceInputSchema = z.object({
   cargo: z.string().min(1, "Informe o cargo"),
 });
 
+export const sessaoPautaInputSchema = z.object({
+  data: dateInput,
+  camara: z.nativeEnum(CamaraTce),
+  observacoesGerais: z.string().optional().nullable(),
+});
+
+export type SessaoPautaInput = z.infer<typeof sessaoPautaInputSchema>;
+
+export const sessaoPautaUpdateSchema = z.object({
+  data: dateInput.optional(),
+  camara: z.nativeEnum(CamaraTce).optional(),
+  observacoesGerais: z.string().optional().nullable(),
+});
+
+export const itemPautaInputSchema = z.object({
+  sessaoId: z.string().min(1, "Selecione a sessao"),
+  numeroProcesso: z.string().min(1, "Informe o numero do processo"),
+  tituloProcesso: z.string().optional().nullable(),
+  municipio: z.string().min(1, "Informe o municipio"),
+  exercicio: z.string().optional().nullable(),
+  relator: z.string().min(1, "Informe o relator"),
+  advogadoResp: z.string().min(1, "Informe o advogado responsavel"),
+  situacao: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  prognostico: z.string().optional().nullable(),
+  providencia: z.string().optional().nullable(),
+  retiradoDePauta: z.boolean().optional().default(false),
+  pedidoVistas: z.boolean().optional().default(false),
+  conselheiroVistas: z.string().optional().nullable(),
+  processoTceId: z.string().optional().nullable(),
+  ordem: z.coerce.number().int().optional(),
+});
+
+export type ItemPautaInput = z.infer<typeof itemPautaInputSchema>;
+
+export const itemPautaUpdateSchema = z.object({
+  numeroProcesso: z.string().min(1).optional(),
+  tituloProcesso: z.string().optional().nullable(),
+  municipio: z.string().min(1).optional(),
+  exercicio: z.string().optional().nullable(),
+  relator: z.string().min(1).optional(),
+  advogadoResp: z.string().min(1).optional(),
+  situacao: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  prognostico: z.string().optional().nullable(),
+  providencia: z.string().optional().nullable(),
+  retiradoDePauta: z.boolean().optional(),
+  pedidoVistas: z.boolean().optional(),
+  conselheiroVistas: z.string().optional().nullable(),
+  processoTceId: z.string().optional().nullable(),
+  ordem: z.coerce.number().int().optional(),
+});
+
