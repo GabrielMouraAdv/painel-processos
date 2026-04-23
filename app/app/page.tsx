@@ -15,7 +15,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { getServerSession } from "next-auth";
-import { CamaraTce, Risco, Role } from "@prisma/client";
+import { Risco, Role } from "@prisma/client";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,6 @@ import {
   parseISODate,
   startOfWeekUTC,
 } from "@/lib/semana";
-import { TCE_CAMARA_LABELS } from "@/lib/tce-config";
 import { ORGAOS_JULGADORES } from "@/lib/tjpe-config";
 import { cn } from "@/lib/utils";
 
@@ -81,12 +80,6 @@ function formatDiaSemanaShort(iso: string): string {
   const month = String(d.getUTCMonth() + 1).padStart(2, "0");
   return `${weekdays[d.getUTCDay()]} ${day}/${month}`;
 }
-
-const CAMARA_DOT: Record<CamaraTce, string> = {
-  PRIMEIRA: "bg-[#1e40af]",
-  SEGUNDA: "bg-[#047857]",
-  PLENO: "bg-[#6b21a8]",
-};
 
 type CategoriaTjpe =
   | "direito_publico"
@@ -182,7 +175,6 @@ export default async function AppHome({
     paradosLista,
     prazosProximos,
     ultimosAndamentos,
-    pautaSessoes,
     pautaSessoesTjpe,
   ] = await Promise.all([
     prisma.processo.count({ where: base }),
@@ -266,16 +258,6 @@ export default async function AppHome({
             gestor: { select: { nome: true } },
           },
         },
-      },
-    }),
-    prisma.sessaoPauta.findMany({
-      where: {
-        escritorioId,
-        data: { gte: pautaWeekStart, lte: pautaWeekEnd },
-      },
-      orderBy: [{ data: "asc" }, { camara: "asc" }],
-      include: {
-        _count: { select: { itens: true } },
       },
     }),
     prisma.sessaoJudicial.findMany({
@@ -515,101 +497,27 @@ export default async function AppHome({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <section className="flex flex-col gap-2">
-              <div className="flex items-center justify-between border-b pb-2">
-                <h3 className="text-sm font-semibold text-brand-navy">TJPE</h3>
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {pautaSessoesTjpeOrdenadas.length} sessa
-                  {pautaSessoesTjpeOrdenadas.length === 1 ? "o" : "oes"}
-                </span>
-              </div>
-              {pautaSessoesTjpeOrdenadas.length === 0 ? (
-                <p className="py-2 text-sm text-muted-foreground">
-                  Nenhuma sessao TJPE nesta semana.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {pautaSessoesTjpeOrdenadas.map((s) => {
-                    const categoria = categoriaOrgaoTjpe(s.orgaoJulgador);
-                    const tipo = TIPO_SESSAO_TJPE[s.tipoSessao];
-                    return (
-                      <li key={s.id}>
-                        <Link
-                          href={`/app/pautas?semana=${pautaWeekStartIso}`}
-                          className="flex items-start justify-between gap-3 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
-                        >
-                          <div className="flex min-w-0 flex-1 flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={cn(
-                                  "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
-                                  CATEGORIA_TJPE_DOT[categoria],
-                                )}
-                                aria-hidden="true"
-                              />
-                              <span className="text-xs font-medium text-muted-foreground">
-                                {formatDiaSemanaShort(s.data.toISOString())}
-                              </span>
-                              <span className="truncate text-sm font-medium text-brand-navy">
-                                {s.orgaoJulgador}
-                              </span>
-                            </div>
-                            {tipo && (
-                              <span
-                                className={cn(
-                                  "inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium",
-                                  tipo.className,
-                                )}
-                              >
-                                {tipo.label}
-                              </span>
-                            )}
-                          </div>
-                          <span className="shrink-0 text-xs text-muted-foreground">
-                            {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              <div className="mt-auto pt-2">
-                <Button asChild variant="ghost" size="sm" className="-ml-2">
-                  <Link href={`/app/pautas?semana=${pautaWeekStartIso}`}>
-                    Ver pautas
-                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </div>
-            </section>
-
-            <section className="flex flex-col gap-2">
-              <div className="flex items-center justify-between border-b pb-2">
-                <h3 className="text-sm font-semibold text-brand-navy">TCE</h3>
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {pautaSessoes.length} sessa
-                  {pautaSessoes.length === 1 ? "o" : "oes"}
-                </span>
-              </div>
-              {pautaSessoes.length === 0 ? (
-                <p className="py-2 text-sm text-muted-foreground">
-                  Nenhuma sessao TCE nesta semana.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {pautaSessoes.map((s) => (
-                    <li key={s.id}>
-                      <Link
-                        href={`/app/tce/pauta?semana=${pautaWeekStartIso}`}
-                        className="flex items-center justify-between gap-3 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
-                      >
-                        <span className="flex min-w-0 items-center gap-2.5">
+          {pautaSessoesTjpeOrdenadas.length === 0 ? (
+            <p className="py-2 text-sm text-muted-foreground">
+              Nenhuma sessao TJPE nesta semana.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {pautaSessoesTjpeOrdenadas.map((s) => {
+                const categoria = categoriaOrgaoTjpe(s.orgaoJulgador);
+                const tipo = TIPO_SESSAO_TJPE[s.tipoSessao];
+                return (
+                  <li key={s.id}>
+                    <Link
+                      href={`/app/pautas?semana=${pautaWeekStartIso}`}
+                      className="flex items-start justify-between gap-3 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+                    >
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <div className="flex items-center gap-2">
                           <span
                             className={cn(
                               "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
-                              CAMARA_DOT[s.camara],
+                              CATEGORIA_TJPE_DOT[categoria],
                             )}
                             aria-hidden="true"
                           />
@@ -617,26 +525,36 @@ export default async function AppHome({
                             {formatDiaSemanaShort(s.data.toISOString())}
                           </span>
                           <span className="truncate text-sm font-medium text-brand-navy">
-                            {TCE_CAMARA_LABELS[s.camara]}
+                            {s.orgaoJulgador}
                           </span>
-                        </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <div className="mt-auto pt-2">
-                <Button asChild variant="ghost" size="sm" className="-ml-2">
-                  <Link href={`/app/tce/pauta?semana=${pautaWeekStartIso}`}>
-                    Ver pautas
-                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </div>
-            </section>
+                        </div>
+                        {tipo && (
+                          <span
+                            className={cn(
+                              "inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium",
+                              tipo.className,
+                            )}
+                          >
+                            {tipo.label}
+                          </span>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="mt-3">
+            <Button asChild variant="ghost" size="sm" className="-ml-2">
+              <Link href={`/app/pautas?semana=${pautaWeekStartIso}`}>
+                Ver pautas
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
