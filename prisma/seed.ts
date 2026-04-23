@@ -231,6 +231,8 @@ function addDias(data: Date, dias: number): Date {
 
 async function main() {
   console.log("Limpando gestores, processos, andamentos, prazos e documentos...");
+  await prisma.itemPautaJudicial.deleteMany();
+  await prisma.sessaoJudicial.deleteMany();
   await prisma.itemPauta.deleteMany();
   await prisma.sessaoPauta.deleteMany();
   await prisma.prazoTce.deleteMany();
@@ -1200,6 +1202,278 @@ async function main() {
     }
   }
 
+  console.log("Criando 6 sessoes judiciais em 2 semanas...");
+  const processosJudPorNumero = new Map(
+    processosCriados.map((p) => [p.id, p.id]),
+  );
+  const processosJudLookup = await prisma.processo.findMany({
+    where: { escritorioId: escritorio.id },
+    select: { id: true, numero: true },
+  });
+  const processoIdPorNumero = new Map(
+    processosJudLookup.map((p) => [p.numero, p.id]),
+  );
+  // only used for typing check; avoid unused var warning
+  void processosJudPorNumero;
+
+  type ItemJudicialSeed = {
+    numeroProcesso: string;
+    tituloProcesso?: string;
+    tipoRecurso?: string;
+    partes?: string;
+    relator: string;
+    advogadoResp: string;
+    situacao?: string;
+    prognostico?: string;
+    observacoes?: string;
+    providencia?: string;
+    sustentacaoOral?: boolean;
+    advogadoSustentacao?: string;
+    sessaoVirtual?: boolean;
+    pedidoRetPresencial?: boolean;
+    retiradoDePauta?: boolean;
+    pedidoVistas?: boolean;
+    desPedidoVistas?: string;
+    vincularProcesso?: boolean;
+  };
+
+  type SessaoJudicialSeed = {
+    data: string;
+    tribunal: string;
+    orgaoJulgador: string;
+    tipoSessao: "presencial" | "virtual" | "plenario_virtual";
+    observacoesGerais?: string;
+    itens: ItemJudicialSeed[];
+  };
+
+  const SESSOES_JUDICIAIS: SessaoJudicialSeed[] = [
+    // Semana 13 a 17 de abril
+    {
+      data: "2026-04-14",
+      tribunal: "TJPE",
+      orgaoJulgador: "1a Camara de Direito Publico",
+      tipoSessao: "presencial",
+      observacoesGerais: "Sessao ordinaria terca-feira 14h.",
+      itens: [
+        {
+          numeroProcesso: "0001542-12.2026.8.17.2001",
+          tituloProcesso: "Apelacao - Municipio de Arco Verde",
+          tipoRecurso: "Apelacao",
+          partes: "Municipio de Arco Verde x Ministerio Publico Estadual",
+          relator: "Fernando Cerqueira Norberto dos Santos",
+          advogadoResp: "Gabriel Moura",
+          situacao: "Preliminares de merito em discussao.",
+          prognostico: "Provimento parcial",
+          providencia: "Sustentacao oral confirmada.",
+          sustentacaoOral: true,
+          advogadoSustentacao: "Gabriel Moura",
+          vincularProcesso: true,
+        },
+        {
+          numeroProcesso: "0002876-55.2026.8.17.3001",
+          tituloProcesso: "Agravo Interno - Instituto Horizonte Social",
+          tipoRecurso: "Agravo Interno",
+          partes: "Instituto Horizonte Social x Estado de Pernambuco",
+          relator: "Jorge Americo Pereira de Lira",
+          advogadoResp: "Henrique Arruda",
+          situacao: "Relator ja votou; aguardando divergencia.",
+          prognostico: "Desprovimento",
+          vincularProcesso: true,
+        },
+        {
+          numeroProcesso: "0009981-41.2026.8.17.0001",
+          tituloProcesso: "Habeas Corpus - Municipio de Serra Azul",
+          tipoRecurso: "Habeas Corpus",
+          relator: "Ricardo de Oliveira Paes Barreto",
+          advogadoResp: "Heloisa Cavalcanti",
+          retiradoDePauta: true,
+          observacoes: "Retirado apos pedido de adiamento.",
+          vincularProcesso: true,
+        },
+      ],
+    },
+    {
+      data: "2026-04-16",
+      tribunal: "TJPE",
+      orgaoJulgador: "2a Camara de Direito Publico",
+      tipoSessao: "presencial",
+      itens: [
+        {
+          numeroProcesso: "0004510-66.2026.8.17.2501",
+          tituloProcesso: "Apelacao - Fundacao Esperanca",
+          tipoRecurso: "Apelacao",
+          partes: "Fundacao Esperanca x MPPE",
+          relator: "Jose Ivo de Paula Guimaraes",
+          advogadoResp: "Mateus Lisboa",
+          situacao: "Aguardando leitura do voto vista.",
+          prognostico: "Provimento",
+          pedidoVistas: true,
+          desPedidoVistas: "Waldemir Tavares de Albuquerque Filho",
+          vincularProcesso: true,
+        },
+        {
+          numeroProcesso: "0007822-03.2026.8.17.1001",
+          tituloProcesso: "Embargos de Declaracao - Sertao Transportes",
+          tipoRecurso: "Embargos de Declaracao",
+          relator: "Ricardo de Oliveira Paes Barreto",
+          advogadoResp: "Filipe Campos",
+          vincularProcesso: true,
+        },
+      ],
+    },
+    {
+      data: "2026-04-15",
+      tribunal: "TJPE",
+      orgaoJulgador: "Plenario Virtual",
+      tipoSessao: "plenario_virtual",
+      observacoesGerais:
+        "Sessao virtual de 14 a 17 de abril - votos eletronicos.",
+      itens: [
+        {
+          numeroProcesso: "0010334-54.2026.8.17.7001",
+          tituloProcesso: "Apelacao - Comercio Ferreira e Filhos",
+          tipoRecurso: "Apelacao",
+          relator: "Jose Ivo de Paula Guimaraes",
+          advogadoResp: "Carlos Porto",
+          situacao: "Votacao aberta no Plenario Virtual.",
+          sessaoVirtual: true,
+          pedidoRetPresencial: true,
+          observacoes: "Pedimos retirada para sessao presencial.",
+          vincularProcesso: true,
+        },
+        {
+          numeroProcesso: "0006635-29.2026.8.17.5001",
+          tituloProcesso: "Agravo de Instrumento - Municipio de Boa Esperanca",
+          tipoRecurso: "Agravo de Instrumento",
+          relator: "Fernando Cerqueira Norberto dos Santos",
+          advogadoResp: "Julio Rodrigues",
+          sessaoVirtual: true,
+          prognostico: "Desprovimento",
+          vincularProcesso: true,
+        },
+      ],
+    },
+    // Semana 20 a 24 de abril
+    {
+      data: "2026-04-21",
+      tribunal: "TJPE",
+      orgaoJulgador: "3a Camara de Direito Publico",
+      tipoSessao: "presencial",
+      observacoesGerais: "Sessao ordinaria terca-feira 9h.",
+      itens: [
+        {
+          numeroProcesso: "0011449-21.2026.8.17.8001",
+          tituloProcesso: "Apelacao - Verde Mar Engenharia",
+          tipoRecurso: "Apelacao",
+          relator: "Erik de Sousa Dantas Simoes",
+          advogadoResp: "Gabriel Moura",
+          situacao: "Alegacoes finais protocoladas.",
+          prognostico: "Provimento parcial",
+          providencia: "Sustentacao oral.",
+          sustentacaoOral: true,
+          advogadoSustentacao: "Gabriel Moura",
+          vincularProcesso: true,
+        },
+        {
+          numeroProcesso: "0012457-93.2026.8.17.4001",
+          tituloProcesso: "Remessa Necessaria - Cooperativa Vale Verde",
+          tipoRecurso: "Remessa Necessaria",
+          relator: "Waldemir Tavares de Albuquerque Filho",
+          advogadoResp: "Mateus Lisboa",
+          vincularProcesso: true,
+        },
+      ],
+    },
+    {
+      data: "2026-04-21",
+      tribunal: "TJPE",
+      orgaoJulgador: "4a Camara Criminal",
+      tipoSessao: "presencial",
+      itens: [
+        {
+          numeroProcesso: "0009120-80.2026.8.17.6001",
+          tituloProcesso: "Apelacao criminal - Porto Azul Logistica",
+          tipoRecurso: "Apelacao",
+          relator: "Democrito Ramos Reinaldo Filho",
+          advogadoResp: "Henrique Arruda",
+          situacao: "Pauta 9h - pedido de sustentacao oral.",
+          sustentacaoOral: true,
+          advogadoSustentacao: "Henrique Arruda",
+          vincularProcesso: true,
+        },
+      ],
+    },
+    {
+      data: "2026-04-21",
+      tribunal: "TJPE",
+      orgaoJulgador: "Camara Regional Caruaru 1a Turma",
+      tipoSessao: "presencial",
+      itens: [
+        {
+          numeroProcesso: "0006501-88.2026.8.17.9001",
+          tituloProcesso: "Apelacao - Sitio do Moinho Agropecuaria",
+          tipoRecurso: "Apelacao",
+          relator: "Alexandre Freire Pimentel",
+          advogadoResp: "Heloisa Cavalcanti",
+          situacao: "Voto do relator ja disponibilizado.",
+          prognostico: "Desprovimento",
+        },
+        {
+          numeroProcesso: "0006812-45.2026.8.17.9002",
+          tituloProcesso: "Mandado de Seguranca - Transporte Agreste",
+          tipoRecurso: "Mandado de Seguranca",
+          relator: "Luciano de Castro Campos",
+          advogadoResp: "Filipe Campos",
+          retiradoDePauta: true,
+          observacoes: "Retirado a pedido do impetrado.",
+        },
+      ],
+    },
+  ];
+
+  for (const sessao of SESSOES_JUDICIAIS) {
+    const sessaoCriada = await prisma.sessaoJudicial.create({
+      data: {
+        data: new Date(`${sessao.data}T00:00:00Z`),
+        tribunal: sessao.tribunal,
+        orgaoJulgador: sessao.orgaoJulgador,
+        tipoSessao: sessao.tipoSessao,
+        observacoesGerais: sessao.observacoesGerais ?? null,
+        escritorioId: escritorio.id,
+      },
+    });
+    for (let ordem = 0; ordem < sessao.itens.length; ordem++) {
+      const item = sessao.itens[ordem];
+      const processoId = item.vincularProcesso
+        ? (processoIdPorNumero.get(item.numeroProcesso) ?? null)
+        : null;
+      await prisma.itemPautaJudicial.create({
+        data: {
+          sessaoId: sessaoCriada.id,
+          numeroProcesso: item.numeroProcesso,
+          tituloProcesso: item.tituloProcesso ?? null,
+          tipoRecurso: item.tipoRecurso ?? null,
+          partes: item.partes ?? null,
+          relator: item.relator,
+          advogadoResp: item.advogadoResp,
+          situacao: item.situacao ?? null,
+          prognostico: item.prognostico ?? null,
+          observacoes: item.observacoes ?? null,
+          providencia: item.providencia ?? null,
+          sustentacaoOral: item.sustentacaoOral ?? false,
+          advogadoSustentacao: item.advogadoSustentacao ?? null,
+          sessaoVirtual: item.sessaoVirtual ?? false,
+          pedidoRetPresencial: item.pedidoRetPresencial ?? false,
+          retiradoDePauta: item.retiradoDePauta ?? false,
+          pedidoVistas: item.pedidoVistas ?? false,
+          desPedidoVistas: item.desPedidoVistas ?? null,
+          processoId,
+          ordem,
+        },
+      });
+    }
+  }
+
   const totais = await Promise.all([
     prisma.escritorio.count(),
     prisma.user.count(),
@@ -1213,12 +1487,14 @@ async function main() {
     prisma.prazoTce.count(),
     prisma.sessaoPauta.count(),
     prisma.itemPauta.count(),
+    prisma.sessaoJudicial.count(),
+    prisma.itemPautaJudicial.count(),
   ]);
 
   console.log("Seed concluido.");
   console.log(`Admin: ${admin.email} / admin123 (escritorio: ${escritorio.nome})`);
   console.log(
-    `Judicial -> escritorios: ${totais[0]}, users: ${totais[1]}, gestores: ${totais[2]}, processos: ${totais[3]}, andamentos: ${totais[4]}, prazos: ${totais[5]}`,
+    `Judicial -> escritorios: ${totais[0]}, users: ${totais[1]}, gestores: ${totais[2]}, processos: ${totais[3]}, andamentos: ${totais[4]}, prazos: ${totais[5]}, sessoes judiciais: ${totais[12]}, itens pauta judicial: ${totais[13]}`,
   );
   console.log(
     `TCE -> municipios: ${totais[6]}, processos: ${totais[7]}, andamentos: ${totais[8]}, prazos: ${totais[9]}, sessoes pauta: ${totais[10]}, itens pauta: ${totais[11]}`,

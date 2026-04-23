@@ -48,12 +48,13 @@ model Escritorio {
   cnpj      String   @unique
   createdAt DateTime @default(now())
 
-  usuarios      User[]
-  gestores      Gestor[]
-  processos     Processo[]
-  municipios    Municipio[]
-  processosTce  ProcessoTce[]
-  sessoesPauta  SessaoPauta[]
+  usuarios         User[]
+  gestores         Gestor[]
+  processos        Processo[]
+  municipios       Municipio[]
+  processosTce     ProcessoTce[]
+  sessoesPauta     SessaoPauta[]
+  sessoesJudiciais SessaoJudicial[]
 }
 
 model User {
@@ -113,12 +114,13 @@ model Processo {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  gestor     Gestor      @relation(fields: [gestorId], references: [id])
-  advogado   User        @relation("ProcessoAdvogado", fields: [advogadoId], references: [id])
-  escritorio Escritorio  @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
-  andamentos Andamento[]
-  prazos     Prazo[]
-  documentos Documento[]
+  gestor             Gestor              @relation(fields: [gestorId], references: [id])
+  advogado           User                @relation("ProcessoAdvogado", fields: [advogadoId], references: [id])
+  escritorio         Escritorio          @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  andamentos         Andamento[]
+  prazos             Prazo[]
+  documentos         Documento[]
+  itensPautaJudicial ItemPautaJudicial[]
 
   @@index([escritorioId])
   @@index([gestorId])
@@ -361,4 +363,53 @@ model ItemPauta {
 
   @@index([sessaoId])
   @@index([processoTceId])
+}
+
+model SessaoJudicial {
+  id                String   @id @default(cuid())
+  data              DateTime
+  tribunal          String
+  orgaoJulgador     String
+  tipoSessao        String   @default("presencial")
+  observacoesGerais String?  @db.Text
+  escritorioId      String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  escritorio Escritorio          @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  itens      ItemPautaJudicial[]
+
+  @@index([escritorioId, data])
+}
+
+model ItemPautaJudicial {
+  id                  String   @id @default(cuid())
+  sessaoId            String
+  numeroProcesso      String
+  tituloProcesso      String?
+  tipoRecurso         String?
+  partes              String?  @db.Text
+  relator             String
+  advogadoResp        String
+  situacao            String?  @db.Text
+  prognostico         String?
+  observacoes         String?  @db.Text
+  providencia         String?
+  sustentacaoOral     Boolean  @default(false)
+  advogadoSustentacao String?
+  sessaoVirtual       Boolean  @default(false)
+  pedidoRetPresencial Boolean  @default(false)
+  retiradoDePauta     Boolean  @default(false)
+  pedidoVistas        Boolean  @default(false)
+  desPedidoVistas     String?
+  processoId          String?
+  ordem               Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  sessao   SessaoJudicial @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  processo Processo?      @relation(fields: [processoId], references: [id])
+
+  @@index([sessaoId])
+  @@index([processoId])
 }

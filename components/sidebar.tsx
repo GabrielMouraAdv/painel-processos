@@ -52,6 +52,7 @@ export function Sidebar({
           badge: prazosUrgentes > 0 ? prazosUrgentes : undefined,
           badgeTone: "red",
         },
+        { label: "Pautas", href: "/app/pautas", icon: CalendarRange },
         { label: "Gestores", href: "/app/gestores", icon: Users },
         { label: "Relatorios", href: "/app/relatorios", icon: BarChart3 },
       ],
