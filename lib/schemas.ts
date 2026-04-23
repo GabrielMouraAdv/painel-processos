@@ -274,3 +274,75 @@ export const itemPautaUpdateSchema = z.object({
   ordem: z.coerce.number().int().optional(),
 });
 
+export const sessaoJudicialInputSchema = z.object({
+  data: dateInput,
+  tribunal: z.string().min(1, "Informe o tribunal"),
+  orgaoJulgador: z.string().min(1, "Selecione o orgao julgador"),
+  tipoSessao: z
+    .enum(["presencial", "virtual", "plenario_virtual"])
+    .optional()
+    .default("presencial"),
+  observacoesGerais: z.string().optional().nullable(),
+});
+
+export type SessaoJudicialInput = z.infer<typeof sessaoJudicialInputSchema>;
+
+export const sessaoJudicialUpdateSchema = z.object({
+  data: dateInput.optional(),
+  tribunal: z.string().min(1).optional(),
+  orgaoJulgador: z.string().min(1).optional(),
+  tipoSessao: z
+    .enum(["presencial", "virtual", "plenario_virtual"])
+    .optional(),
+  observacoesGerais: z.string().optional().nullable(),
+});
+
+export const itemPautaJudicialInputSchema = z.object({
+  sessaoId: z.string().min(1, "Selecione a sessao"),
+  numeroProcesso: z.string().min(1, "Informe o numero do processo"),
+  tituloProcesso: z.string().optional().nullable(),
+  tipoRecurso: z.string().optional().nullable(),
+  partes: z.string().optional().nullable(),
+  relator: z.string().min(1, "Informe o relator"),
+  advogadoResp: z.string().min(1, "Informe o advogado responsavel"),
+  situacao: z.string().optional().nullable(),
+  prognostico: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  providencia: z.string().optional().nullable(),
+  sustentacaoOral: z.boolean().optional().default(false),
+  advogadoSustentacao: z.string().optional().nullable(),
+  sessaoVirtual: z.boolean().optional().default(false),
+  pedidoRetPresencial: z.boolean().optional().default(false),
+  retiradoDePauta: z.boolean().optional().default(false),
+  pedidoVistas: z.boolean().optional().default(false),
+  desPedidoVistas: z.string().optional().nullable(),
+  processoId: z.string().optional().nullable(),
+  ordem: z.coerce.number().int().optional(),
+});
+
+export type ItemPautaJudicialInput = z.infer<
+  typeof itemPautaJudicialInputSchema
+>;
+
+export const itemPautaJudicialUpdateSchema = z.object({
+  numeroProcesso: z.string().min(1).optional(),
+  tituloProcesso: z.string().optional().nullable(),
+  tipoRecurso: z.string().optional().nullable(),
+  partes: z.string().optional().nullable(),
+  relator: z.string().min(1).optional(),
+  advogadoResp: z.string().min(1).optional(),
+  situacao: z.string().optional().nullable(),
+  prognostico: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  providencia: z.string().optional().nullable(),
+  sustentacaoOral: z.boolean().optional(),
+  advogadoSustentacao: z.string().optional().nullable(),
+  sessaoVirtual: z.boolean().optional(),
+  pedidoRetPresencial: z.boolean().optional(),
+  retiradoDePauta: z.boolean().optional(),
+  pedidoVistas: z.boolean().optional(),
+  desPedidoVistas: z.string().optional().nullable(),
+  processoId: z.string().optional().nullable(),
+  ordem: z.coerce.number().int().optional(),
+});
+
