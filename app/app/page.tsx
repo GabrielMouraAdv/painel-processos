@@ -12,7 +12,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { getServerSession } from "next-auth";
-import { Grau, Risco, Tribunal } from "@prisma/client";
+import { Risco } from "@prisma/client";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,15 +26,8 @@ import {
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { diasAte, urgenciaDe } from "@/lib/prazos";
-import {
-  faseLabel,
-  fasesEmPauta,
-  grauLabels,
-  tribunalLabels,
-} from "@/lib/processo-labels";
+import { faseLabel, fasesEmPauta } from "@/lib/processo-labels";
 import { cn } from "@/lib/utils";
-
-import { GrauBar, TribunalPie } from "./dashboard-charts";
 
 function formatDate(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -50,14 +43,22 @@ function countdownLabel(dias: number): string {
   return `${dias} dias`;
 }
 
-const TRIBUNAL_COLORS: Record<Tribunal, string> = {
-  TJPE: "#1e3a5f",
-  TRF5: "#0ea5e9",
-  TRF1: "#10b981",
-  STJ: "#f59e0b",
-  STF: "#dc2626",
-  OUTRO: "#94a3b8",
-};
+function formatCurrency(v: number | null): string {
+  if (v === null || v === undefined) return "-";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(v);
+}
+
+function diasDesde(d: Date): number {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const ref = new Date(d);
+  ref.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((hoje.getTime() - ref.getTime()) / 86_400_000));
+}
 
 export default async function AppHome() {
   const session = await getServerSession(authOptions);
@@ -88,8 +89,8 @@ export default async function AppHome() {
     parados,
     emPauta,
     prazos30d,
-    porTribunal,
-    porGrau,
+    riscoAltoLista,
+    paradosLista,
     prazosProximos,
     ultimosAndamentos,
   ] = await Promise.all([
@@ -110,15 +111,38 @@ export default async function AppHome() {
         processo: base,
       },
     }),
-    prisma.processo.groupBy({
-      by: ["tribunal"],
-      where: base,
-      _count: { _all: true },
+    prisma.processo.findMany({
+      where: { ...base, risco: Risco.ALTO },
+      orderBy: [
+        { valor: { sort: "desc", nulls: "last" } },
+        { dataDistribuicao: "asc" },
+      ],
+      take: 5,
+      select: {
+        id: true,
+        numero: true,
+        fase: true,
+        valor: true,
+        gestor: { select: { nome: true } },
+      },
     }),
-    prisma.processo.groupBy({
-      by: ["grau"],
-      where: base,
-      _count: { _all: true },
+    prisma.processo.findMany({
+      where: {
+        ...base,
+        andamentos: { none: { data: { gte: sessentaDiasAtras } } },
+      },
+      select: {
+        id: true,
+        numero: true,
+        fase: true,
+        dataDistribuicao: true,
+        gestor: { select: { nome: true } },
+        andamentos: {
+          orderBy: { data: "desc" },
+          take: 1,
+          select: { data: true },
+        },
+      },
     }),
     prisma.prazo.findMany({
       where: {
@@ -154,6 +178,29 @@ export default async function AppHome() {
       },
     }),
   ]);
+
+  const paradosTop = paradosLista
+    .map((p) => {
+      const ultima = p.andamentos[0]?.data ?? p.dataDistribuicao;
+      return {
+        id: p.id,
+        numero: p.numero,
+        fase: p.fase,
+        gestor: p.gestor.nome,
+        ultimaData: ultima,
+        diasSem: diasDesde(ultima),
+      };
+    })
+    .sort((a, b) => b.diasSem - a.diasSem)
+    .slice(0, 5);
+
+  const riscoAltoTop = riscoAltoLista.map((p) => ({
+    id: p.id,
+    numero: p.numero,
+    fase: p.fase,
+    gestor: p.gestor.nome,
+    valor: p.valor ? Number(p.valor) : null,
+  }));
 
   const kpis = [
     {
@@ -199,19 +246,6 @@ export default async function AppHome() {
       tone: "navy" as const,
     },
   ];
-
-  const tribunalData = porTribunal.map((row) => ({
-    name: tribunalLabels[row.tribunal],
-    value: row._count._all,
-    color: TRIBUNAL_COLORS[row.tribunal],
-  }));
-
-  const grauMap = new Map<Grau, number>();
-  for (const r of porGrau) grauMap.set(r.grau, r._count._all);
-  const grauData = (Object.values(Grau) as Grau[]).map((g) => ({
-    name: grauLabels[g],
-    value: grauMap.get(g) ?? 0,
-  }));
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8 md:px-8">
@@ -260,21 +294,96 @@ export default async function AppHome() {
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Distribuicao por tribunal</CardTitle>
-            <CardDescription>Share dos processos por corte.</CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <div>
+              <CardTitle className="text-base">Risco alto</CardTitle>
+              <CardDescription>
+                5 processos de maior valor classificados como risco alto.
+              </CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm" className="-mr-2">
+              <Link href="/app/processos?risco=ALTO">
+                Ver todos
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent>
-            <TribunalPie data={tribunalData} />
+            {riscoAltoTop.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhum processo de risco alto.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {riscoAltoTop.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      href={`/app/processos/${p.id}`}
+                      className="flex items-center justify-between gap-3 rounded-md border border-l-4 border-l-red-600 bg-white p-3 text-sm transition-colors hover:bg-slate-50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-mono text-[13px] text-brand-navy">
+                          {p.numero}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {p.gestor} — {faseLabel(p.fase)}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold text-red-700">
+                        {formatCurrency(p.valor)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Processos por grau</CardTitle>
-            <CardDescription>Contagem absoluta em cada grau.</CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <div>
+              <CardTitle className="text-base">Parados ha mais de 60 dias</CardTitle>
+              <CardDescription>
+                Processos sem andamento ha mais tempo.
+              </CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm" className="-mr-2">
+              <Link href="/app/processos?status=parados">
+                Ver todos
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent>
-            <GrauBar data={grauData} />
+            {paradosTop.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhum processo parado ha mais de 60 dias.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {paradosTop.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      href={`/app/processos/${p.id}`}
+                      className="flex items-center justify-between gap-3 rounded-md border border-l-4 border-l-amber-500 bg-white p-3 text-sm transition-colors hover:bg-slate-50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-mono text-[13px] text-brand-navy">
+                          {p.numero}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {p.gestor} — {faseLabel(p.fase)}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold text-amber-700">
+                        {p.diasSem}d sem andamento
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </section>
