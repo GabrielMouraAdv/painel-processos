@@ -231,6 +231,8 @@ function addDias(data: Date, dias: number): Date {
 
 async function main() {
   console.log("Limpando gestores, processos, andamentos, prazos e documentos...");
+  await prisma.itemPauta.deleteMany();
+  await prisma.sessaoPauta.deleteMany();
   await prisma.prazoTce.deleteMany();
   await prisma.andamentoTce.deleteMany();
   await prisma.interessadoProcessoTce.deleteMany();
@@ -817,6 +819,347 @@ async function main() {
     }
   }
 
+  console.log("Criando 8 sessoes de pauta TCE em 3 semanas...");
+  const processosTceExistentes = await prisma.processoTce.findMany({
+    where: { escritorioId: escritorio.id },
+    select: { id: true, numero: true, municipio: { select: { nome: true } } },
+  });
+  const processoPorNumero = new Map(
+    processosTceExistentes.map((p) => [p.numero, p]),
+  );
+
+  type ItemSeed = {
+    numeroProcesso: string;
+    tituloProcesso?: string;
+    municipio: string;
+    exercicio?: string;
+    relator: string;
+    advogadoResp: string;
+    situacao?: string;
+    observacoes?: string;
+    prognostico?: string;
+    providencia?: string;
+    retiradoDePauta?: boolean;
+    pedidoVistas?: boolean;
+    conselheiroVistas?: string;
+    vincularProcessoTce?: boolean;
+  };
+
+  type SessaoSeed = {
+    data: string;
+    camara: CamaraTce;
+    observacoesGerais?: string;
+    itens: ItemSeed[];
+  };
+
+  const SESSOES: SessaoSeed[] = [
+    // Semana 06/04 a 09/04/2026
+    {
+      data: "2026-04-07",
+      camara: CamaraTce.PRIMEIRA,
+      observacoesGerais: "Sessao ordinaria da 1a Camara.",
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 24.0001-5",
+          tituloProcesso: "PCG Barra do Jacare 2023",
+          municipio: "Barra do Jacare",
+          exercicio: "2023",
+          relator: "Ranilson Ramos",
+          advogadoResp: "Gabriel Moura",
+          situacao: "Defesa previa apresentada; aguardando julgamento.",
+          prognostico: "Regularidade com ressalvas",
+          providencia: "Sustentacao oral confirmada.",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0108-6",
+          tituloProcesso: "PCG Barra do Jacare Secretaria de Obras",
+          municipio: "Barra do Jacare",
+          exercicio: "2022",
+          relator: "Ranilson Ramos",
+          advogadoResp: "Henrique Arruda",
+          situacao: "Memorial juntado na vespera.",
+          observacoes: "Acordao ja com embargos de declaracao pendentes.",
+          prognostico: "Julgamento remarcado possivel",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0210-3",
+          municipio: "Lagoa de Dentro",
+          exercicio: "2024",
+          relator: "Rodrigo Novaes",
+          advogadoResp: "Heloisa Cavalcanti",
+          prognostico: "Irregularidade parcial",
+        },
+      ],
+    },
+    {
+      data: "2026-04-08",
+      camara: CamaraTce.PLENO,
+      observacoesGerais: "Sessao do Pleno - processos de maior complexidade.",
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 24.0099-4",
+          tituloProcesso: "Recurso ordinario Campo do Horizonte",
+          municipio: "Campo do Horizonte",
+          exercicio: "2022",
+          relator: "Carlos Neves",
+          advogadoResp: "Mateus Lisboa",
+          situacao: "Aguardando leitura do voto do relator.",
+          prognostico: "Provimento parcial",
+          providencia: "Memorial adicional entregue em 06/04.",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0164-9",
+          tituloProcesso: "PCG Olho d'Agua das Minas 2021",
+          municipio: "Olho d'Agua das Minas",
+          exercicio: "2021",
+          relator: "Carlos Neves",
+          advogadoResp: "Filipe Campos",
+          situacao: "Transitado, recurso contra acordao recente.",
+          pedidoVistas: true,
+          conselheiroVistas: "Marcos Loreto",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 23.0887-1",
+          municipio: "Serra Dourada",
+          exercicio: "2020",
+          relator: "Eduardo Porto",
+          advogadoResp: "Carlos Porto",
+          retiradoDePauta: true,
+          observacoes: "Retirado por pedido do relator.",
+        },
+      ],
+    },
+    {
+      data: "2026-04-09",
+      camara: CamaraTce.SEGUNDA,
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 24.0015-2",
+          tituloProcesso: "PCG Gestao Saude Serra Dourada",
+          municipio: "Serra Dourada",
+          exercicio: "2023",
+          relator: "Eduardo Porto",
+          advogadoResp: "Julio Rodrigues",
+          situacao: "Defesa apresentada; parecer MPCO favoravel.",
+          prognostico: "Regularidade com ressalvas",
+          providencia: "Contrarrazoes protocoladas.",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0034-9",
+          tituloProcesso: "Auditoria Pocao de Cima - residuos solidos",
+          municipio: "Pocao de Cima",
+          exercicio: "2022",
+          relator: "Marcos Loreto",
+          advogadoResp: "Gabriel Moura",
+          situacao: "Acordao proferido; aguardando embargos.",
+          observacoes: "Memorial pronto, despacho com o relator realizado.",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0121-0",
+          tituloProcesso: "Auditoria folha Serra Dourada",
+          municipio: "Serra Dourada",
+          exercicio: "2021",
+          relator: "Marcos Loreto",
+          advogadoResp: "Heloisa Cavalcanti",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0059-1",
+          tituloProcesso: "Auto de infracao Olho d'Agua",
+          municipio: "Olho d'Agua das Minas",
+          exercicio: "2023",
+          relator: "Valdecir Pascoal",
+          advogadoResp: "Henrique Arruda",
+          situacao: "Embargos em julgamento.",
+          prognostico: "Acolhimento parcial dos embargos",
+          vincularProcessoTce: true,
+        },
+      ],
+    },
+    // Semana 13/04 a 16/04/2026
+    {
+      data: "2026-04-13",
+      camara: CamaraTce.PRIMEIRA,
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 24.0047-7",
+          tituloProcesso: "RGF Campo do Horizonte 2Q 2024",
+          municipio: "Campo do Horizonte",
+          exercicio: "2024",
+          relator: "Rodrigo Novaes",
+          advogadoResp: "Mateus Lisboa",
+          prognostico: "Regularidade",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0071-3",
+          tituloProcesso: "Cautelar Pocao de Cima - pregao eletronico",
+          municipio: "Pocao de Cima",
+          exercicio: "2025",
+          relator: "Dirceu Rodolfo",
+          advogadoResp: "Filipe Campos",
+          situacao: "Manifestacao previa apresentada; aguardando decisao.",
+          observacoes: "Pedido de tutela de urgencia feito em plantao.",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0178-2",
+          tituloProcesso: "Agravo regimental Campo do Horizonte",
+          municipio: "Campo do Horizonte",
+          exercicio: "2024",
+          relator: "Dirceu Rodolfo",
+          advogadoResp: "Carlos Porto",
+          prognostico: "Desprovimento",
+          pedidoVistas: true,
+          conselheiroVistas: "Ranilson Ramos",
+          vincularProcessoTce: true,
+        },
+      ],
+    },
+    {
+      data: "2026-04-16",
+      camara: CamaraTce.PLENO,
+      observacoesGerais: "Sessao reduzida - apenas 1 item.",
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 22.4512-0",
+          tituloProcesso: "Consulta formulada por prefeito sobre folha",
+          municipio: "Barra do Jacare",
+          relator: "Carlos Neves",
+          advogadoResp: "Julio Rodrigues",
+          situacao: "Consulta respondida pela area tecnica.",
+          prognostico: "Resposta por acordao normativo",
+        },
+      ],
+    },
+    {
+      data: "2026-04-16",
+      camara: CamaraTce.SEGUNDA,
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 24.0191-5",
+          tituloProcesso: "Auditoria convenio OSCIP Barra do Jacare",
+          municipio: "Barra do Jacare",
+          exercicio: "2022",
+          relator: "Eduardo Porto",
+          advogadoResp: "Heloisa Cavalcanti",
+          situacao: "Acordao dos embargos pos-RO; aguardando leitura.",
+          prognostico: "Manutencao da glosa",
+          providencia: "Sustentacao oral.",
+          vincularProcessoTce: true,
+        },
+      ],
+    },
+    // Semana 22/04 a 23/04/2026
+    {
+      data: "2026-04-22",
+      camara: CamaraTce.PLENO,
+      observacoesGerais: "Sessao extensa no Pleno.",
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 23.9982-4",
+          tituloProcesso: "Recurso ordinario Serra Dourada 2019",
+          municipio: "Serra Dourada",
+          exercicio: "2019",
+          relator: "Carlos Neves",
+          advogadoResp: "Gabriel Moura",
+          prognostico: "Provimento parcial",
+          providencia: "Memorial entregue 20/04.",
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0083-8",
+          tituloProcesso: "Cautelar Serra Dourada - retencao de pagamentos",
+          municipio: "Serra Dourada",
+          exercicio: "2025",
+          relator: "Eduardo Porto",
+          advogadoResp: "Mateus Lisboa",
+          situacao: "Decisao monocratica em referendo do Pleno.",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 24.0152-4",
+          tituloProcesso: "Auto de infracao Campo do Horizonte",
+          municipio: "Campo do Horizonte",
+          exercicio: "2024",
+          relator: "Valdecir Pascoal",
+          advogadoResp: "Filipe Campos",
+          retiradoDePauta: true,
+          observacoes: "Retirado apos pedido de prorrogacao da defesa.",
+          vincularProcessoTce: true,
+        },
+        {
+          numeroProcesso: "TCE-PE 22.7711-8",
+          municipio: "Olho d'Agua das Minas",
+          exercicio: "2020",
+          relator: "Carlos Neves",
+          advogadoResp: "Henrique Arruda",
+          pedidoVistas: true,
+          conselheiroVistas: "Dirceu Rodolfo",
+        },
+      ],
+    },
+    {
+      data: "2026-04-23",
+      camara: CamaraTce.SEGUNDA,
+      itens: [
+        {
+          numeroProcesso: "TCE-PE 24.0135-7",
+          tituloProcesso: "RGF Olho d'Agua das Minas 3Q 2024",
+          municipio: "Olho d'Agua das Minas",
+          exercicio: "2024",
+          relator: "Rodrigo Novaes",
+          advogadoResp: "Julio Rodrigues",
+          situacao: "Alerta de limite prudencial; defesa apresentada.",
+          prognostico: "Regularidade com ressalvas",
+          vincularProcessoTce: true,
+        },
+      ],
+    },
+  ];
+
+  for (const sessao of SESSOES) {
+    const sessaoCriada = await prisma.sessaoPauta.create({
+      data: {
+        data: new Date(`${sessao.data}T00:00:00Z`),
+        camara: sessao.camara,
+        observacoesGerais: sessao.observacoesGerais ?? null,
+        escritorioId: escritorio.id,
+      },
+    });
+    for (let ordem = 0; ordem < sessao.itens.length; ordem++) {
+      const item = sessao.itens[ordem];
+      const processoVinculado = item.vincularProcessoTce
+        ? processoPorNumero.get(item.numeroProcesso)
+        : undefined;
+      await prisma.itemPauta.create({
+        data: {
+          sessaoId: sessaoCriada.id,
+          numeroProcesso: item.numeroProcesso,
+          tituloProcesso: item.tituloProcesso ?? null,
+          municipio: item.municipio,
+          exercicio: item.exercicio ?? null,
+          relator: item.relator,
+          advogadoResp: item.advogadoResp,
+          situacao: item.situacao ?? null,
+          observacoes: item.observacoes ?? null,
+          prognostico: item.prognostico ?? null,
+          providencia: item.providencia ?? null,
+          retiradoDePauta: item.retiradoDePauta ?? false,
+          pedidoVistas: item.pedidoVistas ?? false,
+          conselheiroVistas: item.conselheiroVistas ?? null,
+          processoTceId: processoVinculado?.id ?? null,
+          ordem,
+        },
+      });
+    }
+  }
+
   const totais = await Promise.all([
     prisma.escritorio.count(),
     prisma.user.count(),
@@ -828,6 +1171,8 @@ async function main() {
     prisma.processoTce.count(),
     prisma.andamentoTce.count(),
     prisma.prazoTce.count(),
+    prisma.sessaoPauta.count(),
+    prisma.itemPauta.count(),
   ]);
 
   console.log("Seed concluido.");
@@ -836,7 +1181,7 @@ async function main() {
     `Judicial -> escritorios: ${totais[0]}, users: ${totais[1]}, gestores: ${totais[2]}, processos: ${totais[3]}, andamentos: ${totais[4]}, prazos: ${totais[5]}`,
   );
   console.log(
-    `TCE -> municipios: ${totais[6]}, processos: ${totais[7]}, andamentos: ${totais[8]}, prazos: ${totais[9]}`,
+    `TCE -> municipios: ${totais[6]}, processos: ${totais[7]}, andamentos: ${totais[8]}, prazos: ${totais[9]}, sessoes pauta: ${totais[10]}, itens pauta: ${totais[11]}`,
   );
 }
 

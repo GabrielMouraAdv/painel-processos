@@ -3,6 +3,7 @@ import {
   BarChart3,
   Building2,
   CalendarClock,
+  CalendarRange,
   Gavel,
   Landmark,
   LayoutDashboard,
@@ -66,6 +67,7 @@ export function Sidebar({
           badge: processosTceTotal > 0 ? processosTceTotal : undefined,
           badgeTone: "navy",
         },
+        { label: "Pauta", href: "/app/tce/pauta", icon: CalendarRange },
         { label: "Municipios", href: "/app/tce/municipios", icon: Building2 },
         { label: "Interessados", href: "/app/tce/interessados", icon: UserCheck },
         {

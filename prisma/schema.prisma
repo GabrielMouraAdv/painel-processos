@@ -48,11 +48,12 @@ model Escritorio {
   cnpj      String   @unique
   createdAt DateTime @default(now())
 
-  usuarios     User[]
-  gestores     Gestor[]
-  processos    Processo[]
-  municipios   Municipio[]
-  processosTce ProcessoTce[]
+  usuarios      User[]
+  gestores      Gestor[]
+  processos     Processo[]
+  municipios    Municipio[]
+  processosTce  ProcessoTce[]
+  sessoesPauta  SessaoPauta[]
 }
 
 model User {
@@ -257,6 +258,7 @@ model ProcessoTce {
   interessados InteressadoProcessoTce[]
   andamentos   AndamentoTce[]
   prazos       PrazoTce[]
+  itensPauta   ItemPauta[]
 
   @@index([escritorioId])
   @@index([municipioId])
@@ -316,4 +318,47 @@ model PrazoTce {
   @@index([dataVencimento])
   @@index([cumprido])
   @@index([advogadoRespId])
+}
+
+model SessaoPauta {
+  id                String    @id @default(cuid())
+  data              DateTime
+  camara            CamaraTce
+  observacoesGerais String?   @db.Text
+  escritorioId      String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  escritorio Escritorio  @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  itens      ItemPauta[]
+
+  @@index([escritorioId, data])
+}
+
+model ItemPauta {
+  id                String   @id @default(cuid())
+  sessaoId          String
+  numeroProcesso    String
+  tituloProcesso    String?
+  municipio         String
+  exercicio         String?
+  relator           String
+  advogadoResp      String
+  situacao          String?  @db.Text
+  observacoes       String?  @db.Text
+  prognostico       String?
+  providencia       String?
+  retiradoDePauta   Boolean  @default(false)
+  pedidoVistas      Boolean  @default(false)
+  conselheiroVistas String?
+  processoTceId     String?
+  ordem             Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  sessao      SessaoPauta  @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  processoTce ProcessoTce? @relation(fields: [processoTceId], references: [id])
+
+  @@index([sessaoId])
+  @@index([processoTceId])
 }
