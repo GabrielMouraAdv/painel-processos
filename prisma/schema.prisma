@@ -402,6 +402,7 @@ model ItemPautaJudicial {
   retiradoDePauta     Boolean  @default(false)
   pedidoVistas        Boolean  @default(false)
   desPedidoVistas     String?
+  parecerMpf          Boolean  @default(false)
   processoId          String?
   ordem               Int      @default(0)
   createdAt           DateTime @default(now())

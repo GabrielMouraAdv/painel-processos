@@ -11,11 +11,27 @@ import {
   startOfWeekUTC,
 } from "@/lib/semana";
 import {
+  COMPOSICAO,
   ORGAOS_JULGADORES,
+  TIPOS_RECURSO,
+  orgaosJulgadoresList,
   todosDesembargadores,
 } from "@/lib/tjpe-config";
+import {
+  COMPOSICAO_TRF5,
+  ORGAOS_JULGADORES_TRF5,
+  TIPOS_RECURSO_TRF5,
+  orgaosJulgadoresTrf5List,
+  todosDesembargadoresTrf5,
+} from "@/lib/trf5-config";
 
-import { PautasJudiciaisView, type SessaoRow } from "./pautas-view";
+import {
+  PautasJudiciaisView,
+  type OrgaoJulgadorOption,
+  type ComposicaoRecord,
+  type SessaoRow,
+  type TribunalKey,
+} from "./pautas-view";
 
 function asString(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
@@ -23,8 +39,61 @@ function asString(v: string | string[] | undefined): string {
 
 function horaToNum(h?: string): number {
   if (!h) return 999;
-  const m = /^(\d+)h/i.exec(h.trim());
+  const m = /^(\d+)/.exec(h.trim());
   return m ? parseInt(m[1], 10) : 999;
+}
+
+function resolveTribunal(v: string): TribunalKey {
+  return v === "TRF5" ? "TRF5" : "TJPE";
+}
+
+function configForTribunal(tribunal: TribunalKey): {
+  orgaos: OrgaoJulgadorOption[];
+  composicao: ComposicaoRecord;
+  tiposRecurso: string[];
+  desembargadores: string[];
+  horarioPorOrgao: (orgao: string) => string | undefined;
+} {
+  if (tribunal === "TRF5") {
+    return {
+      orgaos: orgaosJulgadoresTrf5List().map((o) => ({
+        label: o.label,
+        horario: o.horario ?? null,
+      })),
+      composicao: Object.fromEntries(
+        Object.entries(COMPOSICAO_TRF5).map(([k, v]) => [
+          k,
+          v.map((m) => ({
+            nome: m.nome,
+            cargo: m.cargo,
+            observacao: m.observacao ?? null,
+          })),
+        ]),
+      ),
+      tiposRecurso: TIPOS_RECURSO_TRF5,
+      desembargadores: todosDesembargadoresTrf5(),
+      horarioPorOrgao: (o) => ORGAOS_JULGADORES_TRF5[o]?.horario,
+    };
+  }
+  return {
+    orgaos: orgaosJulgadoresList().map((o) => ({
+      label: o.label,
+      horario: o.horario ?? null,
+    })),
+    composicao: Object.fromEntries(
+      Object.entries(COMPOSICAO).map(([k, v]) => [
+        k,
+        v.map((m) => ({
+          nome: m.nome,
+          cargo: m.cargo,
+          observacao: m.observacao ?? null,
+        })),
+      ]),
+    ),
+    tiposRecurso: TIPOS_RECURSO,
+    desembargadores: todosDesembargadores(),
+    horarioPorOrgao: (o) => ORGAOS_JULGADORES[o]?.horario,
+  };
 }
 
 export default async function PautasJudiciaisPage({
@@ -35,6 +104,9 @@ export default async function PautasJudiciaisPage({
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
   const canEdit = podeEditarPauta(session!.user.role);
+
+  const tribunal = resolveTribunal(asString(searchParams.tribunal));
+  const cfg = configForTribunal(tribunal);
 
   const semanaParam = asString(searchParams.semana);
   const ref = parseISODate(semanaParam) ?? new Date();
@@ -67,7 +139,7 @@ export default async function PautasJudiciaisPage({
 
   const where: Prisma.SessaoJudicialWhereInput = {
     escritorioId,
-    tribunal: "TJPE",
+    tribunal,
     data: { gte: weekStart, lte: weekEnd },
     ...(orgaoJulgador && { orgaoJulgador }),
     ...(tipoSessao && { tipoSessao }),
@@ -111,8 +183,8 @@ export default async function PautasJudiciaisPage({
     const da = a.data.getTime();
     const db = b.data.getTime();
     if (da !== db) return da - db;
-    const ha = horaToNum(ORGAOS_JULGADORES[a.orgaoJulgador]?.horario);
-    const hb = horaToNum(ORGAOS_JULGADORES[b.orgaoJulgador]?.horario);
+    const ha = horaToNum(cfg.horarioPorOrgao(a.orgaoJulgador));
+    const hb = horaToNum(cfg.horarioPorOrgao(b.orgaoJulgador));
     return ha - hb;
   });
 
@@ -142,6 +214,7 @@ export default async function PautasJudiciaisPage({
       retiradoDePauta: i.retiradoDePauta,
       pedidoVistas: i.pedidoVistas,
       desPedidoVistas: i.desPedidoVistas,
+      parecerMpf: i.parecerMpf,
       processo: i.processo
         ? { id: i.processo.id, numero: i.processo.numero }
         : null,
@@ -152,6 +225,7 @@ export default async function PautasJudiciaisPage({
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 md:px-8">
       <PautasJudiciaisView
+        tribunal={tribunal}
         sessoes={rows}
         weekStart={isoDay(weekStart)}
         weekEnd={isoDay(weekEnd)}
@@ -163,12 +237,15 @@ export default async function PautasJudiciaisPage({
           q,
         }}
         advogadosCadastrados={advogadosCadastrados.map((a) => a.nome)}
-        desembargadores={todosDesembargadores()}
+        desembargadores={cfg.desembargadores}
         processosJudiciais={processosJudiciais.map((p) => ({
           id: p.id,
           numero: p.numero,
           gestor: p.gestor.nome,
         }))}
+        orgaosJulgadores={cfg.orgaos}
+        composicao={cfg.composicao}
+        tiposRecurso={cfg.tiposRecurso}
         canEdit={canEdit}
       />
     </div>

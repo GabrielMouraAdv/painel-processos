@@ -44,12 +44,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { addDaysIso, parseISODate } from "@/lib/semana";
-import {
-  COMPOSICAO,
-  ORGAOS_JULGADORES,
-  TIPOS_SESSAO,
-  orgaosJulgadoresList,
-} from "@/lib/tjpe-config";
+import { TIPOS_SESSAO } from "@/lib/tjpe-config";
 import { cn } from "@/lib/utils";
 
 import {
@@ -57,6 +52,21 @@ import {
   type ItemPautaJudicialInitial,
   type ProcessoJudicialOption,
 } from "./item-pauta-judicial-dialog";
+
+export type TribunalKey = "TJPE" | "TRF5";
+
+export type OrgaoJulgadorOption = {
+  label: string;
+  horario: string | null;
+};
+
+export type MembroComposicao = {
+  nome: string;
+  cargo: "Presidente" | "Titular" | "Substituto" | "Cargo Vago";
+  observacao: string | null;
+};
+
+export type ComposicaoRecord = Record<string, MembroComposicao[]>;
 
 export type SessaoRow = {
   id: string;
@@ -77,6 +87,7 @@ type Filters = {
 };
 
 type Props = {
+  tribunal: TribunalKey;
   sessoes: SessaoRow[];
   weekStart: string;
   weekEnd: string;
@@ -84,12 +95,27 @@ type Props = {
   advogadosCadastrados: string[];
   desembargadores: string[];
   processosJudiciais: ProcessoJudicialOption[];
+  orgaosJulgadores: OrgaoJulgadorOption[];
+  composicao: ComposicaoRecord;
+  tiposRecurso: string[];
   canEdit: boolean;
 };
 
-type Categoria = "direito_publico" | "criminal" | "regional_caruaru" | "pleno";
+type Categoria =
+  | "direito_publico"
+  | "criminal"
+  | "regional_caruaru"
+  | "pleno"
+  | "turma"
+  | "secao";
 
-function categoriaOrgao(orgao: string): Categoria {
+function categoriaOrgao(orgao: string, tribunal: TribunalKey): Categoria {
+  if (tribunal === "TRF5") {
+    if (orgao.includes("Pleno") || orgao.includes("Plenario Virtual"))
+      return "pleno";
+    if (orgao.includes("Secao")) return "secao";
+    return "turma";
+  }
   if (orgao.includes("Regional Caruaru")) return "regional_caruaru";
   if (orgao.includes("Pleno") || orgao === "Plenario Virtual") return "pleno";
   if (orgao.includes("Criminal")) return "criminal";
@@ -119,6 +145,16 @@ const CATEGORIA_STYLE: Record<
     badge: "bg-[#6b21a8] text-white",
     border: "border-l-[#6b21a8]",
     bg: "bg-purple-50",
+  },
+  turma: {
+    badge: "bg-[#0f766e] text-white",
+    border: "border-l-[#0f766e]",
+    bg: "bg-teal-50",
+  },
+  secao: {
+    badge: "bg-[#be185d] text-white",
+    border: "border-l-[#be185d]",
+    bg: "bg-pink-50",
   },
 };
 
@@ -179,17 +215,26 @@ function todayIso(): string {
   return `${y}-${m}-${day}`;
 }
 
-function horaDoOrgao(orgao: string): number {
-  const h = ORGAOS_JULGADORES[orgao]?.horario;
-  if (!h) return 9;
-  const m = /(\d+)/.exec(h.trim());
-  return m ? parseInt(m[1], 10) : 9;
+function horaDoHorario(horario: string | null | undefined): {
+  hour: number;
+  minute: number;
+} {
+  if (!horario) return { hour: 9, minute: 0 };
+  const m = /(\d+)h(\d{0,2})/i.exec(horario.trim());
+  if (!m) return { hour: 9, minute: 0 };
+  const hour = parseInt(m[1], 10);
+  const minute = m[2] ? parseInt(m[2], 10) : 0;
+  return { hour: Number.isFinite(hour) ? hour : 9, minute: Number.isFinite(minute) ? minute : 0 };
 }
 
-function sessaoDateTimeLocal(sessaoIso: string, orgao: string): Date {
+function sessaoDateTimeLocal(
+  sessaoIso: string,
+  horario: string | null | undefined,
+): Date {
   const day = sessaoIso.slice(0, 10);
   const [y, m, d] = day.split("-").map(Number);
-  return new Date(y, (m ?? 1) - 1, d ?? 1, horaDoOrgao(orgao), 0, 0, 0);
+  const { hour, minute } = horaDoHorario(horario);
+  return new Date(y, (m ?? 1) - 1, d ?? 1, hour, minute, 0, 0);
 }
 
 function formatDateTimeBR(d: Date): string {
@@ -202,10 +247,10 @@ function formatDateTimeBR(d: Date): string {
 
 function SustentacaoOralBadge({
   sessaoIso,
-  orgao,
+  horario,
 }: {
   sessaoIso: string;
-  orgao: string;
+  horario: string | null | undefined;
 }) {
   const [now, setNow] = React.useState<Date | null>(null);
   React.useEffect(() => {
@@ -216,7 +261,7 @@ function SustentacaoOralBadge({
 
   if (!now) return null;
 
-  const sessaoStart = sessaoDateTimeLocal(sessaoIso, orgao);
+  const sessaoStart = sessaoDateTimeLocal(sessaoIso, horario);
   const diffMs = sessaoStart.getTime() - now.getTime();
   if (diffMs <= 0) return null;
 
@@ -246,6 +291,7 @@ function SustentacaoOralBadge({
 }
 
 export function PautasJudiciaisView({
+  tribunal,
   sessoes,
   weekStart,
   weekEnd,
@@ -253,6 +299,9 @@ export function PautasJudiciaisView({
   advogadosCadastrados,
   desembargadores,
   processosJudiciais,
+  orgaosJulgadores,
+  composicao,
+  tiposRecurso,
   canEdit,
 }: Props) {
   const router = useRouter();
@@ -284,8 +333,9 @@ export function PautasJudiciaisView({
   } | null>(null);
   const [itemPending, setItemPending] = React.useState(false);
 
-  function pushWithFilters(next: Filters, week?: string) {
+  function pushWithFilters(next: Filters, week?: string, tribunalOverride?: TribunalKey) {
     const params = new URLSearchParams();
+    params.set("tribunal", tribunalOverride ?? tribunal);
     params.set("semana", week ?? weekStart);
     if (next.orgaoJulgador) params.set("orgaoJulgador", next.orgaoJulgador);
     if (next.tipoSessao) params.set("tipoSessao", next.tipoSessao);
@@ -293,6 +343,21 @@ export function PautasJudiciaisView({
     if (next.advogadoResp) params.set("advogadoResp", next.advogadoResp);
     if (next.q) params.set("q", next.q);
     router.push(`/app/pautas?${params.toString()}`);
+  }
+
+  function goToTribunal(t: TribunalKey) {
+    if (t === tribunal) return;
+    pushWithFilters(
+      {
+        orgaoJulgador: "",
+        tipoSessao: filters.tipoSessao,
+        relator: filters.relator,
+        advogadoResp: filters.advogadoResp,
+        q: filters.q,
+      },
+      weekStart,
+      t,
+    );
   }
 
   function goToWeek(iso: string) {
@@ -500,20 +565,27 @@ export function PautasJudiciaisView({
       <div className="flex gap-1 border-b">
         <button
           type="button"
-          className="border-b-2 border-brand-navy px-4 py-2 text-sm font-semibold text-brand-navy"
+          onClick={() => goToTribunal("TJPE")}
+          className={cn(
+            "border-b-2 px-4 py-2 text-sm font-semibold transition-colors",
+            tribunal === "TJPE"
+              ? "border-brand-navy text-brand-navy"
+              : "border-transparent text-muted-foreground hover:text-brand-navy",
+          )}
         >
           TJPE
         </button>
         <button
           type="button"
-          disabled
-          className="flex items-center gap-1.5 border-b-2 border-transparent px-4 py-2 text-sm font-medium text-muted-foreground"
-          title="Em breve"
+          onClick={() => goToTribunal("TRF5")}
+          className={cn(
+            "border-b-2 px-4 py-2 text-sm font-semibold transition-colors",
+            tribunal === "TRF5"
+              ? "border-brand-navy text-brand-navy"
+              : "border-transparent text-muted-foreground hover:text-brand-navy",
+          )}
         >
           TRF5
-          <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-600">
-            Em breve
-          </span>
         </button>
       </div>
 
@@ -570,7 +642,7 @@ export function PautasJudiciaisView({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">Todos</SelectItem>
-                {orgaosJulgadoresList().map((o) => (
+                {orgaosJulgadores.map((o) => (
                   <SelectItem key={o.label} value={o.label}>
                     {o.label}
                   </SelectItem>
@@ -682,6 +754,9 @@ export function PautasJudiciaisView({
           {sessoes.map((sessao) => (
             <SessaoCard
               key={sessao.id}
+              tribunal={tribunal}
+              composicao={composicao}
+              orgaosJulgadores={orgaosJulgadores}
               sessao={sessao}
               canEdit={canEdit}
               duplicando={duplicandoId === sessao.id}
@@ -703,12 +778,16 @@ export function PautasJudiciaisView({
       )}
 
       <NovaSessaoDialog
+        tribunal={tribunal}
+        orgaosJulgadores={orgaosJulgadores}
         open={novaSessaoOpen}
         onOpenChange={setNovaSessaoOpen}
         defaultDate={todayIso()}
       />
 
       <EditarSessaoDialog
+        tribunal={tribunal}
+        orgaosJulgadores={orgaosJulgadores}
         sessao={editarSessao}
         onOpenChange={(v) => !v && setEditarSessao(null)}
       />
@@ -788,6 +867,8 @@ export function PautasJudiciaisView({
           desembargadores={desembargadores}
           processosJudiciais={processosJudiciais}
           canEdit={canEdit}
+          tribunal={tribunal}
+          tiposRecurso={tiposRecurso}
         />
       )}
 
@@ -841,6 +922,9 @@ function todayStartOfWeek(): string {
 }
 
 function SessaoCard({
+  tribunal,
+  composicao,
+  orgaosJulgadores,
   sessao,
   canEdit,
   duplicando,
@@ -851,6 +935,9 @@ function SessaoCard({
   onEditarItem,
   onExcluirItem,
 }: {
+  tribunal: TribunalKey;
+  composicao: ComposicaoRecord;
+  orgaosJulgadores: OrgaoJulgadorOption[];
   sessao: SessaoRow;
   canEdit: boolean;
   duplicando: boolean;
@@ -862,11 +949,11 @@ function SessaoCard({
   onExcluirItem: (item: ItemPautaJudicialInitial) => void;
 }) {
   const [composicaoAberta, setComposicaoAberta] = React.useState(false);
-  const categoria = categoriaOrgao(sessao.orgaoJulgador);
+  const categoria = categoriaOrgao(sessao.orgaoJulgador, tribunal);
   const estilo = CATEGORIA_STYLE[categoria];
-  const cfg = ORGAOS_JULGADORES[sessao.orgaoJulgador];
+  const orgaoCfg = orgaosJulgadores.find((o) => o.label === sessao.orgaoJulgador);
   const tipoBadge = TIPO_SESSAO_BADGE[sessao.tipoSessao] ?? TIPO_SESSAO_BADGE.presencial;
-  const composicao = COMPOSICAO[sessao.orgaoJulgador] ?? [];
+  const composicaoMembros = composicao[sessao.orgaoJulgador] ?? [];
 
   return (
     <Card className={cn("overflow-hidden border-l-4", estilo.border)}>
@@ -884,7 +971,7 @@ function SessaoCard({
             <div>
               <p className="text-sm font-semibold text-brand-navy">
                 {formatDateFullUTC(sessao.data)}
-                {cfg?.horario ? ` — ${cfg.horario}` : ""}
+                {orgaoCfg?.horario ? ` — ${orgaoCfg.horario}` : ""}
               </p>
               <p className="text-xs text-muted-foreground">
                 {sessao.itens.length} item
@@ -941,7 +1028,7 @@ function SessaoCard({
             {sessao.observacoesGerais}
           </p>
         )}
-        {composicao.length > 0 && (
+        {composicaoMembros.length > 0 && (
           <div>
             <button
               type="button"
@@ -957,7 +1044,7 @@ function SessaoCard({
             </button>
             {composicaoAberta && (
               <ul className="mt-2 grid grid-cols-1 gap-1 text-xs md:grid-cols-2">
-                {composicao.map((m, idx) => (
+                {composicaoMembros.map((m, idx) => (
                   <li
                     key={`${m.nome}-${idx}`}
                     className="flex items-start gap-2 rounded-md border border-white bg-white/60 px-2 py-1"
@@ -1106,7 +1193,7 @@ function SessaoCard({
                         {item.sustentacaoOral && !item.retiradoDePauta && (
                           <SustentacaoOralBadge
                             sessaoIso={sessao.data}
-                            orgao={sessao.orgaoJulgador}
+                            horario={orgaoCfg?.horario ?? null}
                           />
                         )}
                         {item.sessaoVirtual && (
@@ -1151,6 +1238,14 @@ function SessaoCard({
                               : ""}
                           </span>
                         )}
+                        {tribunal === "TRF5" && item.parecerMpf && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-800"
+                            title="Parecer do MPF"
+                          >
+                            Parecer MPF
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-3 py-3 text-right">
@@ -1191,10 +1286,14 @@ function SessaoCard({
 }
 
 function NovaSessaoDialog({
+  tribunal,
+  orgaosJulgadores,
   open,
   onOpenChange,
   defaultDate,
 }: {
+  tribunal: TribunalKey;
+  orgaosJulgadores: OrgaoJulgadorOption[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
   defaultDate: string;
@@ -1217,7 +1316,7 @@ function NovaSessaoDialog({
   }, [open, defaultDate]);
 
   const horarioPadrao = orgaoJulgador
-    ? ORGAOS_JULGADORES[orgaoJulgador]?.horario
+    ? (orgaosJulgadores.find((o) => o.label === orgaoJulgador)?.horario ?? null)
     : null;
 
   async function onSubmit(e: React.FormEvent) {
@@ -1236,7 +1335,7 @@ function NovaSessaoDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data,
-          tribunal: "TJPE",
+          tribunal,
           orgaoJulgador,
           tipoSessao,
           observacoesGerais: observacoesGerais.trim() || null,
@@ -1282,7 +1381,7 @@ function NovaSessaoDialog({
             </div>
             <div className="space-y-1.5">
               <Label>Tribunal</Label>
-              <Input value="TJPE" readOnly disabled />
+              <Input value={tribunal} readOnly disabled />
             </div>
             <div className="space-y-1.5">
               <Label>
@@ -1293,7 +1392,7 @@ function NovaSessaoDialog({
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {orgaosJulgadoresList().map((o) => (
+                  {orgaosJulgadores.map((o) => (
                     <SelectItem key={o.label} value={o.label}>
                       {o.label}
                       {o.horario ? ` (${o.horario})` : ""}
@@ -1356,9 +1455,12 @@ function NovaSessaoDialog({
 }
 
 function EditarSessaoDialog({
+  orgaosJulgadores,
   sessao,
   onOpenChange,
 }: {
+  tribunal: TribunalKey;
+  orgaosJulgadores: OrgaoJulgadorOption[];
   sessao: SessaoRow | null;
   onOpenChange: (v: boolean) => void;
 }) {
@@ -1437,7 +1539,7 @@ function EditarSessaoDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {orgaosJulgadoresList().map((o) => (
+                  {orgaosJulgadores.map((o) => (
                     <SelectItem key={o.label} value={o.label}>
                       {o.label}
                     </SelectItem>

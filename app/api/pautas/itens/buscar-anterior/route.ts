@@ -61,6 +61,7 @@ export async function GET(req: Request) {
       advogadoSustentacao: item.advogadoSustentacao,
       sessaoVirtual: item.sessaoVirtual,
       pedidoRetPresencial: item.pedidoRetPresencial,
+      parecerMpf: item.parecerMpf,
     },
     sessao: {
       id: item.sessao.id,

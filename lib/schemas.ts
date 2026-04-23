@@ -316,6 +316,7 @@ export const itemPautaJudicialInputSchema = z.object({
   retiradoDePauta: z.boolean().optional().default(false),
   pedidoVistas: z.boolean().optional().default(false),
   desPedidoVistas: z.string().optional().nullable(),
+  parecerMpf: z.boolean().optional().default(false),
   processoId: z.string().optional().nullable(),
   ordem: z.coerce.number().int().optional(),
 });
@@ -342,6 +343,7 @@ export const itemPautaJudicialUpdateSchema = z.object({
   retiradoDePauta: z.boolean().optional(),
   pedidoVistas: z.boolean().optional(),
   desPedidoVistas: z.string().optional().nullable(),
+  parecerMpf: z.boolean().optional(),
   processoId: z.string().optional().nullable(),
   ordem: z.coerce.number().int().optional(),
 });

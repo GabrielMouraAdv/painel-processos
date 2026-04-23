@@ -65,6 +65,7 @@ export async function POST(
           retiradoDePauta: false,
           pedidoVistas: false,
           desPedidoVistas: null,
+          parecerMpf: it.parecerMpf,
           processoId: it.processoId,
           ordem: it.ordem,
         })),

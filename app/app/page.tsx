@@ -39,6 +39,7 @@ import {
   startOfWeekUTC,
 } from "@/lib/semana";
 import { ORGAOS_JULGADORES } from "@/lib/tjpe-config";
+import { ORGAOS_JULGADORES_TRF5 } from "@/lib/trf5-config";
 import { cn } from "@/lib/utils";
 
 function formatDate(d: Date): string {
@@ -122,6 +123,21 @@ function horaToNumTjpe(h?: string): number {
   return m ? parseInt(m[1], 10) : 999;
 }
 
+type CategoriaTrf5 = "turma" | "secao" | "pleno";
+
+function categoriaOrgaoTrf5(orgao: string): CategoriaTrf5 {
+  if (orgao.includes("Pleno") || orgao.includes("Plenario Virtual"))
+    return "pleno";
+  if (orgao.includes("Secao")) return "secao";
+  return "turma";
+}
+
+const CATEGORIA_TRF5_DOT: Record<CategoriaTrf5, string> = {
+  turma: "bg-[#0f766e]",
+  secao: "bg-[#be185d]",
+  pleno: "bg-[#6b21a8]",
+};
+
 function asString(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
 }
@@ -176,6 +192,7 @@ export default async function AppHome({
     prazosProximos,
     ultimosAndamentos,
     pautaSessoesTjpe,
+    pautaSessoesTrf5,
   ] = await Promise.all([
     prisma.processo.count({ where: base }),
     prisma.processo.count({ where: { ...base, risco: Risco.ALTO } }),
@@ -281,6 +298,27 @@ export default async function AppHome({
         },
       },
     }),
+    prisma.sessaoJudicial.findMany({
+      where: {
+        escritorioId,
+        tribunal: "TRF5",
+        data: { gte: pautaWeekStart, lte: pautaWeekEnd },
+      },
+      orderBy: [{ data: "asc" }],
+      include: {
+        _count: { select: { itens: true } },
+        itens: {
+          orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
+          take: 3,
+          select: {
+            id: true,
+            numeroProcesso: true,
+            tituloProcesso: true,
+            partes: true,
+          },
+        },
+      },
+    }),
   ]);
 
   const pautaSessoesTjpeOrdenadas = [...pautaSessoesTjpe].sort((a, b) => {
@@ -289,6 +327,15 @@ export default async function AppHome({
     if (da !== db) return da - db;
     const ha = horaToNumTjpe(ORGAOS_JULGADORES[a.orgaoJulgador]?.horario);
     const hb = horaToNumTjpe(ORGAOS_JULGADORES[b.orgaoJulgador]?.horario);
+    return ha - hb;
+  });
+
+  const pautaSessoesTrf5Ordenadas = [...pautaSessoesTrf5].sort((a, b) => {
+    const da = a.data.getTime();
+    const db = b.data.getTime();
+    if (da !== db) return da - db;
+    const ha = horaToNumTjpe(ORGAOS_JULGADORES_TRF5[a.orgaoJulgador]?.horario);
+    const hb = horaToNumTjpe(ORGAOS_JULGADORES_TRF5[b.orgaoJulgador]?.horario);
     return ha - hb;
   });
 
@@ -506,94 +553,200 @@ export default async function AppHome({
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          {pautaSessoesTjpeOrdenadas.length === 0 ? (
-            <p className="py-2 text-sm text-muted-foreground">
-              Nenhuma sessao TJPE nesta semana.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {pautaSessoesTjpeOrdenadas.map((s) => {
-                const categoria = categoriaOrgaoTjpe(s.orgaoJulgador);
-                const tipo = TIPO_SESSAO_TJPE[s.tipoSessao];
-                const restantes = s._count.itens - s.itens.length;
-                return (
-                  <li key={s.id}>
-                    <Link
-                      href={`/app/pautas?semana=${pautaWeekStartIso}`}
-                      className="flex flex-col gap-2 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 flex-1 flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={cn(
-                                "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
-                                CATEGORIA_TJPE_DOT[categoria],
-                              )}
-                              aria-hidden="true"
-                            />
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {formatDiaSemanaShort(s.data.toISOString())}
-                            </span>
-                            <span className="truncate text-sm font-medium text-brand-navy">
-                              {s.orgaoJulgador}
-                            </span>
-                          </div>
-                          {tipo && (
-                            <span
-                              className={cn(
-                                "inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium",
-                                tipo.className,
-                              )}
-                            >
-                              {tipo.label}
-                            </span>
-                          )}
-                        </div>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
-                        </span>
-                      </div>
-                      {s.itens.length > 0 && (
-                        <ul className="flex flex-col gap-1 border-t pt-2">
-                          {s.itens.map((it) => {
-                            const desc = it.partes ?? it.tituloProcesso ?? null;
-                            return (
-                              <li key={it.id} className="text-xs">
-                                <span className="font-mono font-medium text-brand-navy">
-                                  {it.numeroProcesso}
-                                </span>
-                                {desc && (
-                                  <span className="text-muted-foreground">
-                                    {" "}
-                                    — {desc}
-                                  </span>
+        <CardContent className="flex flex-col gap-5">
+          <section className="flex flex-col gap-2">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="text-sm font-semibold text-brand-navy">TJPE</h3>
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {pautaSessoesTjpeOrdenadas.length} sessa
+                {pautaSessoesTjpeOrdenadas.length === 1 ? "o" : "oes"}
+              </span>
+            </div>
+            {pautaSessoesTjpeOrdenadas.length === 0 ? (
+              <p className="py-2 text-sm text-muted-foreground">
+                Nenhuma sessao TJPE nesta semana.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {pautaSessoesTjpeOrdenadas.map((s) => {
+                  const categoria = categoriaOrgaoTjpe(s.orgaoJulgador);
+                  const tipo = TIPO_SESSAO_TJPE[s.tipoSessao];
+                  const restantes = s._count.itens - s.itens.length;
+                  return (
+                    <li key={s.id}>
+                      <Link
+                        href={`/app/pautas?tribunal=TJPE&semana=${pautaWeekStartIso}`}
+                        className="flex flex-col gap-2 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
+                                  CATEGORIA_TJPE_DOT[categoria],
                                 )}
+                                aria-hidden="true"
+                              />
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {formatDiaSemanaShort(s.data.toISOString())}
+                              </span>
+                              <span className="truncate text-sm font-medium text-brand-navy">
+                                {s.orgaoJulgador}
+                              </span>
+                            </div>
+                            {tipo && (
+                              <span
+                                className={cn(
+                                  "inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium",
+                                  tipo.className,
+                                )}
+                              >
+                                {tipo.label}
+                              </span>
+                            )}
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                        {s.itens.length > 0 && (
+                          <ul className="flex flex-col gap-1 border-t pt-2">
+                            {s.itens.map((it) => {
+                              const desc = it.partes ?? it.tituloProcesso ?? null;
+                              return (
+                                <li key={it.id} className="text-xs">
+                                  <span className="font-mono font-medium text-brand-navy">
+                                    {it.numeroProcesso}
+                                  </span>
+                                  {desc && (
+                                    <span className="text-muted-foreground">
+                                      {" "}
+                                      — {desc}
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                            {restantes > 0 && (
+                              <li className="text-[10px] italic text-muted-foreground">
+                                +{restantes} outro{restantes === 1 ? "" : "s"}
                               </li>
-                            );
-                          })}
-                          {restantes > 0 && (
-                            <li className="text-[10px] italic text-muted-foreground">
-                              +{restantes} outro{restantes === 1 ? "" : "s"}
-                            </li>
-                          )}
-                        </ul>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <div className="mt-3">
-            <Button asChild variant="ghost" size="sm" className="-ml-2">
-              <Link href={`/app/pautas?semana=${pautaWeekStartIso}`}>
-                Ver pautas
-                <ArrowRight className="ml-1 h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </div>
+                            )}
+                          </ul>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div className="mt-1">
+              <Button asChild variant="ghost" size="sm" className="-ml-2">
+                <Link href={`/app/pautas?tribunal=TJPE&semana=${pautaWeekStartIso}`}>
+                  Ver pautas TJPE
+                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="text-sm font-semibold text-brand-navy">TRF5</h3>
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {pautaSessoesTrf5Ordenadas.length} sessa
+                {pautaSessoesTrf5Ordenadas.length === 1 ? "o" : "oes"}
+              </span>
+            </div>
+            {pautaSessoesTrf5Ordenadas.length === 0 ? (
+              <p className="py-2 text-sm text-muted-foreground">
+                Nenhuma sessao TRF5 nesta semana.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {pautaSessoesTrf5Ordenadas.map((s) => {
+                  const categoria = categoriaOrgaoTrf5(s.orgaoJulgador);
+                  const tipo = TIPO_SESSAO_TJPE[s.tipoSessao];
+                  const restantes = s._count.itens - s.itens.length;
+                  return (
+                    <li key={s.id}>
+                      <Link
+                        href={`/app/pautas?tribunal=TRF5&semana=${pautaWeekStartIso}`}
+                        className="flex flex-col gap-2 rounded-md border bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
+                                  CATEGORIA_TRF5_DOT[categoria],
+                                )}
+                                aria-hidden="true"
+                              />
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {formatDiaSemanaShort(s.data.toISOString())}
+                              </span>
+                              <span className="truncate text-sm font-medium text-brand-navy">
+                                {s.orgaoJulgador}
+                              </span>
+                            </div>
+                            {tipo && (
+                              <span
+                                className={cn(
+                                  "inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium",
+                                  tipo.className,
+                                )}
+                              >
+                                {tipo.label}
+                              </span>
+                            )}
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {s._count.itens} item{s._count.itens === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                        {s.itens.length > 0 && (
+                          <ul className="flex flex-col gap-1 border-t pt-2">
+                            {s.itens.map((it) => {
+                              const desc = it.partes ?? it.tituloProcesso ?? null;
+                              return (
+                                <li key={it.id} className="text-xs">
+                                  <span className="font-mono font-medium text-brand-navy">
+                                    {it.numeroProcesso}
+                                  </span>
+                                  {desc && (
+                                    <span className="text-muted-foreground">
+                                      {" "}
+                                      — {desc}
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                            {restantes > 0 && (
+                              <li className="text-[10px] italic text-muted-foreground">
+                                +{restantes} outro{restantes === 1 ? "" : "s"}
+                              </li>
+                            )}
+                          </ul>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div className="mt-1">
+              <Button asChild variant="ghost" size="sm" className="-ml-2">
+                <Link href={`/app/pautas?tribunal=TRF5&semana=${pautaWeekStartIso}`}>
+                  Ver pautas TRF5
+                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+          </section>
         </CardContent>
       </Card>
 

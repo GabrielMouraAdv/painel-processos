@@ -107,6 +107,9 @@ export async function PATCH(
       ...(data.desPedidoVistas !== undefined && {
         desPedidoVistas: data.desPedidoVistas || null,
       }),
+      ...(data.parecerMpf !== undefined && {
+        parecerMpf: data.parecerMpf,
+      }),
       ...(data.processoId !== undefined && {
         processoId: data.processoId || null,
       }),

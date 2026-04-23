@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { TIPOS_RECURSO } from "@/lib/tjpe-config";
 
 export type ItemPautaJudicialInitial = {
   id: string;
@@ -45,6 +44,7 @@ export type ItemPautaJudicialInitial = {
   retiradoDePauta: boolean;
   pedidoVistas: boolean;
   desPedidoVistas: string | null;
+  parecerMpf: boolean;
   processo: { id: string; numero: string } | null;
 };
 
@@ -64,6 +64,8 @@ type Props = {
   desembargadores: string[];
   processosJudiciais: ProcessoJudicialOption[];
   canEdit: boolean;
+  tribunal: "TJPE" | "TRF5";
+  tiposRecurso: string[];
 };
 
 const LIST_IDS = {
@@ -84,12 +86,15 @@ export function ItemPautaJudicialDialog({
   desembargadores,
   processosJudiciais,
   canEdit,
+  tribunal,
+  tiposRecurso,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
   const [numeroProcesso, setNumeroProcesso] = React.useState("");
   const [copiando, setCopiando] = React.useState(false);
+  const [parecerMpf, setParecerMpf] = React.useState(false);
   const [tituloProcesso, setTituloProcesso] = React.useState("");
   const [tipoRecurso, setTipoRecurso] = React.useState("");
   const [partes, setPartes] = React.useState("");
@@ -130,6 +135,7 @@ export function ItemPautaJudicialDialog({
       setRetiradoDePauta(item.retiradoDePauta);
       setPedidoVistas(item.pedidoVistas);
       setDesPedidoVistas(item.desPedidoVistas ?? "");
+      setParecerMpf(item.parecerMpf);
     } else {
       setNumeroProcesso("");
       setTituloProcesso("");
@@ -149,6 +155,7 @@ export function ItemPautaJudicialDialog({
       setRetiradoDePauta(false);
       setPedidoVistas(false);
       setDesPedidoVistas("");
+      setParecerMpf(false);
     }
   }, [open, mode, item]);
 
@@ -196,6 +203,7 @@ export function ItemPautaJudicialDialog({
       retiradoDePauta,
       pedidoVistas,
       desPedidoVistas: pedidoVistas ? desPedidoVistas.trim() || null : null,
+      parecerMpf: tribunal === "TRF5" ? parecerMpf : false,
       processoId: processoMatch?.id ?? null,
     };
 
@@ -275,6 +283,7 @@ export function ItemPautaJudicialDialog({
         advogadoSustentacao: string | null;
         sessaoVirtual: boolean;
         pedidoRetPresencial: boolean;
+        parecerMpf: boolean;
       };
       const s = json.sessao as {
         data: string;
@@ -293,6 +302,7 @@ export function ItemPautaJudicialDialog({
       setAdvogadoSustentacao(it.advogadoSustentacao ?? "");
       setSessaoVirtual(it.sessaoVirtual);
       setPedidoRetPresencial(it.pedidoRetPresencial);
+      if (tribunal === "TRF5") setParecerMpf(it.parecerMpf);
       const dataFmt = s.data.slice(0, 10).split("-").reverse().join("/");
       toast({
         title: "Dados copiados",
@@ -355,7 +365,7 @@ export function ItemPautaJudicialDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={TIPO_RECURSO_NONE}>—</SelectItem>
-                    {TIPOS_RECURSO.map((t) => (
+                    {tiposRecurso.map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>
@@ -496,6 +506,16 @@ export function ItemPautaJudicialDialog({
                   />
                   Pedido de vistas
                 </label>
+                {tribunal === "TRF5" && (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={parecerMpf}
+                      onChange={(e) => setParecerMpf(e.target.checked)}
+                    />
+                    Parecer MPF
+                  </label>
+                )}
               </div>
               {sustentacaoOral && (
                 <div className="space-y-1.5">

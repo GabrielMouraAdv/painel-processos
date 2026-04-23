@@ -79,6 +79,7 @@ export async function POST(req: Request) {
       retiradoDePauta: data.retiradoDePauta ?? false,
       pedidoVistas: data.pedidoVistas ?? false,
       desPedidoVistas: data.desPedidoVistas || null,
+      parecerMpf: data.parecerMpf ?? false,
       processoId: data.processoId || null,
       ordem,
     },

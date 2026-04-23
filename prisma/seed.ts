@@ -1202,7 +1202,7 @@ async function main() {
     }
   }
 
-  console.log("Criando 6 sessoes judiciais em 2 semanas...");
+  console.log("Criando sessoes judiciais TJPE e TRF5 em 2 semanas...");
   const processosJudPorNumero = new Map(
     processosCriados.map((p) => [p.id, p.id]),
   );
@@ -1234,6 +1234,7 @@ async function main() {
     retiradoDePauta?: boolean;
     pedidoVistas?: boolean;
     desPedidoVistas?: string;
+    parecerMpf?: boolean;
     vincularProcesso?: boolean;
   };
 
@@ -1429,6 +1430,175 @@ async function main() {
         },
       ],
     },
+    // TRF5 - Semana 1 (13 a 17 de abril)
+    {
+      data: "2026-04-16",
+      tribunal: "TRF5",
+      orgaoJulgador: "1a Turma",
+      tipoSessao: "presencial",
+      observacoesGerais: "Sessao ordinaria quinta-feira 9h.",
+      itens: [
+        {
+          numeroProcesso: "0800123-45.2026.4.05.8300",
+          tituloProcesso: "Apelacao Civel - Uniao Federal",
+          tipoRecurso: "Apelacao",
+          partes: "Municipio de Petrolina x Uniao Federal",
+          relator: "Elio Wanderley de Siqueira Filho",
+          advogadoResp: "Gabriel Moura",
+          situacao: "Parecer do MPF favoravel ao municipio.",
+          prognostico: "Provimento",
+          sustentacaoOral: true,
+          advogadoSustentacao: "Gabriel Moura",
+          parecerMpf: true,
+        },
+        {
+          numeroProcesso: "0800456-78.2026.4.05.8300",
+          tituloProcesso: "Embargos de Declaracao - INSS",
+          tipoRecurso: "Embargos de Declaracao",
+          partes: "Municipio de Caruaru x INSS",
+          relator: "Roberto Wanderley Nogueira",
+          advogadoResp: "Henrique Arruda",
+          situacao: "Aguardando julgamento.",
+          prognostico: "Desprovimento",
+        },
+      ],
+    },
+    {
+      data: "2026-04-14",
+      tribunal: "TRF5",
+      orgaoJulgador: "4a Turma",
+      tipoSessao: "presencial",
+      observacoesGerais: "Sessao ordinaria terca-feira 13h30.",
+      itens: [
+        {
+          numeroProcesso: "0800789-12.2026.4.05.8300",
+          tituloProcesso: "Agravo de Instrumento - Fazenda Nacional",
+          tipoRecurso: "Agravo de Instrumento",
+          partes: "Municipio de Serra Azul x Fazenda Nacional",
+          relator: "Fernando Braga Damasceno",
+          advogadoResp: "Mateus Lisboa",
+          situacao: "Liminar deferida; aguardando agravo interno.",
+          prognostico: "Provimento parcial",
+          parecerMpf: true,
+        },
+        {
+          numeroProcesso: "0801012-34.2026.4.05.8300",
+          tituloProcesso: "Apelacao - Instituto Horizonte",
+          tipoRecurso: "Apelacao",
+          partes: "Instituto Horizonte Social x Uniao Federal",
+          relator: "Manoel de Oliveira Erhardt",
+          advogadoResp: "Gabriel Moura",
+          situacao: "Sustentacao oral confirmada.",
+          prognostico: "Provimento",
+          sustentacaoOral: true,
+          advogadoSustentacao: "Gabriel Moura",
+        },
+      ],
+    },
+    {
+      data: "2026-04-15",
+      tribunal: "TRF5",
+      orgaoJulgador: "Plenario Virtual TRF5",
+      tipoSessao: "plenario_virtual",
+      observacoesGerais:
+        "Sessao virtual de 13 a 17 de abril - votos eletronicos.",
+      itens: [
+        {
+          numeroProcesso: "0801234-56.2026.4.05.8300",
+          tituloProcesso: "Remessa Necessaria - Municipio de Boa Esperanca",
+          tipoRecurso: "Remessa Necessaria",
+          partes: "Municipio de Boa Esperanca x Uniao Federal",
+          relator: "Paulo Roberto de Oliveira Lima",
+          advogadoResp: "Julio Rodrigues",
+          situacao: "Votacao aberta no Plenario Virtual.",
+          sessaoVirtual: true,
+          pedidoRetPresencial: true,
+          observacoes: "Pedimos retirada para sessao presencial.",
+          parecerMpf: true,
+        },
+      ],
+    },
+    // TRF5 - Semana 2 (20 a 24 de abril)
+    {
+      data: "2026-04-21",
+      tribunal: "TRF5",
+      orgaoJulgador: "2a Turma",
+      tipoSessao: "presencial",
+      observacoesGerais: "Sessao ordinaria terca-feira 13h30.",
+      itens: [
+        {
+          numeroProcesso: "0801456-78.2026.4.05.8300",
+          tituloProcesso: "Apelacao - Comercio Ferreira",
+          tipoRecurso: "Apelacao",
+          partes: "Comercio Ferreira e Filhos x Uniao Federal",
+          relator: "Paulo Roberto de Oliveira Lima",
+          advogadoResp: "Carlos Porto",
+          situacao: "Alegacoes finais apresentadas.",
+          prognostico: "Provimento parcial",
+        },
+        {
+          numeroProcesso: "0801678-90.2026.4.05.8300",
+          tituloProcesso: "Mandado de Seguranca - Porto Azul",
+          tipoRecurso: "Mandado de Seguranca",
+          partes: "Porto Azul Logistica x Uniao Federal",
+          relator: "Edilson Pereira Nobre Junior",
+          advogadoResp: "Heloisa Cavalcanti",
+          prognostico: "Concessao parcial",
+          parecerMpf: true,
+        },
+      ],
+    },
+    {
+      data: "2026-04-21",
+      tribunal: "TRF5",
+      orgaoJulgador: "5a Turma",
+      tipoSessao: "presencial",
+      observacoesGerais: "Sessao ordinaria terca-feira 9h30.",
+      itens: [
+        {
+          numeroProcesso: "0801891-12.2026.4.05.8300",
+          tituloProcesso: "Apelacao Criminal - Sertao Transportes",
+          tipoRecurso: "Apelacao",
+          partes: "Ministerio Publico Federal x Sertao Transportes Ltda.",
+          relator: "Cibele Benevides Guedes da Fonseca",
+          advogadoResp: "Gabriel Moura",
+          situacao: "Sustentacao oral agendada.",
+          sustentacaoOral: true,
+          advogadoSustentacao: "Gabriel Moura",
+          parecerMpf: true,
+        },
+      ],
+    },
+    {
+      data: "2026-04-22",
+      tribunal: "TRF5",
+      orgaoJulgador: "3a Secao",
+      tipoSessao: "presencial",
+      observacoesGerais: "Sessao da 3a Secao quarta-feira 14h.",
+      itens: [
+        {
+          numeroProcesso: "0802134-34.2026.4.05.8300",
+          tituloProcesso: "Conflito de Competencia - Fundacao Esperanca",
+          tipoRecurso: "Conflito de Competencia",
+          partes: "Juizo Federal de Recife x Juizo Federal de Petrolina",
+          relator: "Rubens de Mendonca Canuto Neto",
+          advogadoResp: "Filipe Campos",
+          situacao: "Aguardando manifestacao das partes.",
+          parecerMpf: true,
+        },
+        {
+          numeroProcesso: "0802345-56.2026.4.05.8300",
+          tituloProcesso: "Acao Rescisoria - Cooperativa Vale Verde",
+          tipoRecurso: "Acao Rescisoria",
+          partes: "Cooperativa Vale Verde x Uniao Federal",
+          relator: "Cid Marconi Gurgel de Souza",
+          advogadoResp: "Mateus Lisboa",
+          situacao: "Pedido de vistas concedido.",
+          pedidoVistas: true,
+          desPedidoVistas: "Alexandre Costa de Luna Freire",
+        },
+      ],
+    },
   ];
 
   for (const sessao of SESSOES_JUDICIAIS) {
@@ -1467,6 +1637,7 @@ async function main() {
           retiradoDePauta: item.retiradoDePauta ?? false,
           pedidoVistas: item.pedidoVistas ?? false,
           desPedidoVistas: item.desPedidoVistas ?? null,
+          parecerMpf: item.parecerMpf ?? false,
           processoId,
           ordem,
         },
