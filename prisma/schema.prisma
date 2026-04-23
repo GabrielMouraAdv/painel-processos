@@ -48,9 +48,11 @@ model Escritorio {
   cnpj      String   @unique
   createdAt DateTime @default(now())
 
-  usuarios  User[]
-  gestores  Gestor[]
-  processos Processo[]
+  usuarios     User[]
+  gestores     Gestor[]
+  processos    Processo[]
+  municipios   Municipio[]
+  processosTce ProcessoTce[]
 }
 
 model User {
@@ -67,6 +69,8 @@ model User {
   prazosComoRedator     Prazo[]     @relation("PrazoRedator")
   andamentos            Andamento[]
   documentos            Documento[]
+  andamentosTce         AndamentoTce[] @relation("AutorAndamentoTce")
+  prazosTceResp         PrazoTce[]     @relation("AdvogadoRespPrazoTce")
 
   @@index([escritorioId])
 }
@@ -81,8 +85,10 @@ model Gestor {
   escritorioId String
   createdAt    DateTime @default(now())
 
-  escritorio Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
-  processos  Processo[]
+  escritorio              Escritorio               @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  processos               Processo[]
+  historicoGestoes        HistoricoGestao[]
+  interessadoProcessosTce InteressadoProcessoTce[]
 
   @@index([escritorioId])
 }
@@ -175,4 +181,139 @@ model Documento {
 
   @@index([processoId])
   @@index([uploadedBy])
+}
+
+enum TipoProcessoTce {
+  PRESTACAO_CONTAS_GOVERNO
+  PRESTACAO_CONTAS_GESTAO
+  AUDITORIA_ESPECIAL
+  RGF
+  AUTO_INFRACAO
+  MEDIDA_CAUTELAR
+}
+
+enum CamaraTce {
+  PRIMEIRA
+  SEGUNDA
+  PLENO
+}
+
+model Municipio {
+  id             String   @id @default(cuid())
+  nome           String
+  uf             String
+  cnpjPrefeitura String?
+  observacoes    String?
+  escritorioId   String
+  createdAt      DateTime @default(now())
+
+  escritorio   Escritorio        @relation(fields: [escritorioId], references: [id])
+  processosTce ProcessoTce[]     @relation("MunicipioProcessos")
+  gestoes      HistoricoGestao[]
+
+  @@index([escritorioId])
+}
+
+model HistoricoGestao {
+  id          String    @id @default(cuid())
+  municipioId String
+  gestorId    String
+  cargo       String
+  dataInicio  DateTime
+  dataFim     DateTime?
+  createdAt   DateTime  @default(now())
+
+  municipio Municipio @relation(fields: [municipioId], references: [id], onDelete: Cascade)
+  gestor    Gestor    @relation(fields: [gestorId], references: [id])
+
+  @@index([municipioId])
+  @@index([gestorId])
+}
+
+model ProcessoTce {
+  id                    String          @id @default(cuid())
+  numero                String
+  tipo                  TipoProcessoTce
+  municipioId           String?
+  relator               String?
+  camara                CamaraTce
+  faseAtual             String
+  conselheiroSubstituto String?
+  notaTecnica           Boolean         @default(false)
+  parecerMpco           Boolean         @default(false)
+  despachadoComRelator  Boolean         @default(false)
+  memorialPronto        Boolean         @default(false)
+  exercicio             String?
+  valorAutuado          Decimal?        @db.Decimal(15, 2)
+  objeto                String          @db.Text
+  dataAutuacao          DateTime?
+  dataIntimacao         DateTime?
+  escritorioId          String
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  municipio    Municipio?               @relation("MunicipioProcessos", fields: [municipioId], references: [id])
+  escritorio   Escritorio               @relation(fields: [escritorioId], references: [id])
+  interessados InteressadoProcessoTce[]
+  andamentos   AndamentoTce[]
+  prazos       PrazoTce[]
+
+  @@index([escritorioId])
+  @@index([municipioId])
+  @@index([tipo])
+  @@index([camara])
+}
+
+model InteressadoProcessoTce {
+  id         String   @id @default(cuid())
+  processoId String
+  gestorId   String
+  cargo      String
+  createdAt  DateTime @default(now())
+
+  processo ProcessoTce @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  gestor   Gestor      @relation(fields: [gestorId], references: [id])
+
+  @@index([processoId])
+  @@index([gestorId])
+}
+
+model AndamentoTce {
+  id         String   @id @default(cuid())
+  processoId String
+  data       DateTime
+  fase       String
+  descricao  String   @db.Text
+  autorId    String
+  createdAt  DateTime @default(now())
+
+  processo ProcessoTce @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  autor    User        @relation("AutorAndamentoTce", fields: [autorId], references: [id])
+
+  @@index([processoId])
+  @@index([autorId])
+}
+
+model PrazoTce {
+  id                String    @id @default(cuid())
+  processoId        String
+  tipo              String
+  dataIntimacao     DateTime
+  dataVencimento    DateTime
+  diasUteis         Int
+  prorrogavel       Boolean   @default(true)
+  prorrogacaoPedida Boolean   @default(false)
+  dataProrrogacao   DateTime?
+  cumprido          Boolean   @default(false)
+  advogadoRespId    String?
+  observacoes       String?
+  createdAt         DateTime  @default(now())
+
+  processo     ProcessoTce @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  advogadoResp User?       @relation("AdvogadoRespPrazoTce", fields: [advogadoRespId], references: [id])
+
+  @@index([processoId])
+  @@index([dataVencimento])
+  @@index([cumprido])
+  @@index([advogadoRespId])
 }

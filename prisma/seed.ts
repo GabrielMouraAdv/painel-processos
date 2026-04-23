@@ -1,5 +1,16 @@
-import { PrismaClient, Role, TipoProcesso, Tribunal, Grau, Risco } from "@prisma/client";
+import {
+  PrismaClient,
+  Role,
+  TipoProcesso,
+  Tribunal,
+  Grau,
+  Risco,
+  TipoProcessoTce,
+  CamaraTce,
+} from "@prisma/client";
 import bcrypt from "bcryptjs";
+
+import { fasesDoTipo, prazoAutomaticoDaFase } from "../lib/tce-config";
 
 const prisma = new PrismaClient();
 
@@ -220,6 +231,12 @@ function addDias(data: Date, dias: number): Date {
 
 async function main() {
   console.log("Limpando gestores, processos, andamentos, prazos e documentos...");
+  await prisma.prazoTce.deleteMany();
+  await prisma.andamentoTce.deleteMany();
+  await prisma.interessadoProcessoTce.deleteMany();
+  await prisma.processoTce.deleteMany();
+  await prisma.historicoGestao.deleteMany();
+  await prisma.municipio.deleteMany();
   await prisma.documento.deleteMany();
   await prisma.prazo.deleteMany();
   await prisma.andamento.deleteMany();
@@ -345,6 +362,425 @@ async function main() {
     });
   }
 
+  console.log("Criando 10 gestores adicionais para TCE...");
+  const gestoresTceData: { nome: string; cargo: string; municipio: string }[] = [
+    { nome: "Jose Ribamar Andrade", cargo: "Prefeito", municipio: "Barra do Jacare" },
+    { nome: "Marta Albuquerque Pinho", cargo: "Ex-Prefeita", municipio: "Serra Dourada" },
+    { nome: "Antonio Carvalho Sa", cargo: "Prefeito", municipio: "Pocao de Cima" },
+    { nome: "Clara Beltrao Rego", cargo: "Secretaria de Saude", municipio: "Serra Dourada" },
+    { nome: "Ricardo Azevedo Lopes", cargo: "Ordenador de Despesas", municipio: "Pocao de Cima" },
+    { nome: "Beatriz Ferraz Lins", cargo: "Prefeita", municipio: "Campo do Horizonte" },
+    { nome: "Elton Marinho Correia", cargo: "Controlador Municipal", municipio: "Barra do Jacare" },
+    { nome: "Silvana Oliveira Tavares", cargo: "Secretaria de Educacao", municipio: "Campo do Horizonte" },
+    { nome: "Paulo Menezes Coelho", cargo: "Presidente da Camara", municipio: "Olho d'Agua das Minas" },
+    { nome: "Rosana Torres Siqueira", cargo: "Ex-Prefeita", municipio: "Olho d'Agua das Minas" },
+  ];
+
+  const gestoresTce = await Promise.all(
+    gestoresTceData.map((g, i) =>
+      prisma.gestor.create({
+        data: {
+          nome: g.nome,
+          cpf: `111.222.${String(i + 1).padStart(3, "0")}-00`,
+          municipio: g.municipio,
+          cargo: g.cargo,
+          observacoes: `Interessado em processos do TCE - ${g.municipio}`,
+          escritorioId: escritorio.id,
+        },
+      }),
+    ),
+  );
+
+  console.log("Criando 5 municipios...");
+  const municipiosData: {
+    nome: string;
+    uf: string;
+    cnpjPrefeitura: string;
+    observacoes: string;
+  }[] = [
+    {
+      nome: "Barra do Jacare",
+      uf: "PE",
+      cnpjPrefeitura: "10.111.222/0001-10",
+      observacoes: "Interior do agreste, populacao estimada 28 mil habitantes.",
+    },
+    {
+      nome: "Serra Dourada",
+      uf: "PE",
+      cnpjPrefeitura: "10.222.333/0001-20",
+      observacoes: "Regiao do sertao central, auditoria recorrente do TCE.",
+    },
+    {
+      nome: "Pocao de Cima",
+      uf: "PE",
+      cnpjPrefeitura: "10.333.444/0001-30",
+      observacoes: "Municipio em regime de emergencia financeira em 2025.",
+    },
+    {
+      nome: "Campo do Horizonte",
+      uf: "PE",
+      cnpjPrefeitura: "10.444.555/0001-40",
+      observacoes: "Economia agricola; auditorias em folha de pagamento.",
+    },
+    {
+      nome: "Olho d'Agua das Minas",
+      uf: "PE",
+      cnpjPrefeitura: "10.555.666/0001-50",
+      observacoes: "Alta rotatividade de gestores nos ultimos anos.",
+    },
+  ];
+
+  const municipios = await Promise.all(
+    municipiosData.map((m) =>
+      prisma.municipio.create({
+        data: {
+          nome: m.nome,
+          uf: m.uf,
+          cnpjPrefeitura: m.cnpjPrefeitura,
+          observacoes: m.observacoes,
+          escritorioId: escritorio.id,
+        },
+      }),
+    ),
+  );
+
+  const municipioByNome = new Map(municipios.map((m) => [m.nome, m]));
+  const gestorByMunicipio = new Map<string, typeof gestoresTce>();
+  for (const g of gestoresTce) {
+    const lista = gestorByMunicipio.get(g.municipio) ?? [];
+    lista.push(g);
+    gestorByMunicipio.set(g.municipio, lista);
+  }
+
+  console.log("Criando historico de gestao dos municipios...");
+  for (const m of municipios) {
+    const vinculos = gestorByMunicipio.get(m.nome) ?? [];
+    for (let idx = 0; idx < vinculos.length; idx++) {
+      const g = vinculos[idx];
+      const anoInicio = 2021 + idx;
+      const dataInicio = new Date(Date.UTC(anoInicio, 0, 1));
+      const encerrado = idx < vinculos.length - 1;
+      await prisma.historicoGestao.create({
+        data: {
+          municipioId: m.id,
+          gestorId: g.id,
+          cargo: g.cargo,
+          dataInicio,
+          dataFim: encerrado ? new Date(Date.UTC(anoInicio + 1, 11, 31)) : null,
+        },
+      });
+    }
+  }
+
+  console.log("Criando 15 processos TCE...");
+  type TceRow = {
+    numero: string;
+    tipo: TipoProcessoTce;
+    municipio: string;
+    relator: string | null;
+    camara: CamaraTce;
+    fase: string;
+    exercicio: string | null;
+    valor: number | null;
+    objeto: string;
+    conselheiroSubstituto?: string;
+    notaTecnica?: boolean;
+    parecerMpco?: boolean;
+    despachadoComRelator?: boolean;
+    memorialPronto?: boolean;
+  };
+
+  const TCE_ROWS: TceRow[] = [
+    {
+      numero: "TCE-PE 24.0001-5",
+      tipo: "PRESTACAO_CONTAS_GOVERNO",
+      municipio: "Barra do Jacare",
+      relator: "Ranilson Ramos",
+      camara: "PRIMEIRA",
+      fase: "defesa_previa",
+      exercicio: "2023",
+      valor: 182_400_000,
+      objeto:
+        "Prestacao de contas anual de governo do chefe do Executivo municipal referente ao exercicio de 2023.",
+      notaTecnica: true,
+    },
+    {
+      numero: "TCE-PE 24.0015-2",
+      tipo: "PRESTACAO_CONTAS_GESTAO",
+      municipio: "Serra Dourada",
+      relator: "Eduardo Porto",
+      camara: "SEGUNDA",
+      fase: "defesa_apresentada",
+      exercicio: "2023",
+      valor: 45_200_000,
+      objeto:
+        "Prestacao de contas de gestao da Secretaria Municipal de Saude, exercicio 2023.",
+      notaTecnica: true,
+      parecerMpco: true,
+    },
+    {
+      numero: "TCE-PE 24.0034-9",
+      tipo: "AUDITORIA_ESPECIAL",
+      municipio: "Pocao de Cima",
+      relator: "Marcos Loreto",
+      camara: "SEGUNDA",
+      fase: "acordao_1",
+      exercicio: "2022",
+      valor: 9_800_000,
+      objeto:
+        "Auditoria especial sobre execucao de contratos de coleta de residuos solidos.",
+      notaTecnica: true,
+      parecerMpco: true,
+      despachadoComRelator: true,
+      memorialPronto: true,
+    },
+    {
+      numero: "TCE-PE 24.0047-7",
+      tipo: "RGF",
+      municipio: "Campo do Horizonte",
+      relator: "Rodrigo Novaes",
+      camara: "PRIMEIRA",
+      fase: "defesa_previa",
+      exercicio: "2024",
+      valor: null,
+      objeto:
+        "Analise do Relatorio de Gestao Fiscal do 2o quadrimestre de 2024.",
+    },
+    {
+      numero: "TCE-PE 24.0059-1",
+      tipo: "AUTO_INFRACAO",
+      municipio: "Olho d'Agua das Minas",
+      relator: "Valdecir Pascoal",
+      camara: "SEGUNDA",
+      fase: "embargos_1",
+      exercicio: "2023",
+      valor: 2_400_000,
+      objeto:
+        "Auto de infracao lavrado em razao de contratacoes diretas sem licitacao.",
+      notaTecnica: true,
+      memorialPronto: true,
+    },
+    {
+      numero: "TCE-PE 24.0071-3",
+      tipo: "MEDIDA_CAUTELAR",
+      municipio: "Pocao de Cima",
+      relator: "Dirceu Rodolfo",
+      camara: "PRIMEIRA",
+      fase: "manifestacao_previa",
+      exercicio: "2025",
+      valor: 1_800_000,
+      objeto:
+        "Medida cautelar para suspensao de pregao eletronico com indicios de direcionamento.",
+      conselheiroSubstituto: "Alda Magalhaes",
+    },
+    {
+      numero: "TCE-PE 24.0083-8",
+      tipo: "MEDIDA_CAUTELAR",
+      municipio: "Serra Dourada",
+      relator: "Eduardo Porto",
+      camara: "SEGUNDA",
+      fase: "decisao_monocratica",
+      exercicio: "2025",
+      valor: 3_600_000,
+      objeto:
+        "Medida cautelar determinando retencao de pagamentos em contrato de obra.",
+      conselheiroSubstituto: "Marcos Flavio",
+    },
+    {
+      numero: "TCE-PE 24.0099-4",
+      tipo: "PRESTACAO_CONTAS_GOVERNO",
+      municipio: "Campo do Horizonte",
+      relator: "Carlos Neves",
+      camara: "PLENO",
+      fase: "recurso_ordinario",
+      exercicio: "2022",
+      valor: 220_000_000,
+      objeto:
+        "Recurso ordinario contra parecer previo pela rejeicao das contas anuais.",
+      notaTecnica: true,
+      parecerMpco: true,
+      despachadoComRelator: true,
+    },
+    {
+      numero: "TCE-PE 24.0108-6",
+      tipo: "PRESTACAO_CONTAS_GESTAO",
+      municipio: "Barra do Jacare",
+      relator: "Ranilson Ramos",
+      camara: "PRIMEIRA",
+      fase: "acordao_embargos_1",
+      exercicio: "2022",
+      valor: 58_900_000,
+      objeto:
+        "Prestacao de contas de gestao da Secretaria de Obras, com apontamentos de sobrepreco.",
+      notaTecnica: true,
+      parecerMpco: true,
+      memorialPronto: true,
+    },
+    {
+      numero: "TCE-PE 24.0121-0",
+      tipo: "AUDITORIA_ESPECIAL",
+      municipio: "Serra Dourada",
+      relator: "Marcos Loreto",
+      camara: "SEGUNDA",
+      fase: "acordao_ro",
+      exercicio: "2021",
+      valor: 12_500_000,
+      objeto:
+        "Auditoria especial em folha de pagamento com identificacao de acumulo indevido de cargos.",
+      notaTecnica: true,
+      parecerMpco: true,
+    },
+    {
+      numero: "TCE-PE 24.0135-7",
+      tipo: "RGF",
+      municipio: "Olho d'Agua das Minas",
+      relator: "Rodrigo Novaes",
+      camara: "PRIMEIRA",
+      fase: "defesa_apresentada",
+      exercicio: "2024",
+      valor: null,
+      objeto:
+        "Relatorio de Gestao Fiscal do 3o quadrimestre de 2024 com alerta de limite prudencial.",
+      notaTecnica: true,
+    },
+    {
+      numero: "TCE-PE 24.0152-4",
+      tipo: "AUTO_INFRACAO",
+      municipio: "Campo do Horizonte",
+      relator: "Valdecir Pascoal",
+      camara: "SEGUNDA",
+      fase: "defesa_previa",
+      exercicio: "2024",
+      valor: 1_250_000,
+      objeto:
+        "Auto de infracao pela ausencia de publicacao de relatorios bimestrais.",
+    },
+    {
+      numero: "TCE-PE 24.0164-9",
+      tipo: "PRESTACAO_CONTAS_GOVERNO",
+      municipio: "Olho d'Agua das Minas",
+      relator: "Carlos Neves",
+      camara: "PLENO",
+      fase: "transitado",
+      exercicio: "2021",
+      valor: 149_800_000,
+      objeto:
+        "Prestacao de contas de governo transitada em julgado com recomendacoes.",
+      notaTecnica: true,
+      parecerMpco: true,
+      despachadoComRelator: true,
+      memorialPronto: true,
+    },
+    {
+      numero: "TCE-PE 24.0178-2",
+      tipo: "MEDIDA_CAUTELAR",
+      municipio: "Campo do Horizonte",
+      relator: "Dirceu Rodolfo",
+      camara: "PRIMEIRA",
+      fase: "agravo_regimental",
+      exercicio: "2024",
+      valor: 4_200_000,
+      objeto:
+        "Agravo regimental contra decisao monocratica que suspendeu contrato emergencial.",
+      conselheiroSubstituto: "Luiz Arcoverde",
+    },
+    {
+      numero: "TCE-PE 24.0191-5",
+      tipo: "AUDITORIA_ESPECIAL",
+      municipio: "Barra do Jacare",
+      relator: "Eduardo Porto",
+      camara: "SEGUNDA",
+      fase: "acordao_embargos_ro",
+      exercicio: "2022",
+      valor: 7_800_000,
+      objeto:
+        "Auditoria especial em convenio firmado com OSCIP, com glosa de valores.",
+      notaTecnica: true,
+      parecerMpco: true,
+      despachadoComRelator: true,
+      memorialPronto: true,
+    },
+  ];
+
+  const hojeTce = new Date("2026-04-23T00:00:00Z");
+
+  for (let i = 0; i < TCE_ROWS.length; i++) {
+    const row = TCE_ROWS[i];
+    const municipio = municipioByNome.get(row.municipio);
+    if (!municipio) continue;
+
+    const dataAutuacao = addDias(hojeTce, -(60 + i * 9));
+    const dataIntimacao = addDias(dataAutuacao, 15);
+
+    const processoTce = await prisma.processoTce.create({
+      data: {
+        numero: row.numero,
+        tipo: row.tipo,
+        municipioId: municipio.id,
+        relator: row.relator,
+        camara: row.camara,
+        faseAtual: row.fase,
+        conselheiroSubstituto: row.conselheiroSubstituto,
+        notaTecnica: row.notaTecnica ?? false,
+        parecerMpco: row.parecerMpco ?? false,
+        despachadoComRelator: row.despachadoComRelator ?? false,
+        memorialPronto: row.memorialPronto ?? false,
+        exercicio: row.exercicio,
+        valorAutuado: row.valor,
+        objeto: row.objeto,
+        dataAutuacao,
+        dataIntimacao,
+        escritorioId: escritorio.id,
+      },
+    });
+
+    const vinculadosMunicipio = gestorByMunicipio.get(row.municipio) ?? [];
+    for (const gestorInt of vinculadosMunicipio.slice(0, 2)) {
+      await prisma.interessadoProcessoTce.create({
+        data: {
+          processoId: processoTce.id,
+          gestorId: gestorInt.id,
+          cargo: gestorInt.cargo,
+        },
+      });
+    }
+
+    const fases = fasesDoTipo(row.tipo);
+    const faseAtualIdx = fases.findIndex((f) => f.key === row.fase);
+    const historico = fases.slice(0, Math.max(1, faseAtualIdx + 1));
+    for (let h = 0; h < historico.length; h++) {
+      await prisma.andamentoTce.create({
+        data: {
+          processoId: processoTce.id,
+          data: addDias(dataAutuacao, h * 14 + 3),
+          fase: historico[h].key,
+          descricao: `Andamento registrado - ${historico[h].label}.`,
+          autorId: admin.id,
+        },
+      });
+    }
+
+    const prazoConfig = prazoAutomaticoDaFase(row.tipo, row.fase);
+    if (prazoConfig) {
+      const diasCorridos = Math.round(prazoConfig.diasUteis * 1.4);
+      const vencimento = addDias(dataIntimacao, diasCorridos);
+      const jaVenceu = vencimento < hojeTce;
+      await prisma.prazoTce.create({
+        data: {
+          processoId: processoTce.id,
+          tipo: prazoConfig.tipo,
+          dataIntimacao,
+          dataVencimento: vencimento,
+          diasUteis: prazoConfig.diasUteis,
+          prorrogavel: prazoConfig.prorrogavel,
+          cumprido: jaVenceu,
+          advogadoRespId: admin.id,
+          observacoes: `Prazo gerado automaticamente da fase ${row.fase}.`,
+        },
+      });
+    }
+  }
+
   const totais = await Promise.all([
     prisma.escritorio.count(),
     prisma.user.count(),
@@ -352,12 +788,19 @@ async function main() {
     prisma.processo.count(),
     prisma.andamento.count(),
     prisma.prazo.count(),
+    prisma.municipio.count(),
+    prisma.processoTce.count(),
+    prisma.andamentoTce.count(),
+    prisma.prazoTce.count(),
   ]);
 
   console.log("Seed concluido.");
   console.log(`Admin: ${admin.email} / admin123 (escritorio: ${escritorio.nome})`);
   console.log(
-    `Totais -> escritorios: ${totais[0]}, users: ${totais[1]}, gestores: ${totais[2]}, processos: ${totais[3]}, andamentos: ${totais[4]}, prazos: ${totais[5]}`,
+    `Judicial -> escritorios: ${totais[0]}, users: ${totais[1]}, gestores: ${totais[2]}, processos: ${totais[3]}, andamentos: ${totais[4]}, prazos: ${totais[5]}`,
+  );
+  console.log(
+    `TCE -> municipios: ${totais[6]}, processos: ${totais[7]}, andamentos: ${totais[8]}, prazos: ${totais[9]}`,
   );
 }
 
