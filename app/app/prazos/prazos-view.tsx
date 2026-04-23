@@ -43,7 +43,7 @@ export type PrazoItem = {
   cumprido: boolean;
   geradoAuto: boolean;
   origemFase: string | null;
-  advogadoRedator: { id: string; nome: string } | null;
+  advogadoResp: { id: string; nome: string } | null;
   processo: {
     id: string;
     numero: string;
@@ -67,7 +67,7 @@ export type AdvogadoOption = {
 type Filters = {
   tribunal: string;
   advogadoId: string;
-  advogadoRedatorId: string;
+  advogadoRespId: string;
   status: string;
   de: string;
   ate: string;
@@ -77,7 +77,7 @@ type Props = {
   prazos: PrazoItem[];
   processos: ProcessoOption[];
   advogados: AdvogadoOption[];
-  advogadosRedatores: AdvogadoOption[];
+  advogadosResponsaveis: AdvogadoOption[];
   initialFilters: Filters;
 };
 
@@ -110,7 +110,7 @@ export function PrazosView({
   prazos,
   processos,
   advogados,
-  advogadosRedatores,
+  advogadosResponsaveis,
   initialFilters,
 }: Props) {
   const router = useRouter();
@@ -149,8 +149,8 @@ export function PrazosView({
     const params = new URLSearchParams();
     if (next.tribunal) params.set("tribunal", next.tribunal);
     if (next.advogadoId) params.set("advogadoId", next.advogadoId);
-    if (next.advogadoRedatorId)
-      params.set("advogadoRedatorId", next.advogadoRedatorId);
+    if (next.advogadoRespId)
+      params.set("advogadoRespId", next.advogadoRespId);
     if (next.status) params.set("status", next.status);
     if (next.de) params.set("de", next.de);
     if (next.ate) params.set("ate", next.ate);
@@ -166,7 +166,7 @@ export function PrazosView({
     applyFilters({
       tribunal: "",
       advogadoId: "",
-      advogadoRedatorId: "",
+      advogadoRespId: "",
       status: "",
       de: "",
       ate: "",
@@ -240,7 +240,7 @@ export function PrazosView({
             <PrazoForm
               mode="create"
               processos={processos}
-              advogados={advogadosRedatores}
+              advogados={advogadosResponsaveis}
               onSuccess={() => {
                 setCreateOpen(false);
                 router.refresh();
@@ -269,13 +269,13 @@ export function PrazosView({
                 data: editing.data,
                 hora: editing.hora,
                 observacoes: editing.observacoes,
-                advogadoRedator: editing.advogadoRedator,
+                advogadoResp: editing.advogadoResp,
                 processo: {
                   id: editing.processo.id,
                   numero: editing.processo.numero,
                 },
               }}
-              advogados={advogadosRedatores}
+              advogados={advogadosResponsaveis}
               onSuccess={() => {
                 setEditing(null);
                 router.refresh();
@@ -362,11 +362,11 @@ export function PrazosView({
             </Select>
           </div>
           <div className="flex min-w-[180px] flex-col gap-1">
-            <Label className="text-xs">Advogado Redator</Label>
+            <Label className="text-xs">Advogado Responsavel</Label>
             <Select
-              value={filters.advogadoRedatorId || "__all__"}
+              value={filters.advogadoRespId || "__all__"}
               onValueChange={(v) =>
-                updateFilter("advogadoRedatorId", v === "__all__" ? "" : v)
+                updateFilter("advogadoRespId", v === "__all__" ? "" : v)
               }
             >
               <SelectTrigger>
@@ -374,7 +374,7 @@ export function PrazosView({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">Todos</SelectItem>
-                {advogadosRedatores.map((a) => (
+                {advogadosResponsaveis.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
                     {a.nome}
                   </SelectItem>
@@ -546,6 +546,15 @@ function PrazoCard({
           >
             {prazo.tipo}
           </h3>
+          {prazo.advogadoResp ? (
+            <span className="inline-flex items-center rounded-full bg-brand-navy/10 px-2 py-0.5 text-[11px] font-semibold text-brand-navy">
+              {prazo.advogadoResp.nome}
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+              sem responsavel
+            </span>
+          )}
           {prazo.hora && (
             <span className="text-xs text-muted-foreground">
               as {prazo.hora}
@@ -576,17 +585,6 @@ function PrazoCard({
         </p>
         <p className="text-xs text-muted-foreground capitalize">
           {formatDateFull(data)}
-        </p>
-        <p
-          className={cn(
-            "text-xs",
-            prazo.advogadoRedator
-              ? "text-slate-700"
-              : "italic text-muted-foreground",
-          )}
-        >
-          <span className="font-medium">Redator:</span>{" "}
-          {prazo.advogadoRedator?.nome ?? "nao atribuido"}
         </p>
         {prazo.observacoes && (
           <p

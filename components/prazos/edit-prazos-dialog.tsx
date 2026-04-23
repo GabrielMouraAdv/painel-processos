@@ -102,7 +102,7 @@ export function EditPrazosDialog({
                         <span className="text-xs text-muted-foreground">
                           {formatDate(p.data)}
                           {p.hora ? ` as ${p.hora}` : ""}
-                          {p.advogadoRedator ? ` — ${p.advogadoRedator.nome}` : ""}
+                          {p.advogadoResp ? ` — ${p.advogadoResp.nome}` : ""}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">

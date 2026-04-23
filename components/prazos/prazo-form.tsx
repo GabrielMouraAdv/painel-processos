@@ -30,7 +30,7 @@ export type PrazoInitial = {
   data: string;
   hora: string | null;
   observacoes: string | null;
-  advogadoRedator: { id: string; nome: string } | null;
+  advogadoResp: { id: string; nome: string } | null;
   processo?: { id: string; numero: string };
 };
 
@@ -40,13 +40,11 @@ const schema = z.object({
   processoId: z.string().optional(),
   data: z.string().min(1, "Informe a data"),
   hora: z.string().optional(),
-  advogadoRedatorId: z.string().optional(),
+  advogadoRespId: z.string().min(1, "Selecione o advogado responsavel"),
   observacoes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
-
-const UNASSIGNED = "__none__";
 
 type Props = {
   mode: "create" | "edit";
@@ -90,7 +88,7 @@ export function PrazoForm({
       processoId: prazo?.processo?.id ?? processoId ?? "",
       data: prazo ? prazo.data.slice(0, 10) : "",
       hora: prazo?.hora ?? "",
-      advogadoRedatorId: prazo?.advogadoRedator?.id ?? "",
+      advogadoRespId: prazo?.advogadoResp?.id ?? "",
       observacoes: prazo?.observacoes ?? "",
     },
   });
@@ -111,11 +109,6 @@ export function PrazoForm({
       return;
     }
 
-    const redatorId =
-      !values.advogadoRedatorId || values.advogadoRedatorId === UNASSIGNED
-        ? null
-        : values.advogadoRedatorId;
-
     const isEdit = mode === "edit" && prazo?.id;
     const url = isEdit ? `/api/prazos/${prazo!.id}` : "/api/prazos";
     const method = isEdit ? "PATCH" : "POST";
@@ -125,7 +118,7 @@ export function PrazoForm({
       data: values.data,
       hora: values.hora || null,
       observacoes: values.observacoes || null,
-      advogadoRedatorId: redatorId,
+      advogadoRespId: values.advogadoRespId,
     };
     if (!isEdit) {
       basePayload.processoId = processoId ?? values.processoId ?? prazo?.processo?.id;
@@ -229,20 +222,18 @@ export function PrazoForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Advogado responsavel</Label>
+        <Label>
+          Advogado responsavel <span className="text-red-600">*</span>
+        </Label>
         <Controller
           control={control}
-          name="advogadoRedatorId"
+          name="advogadoRespId"
           render={({ field }) => (
-            <Select
-              value={field.value || UNASSIGNED}
-              onValueChange={(v) => field.onChange(v === UNASSIGNED ? "" : v)}
-            >
+            <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o advogado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={UNASSIGNED}>Nao atribuido</SelectItem>
                 {advogados.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
                     {a.nome}
@@ -252,6 +243,9 @@ export function PrazoForm({
             </Select>
           )}
         />
+        {errors.advogadoRespId && (
+          <p className="text-xs text-red-600">{errors.advogadoRespId.message}</p>
+        )}
       </div>
 
       <div className="space-y-1.5">

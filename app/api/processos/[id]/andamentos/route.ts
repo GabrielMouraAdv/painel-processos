@@ -62,6 +62,7 @@ export async function POST(
           observacoes: null,
           geradoAuto: true,
           origemFase: a.origemFase ?? data.fase,
+          advogadoRespId: session.user.id,
         })),
       });
     }

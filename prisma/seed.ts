@@ -266,6 +266,38 @@ async function main() {
     },
   });
 
+  console.log("Garantindo advogados...");
+  const advogadosBase: { nome: string; email: string }[] = [
+    { nome: "Gabriel Moura", email: "gabriel.moura@escritorio.com" },
+    { nome: "Henrique Arruda", email: "henrique.arruda@escritorio.com" },
+    { nome: "Heloisa Cavalcanti", email: "heloisa.cavalcanti@escritorio.com" },
+    { nome: "Mateus Lisboa", email: "mateus.lisboa@escritorio.com" },
+    { nome: "Filipe Campos", email: "filipe.campos@escritorio.com" },
+    { nome: "Carlos Porto", email: "carlos.porto@escritorio.com" },
+    { nome: "Julio Rodrigues", email: "julio.rodrigues@escritorio.com" },
+  ];
+  const senhaAdv = await bcrypt.hash("adv123", 10);
+  const advogados = await Promise.all(
+    advogadosBase.map((a) =>
+      prisma.user.upsert({
+        where: { email: a.email },
+        update: {
+          nome: a.nome,
+          senha: senhaAdv,
+          role: Role.ADVOGADO,
+          escritorioId: escritorio.id,
+        },
+        create: {
+          email: a.email,
+          nome: a.nome,
+          senha: senhaAdv,
+          role: Role.ADVOGADO,
+          escritorioId: escritorio.id,
+        },
+      }),
+    ),
+  );
+
   console.log("Criando 30 gestores...");
   const gestores = await Promise.all(
     DADOS.map((row, i) =>
@@ -345,9 +377,11 @@ async function main() {
     { tipo: "Manifestacao sobre laudo", dias: 28, hora: "17:00", origem: "prazo_provas", observacoes: "Manifestacao sobre laudo pericial." },
   ];
 
-  for (const p of prazosConfig) {
+  for (let idx = 0; idx < prazosConfig.length; idx++) {
+    const p = prazosConfig[idx];
     const matching = processosCriados.filter((pc) => pc.fase === p.origem);
     const processoId = (matching[0] ?? processosCriados[0]).id;
+    const adv = advogados[idx % advogados.length];
     await prisma.prazo.create({
       data: {
         processoId,
@@ -358,6 +392,7 @@ async function main() {
         cumprido: false,
         geradoAuto: true,
         origemFase: p.origem,
+        advogadoRespId: adv.id,
       },
     });
   }
@@ -765,6 +800,7 @@ async function main() {
       const diasCorridos = Math.round(prazoConfig.diasUteis * 1.4);
       const vencimento = addDias(dataIntimacao, diasCorridos);
       const jaVenceu = vencimento < hojeTce;
+      const advTce = advogados[i % advogados.length];
       await prisma.prazoTce.create({
         data: {
           processoId: processoTce.id,
@@ -774,7 +810,7 @@ async function main() {
           diasUteis: prazoConfig.diasUteis,
           prorrogavel: prazoConfig.prorrogavel,
           cumprido: jaVenceu,
-          advogadoRespId: admin.id,
+          advogadoRespId: advTce.id,
           observacoes: `Prazo gerado automaticamente da fase ${row.fase}.`,
         },
       });

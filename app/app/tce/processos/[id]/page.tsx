@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { Role } from "@prisma/client";
 import {
   ArrowLeft,
   CalendarDays,
@@ -77,17 +78,27 @@ export default async function ProcessoTceDetailPage({
         orderBy: { data: "desc" },
         include: { autor: { select: { nome: true } } },
       },
-      prazos: { orderBy: { dataVencimento: "asc" } },
+      prazos: {
+        orderBy: { dataVencimento: "asc" },
+        include: { advogadoResp: { select: { id: true, nome: true } } },
+      },
     },
   });
 
   if (!processo) notFound();
 
-  const gestores = await prisma.gestor.findMany({
-    where: { escritorioId },
-    orderBy: { nome: "asc" },
-    select: { id: true, nome: true },
-  });
+  const [gestores, advogados] = await Promise.all([
+    prisma.gestor.findMany({
+      where: { escritorioId },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true },
+    }),
+    prisma.user.findMany({
+      where: { escritorioId, role: Role.ADVOGADO },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true },
+    }),
+  ]);
 
   const camara = TCE_CAMARAS[processo.camara];
 
@@ -106,6 +117,9 @@ export default async function ProcessoTceDetailPage({
     prorrogavel: p.prorrogavel,
     cumprido: p.cumprido,
     observacoes: p.observacoes,
+    advogadoResp: p.advogadoResp
+      ? { id: p.advogadoResp.id, nome: p.advogadoResp.nome }
+      : null,
   }));
 
   return (
@@ -247,7 +261,11 @@ export default async function ProcessoTceDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <PrazosTceCardActions processoId={processo.id} prazos={prazos} />
+            <PrazosTceCardActions
+              processoId={processo.id}
+              prazos={prazos}
+              advogados={advogados}
+            />
           </CardContent>
         </Card>
       </section>

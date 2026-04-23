@@ -26,7 +26,7 @@ export default async function PrazosPage({
 
   const tribunal = parseTribunal(asString(searchParams.tribunal));
   const advogadoId = asString(searchParams.advogadoId);
-  const advogadoRedatorId = asString(searchParams.advogadoRedatorId);
+  const advogadoRespId = asString(searchParams.advogadoRespId);
   const status = asString(searchParams.status);
   const de = asString(searchParams.de);
   const ate = asString(searchParams.ate);
@@ -40,7 +40,7 @@ export default async function PrazosPage({
 
   const where: Prisma.PrazoWhereInput = {
     processo: processoFilter,
-    ...(advogadoRedatorId && { advogadoRedatorId }),
+    ...(advogadoRespId && { advogadoRespId }),
     ...(status === "cumprido" && { cumprido: true }),
     ...(status === "pendente" && { cumprido: false }),
     ...((de || ate) && {
@@ -51,12 +51,12 @@ export default async function PrazosPage({
     }),
   };
 
-  const [prazos, processos, advogados, advogadosRedatores] = await Promise.all([
+  const [prazos, processos, advogados, advogadosResponsaveis] = await Promise.all([
     prisma.prazo.findMany({
       where,
       orderBy: { data: "asc" },
       include: {
-        advogadoRedator: { select: { id: true, nome: true } },
+        advogadoResp: { select: { id: true, nome: true } },
         processo: {
           select: {
             id: true,
@@ -98,8 +98,8 @@ export default async function PrazosPage({
     cumprido: p.cumprido,
     geradoAuto: p.geradoAuto,
     origemFase: p.origemFase,
-    advogadoRedator: p.advogadoRedator
-      ? { id: p.advogadoRedator.id, nome: p.advogadoRedator.nome }
+    advogadoResp: p.advogadoResp
+      ? { id: p.advogadoResp.id, nome: p.advogadoResp.nome }
       : null,
     processo: {
       id: p.processo.id,
@@ -120,11 +120,11 @@ export default async function PrazosPage({
           gestor: p.gestor.nome,
         }))}
         advogados={advogados}
-        advogadosRedatores={advogadosRedatores}
+        advogadosResponsaveis={advogadosResponsaveis}
         initialFilters={{
           tribunal: tribunal ?? "",
           advogadoId,
-          advogadoRedatorId,
+          advogadoRespId,
           status,
           de,
           ate,

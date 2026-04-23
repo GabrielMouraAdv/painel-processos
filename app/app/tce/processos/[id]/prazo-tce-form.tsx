@@ -14,6 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,13 +35,21 @@ function addDiasUteis(from: string, diasUteis: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+type AdvogadoOption = { id: string; nome: string };
+
 type Props = {
   processoId: string;
+  advogados: AdvogadoOption[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
 };
 
-export function PrazoTceFormDialog({ processoId, open, onOpenChange }: Props) {
+export function PrazoTceFormDialog({
+  processoId,
+  advogados,
+  open,
+  onOpenChange,
+}: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [tipo, setTipo] = React.useState("");
@@ -44,6 +59,7 @@ export function PrazoTceFormDialog({ processoId, open, onOpenChange }: Props) {
   const [diasUteis, setDiasUteis] = React.useState("30");
   const [dataVencimento, setDataVencimento] = React.useState("");
   const [prorrogavel, setProrrogavel] = React.useState(true);
+  const [advogadoRespId, setAdvogadoRespId] = React.useState("");
   const [observacoes, setObservacoes] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -62,6 +78,7 @@ export function PrazoTceFormDialog({ processoId, open, onOpenChange }: Props) {
       setObservacoes("");
       setDiasUteis("30");
       setProrrogavel(true);
+      setAdvogadoRespId("");
       setDataIntimacao(new Date().toISOString().slice(0, 10));
     }
   }, [open]);
@@ -72,6 +89,13 @@ export function PrazoTceFormDialog({ processoId, open, onOpenChange }: Props) {
       toast({
         variant: "destructive",
         title: "Preencha os campos",
+      });
+      return;
+    }
+    if (!advogadoRespId) {
+      toast({
+        variant: "destructive",
+        title: "Selecione o advogado responsavel",
       });
       return;
     }
@@ -87,6 +111,7 @@ export function PrazoTceFormDialog({ processoId, open, onOpenChange }: Props) {
           dataVencimento,
           diasUteis: Number(diasUteis),
           prorrogavel,
+          advogadoRespId,
           observacoes: observacoes.trim() || null,
         }),
       });
@@ -151,6 +176,23 @@ export function PrazoTceFormDialog({ processoId, open, onOpenChange }: Props) {
                 onChange={(e) => setDataVencimento(e.target.value)}
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>
+              Advogado responsavel <span className="text-red-600">*</span>
+            </Label>
+            <Select value={advogadoRespId} onValueChange={setAdvogadoRespId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o advogado" />
+              </SelectTrigger>
+              <SelectContent>
+                {advogados.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input

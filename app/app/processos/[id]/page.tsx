@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getServerSession } from "next-auth";
+import { Role } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import { authOptions } from "@/lib/auth";
@@ -28,14 +29,14 @@ export default async function ProcessoDetailPage({
       },
       prazos: {
         orderBy: { data: "asc" },
-        include: { advogadoRedator: { select: { id: true, nome: true } } },
+        include: { advogadoResp: { select: { id: true, nome: true } } },
       },
     },
   });
 
   if (!processo) notFound();
 
-  const [gestores, advogados] = await Promise.all([
+  const [gestores, advogados, advogadosResponsaveis] = await Promise.all([
     prisma.gestor.findMany({
       where: { escritorioId },
       orderBy: { nome: "asc" },
@@ -45,6 +46,11 @@ export default async function ProcessoDetailPage({
       where: { escritorioId },
       orderBy: { nome: "asc" },
       select: { id: true, nome: true, email: true },
+    }),
+    prisma.user.findMany({
+      where: { escritorioId, role: Role.ADVOGADO },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true },
     }),
   ]);
 
@@ -90,8 +96,8 @@ export default async function ProcessoDetailPage({
       cumprido: p.cumprido,
       geradoAuto: p.geradoAuto,
       origemFase: p.origemFase,
-      advogadoRedator: p.advogadoRedator
-        ? { id: p.advogadoRedator.id, nome: p.advogadoRedator.nome }
+      advogadoResp: p.advogadoResp
+        ? { id: p.advogadoResp.id, nome: p.advogadoResp.nome }
         : null,
     })),
   };
@@ -105,7 +111,12 @@ export default async function ProcessoDetailPage({
         </Link>
       </Button>
 
-      <ProcessoView processo={detail} gestores={gestores} advogados={advogados} />
+      <ProcessoView
+        processo={detail}
+        gestores={gestores}
+        advogados={advogados}
+        advogadosResponsaveis={advogadosResponsaveis}
+      />
     </div>
   );
 }

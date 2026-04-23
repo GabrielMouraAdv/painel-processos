@@ -30,17 +30,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Processo nao encontrado" }, { status: 400 });
   }
 
-  if (data.advogadoRedatorId) {
-    const redator = await prisma.user.findFirst({
-      where: { id: data.advogadoRedatorId, escritorioId },
-      select: { id: true },
-    });
-    if (!redator) {
-      return NextResponse.json(
-        { error: "Advogado redator nao encontrado" },
-        { status: 400 },
-      );
-    }
+  const adv = await prisma.user.findFirst({
+    where: { id: data.advogadoRespId, escritorioId },
+    select: { id: true },
+  });
+  if (!adv) {
+    return NextResponse.json(
+      { error: "Advogado responsavel nao encontrado" },
+      { status: 400 },
+    );
   }
 
   const prazo = await prisma.prazo.create({
@@ -50,7 +48,7 @@ export async function POST(req: Request) {
       data: data.data,
       hora: data.hora || null,
       observacoes: data.observacoes || null,
-      advogadoRedatorId: data.advogadoRedatorId || null,
+      advogadoRespId: data.advogadoRespId,
       geradoAuto: false,
     },
     select: { id: true },

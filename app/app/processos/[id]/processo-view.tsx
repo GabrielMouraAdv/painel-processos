@@ -69,7 +69,7 @@ type Prazo = {
   cumprido: boolean;
   geradoAuto: boolean;
   origemFase: string | null;
-  advogadoRedator: { id: string; nome: string } | null;
+  advogadoResp: { id: string; nome: string } | null;
 };
 
 export type ProcessoDetail = {
@@ -99,6 +99,7 @@ type Props = {
   processo: ProcessoDetail;
   gestores: GestorOption[];
   advogados: AdvogadoOption[];
+  advogadosResponsaveis: { id: string; nome: string }[];
 };
 
 function formatDate(d: string | null | undefined): string {
@@ -115,7 +116,12 @@ function formatCurrency(v: number | null): string {
   }).format(v);
 }
 
-export function ProcessoView({ processo, gestores, advogados }: Props) {
+export function ProcessoView({
+  processo,
+  gestores,
+  advogados,
+  advogadosResponsaveis,
+}: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [editing, setEditing] = React.useState(false);
@@ -138,7 +144,7 @@ export function ProcessoView({ processo, gestores, advogados }: Props) {
         data: p.data,
         hora: p.hora,
         observacoes: p.observacoes,
-        advogadoRedator: p.advogadoRedator,
+        advogadoResp: p.advogadoResp,
       })),
     [prazosOrdenados],
   );
@@ -397,7 +403,7 @@ export function ProcessoView({ processo, gestores, advogados }: Props) {
           <PrazoForm
             mode="create"
             processoId={processo.id}
-            advogados={advogados.map((a) => ({ id: a.id, nome: a.nome }))}
+            advogados={advogadosResponsaveis}
             onSuccess={() => {
               setAddPrazoOpen(false);
               router.refresh();
@@ -411,7 +417,7 @@ export function ProcessoView({ processo, gestores, advogados }: Props) {
         open={editPrazosOpen}
         onOpenChange={setEditPrazosOpen}
         prazos={prazosParaEdicao}
-        advogados={advogados.map((a) => ({ id: a.id, nome: a.nome }))}
+        advogados={advogadosResponsaveis}
       />
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -482,6 +488,11 @@ function PrazoLineItem({ prazo }: { prazo: Prazo }) {
           >
             {prazo.tipo}
           </span>
+          {prazo.advogadoResp && (
+            <span className="inline-flex items-center rounded-full bg-brand-navy/10 px-2 py-0.5 text-[11px] font-semibold text-brand-navy">
+              {prazo.advogadoResp.nome}
+            </span>
+          )}
           {prazo.geradoAuto && (
             <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-600">
               auto
@@ -491,11 +502,6 @@ function PrazoLineItem({ prazo }: { prazo: Prazo }) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
           <span>{formatDate(prazo.data)}</span>
           {prazo.hora && <span>as {prazo.hora}</span>}
-          <span>
-            {prazo.advogadoRedator
-              ? `Responsavel: ${prazo.advogadoRedator.nome}`
-              : "Sem responsavel"}
-          </span>
         </div>
         {prazo.observacoes && (
           <p className="mt-1 text-xs text-slate-600">{prazo.observacoes}</p>

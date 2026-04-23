@@ -33,17 +33,15 @@ export async function POST(req: Request) {
     );
   }
 
-  if (data.advogadoRespId) {
-    const adv = await prisma.user.findFirst({
-      where: { id: data.advogadoRespId, escritorioId },
-      select: { id: true },
-    });
-    if (!adv) {
-      return NextResponse.json(
-        { error: "Advogado nao encontrado" },
-        { status: 400 },
-      );
-    }
+  const adv = await prisma.user.findFirst({
+    where: { id: data.advogadoRespId, escritorioId },
+    select: { id: true },
+  });
+  if (!adv) {
+    return NextResponse.json(
+      { error: "Advogado responsavel nao encontrado" },
+      { status: 400 },
+    );
   }
 
   const prazo = await prisma.prazoTce.create({
@@ -57,7 +55,7 @@ export async function POST(req: Request) {
       prorrogacaoPedida: data.prorrogacaoPedida ?? false,
       dataProrrogacao: data.dataProrrogacao ?? null,
       cumprido: data.cumprido ?? false,
-      advogadoRespId: data.advogadoRespId || null,
+      advogadoRespId: data.advogadoRespId,
       observacoes: data.observacoes || null,
     },
     select: { id: true },

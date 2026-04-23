@@ -19,7 +19,10 @@ export type PrazoTceItem = {
   prorrogavel: boolean;
   cumprido: boolean;
   observacoes: string | null;
+  advogadoResp: { id: string; nome: string } | null;
 };
+
+export type AdvogadoOption = { id: string; nome: string };
 
 function formatDate(d: string): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(d));
@@ -46,9 +49,11 @@ function diasUteisRestantes(ate: string): number {
 export function PrazosTceCardActions({
   processoId,
   prazos,
+  advogados,
 }: {
   processoId: string;
   prazos: PrazoTceItem[];
+  advogados: AdvogadoOption[];
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -145,6 +150,15 @@ export function PrazosTceCardActions({
                 <div className="flex flex-1 flex-col gap-0.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-brand-navy">{p.tipo}</span>
+                    {p.advogadoResp ? (
+                      <span className="inline-flex items-center rounded-full bg-brand-navy/10 px-2 py-0.5 text-[11px] font-semibold text-brand-navy">
+                        {p.advogadoResp.nome}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                        sem responsavel
+                      </span>
+                    )}
                     <span
                       className={cn(
                         "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
@@ -201,6 +215,7 @@ export function PrazosTceCardActions({
 
       <PrazoTceFormDialog
         processoId={processoId}
+        advogados={advogados}
         open={open}
         onOpenChange={setOpen}
       />

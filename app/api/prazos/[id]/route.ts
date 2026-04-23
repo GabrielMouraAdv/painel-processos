@@ -33,17 +33,17 @@ export async function PATCH(
   }
   const data = parsed.data;
 
-  if (data.advogadoRedatorId) {
-    const redator = await prisma.user.findFirst({
+  if (data.advogadoRespId) {
+    const adv = await prisma.user.findFirst({
       where: {
-        id: data.advogadoRedatorId,
+        id: data.advogadoRespId,
         escritorioId: session.user.escritorioId,
       },
       select: { id: true },
     });
-    if (!redator) {
+    if (!adv) {
       return NextResponse.json(
-        { error: "Advogado redator nao encontrado" },
+        { error: "Advogado responsavel nao encontrado" },
         { status: 400 },
       );
     }
@@ -59,8 +59,8 @@ export async function PATCH(
       ...(data.observacoes !== undefined && {
         observacoes: data.observacoes || null,
       }),
-      ...(data.advogadoRedatorId !== undefined && {
-        advogadoRedatorId: data.advogadoRedatorId || null,
+      ...(data.advogadoRespId !== undefined && {
+        advogadoRespId: data.advogadoRespId,
       }),
     },
   });

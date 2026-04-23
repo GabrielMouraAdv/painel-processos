@@ -10,9 +10,10 @@ import {
   Scale,
   ShieldAlert,
   TriangleAlert,
+  UserCheck,
 } from "lucide-react";
 import { getServerSession } from "next-auth";
-import { Risco } from "@prisma/client";
+import { Risco, Role } from "@prisma/client";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,9 @@ export default async function AppHome() {
   const session = await getServerSession(authOptions);
   const nome = session?.user?.name ?? "usuario";
   const escritorioId = session!.user.escritorioId;
+  const userId = session!.user.id;
+  const role = session!.user.role;
+  const isAdvogado = role === Role.ADVOGADO;
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -179,6 +183,78 @@ export default async function AppHome() {
     }),
   ]);
 
+  type MeuPrazo = {
+    id: string;
+    tipo: string;
+    data: Date;
+    modulo: "judicial" | "tce";
+    href: string;
+    contexto: string;
+  };
+
+  let meusPrazos: MeuPrazo[] = [];
+  if (isAdvogado) {
+    const [judPrazos, tcePrazos] = await Promise.all([
+      prisma.prazo.findMany({
+        where: {
+          cumprido: false,
+          advogadoRespId: userId,
+          processo: { escritorioId },
+        },
+        orderBy: { data: "asc" },
+        take: 10,
+        include: {
+          processo: {
+            select: {
+              id: true,
+              numero: true,
+              gestor: { select: { nome: true } },
+            },
+          },
+        },
+      }),
+      prisma.prazoTce.findMany({
+        where: {
+          cumprido: false,
+          advogadoRespId: userId,
+          processo: { escritorioId },
+        },
+        orderBy: { dataVencimento: "asc" },
+        take: 10,
+        include: {
+          processo: {
+            select: {
+              id: true,
+              numero: true,
+              municipio: { select: { nome: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    meusPrazos = [
+      ...judPrazos.map<MeuPrazo>((p) => ({
+        id: `jud-${p.id}`,
+        tipo: p.tipo,
+        data: p.data,
+        modulo: "judicial" as const,
+        href: `/app/processos/${p.processo.id}`,
+        contexto: `${p.processo.gestor.nome} — ${p.processo.numero}`,
+      })),
+      ...tcePrazos.map<MeuPrazo>((p) => ({
+        id: `tce-${p.id}`,
+        tipo: p.tipo,
+        data: p.dataVencimento,
+        modulo: "tce" as const,
+        href: `/app/tce/processos/${p.processo.id}`,
+        contexto: `${p.processo.municipio?.nome ?? "sem municipio"} — ${p.processo.numero}`,
+      })),
+    ]
+      .sort((a, b) => a.data.getTime() - b.data.getTime())
+      .slice(0, 8);
+  }
+
   const paradosTop = paradosLista
     .map((p) => {
       const ultima = p.andamentos[0]?.data ?? p.dataDistribuicao;
@@ -291,6 +367,90 @@ export default async function AppHome() {
           <KpiCard key={k.label} {...k} />
         ))}
       </section>
+
+      {isAdvogado && (
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <UserCheck className="h-4 w-4 text-brand-navy" />
+                Meus Prazos
+              </CardTitle>
+              <CardDescription>
+                Prazos judiciais e TCE atribuidos a voce, ordenados por urgencia.
+              </CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm" className="-mr-2">
+              <Link href={`/app/prazos?advogadoRespId=${userId}&status=pendente`}>
+                Ver prazos judiciais
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {meusPrazos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Voce nao tem prazos atribuidos no momento.
+              </p>
+            ) : (
+              <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                {meusPrazos.map((p) => {
+                  const dias = diasAte(p.data);
+                  const urg = urgenciaDe(p.data, false);
+                  return (
+                    <li key={p.id}>
+                      <Link
+                        href={p.href}
+                        className={cn(
+                          "flex items-center justify-between gap-3 rounded-md border border-l-4 bg-white p-3 text-sm transition-colors hover:bg-slate-50",
+                          urg === "urgente"
+                            ? "border-l-red-600"
+                            : urg === "proximo"
+                              ? "border-l-yellow-500"
+                              : "border-l-slate-300",
+                        )}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate font-medium text-brand-navy">
+                              {p.tipo}
+                            </p>
+                            <span
+                              className={cn(
+                                "rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                                p.modulo === "tce"
+                                  ? "bg-indigo-100 text-indigo-700"
+                                  : "bg-slate-100 text-slate-600",
+                              )}
+                            >
+                              {p.modulo === "tce" ? "TCE" : "Judicial"}
+                            </span>
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {p.contexto} — {formatDate(p.data)}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            "shrink-0 text-xs font-semibold",
+                            urg === "urgente"
+                              ? "text-red-700"
+                              : urg === "proximo"
+                                ? "text-yellow-700"
+                                : "text-muted-foreground",
+                          )}
+                        >
+                          {countdownLabel(dias)}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>

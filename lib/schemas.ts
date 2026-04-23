@@ -77,7 +77,7 @@ export const prazoCreateSchema = z.object({
     .transform((v) => (v instanceof Date ? v : new Date(v))),
   hora: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
-  advogadoRedatorId: z.string().optional().nullable(),
+  advogadoRespId: z.string().min(1, "Selecione o advogado responsavel"),
 });
 
 export type PrazoCreateInput = z.infer<typeof prazoCreateSchema>;
@@ -91,7 +91,7 @@ export const prazoUpdateSchema = z.object({
     .optional(),
   hora: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
-  advogadoRedatorId: z.string().optional().nullable(),
+  advogadoRespId: z.string().min(1, "Selecione o advogado responsavel").optional(),
 });
 
 const dateInput = z
@@ -193,7 +193,7 @@ export const prazoTceCreateSchema = z.object({
   prorrogacaoPedida: z.boolean().optional().default(false),
   dataProrrogacao: optionalDate,
   cumprido: z.boolean().optional().default(false),
-  advogadoRespId: z.string().optional().nullable(),
+  advogadoRespId: z.string().min(1, "Selecione o advogado responsavel"),
   observacoes: z.string().optional().nullable(),
 });
 
@@ -208,7 +208,7 @@ export const prazoTceUpdateSchema = z.object({
   prorrogacaoPedida: z.boolean().optional(),
   dataProrrogacao: optionalDate,
   cumprido: z.boolean().optional(),
-  advogadoRespId: z.string().optional().nullable(),
+  advogadoRespId: z.string().min(1, "Selecione o advogado responsavel").optional(),
   observacoes: z.string().optional().nullable(),
 });
 

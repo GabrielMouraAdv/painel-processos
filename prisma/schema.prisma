@@ -66,7 +66,7 @@ model User {
 
   escritorio            Escritorio  @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
   processosComoAdvogado Processo[]  @relation("ProcessoAdvogado")
-  prazosComoRedator     Prazo[]     @relation("PrazoRedator")
+  prazosComoResp        Prazo[]     @relation("PrazoAdvogadoResp")
   andamentos            Andamento[]
   documentos            Documento[]
   andamentosTce         AndamentoTce[] @relation("AutorAndamentoTce")
@@ -145,25 +145,25 @@ model Andamento {
 }
 
 model Prazo {
-  id                String   @id @default(cuid())
-  processoId        String
-  tipo              String
-  data              DateTime
-  hora              String?
-  observacoes       String?
-  cumprido          Boolean  @default(false)
-  geradoAuto        Boolean  @default(false)
-  origemFase        String?
-  advogadoRedatorId String?
-  createdAt         DateTime @default(now())
+  id             String   @id @default(cuid())
+  processoId     String
+  tipo           String
+  data           DateTime
+  hora           String?
+  observacoes    String?
+  cumprido       Boolean  @default(false)
+  geradoAuto     Boolean  @default(false)
+  origemFase     String?
+  advogadoRespId String?
+  createdAt      DateTime @default(now())
 
-  processo        Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
-  advogadoRedator User?    @relation("PrazoRedator", fields: [advogadoRedatorId], references: [id])
+  processo     Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  advogadoResp User?    @relation("PrazoAdvogadoResp", fields: [advogadoRespId], references: [id])
 
   @@index([processoId])
   @@index([data])
   @@index([cumprido])
-  @@index([advogadoRedatorId])
+  @@index([advogadoRespId])
 }
 
 model Documento {
