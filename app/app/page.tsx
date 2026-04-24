@@ -2,14 +2,18 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
+  Bell,
   CalendarClock,
   CalendarDays,
   CalendarRange,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
+  FileText,
   Files,
   Gavel,
+  Newspaper,
   Scale,
   ShieldAlert,
   TriangleAlert,
@@ -326,6 +330,76 @@ export default async function AppHome({
     }),
   ]);
 
+  const [
+    movsAlertaRecentes,
+    pubsAlertaRecentes,
+    ultimaVerificacaoConfig,
+    totalMovsNaoLidas,
+    totalPubsNaoLidas,
+  ] = await Promise.all([
+    prisma.movimentacaoAutomatica.findMany({
+      where: { lida: false, processo: { escritorioId } },
+      orderBy: { dataMovimento: "desc" },
+      take: 3,
+      include: {
+        processo: { select: { id: true, numero: true } },
+      },
+    }),
+    prisma.publicacaoDJEN.findMany({
+      where: { lida: false, processo: { escritorioId } },
+      orderBy: { dataPublicacao: "desc" },
+      take: 3,
+      include: {
+        processo: { select: { id: true, numero: true } },
+      },
+    }),
+    prisma.monitoramentoConfig.findFirst({
+      where: { processo: { escritorioId } },
+      orderBy: { ultimaVerificacao: "desc" },
+      select: { ultimaVerificacao: true },
+    }),
+    prisma.movimentacaoAutomatica.count({
+      where: { lida: false, processo: { escritorioId } },
+    }),
+    prisma.publicacaoDJEN.count({
+      where: { lida: false, processo: { escritorioId } },
+    }),
+  ]);
+
+  const totalAlertas = totalMovsNaoLidas + totalPubsNaoLidas;
+  const alertasRecentes = [
+    ...movsAlertaRecentes.map((m) => ({
+      id: m.id,
+      tipo: "movimentacao" as const,
+      data: m.dataMovimento,
+      titulo: m.nomeMovimento,
+      processoId: m.processo.id,
+      processoNumero: m.processo.numero,
+    })),
+    ...pubsAlertaRecentes.map((p) => ({
+      id: p.id,
+      tipo: "publicacao" as const,
+      data: p.dataPublicacao,
+      titulo: p.conteudo
+        ? p.conteudo.length > 80
+          ? p.conteudo.slice(0, 80) + "..."
+          : p.conteudo
+        : "Publicacao DJEN",
+      processoId: p.processo.id,
+      processoNumero: p.processo.numero,
+    })),
+  ]
+    .sort((a, b) => b.data.getTime() - a.data.getTime())
+    .slice(0, 3);
+
+  const ultimaVerificacao = ultimaVerificacaoConfig?.ultimaVerificacao ?? null;
+  const horasDesdeUltima = ultimaVerificacao
+    ? Math.max(
+        0,
+        Math.floor((Date.now() - ultimaVerificacao.getTime()) / 3_600_000),
+      )
+    : null;
+
   const pautaSessoesTjpeOrdenadas = [...pautaSessoesTjpe].sort((a, b) => {
     const da = a.data.getTime();
     const db = b.data.getTime();
@@ -535,6 +609,98 @@ export default async function AppHome({
           <KpiCard key={k.label} {...k} />
         ))}
       </section>
+
+      <Card
+        className={cn(
+          totalAlertas > 0
+            ? "border-amber-300 bg-amber-50"
+            : "border-emerald-300 bg-emerald-50",
+        )}
+      >
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bell
+                className={cn(
+                  "h-4 w-4",
+                  totalAlertas > 0 ? "text-amber-700" : "text-emerald-700",
+                )}
+              />
+              Monitoramento
+            </CardTitle>
+            <CardDescription>
+              {ultimaVerificacao
+                ? horasDesdeUltima === 0
+                  ? "Verificado ha menos de 1 hora"
+                  : horasDesdeUltima === 1
+                    ? "Verificado ha 1 hora"
+                    : `Verificado ha ${horasDesdeUltima} horas`
+                : "Ainda nao verificado"}
+            </CardDescription>
+          </div>
+          <Button asChild variant="ghost" size="sm" className="-mr-2">
+            <Link href="/app/monitoramento">
+              Ver todos os alertas
+              <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {totalAlertas === 0 ? (
+            <div className="flex items-center gap-2 text-sm text-emerald-800">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Nenhuma novidade detectada.</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-medium text-amber-900">
+                {totalAlertas} alerta{totalAlertas === 1 ? "" : "s"} nao lido
+                {totalAlertas === 1 ? "" : "s"} ({totalMovsNaoLidas} movimenta
+                {totalMovsNaoLidas === 1 ? "cao" : "coes"} +{" "}
+                {totalPubsNaoLidas} publica
+                {totalPubsNaoLidas === 1 ? "cao" : "coes"}).
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {alertasRecentes.map((a) => (
+                  <li key={`${a.tipo}-${a.id}`}>
+                    <Link
+                      href={`/app/processos/${a.processoId}`}
+                      className="flex items-start gap-2 rounded-md border border-amber-200 bg-white px-3 py-2 text-sm transition-colors hover:bg-amber-50"
+                    >
+                      <span
+                        className={cn(
+                          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                          a.tipo === "movimentacao"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-orange-100 text-orange-700",
+                        )}
+                        aria-hidden="true"
+                      >
+                        {a.tipo === "movimentacao" ? (
+                          <FileText className="h-3 w-3" />
+                        ) : (
+                          <Newspaper className="h-3 w-3" />
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-mono text-[12px] text-brand-navy">
+                          {a.processoNumero}
+                        </p>
+                        <p className="truncate text-xs text-slate-700">
+                          {a.titulo}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        {formatDate(a.data)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">

@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import { authOptions } from "@/lib/auth";
+import { detectaDecisao } from "@/lib/monitoramento-detect";
 import { prisma } from "@/lib/prisma";
 
 import { MonitoramentoClient } from "./monitoramento-client";
@@ -89,6 +90,8 @@ export default async function MonitoramentoPage() {
       data: m.dataMovimento.toISOString(),
       titulo: m.nomeMovimento,
       detalhe: m.complementos,
+      ehDecisao: detectaDecisao(m.nomeMovimento),
+      geraIntimacao: false,
       processo: {
         id: m.processo.id,
         numero: m.processo.numero,
@@ -107,6 +110,8 @@ export default async function MonitoramentoPage() {
         : "Publicacao DJEN",
       detalhe:
         [p.caderno, p.pagina].filter(Boolean).join(" - ") || null,
+      ehDecisao: false,
+      geraIntimacao: p.geraIntimacao,
       processo: {
         id: p.processo.id,
         numero: p.processo.numero,

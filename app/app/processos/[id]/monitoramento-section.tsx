@@ -22,6 +22,7 @@ export type MovimentacaoAutoItem = {
   nome: string;
   complementos: string | null;
   lida: boolean;
+  ehDecisao: boolean;
 };
 
 export type PublicacaoDjenItem = {
@@ -31,6 +32,7 @@ export type PublicacaoDjenItem = {
   caderno: string | null;
   pagina: string | null;
   lida: boolean;
+  geraIntimacao: boolean;
 };
 
 type Props = {
@@ -207,6 +209,11 @@ export function MonitoramentoSection({
                               Novo
                             </span>
                           )}
+                          {m.ehDecisao && (
+                            <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                              Decisao detectada — verificar necessidade de recurso
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-slate-800">{m.nome}</p>
                         {m.complementos && (
@@ -260,6 +267,11 @@ export function MonitoramentoSection({
                           {!p.lida && (
                             <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
                               Novo
+                            </span>
+                          )}
+                          {p.geraIntimacao && (
+                            <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                              Intimacao detectada — pode gerar prazo
                             </span>
                           )}
                           {p.caderno && (

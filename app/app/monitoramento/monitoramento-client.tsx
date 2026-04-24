@@ -30,6 +30,8 @@ type Alerta = {
   data: string;
   titulo: string;
   detalhe: string | null;
+  ehDecisao: boolean;
+  geraIntimacao: boolean;
   processo: {
     id: string;
     numero: string;
@@ -283,8 +285,28 @@ export function MonitoramentoClient({
                       <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                         Novo
                       </span>
+                      {a.geraIntimacao && (
+                        <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                          Intimacao detectada
+                        </span>
+                      )}
+                      {a.ehDecisao && (
+                        <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                          Decisao detectada
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-slate-800">{a.titulo}</p>
+                    {a.ehDecisao && (
+                      <p className="text-[11px] font-medium text-red-700">
+                        Verificar necessidade de recurso.
+                      </p>
+                    )}
+                    {a.geraIntimacao && (
+                      <p className="text-[11px] font-medium text-red-700">
+                        Pode gerar prazo — verificar.
+                      </p>
+                    )}
                     {a.detalhe && (
                       <p className="text-xs text-muted-foreground">
                         {a.detalhe}

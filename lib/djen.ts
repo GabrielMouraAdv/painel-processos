@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { consultarProcesso } from "./datajud";
+import { detectaIntimacao } from "./monitoramento-detect";
 
 export type PublicacaoDjenResultado = {
   dataPublicacao: Date;
@@ -7,6 +8,7 @@ export type PublicacaoDjenResultado = {
   conteudo: string;
   caderno: string | null;
   pagina: string | null;
+  geraIntimacao: boolean;
 };
 
 const CODIGOS_PUBLICACAO = new Set<string>([
@@ -74,6 +76,7 @@ export async function consultarPublicacoesDJEN(
       conteudo,
       caderno: extrairCaderno(mov.complementos),
       pagina: extrairPagina(mov.complementos),
+      geraIntimacao: detectaIntimacao(conteudo),
     });
   }
 
@@ -106,6 +109,7 @@ export async function verificarNovasPublicacoes(
           caderno: pub.caderno,
           pagina: pub.pagina,
           fonte: "DJEN",
+          geraIntimacao: pub.geraIntimacao,
         },
       });
       novas++;

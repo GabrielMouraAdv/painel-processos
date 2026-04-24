@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { detectaDecisao } from "@/lib/monitoramento-detect";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -49,6 +50,7 @@ export async function GET() {
       data: m.dataMovimento.toISOString(),
       nome: m.nomeMovimento,
       complementos: m.complementos,
+      ehDecisao: detectaDecisao(m.nomeMovimento),
       processo: {
         id: m.processo.id,
         numero: m.processo.numero,
@@ -63,6 +65,7 @@ export async function GET() {
       conteudo: p.conteudo,
       caderno: p.caderno,
       pagina: p.pagina,
+      geraIntimacao: p.geraIntimacao,
       processo: {
         id: p.processo.id,
         numero: p.processo.numero,

@@ -6,6 +6,7 @@ import { Role } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import { authOptions } from "@/lib/auth";
+import { detectaDecisao } from "@/lib/monitoramento-detect";
 import { prisma } from "@/lib/prisma";
 
 import { ProcessoView, type ProcessoDetail } from "./processo-view";
@@ -160,6 +161,7 @@ export default async function ProcessoDetailPage({
         nome: m.nomeMovimento,
         complementos: m.complementos,
         lida: m.lida,
+        ehDecisao: detectaDecisao(m.nomeMovimento),
       })),
       publicacoes: processo.publicacoesDjen.map((p) => ({
         id: p.id,
@@ -168,6 +170,7 @@ export default async function ProcessoDetailPage({
         caderno: p.caderno,
         pagina: p.pagina,
         lida: p.lida,
+        geraIntimacao: p.geraIntimacao,
       })),
     },
   };
