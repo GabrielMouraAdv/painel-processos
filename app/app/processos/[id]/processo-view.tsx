@@ -51,6 +51,11 @@ import { cn } from "@/lib/utils";
 
 import { AndamentoForm } from "./andamento-form";
 import {
+  MonitoramentoSection,
+  type MovimentacaoAutoItem,
+  type PublicacaoDjenItem,
+} from "./monitoramento-section";
+import {
   ProcessoForm,
   type AdvogadoOption,
   type GestorOption,
@@ -114,6 +119,13 @@ export type ProcessoDetail = {
   prazos: Prazo[];
   historicoPauta: HistoricoPautaItem[];
   documentos: DocumentoItem[];
+  monitoramento: {
+    ativo: boolean;
+    ultimaVerificacao: string | null;
+    ultimoErro: string | null;
+    movimentacoes: MovimentacaoAutoItem[];
+    publicacoes: PublicacaoDjenItem[];
+  };
 };
 
 type Props = {
@@ -152,6 +164,11 @@ export function ProcessoView({
   const [deleting, setDeleting] = React.useState(false);
   const [addPrazoOpen, setAddPrazoOpen] = React.useState(false);
   const [editPrazosOpen, setEditPrazosOpen] = React.useState(false);
+  const [andamentoPrefill, setAndamentoPrefill] = React.useState<{
+    data?: string;
+    texto?: string;
+  } | null>(null);
+  const [andamentoPrefillTrigger, setAndamentoPrefillTrigger] = React.useState(0);
 
   const prazosOrdenados = React.useMemo(() => {
     return [...processo.prazos].sort(
@@ -325,6 +342,8 @@ export function ProcessoView({
             processoId={processo.id}
             currentGrau={processo.grau}
             currentFase={processo.fase}
+            prefill={andamentoPrefill}
+            prefillTrigger={andamentoPrefillTrigger}
           />
         </CardContent>
       </Card>
@@ -421,6 +440,19 @@ export function ProcessoView({
         documentos={processo.documentos}
         tiposDocumento={TIPOS_DOCUMENTO_JUDICIAL}
         canDelete={canDeleteDocumentos}
+      />
+
+      <MonitoramentoSection
+        processoId={processo.id}
+        ativo={processo.monitoramento.ativo}
+        ultimaVerificacao={processo.monitoramento.ultimaVerificacao}
+        ultimoErro={processo.monitoramento.ultimoErro}
+        movimentacoes={processo.monitoramento.movimentacoes}
+        publicacoes={processo.monitoramento.publicacoes}
+        onCriarAndamento={(p) => {
+          setAndamentoPrefill(p);
+          setAndamentoPrefillTrigger((n) => n + 1);
+        }}
       />
 
       <Card>

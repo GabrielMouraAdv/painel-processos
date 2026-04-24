@@ -38,17 +38,26 @@ type Props = {
   processoId: string;
   currentGrau: Grau;
   currentFase: string;
+  prefill?: { data?: string; texto?: string } | null;
+  prefillTrigger?: number;
 };
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function AndamentoForm({ processoId, currentGrau, currentFase }: Props) {
+export function AndamentoForm({
+  processoId,
+  currentGrau,
+  currentFase,
+  prefill,
+  prefillTrigger,
+}: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [submitting, setSubmitting] = React.useState(false);
   const [acoesSelecionadas, setAcoesSelecionadas] = React.useState<Record<string, boolean>>({});
+  const formRef = React.useRef<HTMLFormElement | null>(null);
 
   const {
     control,
@@ -83,6 +92,14 @@ export function AndamentoForm({ processoId, currentGrau, currentFase }: Props) {
   React.useEffect(() => {
     setAcoesSelecionadas({});
   }, [grau, fase, resultado]);
+
+  React.useEffect(() => {
+    if (prefillTrigger === undefined || !prefill) return;
+    if (prefill.data) setValue("data", prefill.data);
+    if (prefill.texto) setValue("texto", prefill.texto);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillTrigger]);
 
   function toggleAcao(id: string) {
     setAcoesSelecionadas((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -145,7 +162,7 @@ export function AndamentoForm({ processoId, currentGrau, currentFase }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="space-y-1.5">
           <Label>Data</Label>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Activity,
   BarChart3,
   Building2,
   CalendarClock,
@@ -33,6 +34,7 @@ type Props = {
   prazosTceUrgentes?: number;
   processosTceTotal?: number;
   pautasJudiciaisTotal?: number;
+  alertasMonitoramento?: number;
 };
 
 export function Sidebar({
@@ -40,6 +42,7 @@ export function Sidebar({
   prazosTceUrgentes = 0,
   processosTceTotal = 0,
   pautasJudiciaisTotal = 0,
+  alertasMonitoramento = 0,
 }: Props) {
   const groups: NavGroup[] = [
     {
@@ -63,6 +66,14 @@ export function Sidebar({
           badgeTone: "navy",
         },
         { label: "Gestores", href: "/app/gestores", icon: Users },
+        {
+          label: "Monitoramento",
+          href: "/app/monitoramento",
+          icon: Activity,
+          badge:
+            alertasMonitoramento > 0 ? alertasMonitoramento : undefined,
+          badgeTone: "red",
+        },
         { label: "Relatorios", href: "/app/relatorios", icon: BarChart3 },
       ],
     },

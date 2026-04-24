@@ -35,6 +35,15 @@ export default async function ProcessoDetailPage({
         orderBy: { createdAt: "desc" },
         include: { uploadedByUser: { select: { nome: true } } },
       },
+      monitoramento: true,
+      movimentacoesAuto: {
+        orderBy: { dataMovimento: "desc" },
+        take: 10,
+      },
+      publicacoesDjen: {
+        orderBy: { dataPublicacao: "desc" },
+        take: 10,
+      },
     },
   });
 
@@ -140,6 +149,27 @@ export default async function ProcessoDetailPage({
       createdAt: d.createdAt.toISOString(),
       uploadedByNome: d.uploadedByUser.nome,
     })),
+    monitoramento: {
+      ativo: processo.monitoramento?.monitoramentoAtivo ?? false,
+      ultimaVerificacao:
+        processo.monitoramento?.ultimaVerificacao?.toISOString() ?? null,
+      ultimoErro: processo.monitoramento?.ultimoErro ?? null,
+      movimentacoes: processo.movimentacoesAuto.map((m) => ({
+        id: m.id,
+        data: m.dataMovimento.toISOString(),
+        nome: m.nomeMovimento,
+        complementos: m.complementos,
+        lida: m.lida,
+      })),
+      publicacoes: processo.publicacoesDjen.map((p) => ({
+        id: p.id,
+        data: p.dataPublicacao.toISOString(),
+        conteudo: p.conteudo,
+        caderno: p.caderno,
+        pagina: p.pagina,
+        lida: p.lida,
+      })),
+    },
   };
 
   return (
