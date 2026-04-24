@@ -122,6 +122,9 @@ model Processo {
   prazos             Prazo[]
   documentos         Documento[]
   itensPautaJudicial ItemPautaJudicial[]
+  movimentacoesAuto  MovimentacaoAutomatica[]
+  publicacoesDjen    PublicacaoDJEN[]
+  monitoramento      MonitoramentoConfig?
 
   @@index([escritorioId])
   @@index([gestorId])
@@ -432,4 +435,51 @@ model ItemPautaJudicial {
 
   @@index([sessaoId])
   @@index([processoId])
+}
+
+model MovimentacaoAutomatica {
+  id              String    @id @default(cuid())
+  processoId      String
+  processo        Processo  @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  codigoMovimento String?
+  nomeMovimento   String
+  descricao       String?   @db.Text
+  dataMovimento   DateTime
+  complementos    String?   @db.Text
+  fonte           String    @default("DATAJUD")
+  lida            Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  @@unique([processoId, dataMovimento, nomeMovimento])
+  @@index([processoId, lida])
+}
+
+model PublicacaoDJEN {
+  id                   String    @id @default(cuid())
+  processoId           String
+  processo             Processo  @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  dataPublicacao       DateTime
+  dataDisponibilizacao DateTime?
+  conteudo             String?   @db.Text
+  caderno              String?
+  pagina               String?
+  fonte                String    @default("DJEN")
+  lida                 Boolean   @default(false)
+  geraIntimacao        Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+
+  @@unique([processoId, dataPublicacao, conteudo])
+  @@index([processoId, lida])
+}
+
+model MonitoramentoConfig {
+  id                 String    @id @default(cuid())
+  processoId         String    @unique
+  processo           Processo  @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  monitoramentoAtivo Boolean   @default(true)
+  ultimaVerificacao  DateTime?
+  ultimoErro         String?
+  totalVerificacoes  Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
