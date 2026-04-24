@@ -36,20 +36,40 @@ function endpointPorTribunal(tribunal: string): string | null {
   return `${DATAJUD_API_URL}/${alias}/_search`;
 }
 
-function extrairComplementos(mov: any): string[] {
+type RawHit = {
+  classe?: string | { nome?: string };
+  orgaoJulgador?: string | { nome?: string };
+  dataHoraUltimaAtualizacao?: string;
+  movimentos?: RawMovimento[];
+};
+
+type RawMovimento = {
+  codigo?: number | string | null;
+  nome?: string | null;
+  dataHora?: string | null;
+  complementosTabelados?: Array<{ descricao?: string; nome?: string }>;
+  complemento?: unknown[];
+};
+
+function extrairComplementos(mov: RawMovimento): string[] {
   const lista: string[] = [];
-  if (Array.isArray(mov?.complementosTabelados)) {
+  if (Array.isArray(mov.complementosTabelados)) {
     for (const c of mov.complementosTabelados) {
       if (c?.descricao) lista.push(String(c.descricao));
       else if (c?.nome) lista.push(String(c.nome));
     }
   }
-  if (Array.isArray(mov?.complemento)) {
+  if (Array.isArray(mov.complemento)) {
     for (const c of mov.complemento) {
       if (typeof c === "string") lista.push(c);
     }
   }
   return lista;
+}
+
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
 }
 
 export async function consultarProcesso(
@@ -78,12 +98,14 @@ export async function consultarProcesso(
 
     if (!res.ok) return null;
 
-    const json = await res.json();
+    const json = (await res.json()) as {
+      hits?: { hits?: Array<{ _source?: RawHit }> };
+    };
     const hit = json?.hits?.hits?.[0]?._source;
     if (!hit) return null;
 
     const movimentos: DatajudMovimento[] = Array.isArray(hit.movimentos)
-      ? hit.movimentos.map((m: any) => ({
+      ? hit.movimentos.map((m) => ({
           codigo: m?.codigo != null ? String(m.codigo) : null,
           nome: String(m?.nome ?? ""),
           dataHora: String(m?.dataHora ?? ""),
@@ -94,20 +116,20 @@ export async function consultarProcesso(
     const orgao =
       typeof hit.orgaoJulgador === "string"
         ? hit.orgaoJulgador
-        : hit?.orgaoJulgador?.nome ?? null;
+        : (hit.orgaoJulgador?.nome ?? null);
 
     const classe =
       typeof hit.classe === "string"
         ? hit.classe
-        : hit?.classe?.nome ?? null;
+        : (hit.classe?.nome ?? null);
 
     return {
-      classe,
+      classe: classe ?? null,
       orgaoJulgador: orgao ? String(orgao) : null,
-      dataUltimaAtualizacao: hit?.dataHoraUltimaAtualizacao ?? null,
+      dataUltimaAtualizacao: hit.dataHoraUltimaAtualizacao ?? null,
       movimentos,
     };
-  } catch (_err) {
+  } catch {
     return null;
   }
 }
@@ -161,7 +183,7 @@ export async function verificarNovasMovimentacoes(
           },
         });
         novas++;
-      } catch (_err) {
+      } catch {
         // duplicada pela unique constraint (processoId, dataMovimento, nomeMovimento)
       }
     }
@@ -180,18 +202,19 @@ export async function verificarNovasMovimentacoes(
         totalVerificacoes: { increment: 1 },
       },
     });
-  } catch (err: any) {
+  } catch (err) {
+    const msg = errorMessage(err);
     await prisma.monitoramentoConfig.upsert({
       where: { processoId: processo.id },
       create: {
         processoId: processo.id,
         ultimaVerificacao: new Date(),
-        ultimoErro: String(err?.message ?? err),
+        ultimoErro: msg,
         totalVerificacoes: 1,
       },
       update: {
         ultimaVerificacao: new Date(),
-        ultimoErro: String(err?.message ?? err),
+        ultimoErro: msg,
         totalVerificacoes: { increment: 1 },
       },
     });

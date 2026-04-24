@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { verificarNovasMovimentacoes } from "@/lib/datajud";
 import { verificarNovasPublicacoes } from "@/lib/djen";
 import { prisma } from "@/lib/prisma";
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -17,16 +22,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => ({}) as any);
+  const body = (await req
+    .json()
+    .catch(() => ({}))) as { processoId?: unknown };
   const processoIdInput =
-    typeof body?.processoId === "string" && body.processoId.length > 0
+    typeof body.processoId === "string" && body.processoId.length > 0
       ? body.processoId
       : null;
 
   let processosIds: string[] = [];
 
   if (processoIdInput) {
-    const where = session?.user
+    const where: Prisma.ProcessoWhereInput = session?.user
       ? { id: processoIdInput, escritorioId: session.user.escritorioId }
       : { id: processoIdInput };
     const p = await prisma.processo.findFirst({
@@ -41,7 +48,9 @@ export async function POST(req: Request) {
     }
     processosIds = [p.id];
   } else {
-    const where: any = { monitoramento: { monitoramentoAtivo: true } };
+    const where: Prisma.ProcessoWhereInput = {
+      monitoramento: { monitoramentoAtivo: true },
+    };
     if (session?.user) where.escritorioId = session.user.escritorioId;
     const lista = await prisma.processo.findMany({
       where,
@@ -58,14 +67,14 @@ export async function POST(req: Request) {
     try {
       const m = await verificarNovasMovimentacoes(id);
       novasMovimentacoes += m;
-    } catch (err: any) {
-      erros.push({ processoId: id, erro: `mov: ${err?.message ?? err}` });
+    } catch (err) {
+      erros.push({ processoId: id, erro: `mov: ${errorMessage(err)}` });
     }
     try {
       const p = await verificarNovasPublicacoes(id);
       novasPublicacoes += p;
-    } catch (err: any) {
-      erros.push({ processoId: id, erro: `pub: ${err?.message ?? err}` });
+    } catch (err) {
+      erros.push({ processoId: id, erro: `pub: ${errorMessage(err)}` });
     }
   }
 

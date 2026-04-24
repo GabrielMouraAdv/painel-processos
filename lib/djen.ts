@@ -113,7 +113,7 @@ export async function verificarNovasPublicacoes(
         },
       });
       novas++;
-    } catch (_err) {
+    } catch {
       // duplicada pela unique constraint (processoId, dataPublicacao, conteudo)
     }
   }

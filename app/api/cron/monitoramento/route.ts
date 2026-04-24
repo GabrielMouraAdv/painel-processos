@@ -27,23 +27,27 @@ export async function GET(req: Request) {
   let novasPublicacoes = 0;
   const erros: { processoId: string; numero: string; erro: string }[] = [];
 
+  function msg(err: unknown): string {
+    return err instanceof Error ? err.message : String(err);
+  }
+
   for (const p of processos) {
     try {
       novasMovimentacoes += await verificarNovasMovimentacoes(p.id);
-    } catch (err: any) {
+    } catch (err) {
       erros.push({
         processoId: p.id,
         numero: p.numero,
-        erro: `mov: ${err?.message ?? err}`,
+        erro: `mov: ${msg(err)}`,
       });
     }
     try {
       novasPublicacoes += await verificarNovasPublicacoes(p.id);
-    } catch (err: any) {
+    } catch (err) {
       erros.push({
         processoId: p.id,
         numero: p.numero,
-        erro: `pub: ${err?.message ?? err}`,
+        erro: `pub: ${msg(err)}`,
       });
     }
   }
