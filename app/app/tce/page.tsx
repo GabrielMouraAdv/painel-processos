@@ -111,6 +111,9 @@ export default async function TceDashboardPage({
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
+  const em15Corridos = new Date(hoje);
+  em15Corridos.setDate(em15Corridos.getDate() + 15);
+  em15Corridos.setHours(23, 59, 59, 999);
 
   const base = { escritorioId } as const;
 
@@ -122,6 +125,10 @@ export default async function TceDashboardPage({
     contrarrazoesNt,
     contrarrazoesMpco,
     semDespacho,
+    contrarrazoesNtPend,
+    contrarrazoesMpcoPend,
+    despachosPend,
+    prazosVencendoCandidatos,
     proximosPrazos,
     ultimosAndamentos,
     alertasProcessos,
@@ -139,7 +146,11 @@ export default async function TceDashboardPage({
       },
     }),
     prisma.processoTce.count({
-      where: { ...base, memorialPronto: false },
+      where: {
+        ...base,
+        memorialPronto: false,
+        faseAtual: { notIn: ["transitado", "transitado_cautelar"] },
+      },
     }),
     prisma.processoTce.count({
       where: { ...base, notaTecnica: true },
@@ -149,6 +160,35 @@ export default async function TceDashboardPage({
     }),
     prisma.processoTce.count({
       where: { ...base, despachadoComRelator: false },
+    }),
+    prisma.processoTce.count({
+      where: {
+        ...base,
+        notaTecnica: true,
+        contrarrazoesNtApresentadas: false,
+      },
+    }),
+    prisma.processoTce.count({
+      where: {
+        ...base,
+        parecerMpco: true,
+        contrarrazoesMpcoApresentadas: false,
+      },
+    }),
+    prisma.processoTce.count({
+      where: {
+        ...base,
+        memorialPronto: true,
+        despachadoComRelator: false,
+      },
+    }),
+    prisma.prazoTce.findMany({
+      where: {
+        cumprido: false,
+        processo: base,
+        dataVencimento: { lte: em15Corridos },
+      },
+      select: { dataVencimento: true },
     }),
     prisma.prazoTce.findMany({
       where: {
@@ -246,6 +286,16 @@ export default async function TceDashboardPage({
     }),
   ]);
 
+  const prazosVencendoCount = prazosVencendoCandidatos.filter(
+    (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
+  ).length;
+  const totalPendencias =
+    contrarrazoesNtPend +
+    contrarrazoesMpcoPend +
+    memoriaisPendentes +
+    despachosPend +
+    prazosVencendoCount;
+
   const totalAlertas = alertasProcessos.reduce(
     (acc, p) =>
       acc +
@@ -263,8 +313,15 @@ export default async function TceDashboardPage({
     value: number;
     href: string;
     icon: React.ComponentType<{ className?: string }>;
-    tone: "navy" | "red" | "orange" | "slate" | "violet" | "emerald";
+    tone: "navy" | "red" | "orange" | "slate" | "violet" | "emerald" | "rose";
   }[] = [
+    {
+      label: "Pendencias",
+      value: totalPendencias,
+      href: "/app/tce/pendencias",
+      icon: AlertTriangle,
+      tone: "rose",
+    },
     {
       label: "Total TCE",
       value: total,
@@ -323,6 +380,7 @@ export default async function TceDashboardPage({
     slate: "border-slate-300 bg-slate-100 text-slate-800",
     violet: "border-violet-200 bg-violet-50 text-violet-800",
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    rose: "border-rose-300 bg-rose-100 text-rose-900",
   };
 
   return (

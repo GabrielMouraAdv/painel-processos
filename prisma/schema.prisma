@@ -291,14 +291,16 @@ model ProcessoTce {
   camara                CamaraTce
   faseAtual             String
   conselheiroSubstituto String?
-  notaTecnica           Boolean         @default(false)
-  parecerMpco           Boolean         @default(false)
-  despachadoComRelator  Boolean         @default(false)
-  memorialPronto        Boolean         @default(false)
-  prognosticoDespacho   String?         @db.Text
-  retornoDespacho       String?         @db.Text
-  dataDespacho          DateTime?
-  incluidoNoDespacho    Boolean         @default(false)
+  notaTecnica                   Boolean   @default(false)
+  parecerMpco                   Boolean   @default(false)
+  despachadoComRelator          Boolean   @default(false)
+  memorialPronto                Boolean   @default(false)
+  contrarrazoesNtApresentadas   Boolean   @default(false)
+  contrarrazoesMpcoApresentadas Boolean   @default(false)
+  prognosticoDespacho           String?   @db.Text
+  retornoDespacho               String?   @db.Text
+  dataDespacho                  DateTime?
+  incluidoNoDespacho            Boolean   @default(false)
   exercicio             String?
   valorAutuado          Decimal?        @db.Decimal(15, 2)
   objeto                String          @db.Text

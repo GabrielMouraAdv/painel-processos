@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { CamaraTce, TipoProcessoTce, type Prisma } from "@prisma/client";
+import { AlertTriangle } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { authOptions } from "@/lib/auth";
 import { diasUteisRestantes } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
@@ -207,10 +210,18 @@ export default async function TceProcessosPage({
             {total === 1 ? "" : "s"}.
           </p>
         </div>
-        <NovoProcessoTceButton
-          municipios={municipiosTodos}
-          gestores={todosGestores}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/app/tce/pendencias">
+              <AlertTriangle className="mr-2 h-4 w-4 text-rose-600" />
+              Ver Pendencias
+            </Link>
+          </Button>
+          <NovoProcessoTceButton
+            municipios={municipiosTodos}
+            gestores={todosGestores}
+          />
+        </div>
       </header>
 
       <KpiCardsTce
