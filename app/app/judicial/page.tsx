@@ -179,6 +179,10 @@ export default async function AppHome({
 
   const base = { escritorioId } as const;
 
+  const em7Pendencias = new Date(hoje);
+  em7Pendencias.setDate(em7Pendencias.getDate() + 7);
+  em7Pendencias.setHours(23, 59, 59, 999);
+
   const [
     totalProcessos,
     riscoAlto,
@@ -186,6 +190,9 @@ export default async function AppHome({
     parados,
     emPauta,
     prazos30d,
+    memoriaisPendJud,
+    despachosPendJud,
+    prazosVencendoJud,
     riscoAltoLista,
     paradosLista,
     prazosProximos,
@@ -207,6 +214,27 @@ export default async function AppHome({
       where: {
         cumprido: false,
         data: { gte: hoje, lte: em30 },
+        processo: base,
+      },
+    }),
+    prisma.processo.count({
+      where: {
+        ...base,
+        memorialPronto: false,
+        fase: { not: "transitado" },
+        OR: [
+          { fase: { in: fasesEmPauta } },
+          { grau: { in: ["SEGUNDO", "SUPERIOR"] } },
+        ],
+      },
+    }),
+    prisma.processo.count({
+      where: { ...base, memorialPronto: true, despachadoComRelator: false },
+    }),
+    prisma.prazo.count({
+      where: {
+        cumprido: false,
+        data: { gte: hoje, lte: em7Pendencias },
         processo: base,
       },
     }),
@@ -433,7 +461,17 @@ export default async function AppHome({
     valor: p.valor ? Number(p.valor) : null,
   }));
 
+  const totalPendenciasJud =
+    memoriaisPendJud + despachosPendJud + prazosVencendoJud;
+
   const kpis = [
+    {
+      label: "Pendencias",
+      value: totalPendenciasJud,
+      icon: TriangleAlert,
+      href: "/app/pendencias",
+      tone: "rose" as const,
+    },
     {
       label: "Processos ativos",
       value: totalProcessos,
@@ -492,7 +530,7 @@ export default async function AppHome({
         </p>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         {kpis.map((k) => (
           <KpiCard key={k.label} {...k} />
         ))}
@@ -1038,7 +1076,7 @@ function KpiCard({
   value: number;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  tone: "default" | "red" | "amber" | "slate" | "navy";
+  tone: "default" | "red" | "amber" | "slate" | "navy" | "rose";
 }) {
   const valueClass = {
     default: "text-brand-navy",
@@ -1046,6 +1084,7 @@ function KpiCard({
     amber: "text-amber-700",
     slate: "text-slate-700",
     navy: "text-brand-navy",
+    rose: "text-rose-700",
   }[tone];
   const iconClass = {
     default: "text-brand-navy",
@@ -1053,12 +1092,24 @@ function KpiCard({
     amber: "text-amber-600",
     slate: "text-slate-500",
     navy: "text-brand-navy",
+    rose: "text-rose-600",
+  }[tone];
+  const containerClass = {
+    default: "border-slate-200 bg-white",
+    red: "border-slate-200 bg-white",
+    amber: "border-slate-200 bg-white",
+    slate: "border-slate-200 bg-white",
+    navy: "border-slate-200 bg-white",
+    rose: "border-rose-300 bg-rose-100",
   }[tone];
 
   return (
     <Link
       href={href}
-      className="group rounded-lg border bg-white p-4 shadow-sm transition hover:border-brand-navy/40 hover:shadow-md"
+      className={cn(
+        "group rounded-lg border p-4 shadow-sm transition hover:border-brand-navy/40 hover:shadow-md",
+        containerClass,
+      )}
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

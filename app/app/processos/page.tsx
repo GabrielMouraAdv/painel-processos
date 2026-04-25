@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import { getServerSession } from "next-auth";
 import {
   Grau,
@@ -115,12 +115,20 @@ export default async function ProcessosPage({
             Gerencie e acompanhe todos os processos do escritorio.
           </p>
         </div>
-        <Button asChild className="bg-brand-navy hover:bg-brand-navy/90">
-          <Link href="/app/processos/novo">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Processo
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/app/pendencias">
+              <AlertTriangle className="mr-2 h-4 w-4 text-rose-600" />
+              Ver Pendencias
+            </Link>
+          </Button>
+          <Button asChild className="bg-brand-navy hover:bg-brand-navy/90">
+            <Link href="/app/processos/novo">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Processo
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <KpiCards

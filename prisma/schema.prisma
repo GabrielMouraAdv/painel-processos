@@ -124,20 +124,24 @@ model GestorMunicipio {
 }
 
 model Processo {
-  id               String       @id @default(cuid())
-  numero           String       @unique
-  tipo             TipoProcesso
-  tribunal         Tribunal
-  juizo            String
-  grau             Grau
-  fase             String
-  resultado        String?
-  risco            Risco
-  valor            Decimal?     @db.Decimal(15, 2)
-  dataDistribuicao DateTime
-  objeto           String       @db.Text
-  gestorId         String
-  advogadoId       String
+  id                   String       @id @default(cuid())
+  numero               String       @unique
+  tipo                 TipoProcesso
+  tribunal             Tribunal
+  juizo                String
+  grau                 Grau
+  fase                 String
+  resultado            String?
+  risco                Risco
+  valor                Decimal?     @db.Decimal(15, 2)
+  dataDistribuicao     DateTime
+  objeto               String       @db.Text
+  memorialPronto       Boolean      @default(false)
+  despachadoComRelator Boolean      @default(false)
+  dataDespacho         DateTime?
+  retornoDespacho      String?      @db.Text
+  gestorId             String
+  advogadoId           String
   escritorioId     String
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
