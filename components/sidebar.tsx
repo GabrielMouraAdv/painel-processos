@@ -7,6 +7,7 @@ import {
   CalendarRange,
   ClipboardCheck,
   Gavel,
+  Home,
   Landmark,
   LayoutDashboard,
   Scale,
@@ -82,7 +83,7 @@ export function Sidebar({
     {
       title: "Judicial",
       items: [
-        { label: "Dashboard", href: "/app", icon: LayoutDashboard },
+        { label: "Dashboard", href: "/app/judicial", icon: LayoutDashboard },
         { label: "Processos", href: "/app/processos", icon: Scale },
         {
           label: "Prazos",
@@ -129,6 +130,18 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-6">
+        <div className="space-y-1 pb-2">
+          <Link
+            href="/app"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+              "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
+            )}
+          >
+            <Home className="h-4 w-4" aria-hidden="true" />
+            <span>Inicio</span>
+          </Link>
+        </div>
         {groups.map((group, index) => (
           <div
             key={group.title}
