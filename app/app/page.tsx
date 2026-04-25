@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowRight,
   CalendarClock,
   CalendarDays,
@@ -504,31 +503,6 @@ export default async function AppHome({
           Visao geral do escritorio — clique nos indicadores para filtrar rapidamente.
         </p>
       </header>
-
-      {parados > 0 && (
-        <div className="flex gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div className="flex-1">
-            <p className="font-medium">
-              {parados} processo{parados === 1 ? "" : "s"} ha mais de 60 dias sem andamento.
-            </p>
-            <p className="text-amber-800">
-              Verifique se ha alguma pendencia que esteja travando o fluxo.
-            </p>
-          </div>
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
-          >
-            <Link href="/app/processos?status=parados">
-              Ver processos
-              <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Link>
-          </Button>
-        </div>
-      )}
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {kpis.map((k) => (
