@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ESCRITORIOS_EMISSORES } from "@/lib/escritorios-emissores";
 import { cn } from "@/lib/utils";
 
 export type GestorOption = {
@@ -44,8 +52,20 @@ export function ClienteForm({ gestores, municipios }: Props) {
   const [incluirJudicial, setIncluirJudicial] = React.useState(true);
   const [incluirTce, setIncluirTce] = React.useState(true);
   const [status, setStatus] = React.useState<Status>("ativos");
+  const [emissorSlug, setEmissorSlug] = React.useState<string>("");
+  const [advogadoIdx, setAdvogadoIdx] = React.useState<number>(0);
   const [erro, setErro] = React.useState<string | null>(null);
   const [gerando, setGerando] = React.useState(false);
+
+  const emissorAtual = React.useMemo(
+    () => ESCRITORIOS_EMISSORES.find((e) => e.slug === emissorSlug) ?? null,
+    [emissorSlug],
+  );
+
+  function trocarEmissor(slug: string) {
+    setEmissorSlug(slug);
+    setAdvogadoIdx(0);
+  }
 
   const lista = React.useMemo(() => {
     const src = tipo === "gestor" ? gestores : municipios;
@@ -104,6 +124,10 @@ export function ClienteForm({ gestores, municipios }: Props) {
       setErro("Selecione ao menos um modulo.");
       return;
     }
+    if (!emissorAtual) {
+      setErro("Selecione o escritorio responsavel.");
+      return;
+    }
 
     const params = new URLSearchParams({
       tipo,
@@ -111,6 +135,8 @@ export function ClienteForm({ gestores, municipios }: Props) {
       judicial: String(incluirJudicial),
       tce: String(incluirTce),
       status,
+      emissor: emissorAtual.slug,
+      advogado: String(advogadoIdx),
     });
 
     setGerando(true);
@@ -329,6 +355,53 @@ export function ClienteForm({ gestores, municipios }: Props) {
         </div>
       </div>
 
+      {/* Escritorio responsavel */}
+      <div className="flex flex-col gap-2">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+          Escritorio responsavel <span className="text-red-600">*</span>
+        </Label>
+        <Select value={emissorSlug} onValueChange={trocarEmissor}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o escritorio emissor" />
+          </SelectTrigger>
+          <SelectContent>
+            {ESCRITORIOS_EMISSORES.map((e) => (
+              <SelectItem key={e.slug} value={e.slug}>
+                {e.nome}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {emissorAtual && emissorAtual.advogados.length > 1 && (
+          <div className="flex flex-col gap-2 pt-1">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Advogado que assina
+            </Label>
+            <Select
+              value={String(advogadoIdx)}
+              onValueChange={(v) => setAdvogadoIdx(Number(v))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {emissorAtual.advogados.map((a, i) => (
+                  <SelectItem key={a.oab} value={String(i)}>
+                    {a.nome} — {a.oab}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {emissorAtual && emissorAtual.advogados.length === 1 && (
+          <p className="text-xs text-muted-foreground">
+            Assina: {emissorAtual.advogados[0].nome} —{" "}
+            {emissorAtual.advogados[0].oab}
+          </p>
+        )}
+      </div>
+
       {erro && (
         <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {erro}
@@ -338,7 +411,7 @@ export function ClienteForm({ gestores, municipios }: Props) {
       <div>
         <Button
           onClick={gerar}
-          disabled={gerando || !clienteId}
+          disabled={gerando || !clienteId || !emissorSlug}
           className="bg-brand-navy hover:bg-brand-navy/90"
           size="lg"
         >

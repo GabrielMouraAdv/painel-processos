@@ -17,7 +17,8 @@ export type TabelaRelatorio = {
 };
 
 export type RelatorioGerencialData = {
-  escritorio: { nome: string };
+  emissor: { slug: string; nome: string };
+  advogadoSignatario: { nome: string; oab: string };
   geradoEm: Date;
   periodo: { de: string | null; ate: string | null };
   totalProcessos: number;
@@ -159,6 +160,34 @@ const styles = StyleSheet.create({
     borderTopColor: COLOR_GRAY_BORDER,
     paddingTop: 6,
   },
+  assinaturaBox: {
+    marginTop: 24,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLOR_GRAY_BORDER,
+  },
+  assinaturaCabecalho: {
+    fontSize: 10,
+    color: COLOR_TEXT,
+    marginBottom: 28,
+  },
+  assinaturaLinha: {
+    width: 240,
+    borderTopWidth: 1,
+    borderTopColor: COLOR_TEXT,
+    marginBottom: 4,
+  },
+  assinaturaNome: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    color: COLOR_NAVY,
+    letterSpacing: 0.5,
+  },
+  assinaturaOab: {
+    fontSize: 9,
+    color: COLOR_MUTED,
+    marginTop: 1,
+  },
 });
 
 function formatDateBR(d: Date): string {
@@ -278,12 +307,21 @@ export function RelatorioGerencialDocument({
 }: {
   data: RelatorioGerencialData;
 }) {
-  const { escritorio, geradoEm, periodo, totalProcessos, tabelas } = data;
+  const {
+    emissor,
+    advogadoSignatario,
+    geradoEm,
+    periodo,
+    totalProcessos,
+    tabelas,
+  } = data;
   return (
-    <Document title="Relatorio Gerencial de Processos" author={escritorio.nome}>
+    <Document title="Relatorio Gerencial de Processos" author={emissor.nome}>
       <Page size="A4" style={styles.page}>
+        {/* Slot futuro para header.png em
+            public/escritorios/{emissor.slug}/header.png */}
         <Text style={styles.capaTitulo}>RELATORIO GERENCIAL</Text>
-        <Text style={styles.capaEscritorio}>{escritorio.nome}</Text>
+        <Text style={styles.capaEscritorio}>{emissor.nome}</Text>
         <View style={styles.divider} />
 
         <View style={styles.metaBox}>
@@ -304,6 +342,17 @@ export function RelatorioGerencialDocument({
         {tabelas.map((t) => (
           <Tabela key={t.titulo} tabela={t} />
         ))}
+
+        {/* Slot futuro para footer.png em
+            public/escritorios/{emissor.slug}/footer.png */}
+        <View style={styles.assinaturaBox} wrap={false}>
+          <Text style={styles.assinaturaCabecalho}>Atenciosamente,</Text>
+          <View style={styles.assinaturaLinha} />
+          <Text style={styles.assinaturaNome}>
+            {advogadoSignatario.nome.toUpperCase()}
+          </Text>
+          <Text style={styles.assinaturaOab}>{advogadoSignatario.oab}</Text>
+        </View>
 
         <PageFooter geradoEm={geradoEm} />
       </Page>

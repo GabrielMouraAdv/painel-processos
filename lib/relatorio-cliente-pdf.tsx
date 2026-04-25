@@ -50,7 +50,8 @@ export type ProcessoTceItem = {
 };
 
 export type RelatorioClienteData = {
-  escritorio: { nome: string };
+  emissor: { slug: string; nome: string };
+  advogadoSignatario: { nome: string; oab: string };
   cliente: {
     tipo: "gestor" | "municipio";
     nome: string;
@@ -322,6 +323,35 @@ const styles = StyleSheet.create({
   prazoProx: {
     color: COLOR_AMBER,
   },
+  // Assinatura
+  assinaturaBox: {
+    marginTop: 24,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLOR_GRAY_BORDER,
+  },
+  assinaturaCabecalho: {
+    fontSize: 10,
+    color: COLOR_TEXT,
+    marginBottom: 28,
+  },
+  assinaturaLinha: {
+    width: 240,
+    borderTopWidth: 1,
+    borderTopColor: COLOR_TEXT,
+    marginBottom: 4,
+  },
+  assinaturaNome: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    color: COLOR_NAVY,
+    letterSpacing: 0.5,
+  },
+  assinaturaOab: {
+    fontSize: 9,
+    color: COLOR_MUTED,
+    marginTop: 1,
+  },
 });
 
 function formatDate(d: Date): string {
@@ -576,7 +606,8 @@ export function RelatorioClienteDocument({
   data: RelatorioClienteData;
 }) {
   const {
-    escritorio,
+    emissor,
+    advogadoSignatario,
     cliente,
     geradoEm,
     resumo,
@@ -590,12 +621,14 @@ export function RelatorioClienteDocument({
   return (
     <Document
       title={`Relatorio de Processos — ${cliente.nome}`}
-      author={escritorio.nome}
+      author={emissor.nome}
     >
       <Page size="A4" style={styles.page}>
-        {/* Capa */}
+        {/* Capa
+            Slot futuro para header.png em
+            public/escritorios/{emissor.slug}/header.png */}
         <Text style={styles.capaTitulo}>RELATORIO DE PROCESSOS</Text>
-        <Text style={styles.capaEscritorio}>{escritorio.nome}</Text>
+        <Text style={styles.capaEscritorio}>{emissor.nome}</Text>
         <View style={styles.divider} />
 
         {/* Cliente */}
@@ -684,6 +717,18 @@ export function RelatorioClienteDocument({
             )}
           </>
         )}
+
+        {/* Assinatura
+            Slot futuro para footer.png em
+            public/escritorios/{emissor.slug}/footer.png */}
+        <View style={styles.assinaturaBox} wrap={false}>
+          <Text style={styles.assinaturaCabecalho}>Atenciosamente,</Text>
+          <View style={styles.assinaturaLinha} />
+          <Text style={styles.assinaturaNome}>
+            {advogadoSignatario.nome.toUpperCase()}
+          </Text>
+          <Text style={styles.assinaturaOab}>{advogadoSignatario.oab}</Text>
+        </View>
 
         <PageFooter geradoEm={geradoEm} />
       </Page>

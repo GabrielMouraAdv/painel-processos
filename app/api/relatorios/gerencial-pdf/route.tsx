@@ -5,6 +5,7 @@ import { Grau, Risco, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveEmissor } from "@/lib/escritorios-emissores";
 import {
   faseLabel,
   grauLabels,
@@ -30,6 +31,16 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const de = url.searchParams.get("de") ?? "";
   const ate = url.searchParams.get("ate") ?? "";
+  const emissorSlug = url.searchParams.get("emissor") ?? "";
+  const advogadoIdx = Number(url.searchParams.get("advogado") ?? "0") || 0;
+
+  const emissorResolvido = resolveEmissor(emissorSlug, advogadoIdx);
+  if (!emissorResolvido) {
+    return NextResponse.json(
+      { error: "escritorio emissor invalido" },
+      { status: 400 },
+    );
+  }
 
   const where: Prisma.ProcessoWhereInput = {
     escritorioId,
@@ -41,36 +52,24 @@ export async function GET(req: Request) {
     }),
   };
 
-  const [escritorio, totalFiltrado, porTribunal, porRisco, porFase] =
-    await Promise.all([
-      prisma.escritorio.findUnique({
-        where: { id: escritorioId },
-        select: { nome: true },
-      }),
-      prisma.processo.count({ where }),
-      prisma.processo.groupBy({
-        by: ["tribunal"],
-        where,
-        _count: { _all: true },
-      }),
-      prisma.processo.groupBy({
-        by: ["risco"],
-        where,
-        _count: { _all: true },
-      }),
-      prisma.processo.groupBy({
-        by: ["fase", "grau"],
-        where,
-        _count: { _all: true },
-      }),
-    ]);
-
-  if (!escritorio) {
-    return NextResponse.json(
-      { error: "escritorio nao encontrado" },
-      { status: 404 },
-    );
-  }
+  const [totalFiltrado, porTribunal, porRisco, porFase] = await Promise.all([
+    prisma.processo.count({ where }),
+    prisma.processo.groupBy({
+      by: ["tribunal"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.processo.groupBy({
+      by: ["risco"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.processo.groupBy({
+      by: ["fase", "grau"],
+      where,
+      _count: { _all: true },
+    }),
+  ]);
 
   const linhasTribunal = porTribunal
     .map((row) => ({
@@ -116,7 +115,14 @@ export async function GET(req: Request) {
   ];
 
   const data: RelatorioGerencialData = {
-    escritorio: { nome: escritorio.nome },
+    emissor: {
+      slug: emissorResolvido.escritorio.slug,
+      nome: emissorResolvido.escritorio.nome,
+    },
+    advogadoSignatario: {
+      nome: emissorResolvido.advogado.nome,
+      oab: emissorResolvido.advogado.oab,
+    },
     geradoEm: new Date(),
     periodo: { de: de || null, ate: ate || null },
     totalProcessos: totalFiltrado,

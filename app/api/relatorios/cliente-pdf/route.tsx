@@ -5,6 +5,7 @@ import { Risco, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveEmissor } from "@/lib/escritorios-emissores";
 import { diasAte } from "@/lib/prazos";
 import {
   faseLabel,
@@ -62,6 +63,8 @@ export async function GET(req: Request) {
   const statusParam = url.searchParams.get("status");
   const status: RelatorioStatusFiltro =
     statusParam === "todos" ? "todos" : "ativos";
+  const emissorSlug = url.searchParams.get("emissor") ?? "";
+  const advogadoIdx = Number(url.searchParams.get("advogado") ?? "0") || 0;
 
   if (tipo !== "gestor" && tipo !== "municipio") {
     return NextResponse.json(
@@ -79,14 +82,11 @@ export async function GET(req: Request) {
     );
   }
 
-  const escritorio = await prisma.escritorio.findUnique({
-    where: { id: escritorioId },
-    select: { nome: true },
-  });
-  if (!escritorio) {
+  const emissorResolvido = resolveEmissor(emissorSlug, advogadoIdx);
+  if (!emissorResolvido) {
     return NextResponse.json(
-      { error: "escritorio nao encontrado" },
-      { status: 404 },
+      { error: "escritorio emissor invalido" },
+      { status: 400 },
     );
   }
 
@@ -295,7 +295,14 @@ export async function GET(req: Request) {
   }
 
   const data: RelatorioClienteData = {
-    escritorio: { nome: escritorio.nome },
+    emissor: {
+      slug: emissorResolvido.escritorio.slug,
+      nome: emissorResolvido.escritorio.nome,
+    },
+    advogadoSignatario: {
+      nome: emissorResolvido.advogado.nome,
+      oab: emissorResolvido.advogado.oab,
+    },
     cliente: {
       tipo,
       nome: clienteNome,
