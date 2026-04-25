@@ -38,3 +38,6 @@ next-env.d.ts
 
 # claude code
 .claude/
+
+# database backups (dumps locais antes de limpezas)
+/backup/
