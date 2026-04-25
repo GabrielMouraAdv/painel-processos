@@ -42,6 +42,7 @@ export default async function ModuloHomePage() {
       where: {
         escritorioId,
         memorialPronto: false,
+        memorialDispensado: false,
         fase: { not: "transitado" },
         OR: [
           { fase: { in: fasesEmPauta } },
@@ -54,6 +55,7 @@ export default async function ModuloHomePage() {
         escritorioId,
         memorialPronto: true,
         despachadoComRelator: false,
+        despachoDispensado: false,
       },
     }),
     prisma.prazo.count({
@@ -85,6 +87,7 @@ export default async function ModuloHomePage() {
       where: {
         escritorioId,
         memorialPronto: false,
+        memorialDispensado: false,
         faseAtual: { notIn: ["transitado", "transitado_cautelar"] },
       },
     }),
@@ -93,6 +96,7 @@ export default async function ModuloHomePage() {
         escritorioId,
         memorialPronto: true,
         despachadoComRelator: false,
+        despachoDispensado: false,
       },
     }),
     prisma.prazoTce.findMany({

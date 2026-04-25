@@ -37,6 +37,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { AndamentoTceForm } from "./andamento-tce-form";
+import { DispensaBadgesTce } from "./dispensa-badges";
 import {
   InteressadosTceManager,
   type InteressadoItem,
@@ -202,6 +203,7 @@ export default async function ProcessoTceDetailPage({
     parecerMpco: processo.parecerMpco,
     despachadoComRelator: processo.despachadoComRelator,
     memorialPronto: processo.memorialPronto,
+    despachoDispensado: processo.despachoDispensado,
   });
 
   const documentos: DocumentoItem[] = processo.documentos.map((d) => ({
@@ -255,6 +257,32 @@ export default async function ProcessoTceDetailPage({
           <BoolBadge label="Memorial" value={processo.memorialPronto} />
         </div>
       </header>
+
+      <DispensaBadgesTce
+        processoId={processo.id}
+        memorial={
+          processo.memorialDispensado &&
+          processo.memorialDispensadoPor &&
+          processo.memorialDispensadoEm
+            ? {
+                por: processo.memorialDispensadoPor,
+                em: processo.memorialDispensadoEm.toISOString(),
+                motivo: processo.memorialDispensadoMotivo ?? null,
+              }
+            : null
+        }
+        despacho={
+          processo.despachoDispensado &&
+          processo.despachoDispensadoPor &&
+          processo.despachoDispensadoEm
+            ? {
+                por: processo.despachoDispensadoPor,
+                em: processo.despachoDispensadoEm.toISOString(),
+                motivo: processo.despachoDispensadoMotivo ?? null,
+              }
+            : null
+        }
+      />
 
       {alertas.length > 0 && (
         <Card className="border-amber-300 bg-amber-50">

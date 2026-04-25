@@ -165,6 +165,14 @@ model Processo {
   memorialAgendadoAdvogadoId String?
   despachoAgendadoData       DateTime?
   despachoAgendadoAdvogadoId String?
+  memorialDispensado         Boolean      @default(false)
+  memorialDispensadoPor      String?
+  memorialDispensadoEm       DateTime?
+  memorialDispensadoMotivo   String?      @db.Text
+  despachoDispensado         Boolean      @default(false)
+  despachoDispensadoPor      String?
+  despachoDispensadoEm       DateTime?
+  despachoDispensadoMotivo   String?      @db.Text
   tipoLivre                  String?
   gestorId                   String
   advogadoId           String
@@ -341,6 +349,14 @@ model ProcessoTce {
   incluidoNoDespacho            Boolean   @default(false)
   despachoAgendadoData          DateTime?
   despachoAgendadoAdvogadoId    String?
+  memorialDispensado            Boolean   @default(false)
+  memorialDispensadoPor         String?
+  memorialDispensadoEm          DateTime?
+  memorialDispensadoMotivo      String?   @db.Text
+  despachoDispensado            Boolean   @default(false)
+  despachoDispensadoPor         String?
+  despachoDispensadoEm          DateTime?
+  despachoDispensadoMotivo      String?   @db.Text
   exercicio             String?
   valorAutuado          Decimal?        @db.Decimal(15, 2)
   objeto                String          @db.Text
@@ -593,6 +609,14 @@ model SubprocessoTce {
   memorialAgendadoAdvogadoId String?
   despachoAgendadoData       DateTime?
   despachoAgendadoAdvogadoId String?
+  memorialDispensado         Boolean        @default(false)
+  memorialDispensadoPor      String?
+  memorialDispensadoEm       DateTime?
+  memorialDispensadoMotivo   String?        @db.Text
+  despachoDispensado         Boolean        @default(false)
+  despachoDispensadoPor      String?
+  despachoDispensadoEm       DateTime?
+  despachoDispensadoMotivo   String?        @db.Text
   prazos                     PrazoSubprocessoTce[]
   andamentos           AndamentoSubprocessoTce[]
   documentos           DocumentoSubprocessoTce[]

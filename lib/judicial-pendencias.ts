@@ -22,6 +22,12 @@ export type PendenciaJud = {
     data: string;
     advogadoNome: string;
   } | null;
+  // Apenas para "memorial" / "despacho" — quando dispensado
+  dispensado?: {
+    por: string;
+    em: string;
+    motivo: string | null;
+  } | null;
 };
 
 export type ProcessoComPendenciasJud = {
@@ -37,6 +43,8 @@ export type ProcessoComPendenciasJud = {
   advogadoId: string;
   memorialPronto: boolean;
   despachadoComRelator: boolean;
+  memorialDispensado: boolean;
+  despachoDispensado: boolean;
   pendencias: PendenciaJud[];
 };
 
@@ -59,6 +67,14 @@ export function detectarPendenciasJud(
     memorialAgendadoAdvogadoNome?: string | null;
     despachoAgendadoData?: Date | null;
     despachoAgendadoAdvogadoNome?: string | null;
+    memorialDispensado?: boolean;
+    memorialDispensadoPor?: string | null;
+    memorialDispensadoEm?: Date | null;
+    memorialDispensadoMotivo?: string | null;
+    despachoDispensado?: boolean;
+    despachoDispensadoPor?: string | null;
+    despachoDispensadoEm?: Date | null;
+    despachoDispensadoMotivo?: string | null;
   },
   prazos: {
     id: string;
@@ -71,9 +87,32 @@ export function detectarPendenciasJud(
 ): PendenciaJud[] {
   const out: PendenciaJud[] = [];
 
+  const memDispensado =
+    processo.memorialDispensado &&
+    processo.memorialDispensadoPor &&
+    processo.memorialDispensadoEm
+      ? {
+          por: processo.memorialDispensadoPor,
+          em: processo.memorialDispensadoEm.toISOString(),
+          motivo: processo.memorialDispensadoMotivo ?? null,
+        }
+      : null;
+
+  const despDispensado =
+    processo.despachoDispensado &&
+    processo.despachoDispensadoPor &&
+    processo.despachoDispensadoEm
+      ? {
+          por: processo.despachoDispensadoPor,
+          em: processo.despachoDispensadoEm.toISOString(),
+          motivo: processo.despachoDispensadoMotivo ?? null,
+        }
+      : null;
+
   if (exigeMemorial(processo.fase, processo.grau)) {
     const memAgendado =
       !processo.memorialPronto &&
+      !memDispensado &&
       processo.memorialAgendadoData &&
       processo.memorialAgendadoAdvogadoNome
         ? {
@@ -81,23 +120,28 @@ export function detectarPendenciasJud(
             advogadoNome: processo.memorialAgendadoAdvogadoNome,
           }
         : null;
+    const concluida = processo.memorialPronto || !!memDispensado;
     out.push({
       id: `${processo.id}-memorial`,
       tipo: "memorial",
-      concluida: processo.memorialPronto,
+      concluida,
       descricao: "Elaborar Memorial",
-      detalhe: processo.memorialPronto
-        ? "Memorial pronto"
-        : memAgendado
-          ? `Memorial agendado para ${new Date(memAgendado.data).toLocaleDateString("pt-BR")} com ${memAgendado.advogadoNome}`
-          : "Memorial pendente de elaboracao",
+      detalhe: memDispensado
+        ? `Memorial dispensado por ${memDispensado.por} em ${new Date(memDispensado.em).toLocaleDateString("pt-BR")}${memDispensado.motivo ? `. Motivo: ${memDispensado.motivo}` : ""}`
+        : processo.memorialPronto
+          ? "Memorial pronto"
+          : memAgendado
+            ? `Memorial agendado para ${new Date(memAgendado.data).toLocaleDateString("pt-BR")} com ${memAgendado.advogadoNome}`
+            : "Memorial pendente de elaboracao",
       agendado: memAgendado,
+      dispensado: memDispensado,
     });
   }
 
-  if (processo.memorialPronto) {
+  if (processo.memorialPronto || memDispensado) {
     const despAgendado =
       !processo.despachadoComRelator &&
+      !despDispensado &&
       processo.despachoAgendadoData &&
       processo.despachoAgendadoAdvogadoNome
         ? {
@@ -105,17 +149,21 @@ export function detectarPendenciasJud(
             advogadoNome: processo.despachoAgendadoAdvogadoNome,
           }
         : null;
+    const concluida = processo.despachadoComRelator || !!despDispensado;
     out.push({
       id: `${processo.id}-despacho`,
       tipo: "despacho",
-      concluida: processo.despachadoComRelator,
+      concluida,
       descricao: "Agendar Despacho com Relator",
-      detalhe: processo.despachadoComRelator
-        ? "Despachado"
-        : despAgendado
-          ? `Despacho agendado para ${new Date(despAgendado.data).toLocaleDateString("pt-BR")} com ${despAgendado.advogadoNome}`
-          : "Aguardando agendamento de despacho",
+      detalhe: despDispensado
+        ? `Despacho dispensado por ${despDispensado.por} em ${new Date(despDispensado.em).toLocaleDateString("pt-BR")}${despDispensado.motivo ? `. Motivo: ${despDispensado.motivo}` : ""}`
+        : processo.despachadoComRelator
+          ? "Despachado"
+          : despAgendado
+            ? `Despacho agendado para ${new Date(despAgendado.data).toLocaleDateString("pt-BR")} com ${despAgendado.advogadoNome}`
+            : "Aguardando agendamento de despacho",
       agendado: despAgendado,
+      dispensado: despDispensado,
     });
   }
 
@@ -181,6 +229,7 @@ export function agregarPendenciasJud(
   for (const p of itens) {
     for (const pd of p.pendencias) {
       if (pd.concluida) continue;
+      if (pd.dispensado) continue;
       if (pd.tipo === "prazo" && pd.prazoStatus === "cumprido_com_atraso")
         continue;
       if (pd.tipo === "memorial") agg.memorial++;

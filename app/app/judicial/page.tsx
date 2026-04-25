@@ -221,6 +221,7 @@ export default async function AppHome({
       where: {
         ...base,
         memorialPronto: false,
+        memorialDispensado: false,
         fase: { not: "transitado" },
         OR: [
           { fase: { in: fasesEmPauta } },
@@ -229,7 +230,12 @@ export default async function AppHome({
       },
     }),
     prisma.processo.count({
-      where: { ...base, memorialPronto: true, despachadoComRelator: false },
+      where: {
+        ...base,
+        memorialPronto: true,
+        despachadoComRelator: false,
+        despachoDispensado: false,
+      },
     }),
     prisma.prazo.count({
       where: {

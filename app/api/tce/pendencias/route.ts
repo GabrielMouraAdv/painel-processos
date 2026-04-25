@@ -34,6 +34,11 @@ const agendarSchema = baseProcessoSchema.extend({
   advogadoId: z.string().min(1),
 });
 
+const dispensarSchema = baseProcessoSchema.extend({
+  advogadoId: z.string().min(1),
+  motivo: z.string().optional().nullable(),
+});
+
 const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_nt") }),
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_mpco") }),
@@ -45,6 +50,10 @@ const inputSchema = z.discriminatedUnion("acao", [
   agendarSchema.extend({ acao: z.literal("agendar_despacho") }),
   baseProcessoSchema.extend({ acao: z.literal("desfazer_agendamento_memorial") }),
   baseProcessoSchema.extend({ acao: z.literal("desfazer_agendamento_despacho") }),
+  dispensarSchema.extend({ acao: z.literal("dispensar_memorial") }),
+  dispensarSchema.extend({ acao: z.literal("dispensar_despacho") }),
+  baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_memorial") }),
+  baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_despacho") }),
 ]);
 
 export async function POST(req: Request) {
@@ -324,6 +333,101 @@ export async function POST(req: Request) {
       }
     });
     void tipoNorm;
+    return NextResponse.json({ ok: true });
+  }
+
+  if (
+    data.acao === "dispensar_memorial" ||
+    data.acao === "dispensar_despacho"
+  ) {
+    const ehMemorial = data.acao === "dispensar_memorial";
+    const adv = await prisma.user.findFirst({
+      where: { id: data.advogadoId, escritorioId },
+      select: { id: true, nome: true },
+    });
+    if (!adv) {
+      return NextResponse.json(
+        { error: "Advogado nao encontrado" },
+        { status: 400 },
+      );
+    }
+    const motivo = data.motivo?.trim() || null;
+    const agora = new Date();
+    const descricaoAndamento = ehMemorial
+      ? `Memorial dispensado por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`
+      : `Despacho dispensado por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`;
+
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: ehMemorial
+          ? {
+              memorialDispensado: true,
+              memorialDispensadoPor: adv.nome,
+              memorialDispensadoEm: agora,
+              memorialDispensadoMotivo: motivo,
+              memorialAgendadoData: null,
+              memorialAgendadoAdvogadoId: null,
+            }
+          : {
+              despachoDispensado: true,
+              despachoDispensadoPor: adv.nome,
+              despachoDispensadoEm: agora,
+              despachoDispensadoMotivo: motivo,
+              despachoAgendadoData: null,
+              despachoAgendadoAdvogadoId: null,
+            },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: agora,
+          fase: ehMemorial ? "memorial_dispensado" : "despacho_dispensado",
+          descricao: descricaoAndamento,
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (
+    data.acao === "reverter_dispensa_memorial" ||
+    data.acao === "reverter_dispensa_despacho"
+  ) {
+    const ehMemorial = data.acao === "reverter_dispensa_memorial";
+    const agora = new Date();
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: ehMemorial
+          ? {
+              memorialDispensado: false,
+              memorialDispensadoPor: null,
+              memorialDispensadoEm: null,
+              memorialDispensadoMotivo: null,
+            }
+          : {
+              despachoDispensado: false,
+              despachoDispensadoPor: null,
+              despachoDispensadoEm: null,
+              despachoDispensadoMotivo: null,
+            },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: agora,
+          fase: ehMemorial
+            ? "memorial_dispensa_revertida"
+            : "despacho_dispensa_revertido",
+          descricao: ehMemorial
+            ? "Dispensa do memorial revertida. Pendencia reaberta."
+            : "Dispensa do despacho revertida. Pendencia reaberta.",
+          autorId: userId,
+        },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 

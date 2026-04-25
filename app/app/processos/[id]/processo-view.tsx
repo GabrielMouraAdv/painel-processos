@@ -55,6 +55,7 @@ import {
   type MovimentacaoAutoItem,
   type PublicacaoDjenItem,
 } from "./monitoramento-section";
+import { DispensaBadgesTce } from "../../tce/processos/[id]/dispensa-badges";
 import {
   ProcessoForm,
   type AdvogadoOption,
@@ -127,6 +128,16 @@ export type ProcessoDetail = {
     movimentacoes: MovimentacaoAutoItem[];
     publicacoes: PublicacaoDjenItem[];
   };
+  memorialDispensado: {
+    por: string;
+    em: string;
+    motivo: string | null;
+  } | null;
+  despachoDispensado: {
+    por: string;
+    em: string;
+    motivo: string | null;
+  } | null;
 };
 
 type Props = {
@@ -286,6 +297,13 @@ export function ProcessoView({
           </div>
         </div>
       </div>
+
+      <DispensaBadgesTce
+        processoId={processo.id}
+        memorial={processo.memorialDispensado}
+        despacho={processo.despachoDispensado}
+        apiPath="/api/pendencias"
+      />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>

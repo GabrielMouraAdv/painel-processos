@@ -76,6 +76,7 @@ export default async function AppLayout({
         escritorioId,
         memorialPronto: true,
         despachadoComRelator: false,
+        despachoDispensado: false,
       },
     }),
   ]);

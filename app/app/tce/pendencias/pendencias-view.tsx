@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CamaraTce } from "@prisma/client";
 import {
   AlertTriangle,
+  Ban,
   Check,
   ClipboardCheck,
   ExternalLink,
@@ -38,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { CriarPrazoDialog } from "./criar-prazo-dialog";
 import { AgendarPendenciaDialog } from "./agendar-dialog";
 import { DespachoFeitoDialog } from "./despacho-feito-dialog";
+import { DispensarPendenciaDialog } from "./dispensar-dialog";
 import { MemorialProntoDialog } from "./memorial-pronto-dialog";
 
 const CAMARA_LABEL: Record<CamaraTce, string> = {
@@ -49,7 +51,7 @@ const CAMARA_LABEL: Record<CamaraTce, string> = {
 type Advogado = { id: string; nome: string };
 
 type FiltroKpi = TipoPendencia | "todas" | null;
-type FiltroStatus = "pendentes" | "concluidas" | "todas";
+type FiltroStatus = "pendentes" | "concluidas" | "dispensados" | "todas";
 
 export function PendenciasView({
   cards,
@@ -68,8 +70,11 @@ export function PendenciasView({
     return cards
       .map((c) => {
         const filtradas = c.pendencias.filter((pd) => {
-          if (filtroStatus === "pendentes" && pd.concluida) return false;
-          if (filtroStatus === "concluidas" && !pd.concluida) return false;
+          if (filtroStatus === "pendentes" && (pd.concluida || pd.dispensado))
+            return false;
+          if (filtroStatus === "concluidas" && (!pd.concluida || pd.dispensado))
+            return false;
+          if (filtroStatus === "dispensados" && !pd.dispensado) return false;
           if (filtroKpi && filtroKpi !== "todas" && pd.tipo !== filtroKpi)
             return false;
           return true;
@@ -162,6 +167,7 @@ export function PendenciasView({
               <SelectContent>
                 <SelectItem value="pendentes">Pendentes</SelectItem>
                 <SelectItem value="concluidas">Concluidas</SelectItem>
+                <SelectItem value="dispensados">Dispensados</SelectItem>
                 <SelectItem value="todas">Todas</SelectItem>
               </SelectContent>
             </Select>
@@ -270,6 +276,38 @@ function ProcessoCardComponent({
   const [agendarDespachoOpen, setAgendarDespachoOpen] = React.useState(false);
   const [memorialProntoOpen, setMemorialProntoOpen] = React.useState(false);
   const [despachoFeitoOpen, setDespachoFeitoOpen] = React.useState(false);
+  const [dispensarMemorialOpen, setDispensarMemorialOpen] = React.useState(false);
+  const [dispensarDespachoOpen, setDispensarDespachoOpen] = React.useState(false);
+
+  async function reverterDispensa(modo: "memorial" | "despacho") {
+    setBusyId(`reverter-${modo}`);
+    try {
+      const res = await fetch("/api/tce/pendencias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acao:
+            modo === "memorial"
+              ? "reverter_dispensa_memorial"
+              : "reverter_dispensa_despacho",
+          processoId: processo.id,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: json.error ?? "Tente novamente.",
+        });
+        return;
+      }
+      toast({ title: "Dispensa revertida" });
+      router.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   // Quando o user marca cumprido um prazo do tipo "Agendar..." abrimos o modal
   // de agendamento com a data pre-preenchida.
@@ -385,15 +423,18 @@ function ProcessoCardComponent({
         {processo.pendencias.map((pd) => {
           const isVencido = pd.tipo === "prazo" && pd.prazoStatus === "vencido";
           const isAgendado = !!pd.agendado;
+          const isDispensado = !!pd.dispensado;
           return (
           <li
             key={pd.id}
             className={
-              isVencido
-                ? "flex flex-wrap items-center gap-3 border-l-4 border-l-red-700 bg-red-50 px-5 py-3"
-                : isAgendado
-                  ? "flex flex-wrap items-center gap-3 border-l-4 border-l-blue-500 bg-blue-50 px-5 py-3"
-                  : "flex flex-wrap items-center gap-3 px-5 py-3"
+              isDispensado
+                ? "flex flex-wrap items-center gap-3 border-l-4 border-l-slate-400 bg-slate-100 px-5 py-3"
+                : isVencido
+                  ? "flex flex-wrap items-center gap-3 border-l-4 border-l-red-700 bg-red-50 px-5 py-3"
+                  : isAgendado
+                    ? "flex flex-wrap items-center gap-3 border-l-4 border-l-blue-500 bg-blue-50 px-5 py-3"
+                    : "flex flex-wrap items-center gap-3 px-5 py-3"
             }
           >
             <PendenciaIcon tipo={pd.tipo} />
@@ -423,7 +464,12 @@ function ProcessoCardComponent({
                 </p>
               )}
             </div>
-            {pd.tipo === "prazo" ? (
+            {isDispensado ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-slate-200 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700">
+                <Ban className="h-3 w-3" />
+                Dispensado
+              </span>
+            ) : pd.tipo === "prazo" ? (
               pd.prazoStatus === "vencido" ? (
                 <span className="inline-flex items-center gap-1 rounded-md border border-red-700 bg-[#fecaca] px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#7f1d1d]">
                   Vencido
@@ -448,7 +494,21 @@ function ProcessoCardComponent({
                 Pendente
               </span>
             )}
-            {!pd.concluida && (
+            {isDispensado && (pd.tipo === "memorial" || pd.tipo === "despacho") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => reverterDispensa(pd.tipo as "memorial" | "despacho")}
+                disabled={busyId !== null}
+              >
+                {busyId === `reverter-${pd.tipo}` ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  "Reverter Dispensa"
+                )}
+              </Button>
+            )}
+            {!pd.concluida && !isDispensado && (
               <div className="flex flex-wrap items-center gap-2">
                 {pd.tipo === "prazo" && pd.prazoId && (
                   <Button
@@ -491,6 +551,22 @@ function ProcessoCardComponent({
                     disabled={busyId !== null}
                   >
                     Reagendar
+                  </Button>
+                )}
+                {(pd.tipo === "memorial" || pd.tipo === "despacho") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                    onClick={() =>
+                      pd.tipo === "memorial"
+                        ? setDispensarMemorialOpen(true)
+                        : setDispensarDespachoOpen(true)
+                    }
+                    disabled={busyId !== null}
+                  >
+                    <Ban className="mr-1 h-3.5 w-3.5" />
+                    Dispensar
                   </Button>
                 )}
                 <Button
@@ -565,6 +641,24 @@ function ProcessoCardComponent({
         onOpenChange={setDespachoFeitoOpen}
         processoId={processo.id}
         pendenciasApiPath="/api/tce/pendencias"
+      />
+
+      <DispensarPendenciaDialog
+        open={dispensarMemorialOpen}
+        onOpenChange={setDispensarMemorialOpen}
+        modo="memorial"
+        processoId={processo.id}
+        advogados={advogados}
+        apiPath="/api/tce/pendencias"
+      />
+
+      <DispensarPendenciaDialog
+        open={dispensarDespachoOpen}
+        onOpenChange={setDispensarDespachoOpen}
+        modo="despacho"
+        processoId={processo.id}
+        advogados={advogados}
+        apiPath="/api/tce/pendencias"
       />
     </Card>
   );

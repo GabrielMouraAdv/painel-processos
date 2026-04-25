@@ -109,6 +109,14 @@ export default async function PendenciasJudiciaisPage() {
           despachoAgendadoAdvogadoNome: p.despachoAgendadoAdvogadoId
             ? advsAgendamentoMap.get(p.despachoAgendadoAdvogadoId) ?? null
             : null,
+          memorialDispensado: p.memorialDispensado,
+          memorialDispensadoPor: p.memorialDispensadoPor,
+          memorialDispensadoEm: p.memorialDispensadoEm,
+          memorialDispensadoMotivo: p.memorialDispensadoMotivo,
+          despachoDispensado: p.despachoDispensado,
+          despachoDispensadoPor: p.despachoDispensadoPor,
+          despachoDispensadoEm: p.despachoDispensadoEm,
+          despachoDispensadoMotivo: p.despachoDispensadoMotivo,
         },
         prazosFiltrados,
       );
@@ -126,6 +134,8 @@ export default async function PendenciasJudiciaisPage() {
         advogadoId: p.advogado.id,
         memorialPronto: p.memorialPronto,
         despachadoComRelator: p.despachadoComRelator,
+        memorialDispensado: p.memorialDispensado,
+        despachoDispensado: p.despachoDispensado,
         pendencias,
       };
     })

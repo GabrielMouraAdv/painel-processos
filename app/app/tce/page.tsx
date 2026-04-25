@@ -148,6 +148,7 @@ export default async function TceDashboardPage({
       where: {
         ...base,
         memorialPronto: false,
+        memorialDispensado: false,
         faseAtual: { notIn: ["transitado", "transitado_cautelar"] },
         tipo: {
           notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
@@ -164,6 +165,7 @@ export default async function TceDashboardPage({
       where: {
         ...base,
         despachadoComRelator: false,
+        despachoDispensado: false,
         tipo: {
           notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
         },
@@ -188,6 +190,7 @@ export default async function TceDashboardPage({
         ...base,
         memorialPronto: true,
         despachadoComRelator: false,
+        despachoDispensado: false,
         tipo: {
           notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
         },

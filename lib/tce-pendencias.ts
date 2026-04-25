@@ -35,6 +35,12 @@ export type Pendencia = {
     data: string; // ISO
     advogadoNome: string;
   } | null;
+  // Apenas para "memorial" / "despacho" — quando dispensado
+  dispensado?: {
+    por: string;
+    em: string; // ISO
+    motivo: string | null;
+  } | null;
 };
 
 export type ProcessoComPendencias = {
@@ -52,6 +58,8 @@ export type ProcessoComPendencias = {
   despachadoComRelator: boolean;
   contrarrazoesNtApresentadas: boolean;
   contrarrazoesMpcoApresentadas: boolean;
+  memorialDispensado: boolean;
+  despachoDispensado: boolean;
   pendencias: Pendencia[];
 };
 
@@ -81,6 +89,14 @@ export function detectarPendencias(
     memorialAgendadoAdvogadoNome?: string | null;
     despachoAgendadoData?: Date | null;
     despachoAgendadoAdvogadoNome?: string | null;
+    memorialDispensado?: boolean;
+    memorialDispensadoPor?: string | null;
+    memorialDispensadoEm?: Date | null;
+    memorialDispensadoMotivo?: string | null;
+    despachoDispensado?: boolean;
+    despachoDispensadoPor?: string | null;
+    despachoDispensadoEm?: Date | null;
+    despachoDispensadoMotivo?: string | null;
   },
   andamentos: AndamentoMin[],
   prazos: {
@@ -120,9 +136,32 @@ export function detectarPendencias(
     });
   }
 
+  const memDispensado =
+    processo.memorialDispensado &&
+    processo.memorialDispensadoPor &&
+    processo.memorialDispensadoEm
+      ? {
+          por: processo.memorialDispensadoPor,
+          em: processo.memorialDispensadoEm.toISOString(),
+          motivo: processo.memorialDispensadoMotivo ?? null,
+        }
+      : null;
+
+  const despDispensado =
+    processo.despachoDispensado &&
+    processo.despachoDispensadoPor &&
+    processo.despachoDispensadoEm
+      ? {
+          por: processo.despachoDispensadoPor,
+          em: processo.despachoDispensadoEm.toISOString(),
+          motivo: processo.despachoDispensadoMotivo ?? null,
+        }
+      : null;
+
   if (!semFluxoRelator && !FASES_ENCERRADAS.has(processo.faseAtual)) {
     const memAgendado =
       !processo.memorialPronto &&
+      !memDispensado &&
       processo.memorialAgendadoData &&
       processo.memorialAgendadoAdvogadoNome
         ? {
@@ -130,23 +169,28 @@ export function detectarPendencias(
             advogadoNome: processo.memorialAgendadoAdvogadoNome,
           }
         : null;
+    const concluida = processo.memorialPronto || !!memDispensado;
     out.push({
       id: `${processo.id}-memorial`,
       tipo: "memorial",
-      concluida: processo.memorialPronto,
+      concluida,
       descricao: "Elaborar Memorial",
-      detalhe: processo.memorialPronto
-        ? "Memorial pronto"
-        : memAgendado
-          ? `Memorial agendado para ${new Date(memAgendado.data).toLocaleDateString("pt-BR")} com ${memAgendado.advogadoNome}`
-          : "Memorial pendente de elaboracao",
+      detalhe: memDispensado
+        ? `Memorial dispensado por ${memDispensado.por} em ${new Date(memDispensado.em).toLocaleDateString("pt-BR")}${memDispensado.motivo ? `. Motivo: ${memDispensado.motivo}` : ""}`
+        : processo.memorialPronto
+          ? "Memorial pronto"
+          : memAgendado
+            ? `Memorial agendado para ${new Date(memAgendado.data).toLocaleDateString("pt-BR")} com ${memAgendado.advogadoNome}`
+            : "Memorial pendente de elaboracao",
       agendado: memAgendado,
+      dispensado: memDispensado,
     });
   }
 
-  if (!semFluxoRelator && processo.memorialPronto) {
+  if (!semFluxoRelator && (processo.memorialPronto || memDispensado)) {
     const despAgendado =
       !processo.despachadoComRelator &&
+      !despDispensado &&
       processo.despachoAgendadoData &&
       processo.despachoAgendadoAdvogadoNome
         ? {
@@ -154,17 +198,21 @@ export function detectarPendencias(
             advogadoNome: processo.despachoAgendadoAdvogadoNome,
           }
         : null;
+    const concluida = processo.despachadoComRelator || !!despDispensado;
     out.push({
       id: `${processo.id}-despacho`,
       tipo: "despacho",
-      concluida: processo.despachadoComRelator,
+      concluida,
       descricao: "Agendar Despacho com Relator",
-      detalhe: processo.despachadoComRelator
-        ? "Despachado"
-        : despAgendado
-          ? `Despacho agendado para ${new Date(despAgendado.data).toLocaleDateString("pt-BR")} com ${despAgendado.advogadoNome}`
-          : "Aguardando agendamento de despacho",
+      detalhe: despDispensado
+        ? `Despacho dispensado por ${despDispensado.por} em ${new Date(despDispensado.em).toLocaleDateString("pt-BR")}${despDispensado.motivo ? `. Motivo: ${despDispensado.motivo}` : ""}`
+        : processo.despachadoComRelator
+          ? "Despachado"
+          : despAgendado
+            ? `Despacho agendado para ${new Date(despAgendado.data).toLocaleDateString("pt-BR")} com ${despAgendado.advogadoNome}`
+            : "Aguardando agendamento de despacho",
       agendado: despAgendado,
+      dispensado: despDispensado,
     });
   }
 
@@ -238,6 +286,8 @@ export function agregarPendencias(
   for (const p of itens) {
     for (const pd of p.pendencias) {
       if (pd.concluida) continue;
+      // Dispensados nao contam como pendencia ativa.
+      if (pd.dispensado) continue;
       // Nao conta cumprido_com_atraso como pendencia ativa (ja foi resolvido).
       if (pd.tipo === "prazo" && pd.prazoStatus === "cumprido_com_atraso")
         continue;

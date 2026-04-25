@@ -174,6 +174,26 @@ export default async function ProcessoDetailPage({
         geraIntimacao: p.geraIntimacao,
       })),
     },
+    memorialDispensado:
+      processo.memorialDispensado &&
+      processo.memorialDispensadoPor &&
+      processo.memorialDispensadoEm
+        ? {
+            por: processo.memorialDispensadoPor,
+            em: processo.memorialDispensadoEm.toISOString(),
+            motivo: processo.memorialDispensadoMotivo ?? null,
+          }
+        : null,
+    despachoDispensado:
+      processo.despachoDispensado &&
+      processo.despachoDispensadoPor &&
+      processo.despachoDispensadoEm
+        ? {
+            por: processo.despachoDispensadoPor,
+            em: processo.despachoDispensadoEm.toISOString(),
+            motivo: processo.despachoDispensadoMotivo ?? null,
+          }
+        : null,
   };
 
   return (

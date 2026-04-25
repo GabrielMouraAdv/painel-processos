@@ -181,6 +181,14 @@ export default async function PendenciasTcePage() {
           despachoAgendadoAdvogadoNome: p.despachoAgendadoAdvogadoId
             ? advsAgendamentoMap.get(p.despachoAgendadoAdvogadoId) ?? null
             : null,
+          memorialDispensado: p.memorialDispensado,
+          memorialDispensadoPor: p.memorialDispensadoPor,
+          memorialDispensadoEm: p.memorialDispensadoEm,
+          memorialDispensadoMotivo: p.memorialDispensadoMotivo,
+          despachoDispensado: p.despachoDispensado,
+          despachoDispensadoPor: p.despachoDispensadoPor,
+          despachoDispensadoEm: p.despachoDispensadoEm,
+          despachoDispensadoMotivo: p.despachoDispensadoMotivo,
         },
         p.andamentos,
         prazosFiltrados,
@@ -201,6 +209,8 @@ export default async function PendenciasTcePage() {
         despachadoComRelator: p.despachadoComRelator,
         contrarrazoesNtApresentadas: p.contrarrazoesNtApresentadas,
         contrarrazoesMpcoApresentadas: p.contrarrazoesMpcoApresentadas,
+        memorialDispensado: p.memorialDispensado,
+        despachoDispensado: p.despachoDispensado,
         pendencias,
       };
     })

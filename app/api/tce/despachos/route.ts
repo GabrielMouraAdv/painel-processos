@@ -83,11 +83,12 @@ export async function GET(req: Request) {
     where.AND = [
       { memorialPronto: true },
       { despachadoComRelator: false },
+      { despachoDispensado: false },
     ];
   } else if (status === "despachado") {
     where.AND = [{ despachadoComRelator: true }];
   } else if (status === "memorial_pendente") {
-    where.AND = [{ memorialPronto: false }];
+    where.AND = [{ memorialPronto: false }, { memorialDispensado: false }];
   }
 
   const processos = await prisma.processoTce.findMany({

@@ -9,6 +9,7 @@ type ProcessoFlags = {
   parecerMpco: boolean;
   despachadoComRelator: boolean;
   memorialPronto: boolean;
+  despachoDispensado?: boolean;
 };
 
 export function computeTceAlertas(p: ProcessoFlags): TceAlerta[] {
@@ -29,7 +30,7 @@ export function computeTceAlertas(p: ProcessoFlags): TceAlerta[] {
         "Parecer do Ministerio Publico de Contas juntado. Avaliar contrarrazoes.",
     });
   }
-  if (p.memorialPronto && !p.despachadoComRelator) {
+  if (p.memorialPronto && !p.despachadoComRelator && !p.despachoDispensado) {
     lista.push({
       key: "despacho_relator",
       titulo: "Agendar despacho com o relator",
