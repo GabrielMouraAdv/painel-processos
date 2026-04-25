@@ -42,6 +42,7 @@ import {
   type InteressadoItem,
 } from "./interessados-tce-manager";
 import { PrazosTceCardActions, type PrazoTceItem } from "./prazo-tce-actions";
+import { RecursosSection } from "./recursos-section";
 
 function formatDate(d: Date | null | undefined): string {
   if (!d) return "-";
@@ -97,6 +98,62 @@ export default async function ProcessoTceDetailPage({
   });
 
   if (!processo) notFound();
+
+  const subprocessosRaw = await prisma.subprocessoTce.findMany({
+    where: { processoPaiId: processo.id },
+    orderBy: [{ dataInterposicao: "asc" }, { numeroSequencial: "asc" }],
+    include: {
+      prazos: {
+        where: { cumprido: false },
+        orderBy: { dataVencimento: "asc" },
+        select: { id: true, tipo: true, dataVencimento: true },
+      },
+    },
+  });
+
+  type SubLite = (typeof subprocessosRaw)[number];
+  const byId = new Map<string, SubLite>(subprocessosRaw.map((s) => [s.id, s]));
+  type SubNode = {
+    id: string;
+    numero: string;
+    tipoRecurso: SubLite["tipoRecurso"];
+    numeroSequencial: number;
+    dataInterposicao: string;
+    fase: string;
+    relator: string | null;
+    prazosAbertos: number;
+    prazoMaisProximo: { tipo: string; data: string } | null;
+    filhos: SubNode[];
+  };
+  const childrenOf = new Map<string | null, SubLite[]>();
+  for (const s of subprocessosRaw) {
+    const k = s.subprocessoPaiId ?? null;
+    const list = childrenOf.get(k) ?? [];
+    list.push(s);
+    childrenOf.set(k, list);
+  }
+  function buildTree(paiId: string | null): SubNode[] {
+    const arr = childrenOf.get(paiId) ?? [];
+    return arr.map((s) => ({
+      id: s.id,
+      numero: s.numero,
+      tipoRecurso: s.tipoRecurso,
+      numeroSequencial: s.numeroSequencial,
+      dataInterposicao: s.dataInterposicao.toISOString(),
+      fase: s.fase,
+      relator: s.relator,
+      prazosAbertos: s.prazos.length,
+      prazoMaisProximo: s.prazos[0]
+        ? {
+            tipo: s.prazos[0].tipo,
+            data: s.prazos[0].dataVencimento.toISOString(),
+          }
+        : null,
+      filhos: buildTree(s.id),
+    }));
+  }
+  void byId;
+  const subprocessosArvore = buildTree(null);
 
   const [gestores, advogados] = await Promise.all([
     prisma.gestor.findMany({
@@ -392,6 +449,12 @@ export default async function ProcessoTceDetailPage({
           )}
         </CardContent>
       </Card>
+
+      <RecursosSection
+        processoId={processo.id}
+        baseNumero={processo.numero}
+        subprocessos={subprocessosArvore}
+      />
 
       <DocumentosSection
         escopo="tce"

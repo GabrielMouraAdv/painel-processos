@@ -349,6 +349,7 @@ model ProcessoTce {
   prazos       PrazoTce[]
   itensPauta   ItemPauta[]
   documentos   DocumentoTce[]
+  subprocessos SubprocessoTce[]
 
   @@index([escritorioId])
   @@index([municipioId])
@@ -548,4 +549,86 @@ model MonitoramentoConfig {
   totalVerificacoes  Int       @default(0)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+}
+
+enum TipoRecursoTce {
+  RECURSO_ORDINARIO
+  EMBARGOS_DECLARACAO
+  AGRAVO
+  AGRAVO_REGIMENTAL
+  PEDIDO_RESCISAO_RECURSO
+  PEDIDO_SUSPENSAO_CAUTELAR
+}
+
+model SubprocessoTce {
+  id                String         @id @default(cuid())
+  processoPaiId     String
+  processoPai       ProcessoTce    @relation(fields: [processoPaiId], references: [id], onDelete: Cascade)
+  subprocessoPaiId  String?
+  subprocessoPai    SubprocessoTce? @relation("SubprocessoPaiFilho", fields: [subprocessoPaiId], references: [id], onDelete: Cascade)
+  subprocessosFilhos SubprocessoTce[] @relation("SubprocessoPaiFilho")
+  numero            String
+  tipoRecurso       TipoRecursoTce
+  numeroSequencial  Int
+  dataInterposicao  DateTime
+  dataIntimacao     DateTime?
+  fase              String
+  relator           String?
+  decisao           String?        @db.Text
+  observacoes       String?        @db.Text
+  prazos            PrazoSubprocessoTce[]
+  andamentos        AndamentoSubprocessoTce[]
+  documentos        DocumentoSubprocessoTce[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([processoPaiId])
+  @@index([subprocessoPaiId])
+}
+
+model PrazoSubprocessoTce {
+  id                String         @id @default(cuid())
+  subprocessoId     String
+  subprocesso       SubprocessoTce @relation(fields: [subprocessoId], references: [id], onDelete: Cascade)
+  tipo              String
+  dataIntimacao     DateTime
+  dataVencimento    DateTime
+  diasUteis         Int
+  prorrogavel       Boolean        @default(true)
+  prorrogacaoPedida Boolean        @default(false)
+  cumprido          Boolean        @default(false)
+  advogadoRespId    String?
+  observacoes       String?
+  createdAt         DateTime       @default(now())
+
+  @@index([subprocessoId])
+  @@index([dataVencimento])
+  @@index([cumprido])
+}
+
+model AndamentoSubprocessoTce {
+  id            String         @id @default(cuid())
+  subprocessoId String
+  subprocesso   SubprocessoTce @relation(fields: [subprocessoId], references: [id], onDelete: Cascade)
+  data          DateTime
+  fase          String
+  descricao     String         @db.Text
+  autorId       String
+  createdAt     DateTime       @default(now())
+
+  @@index([subprocessoId])
+}
+
+model DocumentoSubprocessoTce {
+  id            String         @id @default(cuid())
+  subprocessoId String
+  subprocesso   SubprocessoTce @relation(fields: [subprocessoId], references: [id], onDelete: Cascade)
+  nome          String
+  url           String
+  tipo          String
+  tamanho       Int
+  uploadedBy    String
+  createdAt     DateTime       @default(now())
+
+  @@index([subprocessoId])
 }

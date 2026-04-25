@@ -1,4 +1,4 @@
-import { CamaraTce, TipoProcessoTce } from "@prisma/client";
+import { CamaraTce, TipoProcessoTce, type TipoRecursoTce } from "@prisma/client";
 
 export type CamaraConfig = {
   label: string;
@@ -249,3 +249,74 @@ export function todasFasesTce(): FaseTce[] {
   }
   return Array.from(map.values());
 }
+
+// Configuracao dos prazos por tipo de recurso interposto.
+export type PrazoRecursoConfig = {
+  tipo: string; // descricao do prazo de contrarrazoes
+  diasUteis: number;
+  prorrogavel: boolean;
+  observacao?: string;
+};
+
+export const PRAZOS_RECURSOS_TCE: Partial<
+  Record<TipoRecursoTce, PrazoRecursoConfig>
+> = {
+  RECURSO_ORDINARIO: {
+    tipo: "Contrarrazoes ao Recurso Ordinario",
+    diasUteis: 30,
+    prorrogavel: true,
+    observacao: "Suspensivo + devolutivo",
+  },
+  EMBARGOS_DECLARACAO: {
+    tipo: "Contrarrazoes aos Embargos de Declaracao",
+    diasUteis: 5,
+    prorrogavel: false,
+    observacao: "Interrompe outros prazos",
+  },
+  AGRAVO: {
+    tipo: "Contrarrazoes ao Agravo",
+    diasUteis: 5,
+    prorrogavel: false,
+    observacao: "Devolutivo",
+  },
+  AGRAVO_REGIMENTAL: {
+    tipo: "Contrarrazoes ao Agravo Regimental",
+    diasUteis: 5,
+    prorrogavel: false,
+  },
+  // PEDIDO_RESCISAO_RECURSO e PEDIDO_SUSPENSAO_CAUTELAR nao tem prazo automatico
+};
+
+export function getPrazoRecursoPorTipo(
+  tipo: TipoRecursoTce,
+): PrazoRecursoConfig | null {
+  return PRAZOS_RECURSOS_TCE[tipo] ?? null;
+}
+
+export const TCE_RECURSO_LABELS: Record<TipoRecursoTce, string> = {
+  RECURSO_ORDINARIO: "Recurso Ordinario",
+  EMBARGOS_DECLARACAO: "Embargos de Declaracao",
+  AGRAVO: "Agravo",
+  AGRAVO_REGIMENTAL: "Agravo Regimental",
+  PEDIDO_RESCISAO_RECURSO: "Pedido de Rescisao",
+  PEDIDO_SUSPENSAO_CAUTELAR: "Pedido de Suspensao Cautelar",
+};
+
+export const TCE_RECURSO_CODE: Record<TipoRecursoTce, string> = {
+  RECURSO_ORDINARIO: "RO",
+  EMBARGOS_DECLARACAO: "ED",
+  AGRAVO: "AG",
+  AGRAVO_REGIMENTAL: "AGR",
+  PEDIDO_RESCISAO_RECURSO: "PR",
+  PEDIDO_SUSPENSAO_CAUTELAR: "PSC",
+};
+
+// Fases iniciais por tipo de recurso (apos interposicao)
+export const TCE_RECURSO_FASE_INICIAL: Record<TipoRecursoTce, string> = {
+  RECURSO_ORDINARIO: "recurso_interposto",
+  EMBARGOS_DECLARACAO: "embargos_interpostos",
+  AGRAVO: "agravo_interposto",
+  AGRAVO_REGIMENTAL: "agravo_regimental_interposto",
+  PEDIDO_RESCISAO_RECURSO: "pedido_rescisao_interposto",
+  PEDIDO_SUSPENSAO_CAUTELAR: "pedido_suspensao_interposto",
+};
