@@ -37,13 +37,13 @@ import {
 import { cn } from "@/lib/utils";
 
 import { AndamentoTceForm } from "./andamento-tce-form";
-import { DispensaBadgesTce } from "./dispensa-badges";
 import {
   InteressadosTceManager,
   type InteressadoItem,
 } from "./interessados-tce-manager";
 import { PrazosTceCardActions, type PrazoTceItem } from "./prazo-tce-actions";
 import { RecursosSection } from "./recursos-section";
+import { StatusAcoesSection } from "./status-acoes-section";
 
 function formatDate(d: Date | null | undefined): string {
   if (!d) return "-";
@@ -216,6 +216,30 @@ export default async function ProcessoTceDetailPage({
     uploadedByNome: d.uploadedByUser.nome,
   }));
 
+  // Memorial mais recente (para o card Memorial mostrar link de download).
+  const memorialDoc = (() => {
+    const m = processo.documentos.find(
+      (d) => d.tipo.toLowerCase() === "memorial",
+    );
+    if (!m) return null;
+    return {
+      id: m.id,
+      nome: m.nome,
+      url: m.url,
+      createdAt: m.createdAt.toISOString(),
+      uploadedByNome: m.uploadedByUser.nome,
+    };
+  })();
+
+  // Nomes dos advogados do agendamento (memorial / despacho).
+  const advNomePorId = new Map(advogados.map((a) => [a.id, a.nome]));
+  const memorialAgendadoAdvogadoNome = processo.memorialAgendadoAdvogadoId
+    ? advNomePorId.get(processo.memorialAgendadoAdvogadoId) ?? null
+    : null;
+  const despachoAgendadoAdvogadoNome = processo.despachoAgendadoAdvogadoId
+    ? advNomePorId.get(processo.despachoAgendadoAdvogadoId) ?? null
+    : null;
+
   const canDeleteDocumentos = session!.user.role === Role.ADMIN;
 
   return (
@@ -251,38 +275,28 @@ export default async function ProcessoTceDetailPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs">
-          <BoolBadge label="Nota Tecnica" value={processo.notaTecnica} />
-          <BoolBadge label="Parecer MPCO" value={processo.parecerMpco} />
-          <BoolBadge label="Despachado" value={processo.despachadoComRelator} />
-          <BoolBadge label="Memorial" value={processo.memorialPronto} />
+          <BoolBadge
+            label="Nota Tecnica"
+            value={processo.notaTecnica}
+            href="#card-nt"
+          />
+          <BoolBadge
+            label="Parecer MPCO"
+            value={processo.parecerMpco}
+            href="#card-mpco"
+          />
+          <BoolBadge
+            label="Despachado"
+            value={processo.despachadoComRelator}
+            href="#card-despacho"
+          />
+          <BoolBadge
+            label="Memorial"
+            value={processo.memorialPronto}
+            href="#card-memorial"
+          />
         </div>
       </header>
-
-      <DispensaBadgesTce
-        processoId={processo.id}
-        memorial={
-          processo.memorialDispensado &&
-          processo.memorialDispensadoPor &&
-          processo.memorialDispensadoEm
-            ? {
-                por: processo.memorialDispensadoPor,
-                em: processo.memorialDispensadoEm.toISOString(),
-                motivo: processo.memorialDispensadoMotivo ?? null,
-              }
-            : null
-        }
-        despacho={
-          processo.despachoDispensado &&
-          processo.despachoDispensadoPor &&
-          processo.despachoDispensadoEm
-            ? {
-                por: processo.despachoDispensadoPor,
-                em: processo.despachoDispensadoEm.toISOString(),
-                motivo: processo.despachoDispensadoMotivo ?? null,
-              }
-            : null
-        }
-      />
 
       {alertas.length > 0 && (
         <Card className="border-amber-300 bg-amber-50">
@@ -376,6 +390,78 @@ export default async function ProcessoTceDetailPage({
           </CardContent>
         </Card>
       </section>
+
+      <StatusAcoesSection
+        processoId={processo.id}
+        notaTecnica={processo.notaTecnica}
+        parecerMpco={processo.parecerMpco}
+        contrarrazoesNtApresentadas={processo.contrarrazoesNtApresentadas}
+        contrarrazoesMpcoApresentadas={processo.contrarrazoesMpcoApresentadas}
+        contrarrazoesNtDispensado={
+          processo.contrarrazoesNtDispensadas &&
+          processo.contrarrazoesNtDispensadoPor &&
+          processo.contrarrazoesNtDispensadoEm
+            ? {
+                por: processo.contrarrazoesNtDispensadoPor,
+                em: processo.contrarrazoesNtDispensadoEm.toISOString(),
+                motivo: processo.contrarrazoesNtDispensadoMotivo ?? null,
+              }
+            : null
+        }
+        contrarrazoesMpcoDispensado={
+          processo.contrarrazoesMpcoDispensadas &&
+          processo.contrarrazoesMpcoDispensadoPor &&
+          processo.contrarrazoesMpcoDispensadoEm
+            ? {
+                por: processo.contrarrazoesMpcoDispensadoPor,
+                em: processo.contrarrazoesMpcoDispensadoEm.toISOString(),
+                motivo: processo.contrarrazoesMpcoDispensadoMotivo ?? null,
+              }
+            : null
+        }
+        memorialPronto={processo.memorialPronto}
+        memorialDispensado={
+          processo.memorialDispensado &&
+          processo.memorialDispensadoPor &&
+          processo.memorialDispensadoEm
+            ? {
+                por: processo.memorialDispensadoPor,
+                em: processo.memorialDispensadoEm.toISOString(),
+                motivo: processo.memorialDispensadoMotivo ?? null,
+              }
+            : null
+        }
+        despachadoComRelator={processo.despachadoComRelator}
+        despachoDispensado={
+          processo.despachoDispensado &&
+          processo.despachoDispensadoPor &&
+          processo.despachoDispensadoEm
+            ? {
+                por: processo.despachoDispensadoPor,
+                em: processo.despachoDispensadoEm.toISOString(),
+                motivo: processo.despachoDispensadoMotivo ?? null,
+              }
+            : null
+        }
+        dataDespacho={
+          processo.dataDespacho ? processo.dataDespacho.toISOString() : null
+        }
+        retornoDespacho={processo.retornoDespacho}
+        memorialAgendadoData={
+          processo.memorialAgendadoData
+            ? processo.memorialAgendadoData.toISOString()
+            : null
+        }
+        memorialAgendadoAdvogadoNome={memorialAgendadoAdvogadoNome}
+        despachoAgendadoData={
+          processo.despachoAgendadoData
+            ? processo.despachoAgendadoData.toISOString()
+            : null
+        }
+        despachoAgendadoAdvogadoNome={despachoAgendadoAdvogadoNome}
+        memorialDoc={memorialDoc}
+        advogados={advogados}
+      />
 
       <Card>
         <CardHeader className="pb-2">
@@ -506,16 +592,32 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BoolBadge({ label, value }: { label: string; value: boolean }) {
+function BoolBadge({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: boolean;
+  href?: string;
+}) {
+  const className = cn(
+    "inline-flex items-center gap-1 rounded-full border px-2 py-1",
+    value
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : "border-slate-200 bg-slate-50 text-slate-600",
+    href && "transition-colors hover:bg-opacity-80 hover:underline",
+  );
+  if (href) {
+    return (
+      <a href={href} className={className}>
+        <StatusIcon active={value} />
+        {label}
+      </a>
+    );
+  }
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-1",
-        value
-          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-          : "border-slate-200 bg-slate-50 text-slate-600",
-      )}
-    >
+    <span className={className}>
       <StatusIcon active={value} />
       {label}
     </span>

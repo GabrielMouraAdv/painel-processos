@@ -97,6 +97,14 @@ export function detectarPendencias(
     despachoDispensadoPor?: string | null;
     despachoDispensadoEm?: Date | null;
     despachoDispensadoMotivo?: string | null;
+    contrarrazoesNtDispensadas?: boolean;
+    contrarrazoesNtDispensadoPor?: string | null;
+    contrarrazoesNtDispensadoEm?: Date | null;
+    contrarrazoesNtDispensadoMotivo?: string | null;
+    contrarrazoesMpcoDispensadas?: boolean;
+    contrarrazoesMpcoDispensadoPor?: string | null;
+    contrarrazoesMpcoDispensadoEm?: Date | null;
+    contrarrazoesMpcoDispensadoMotivo?: string | null;
   },
   andamentos: AndamentoMin[],
   prazos: {
@@ -113,26 +121,58 @@ export function detectarPendencias(
   const semFluxoRelator = TIPOS_SEM_FLUXO_RELATOR.has(processo.tipo);
 
   if (processo.notaTecnica) {
+    const ntDispensado =
+      processo.contrarrazoesNtDispensadas &&
+      processo.contrarrazoesNtDispensadoPor &&
+      processo.contrarrazoesNtDispensadoEm
+        ? {
+            por: processo.contrarrazoesNtDispensadoPor,
+            em: processo.contrarrazoesNtDispensadoEm.toISOString(),
+            motivo: processo.contrarrazoesNtDispensadoMotivo ?? null,
+          }
+        : null;
     const concluida =
-      processo.contrarrazoesNtApresentadas || temContrarraz;
+      processo.contrarrazoesNtApresentadas || temContrarraz || !!ntDispensado;
     out.push({
       id: `${processo.id}-contrarrazoes_nt`,
       tipo: "contrarrazoes_nt",
       concluida,
       descricao: "Contrarrazoes a Nota Tecnica",
-      detalhe: concluida ? null : "Aguardando apresentacao das contrarrazoes",
+      detalhe: ntDispensado
+        ? `Dispensadas por ${ntDispensado.por} em ${new Date(ntDispensado.em).toLocaleDateString("pt-BR")}${ntDispensado.motivo ? `. Motivo: ${ntDispensado.motivo}` : ""}`
+        : concluida
+          ? null
+          : "Aguardando apresentacao das contrarrazoes",
+      dispensado: ntDispensado,
     });
   }
 
   if (processo.parecerMpco) {
+    const mpcoDispensado =
+      processo.contrarrazoesMpcoDispensadas &&
+      processo.contrarrazoesMpcoDispensadoPor &&
+      processo.contrarrazoesMpcoDispensadoEm
+        ? {
+            por: processo.contrarrazoesMpcoDispensadoPor,
+            em: processo.contrarrazoesMpcoDispensadoEm.toISOString(),
+            motivo: processo.contrarrazoesMpcoDispensadoMotivo ?? null,
+          }
+        : null;
     const concluida =
-      processo.contrarrazoesMpcoApresentadas || temContrarraz;
+      processo.contrarrazoesMpcoApresentadas ||
+      temContrarraz ||
+      !!mpcoDispensado;
     out.push({
       id: `${processo.id}-contrarrazoes_mpco`,
       tipo: "contrarrazoes_mpco",
       concluida,
       descricao: "Contrarrazoes ao Parecer MPCO",
-      detalhe: concluida ? null : "Aguardando apresentacao das contrarrazoes",
+      detalhe: mpcoDispensado
+        ? `Dispensadas por ${mpcoDispensado.por} em ${new Date(mpcoDispensado.em).toLocaleDateString("pt-BR")}${mpcoDispensado.motivo ? `. Motivo: ${mpcoDispensado.motivo}` : ""}`
+        : concluida
+          ? null
+          : "Aguardando apresentacao das contrarrazoes",
+      dispensado: mpcoDispensado,
     });
   }
 

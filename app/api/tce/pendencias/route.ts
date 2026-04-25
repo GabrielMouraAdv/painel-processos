@@ -49,6 +49,10 @@ const reverterDispensaPrazoSchema = z.object({
   prazoId: z.string().min(1),
 });
 
+const registrarSchema = baseProcessoSchema.extend({
+  valor: z.boolean(),
+});
+
 const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_nt") }),
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_mpco") }),
@@ -66,6 +70,12 @@ const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_despacho") }),
   dispensarPrazoSchema.extend({ acao: z.literal("dispensar_prazo") }),
   reverterDispensaPrazoSchema.extend({ acao: z.literal("reverter_dispensa_prazo") }),
+  registrarSchema.extend({ acao: z.literal("registrar_nt") }),
+  registrarSchema.extend({ acao: z.literal("registrar_mpco") }),
+  dispensarSchema.extend({ acao: z.literal("dispensar_contrarrazoes_nt") }),
+  dispensarSchema.extend({ acao: z.literal("dispensar_contrarrazoes_mpco") }),
+  baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_contrarrazoes_nt") }),
+  baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_contrarrazoes_mpco") }),
 ]);
 
 export async function POST(req: Request) {
@@ -705,6 +715,135 @@ export async function POST(req: Request) {
           data: agora,
           fase: "prazo_dispensa_revertida",
           descricao: `Dispensa do prazo "${prazoSub.tipo}" (recurso vinculado) revertida.`,
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "registrar_nt" || data.acao === "registrar_mpco") {
+    const ehNt = data.acao === "registrar_nt";
+    const agora = new Date();
+    const proc = await prisma.processoTce.findFirst({
+      where: { id: data.processoId, escritorioId },
+      select: { notaTecnica: true, parecerMpco: true },
+    });
+    const valorAntes = ehNt ? proc?.notaTecnica : proc?.parecerMpco;
+    if (valorAntes === data.valor) {
+      return NextResponse.json({ ok: true, alreadySet: true });
+    }
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: ehNt
+          ? { notaTecnica: data.valor }
+          : { parecerMpco: data.valor },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: agora,
+          fase: ehNt ? "nota_tecnica" : "parecer_mpco",
+          descricao: data.valor
+            ? ehNt
+              ? "Nota Tecnica registrada nos autos."
+              : "Parecer MPCO registrado nos autos."
+            : ehNt
+              ? "Registro de Nota Tecnica desfeito."
+              : "Registro de Parecer MPCO desfeito.",
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (
+    data.acao === "dispensar_contrarrazoes_nt" ||
+    data.acao === "dispensar_contrarrazoes_mpco"
+  ) {
+    const ehNt = data.acao === "dispensar_contrarrazoes_nt";
+    const adv = await prisma.user.findFirst({
+      where: { id: data.advogadoId, escritorioId },
+      select: { id: true, nome: true },
+    });
+    if (!adv) {
+      return NextResponse.json(
+        { error: "Advogado nao encontrado" },
+        { status: 400 },
+      );
+    }
+    const motivo = data.motivo?.trim() || null;
+    const agora = new Date();
+    const descricao = ehNt
+      ? `Contrarrazoes a Nota Tecnica dispensadas por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`
+      : `Contrarrazoes ao Parecer MPCO dispensadas por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`;
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: ehNt
+          ? {
+              contrarrazoesNtDispensadas: true,
+              contrarrazoesNtDispensadoPor: adv.nome,
+              contrarrazoesNtDispensadoEm: agora,
+              contrarrazoesNtDispensadoMotivo: motivo,
+            }
+          : {
+              contrarrazoesMpcoDispensadas: true,
+              contrarrazoesMpcoDispensadoPor: adv.nome,
+              contrarrazoesMpcoDispensadoEm: agora,
+              contrarrazoesMpcoDispensadoMotivo: motivo,
+            },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: agora,
+          fase: ehNt
+            ? "contrarrazoes_nt_dispensadas"
+            : "contrarrazoes_mpco_dispensadas",
+          descricao,
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (
+    data.acao === "reverter_dispensa_contrarrazoes_nt" ||
+    data.acao === "reverter_dispensa_contrarrazoes_mpco"
+  ) {
+    const ehNt = data.acao === "reverter_dispensa_contrarrazoes_nt";
+    const agora = new Date();
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: ehNt
+          ? {
+              contrarrazoesNtDispensadas: false,
+              contrarrazoesNtDispensadoPor: null,
+              contrarrazoesNtDispensadoEm: null,
+              contrarrazoesNtDispensadoMotivo: null,
+            }
+          : {
+              contrarrazoesMpcoDispensadas: false,
+              contrarrazoesMpcoDispensadoPor: null,
+              contrarrazoesMpcoDispensadoEm: null,
+              contrarrazoesMpcoDispensadoMotivo: null,
+            },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: agora,
+          fase: ehNt
+            ? "contrarrazoes_nt_dispensa_revertida"
+            : "contrarrazoes_mpco_dispensa_revertida",
+          descricao: ehNt
+            ? "Dispensa das contrarrazoes a NT revertida."
+            : "Dispensa das contrarrazoes ao MPCO revertida.",
           autorId: userId,
         },
       }),

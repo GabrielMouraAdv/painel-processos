@@ -25,7 +25,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 type Advogado = { id: string; nome: string };
-type Modo = "memorial" | "despacho" | "prazo";
+type Modo =
+  | "memorial"
+  | "despacho"
+  | "prazo"
+  | "contrarrazoes_nt"
+  | "contrarrazoes_mpco";
 
 export function DispensarPendenciaDialog({
   open,
@@ -75,7 +80,11 @@ export function DispensarPendenciaDialog({
           ? "dispensar_memorial"
           : modo === "despacho"
             ? "dispensar_despacho"
-            : "dispensar_prazo";
+            : modo === "prazo"
+              ? "dispensar_prazo"
+              : modo === "contrarrazoes_nt"
+                ? "dispensar_contrarrazoes_nt"
+                : "dispensar_contrarrazoes_mpco";
       const body =
         modo === "prazo"
           ? { acao, prazoId, advogadoId, motivo: motivo.trim() || null }
@@ -96,7 +105,11 @@ export function DispensarPendenciaDialog({
             ? "Memorial dispensado"
             : modo === "despacho"
               ? "Despacho dispensado"
-              : "Prazo dispensado",
+              : modo === "prazo"
+                ? "Prazo dispensado"
+                : modo === "contrarrazoes_nt"
+                  ? "Contrarrazoes NT dispensadas"
+                  : "Contrarrazoes MPCO dispensadas",
       });
       onOpenChange(false);
       onSuccess?.();
@@ -115,14 +128,20 @@ export function DispensarPendenciaDialog({
               ? "Dispensar Memorial"
               : modo === "despacho"
                 ? "Dispensar Despacho"
-                : `Dispensar Prazo${prazoTipo ? `: ${prazoTipo}` : ""}`}
+                : modo === "prazo"
+                  ? `Dispensar Prazo${prazoTipo ? `: ${prazoTipo}` : ""}`
+                  : modo === "contrarrazoes_nt"
+                    ? "Dispensar Contrarrazoes a Nota Tecnica"
+                    : "Dispensar Contrarrazoes ao Parecer MPCO"}
           </DialogTitle>
           <DialogDescription>
             {modo === "memorial"
               ? "Marque o memorial como dispensado neste processo. A pendencia sai da lista."
               : modo === "despacho"
                 ? "Marque o despacho como dispensado neste processo. A pendencia sai da lista."
-                : "Marque o prazo como dispensado. O alerta sai da lista de pendencias e o prazo nao conta nos KPIs."}
+                : modo === "prazo"
+                  ? "Marque o prazo como dispensado. O alerta sai da lista de pendencias e o prazo nao conta nos KPIs."
+                  : "Marque as contrarrazoes como dispensadas. A pendencia sai da lista."}
           </DialogDescription>
         </DialogHeader>
 

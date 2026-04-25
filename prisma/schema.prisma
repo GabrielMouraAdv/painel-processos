@@ -347,6 +347,14 @@ model ProcessoTce {
   memorialAgendadoAdvogadoId    String?
   contrarrazoesNtApresentadas   Boolean   @default(false)
   contrarrazoesMpcoApresentadas Boolean   @default(false)
+  contrarrazoesNtDispensadas      Boolean   @default(false)
+  contrarrazoesNtDispensadoPor    String?
+  contrarrazoesNtDispensadoEm     DateTime?
+  contrarrazoesNtDispensadoMotivo String?   @db.Text
+  contrarrazoesMpcoDispensadas      Boolean   @default(false)
+  contrarrazoesMpcoDispensadoPor    String?
+  contrarrazoesMpcoDispensadoEm     DateTime?
+  contrarrazoesMpcoDispensadoMotivo String?   @db.Text
   prognosticoDespacho           String?   @db.Text
   retornoDespacho               String?   @db.Text
   dataDespacho                  DateTime?
