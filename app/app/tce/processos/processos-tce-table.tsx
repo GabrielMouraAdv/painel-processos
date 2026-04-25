@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { CamaraTce, TipoProcessoTce } from "@prisma/client";
-import { Check, X } from "lucide-react";
+import { Ban, Check, X } from "lucide-react";
 
 import {
   Table,
@@ -19,6 +19,11 @@ import {
 } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 
+type DispensaInfo = {
+  por: string;
+  em: string; // ISO
+} | null;
+
 export type ProcessoTceRow = {
   id: string;
   numero: string;
@@ -32,6 +37,8 @@ export type ProcessoTceRow = {
   parecerMpco: boolean;
   despachadoComRelator: boolean;
   memorialPronto: boolean;
+  despachoDispensado: DispensaInfo;
+  memorialDispensado: DispensaInfo;
   prazoAberto: {
     tipo: string;
     dataVencimento: string;
@@ -45,6 +52,30 @@ function StatusIcon({ active }: { active: boolean }) {
   ) : (
     <X className="h-4 w-4 text-red-500" aria-label="nao" />
   );
+}
+
+function StatusIconComDispensa({
+  active,
+  dispensado,
+}: {
+  active: boolean;
+  dispensado: DispensaInfo;
+}) {
+  if (dispensado) {
+    const data = new Date(dispensado.em).toLocaleDateString("pt-BR");
+    return (
+      <span
+        title={`Dispensado por ${dispensado.por} em ${data}`}
+        className="inline-flex items-center justify-center"
+      >
+        <Ban
+          className="h-4 w-4 text-slate-500"
+          aria-label={`dispensado por ${dispensado.por} em ${data}`}
+        />
+      </span>
+    );
+  }
+  return <StatusIcon active={active} />;
 }
 
 function PrazoBadge({
@@ -155,10 +186,16 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                   <StatusIcon active={p.parecerMpco} />
                 </TableCell>
                 <TableCell className="text-center">
-                  <StatusIcon active={p.despachadoComRelator} />
+                  <StatusIconComDispensa
+                    active={p.despachadoComRelator}
+                    dispensado={p.despachoDispensado}
+                  />
                 </TableCell>
                 <TableCell className="text-center">
-                  <StatusIcon active={p.memorialPronto} />
+                  <StatusIconComDispensa
+                    active={p.memorialPronto}
+                    dispensado={p.memorialDispensado}
+                  />
                 </TableCell>
                 <TableCell>
                   {p.prazoAberto ? (

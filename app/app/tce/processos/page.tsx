@@ -183,6 +183,24 @@ export default async function TceProcessosPage({
       parecerMpco: p.parecerMpco,
       despachadoComRelator: p.despachadoComRelator,
       memorialPronto: p.memorialPronto,
+      despachoDispensado:
+        p.despachoDispensado &&
+        p.despachoDispensadoPor &&
+        p.despachoDispensadoEm
+          ? {
+              por: p.despachoDispensadoPor,
+              em: p.despachoDispensadoEm.toISOString(),
+            }
+          : null,
+      memorialDispensado:
+        p.memorialDispensado &&
+        p.memorialDispensadoPor &&
+        p.memorialDispensadoEm
+          ? {
+              por: p.memorialDispensadoPor,
+              em: p.memorialDispensadoEm.toISOString(),
+            }
+          : null,
       prazoAberto: primeiroPrazo
         ? {
             tipo: primeiroPrazo.tipo,
