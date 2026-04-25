@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -145,31 +146,92 @@ export async function POST(req: Request) {
 
   const url = getPublicUrl(path);
 
+  const ehMemorial = tipo.toLowerCase() === "memorial";
+
   if (escopo === "judicial") {
-    const doc = await prisma.documento.create({
+    const proc = await prisma.processo.findFirst({
+      where: { id: processoId, escritorioId },
+      select: { id: true, memorialPronto: true },
+    });
+    const opsJud: Prisma.PrismaPromise<unknown>[] = [
+      prisma.documento.create({
+        data: {
+          processoId,
+          nome: nomeFinal,
+          url,
+          tipo,
+          tamanho: file.size,
+          uploadedBy: userId,
+        },
+      }),
+    ];
+    if (ehMemorial && proc && !proc.memorialPronto) {
+      opsJud.push(
+        prisma.processo.update({
+          where: { id: processoId },
+          data: {
+            memorialPronto: true,
+            memorialAgendadoData: null,
+            memorialAgendadoAdvogadoId: null,
+          },
+        }),
+      );
+      opsJud.push(
+        prisma.andamento.create({
+          data: {
+            processoId,
+            data: new Date(),
+            grau: "PRIMEIRO",
+            fase: "memorial_pronto",
+            texto: "Memorial elaborado e anexado ao processo.",
+            autorId: userId,
+          },
+        }),
+      );
+    }
+    const [doc] = (await prisma.$transaction(opsJud)) as Array<{ id: string }>;
+    return NextResponse.json({ id: doc.id, url, path }, { status: 201 });
+  }
+
+  const procTce = await prisma.processoTce.findFirst({
+    where: { id: processoId, escritorioId },
+    select: { id: true, memorialPronto: true },
+  });
+  const opsTce: Prisma.PrismaPromise<unknown>[] = [
+    prisma.documentoTce.create({
       data: {
-        processoId,
+        processoTceId: processoId,
         nome: nomeFinal,
         url,
         tipo,
         tamanho: file.size,
         uploadedBy: userId,
       },
-      select: { id: true },
-    });
-    return NextResponse.json({ id: doc.id, url, path }, { status: 201 });
+    }),
+  ];
+  if (ehMemorial && procTce && !procTce.memorialPronto) {
+    opsTce.push(
+      prisma.processoTce.update({
+        where: { id: processoId },
+        data: {
+          memorialPronto: true,
+          memorialAgendadoData: null,
+          memorialAgendadoAdvogadoId: null,
+        },
+      }),
+    );
+    opsTce.push(
+      prisma.andamentoTce.create({
+        data: {
+          processoId,
+          data: new Date(),
+          fase: "memorial_pronto",
+          descricao: "Memorial elaborado e anexado ao processo.",
+          autorId: userId,
+        },
+      }),
+    );
   }
-
-  const doc = await prisma.documentoTce.create({
-    data: {
-      processoTceId: processoId,
-      nome: nomeFinal,
-      url,
-      tipo,
-      tamanho: file.size,
-      uploadedBy: userId,
-    },
-    select: { id: true },
-  });
+  const [doc] = (await prisma.$transaction(opsTce)) as Array<{ id: string }>;
   return NextResponse.json({ id: doc.id, url, path }, { status: 201 });
 }

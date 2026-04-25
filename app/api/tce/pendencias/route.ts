@@ -191,6 +191,15 @@ export async function POST(req: Request) {
   }
 
   if (data.acao === "memorial_pronto") {
+    // Idempotente: se o memorial ja estiver marcado como pronto (ex.: via
+    // /api/documentos/upload com tipo=memorial), nao recria o andamento.
+    const proc = await prisma.processoTce.findUnique({
+      where: { id: data.processoId },
+      select: { memorialPronto: true },
+    });
+    if (proc?.memorialPronto) {
+      return NextResponse.json({ ok: true, alreadyMarked: true });
+    }
     await prisma.$transaction([
       prisma.processoTce.update({
         where: { id: data.processoId },
