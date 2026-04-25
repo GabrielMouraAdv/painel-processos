@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
-import { Sidebar } from "@/components/sidebar";
+import { AppShell } from "@/components/app-shell";
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
@@ -88,16 +88,15 @@ export default async function AppLayout({
   ).length;
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar
-        prazosUrgentes={prazosUrgentes}
-        prazosTceUrgentes={prazosTceUrgentes}
-        processosTceTotal={processosTceTotal}
-        pautasJudiciaisTotal={pautasJudiciaisTotal}
-        alertasMonitoramento={movsNaoLidas + pubsNaoLidas}
-        despachosTcePendentes={despachosTcePendentes}
-      />
-      <main className="flex-1 overflow-y-auto">{children}</main>
-    </div>
+    <AppShell
+      prazosUrgentes={prazosUrgentes}
+      prazosTceUrgentes={prazosTceUrgentes}
+      processosTceTotal={processosTceTotal}
+      pautasJudiciaisTotal={pautasJudiciaisTotal}
+      alertasMonitoramento={movsNaoLidas + pubsNaoLidas}
+      despachosTcePendentes={despachosTcePendentes}
+    >
+      {children}
+    </AppShell>
   );
 }

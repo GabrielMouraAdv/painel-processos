@@ -77,7 +77,7 @@ export default async function SubprocessoDetailPage({
   hoje.setHours(0, 0, 0, 0);
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 md:px-8">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
         <Link href={`/app/tce/processos/${sub.processoPai.id}`}>
           <ArrowLeft className="mr-1 h-4 w-4" />

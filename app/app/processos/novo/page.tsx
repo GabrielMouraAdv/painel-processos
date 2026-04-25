@@ -27,7 +27,7 @@ export default async function NovoProcessoPage() {
   ]);
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8 md:px-8">
+    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <div>
         <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2">
           <Link href="/app/processos">

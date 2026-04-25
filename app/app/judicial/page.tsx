@@ -528,7 +528,7 @@ export default async function AppHome({
   ];
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8 md:px-8">
+    <div className="mx-auto flex max-w-7xl flex-col gap-8 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <header className="flex flex-col gap-3">
         <Badge className="w-fit bg-brand-navy text-white hover:bg-brand-navy/90">
           Painel Juridico

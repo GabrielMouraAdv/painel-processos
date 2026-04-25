@@ -8,7 +8,7 @@ type Props = {
 
 export function EmConstrucao({ titulo }: Props) {
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-8 md:px-8">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           Tribunal de Contas

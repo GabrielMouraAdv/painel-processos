@@ -133,15 +133,15 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
             <TableRow className="bg-slate-50 hover:bg-slate-50">
               <TableHead>Numero</TableHead>
               <TableHead>Municipio</TableHead>
-              <TableHead>Interessados</TableHead>
+              <TableHead className="hidden md:table-cell">Interessados</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Camara</TableHead>
-              <TableHead>Relator</TableHead>
+              <TableHead className="hidden md:table-cell">Camara</TableHead>
+              <TableHead className="hidden md:table-cell">Relator</TableHead>
               <TableHead>Fase</TableHead>
-              <TableHead className="text-center">NT</TableHead>
-              <TableHead className="text-center">Parecer MPCO</TableHead>
-              <TableHead className="text-center">Despacho</TableHead>
-              <TableHead className="text-center">Memorial</TableHead>
+              <TableHead className="hidden text-center md:table-cell">NT</TableHead>
+              <TableHead className="hidden text-center md:table-cell">Parecer MPCO</TableHead>
+              <TableHead className="hidden text-center md:table-cell">Despacho</TableHead>
+              <TableHead className="hidden text-center md:table-cell">Memorial</TableHead>
               <TableHead>Prazo aberto</TableHead>
             </TableRow>
           </TableHeader>
@@ -160,7 +160,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                     <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
-                <TableCell className="max-w-[220px] truncate text-xs text-slate-700">
+                <TableCell className="hidden max-w-[220px] truncate text-xs text-slate-700 md:table-cell">
                   {p.interessados.length
                     ? p.interessados.map((i) => i.nome).join(", ")
                     : "—"}
@@ -168,10 +168,10 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                 <TableCell className="text-xs">
                   {TCE_TIPO_LABELS[p.tipo]}
                 </TableCell>
-                <TableCell className="text-xs">
+                <TableCell className="hidden text-xs md:table-cell">
                   {TCE_CAMARA_LABELS[p.camara]}
                 </TableCell>
-                <TableCell className="text-xs">
+                <TableCell className="hidden text-xs md:table-cell">
                   {p.relator ?? (
                     <span className="text-muted-foreground">—</span>
                   )}
@@ -179,19 +179,19 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                 <TableCell className="text-xs">
                   {faseTceLabel(p.tipo, p.faseAtual)}
                 </TableCell>
-                <TableCell className="text-center">
+                <TableCell className="hidden text-center md:table-cell">
                   <StatusIcon active={p.notaTecnica} />
                 </TableCell>
-                <TableCell className="text-center">
+                <TableCell className="hidden text-center md:table-cell">
                   <StatusIcon active={p.parecerMpco} />
                 </TableCell>
-                <TableCell className="text-center">
+                <TableCell className="hidden text-center md:table-cell">
                   <StatusIconComDispensa
                     active={p.despachadoComRelator}
                     dispensado={p.despachoDispensado}
                   />
                 </TableCell>
-                <TableCell className="text-center">
+                <TableCell className="hidden text-center md:table-cell">
                   <StatusIconComDispensa
                     active={p.memorialPronto}
                     dispensado={p.memorialDispensado}

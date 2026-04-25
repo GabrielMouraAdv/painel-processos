@@ -134,7 +134,7 @@ export default async function MonitoramentoPage() {
   }));
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 md:px-8">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-brand-navy md:text-3xl">
           Monitoramento Automatico

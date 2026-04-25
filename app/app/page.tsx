@@ -140,13 +140,13 @@ export default async function ModuloHomePage() {
   const nome = session?.user?.name ?? "usuario";
 
   return (
-    <div className="flex min-h-[calc(100vh-0px)] flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-6 py-10">
+    <div className="flex min-h-[calc(100vh-0px)] flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-6 sm:px-6 sm:py-10">
       <div className="w-full max-w-5xl">
-        <header className="mb-10 text-center">
+        <header className="mb-6 text-center sm:mb-10">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Bem-vindo, {nome}
           </p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight text-brand-navy sm:text-5xl">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-brand-navy sm:text-5xl">
             Gestao Processual
           </h1>
           <p className="mt-2 text-base text-muted-foreground">
@@ -154,10 +154,10 @@ export default async function ModuloHomePage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
           <Link
             href="/app/tce"
-            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-8 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg"
+            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8"
           >
             <div className="flex items-start justify-between">
               <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
@@ -182,7 +182,7 @@ export default async function ModuloHomePage() {
 
           <Link
             href="/app/judicial"
-            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-8 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg"
+            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8"
           >
             <div className="flex items-start justify-between">
               <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
@@ -230,10 +230,12 @@ function Stat({
   }[tone];
   return (
     <div>
-      <dt className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+      <dt className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[10px]">
         {label}
       </dt>
-      <dd className={`mt-0.5 text-xl font-semibold ${valueClass}`}>{value}</dd>
+      <dd className={`mt-0.5 text-lg font-semibold sm:text-xl ${valueClass}`}>
+        {value}
+      </dd>
     </div>
   );
 }

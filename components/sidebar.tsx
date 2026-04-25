@@ -115,10 +115,7 @@ export function Sidebar({
   ];
 
   return (
-    <aside
-      className="flex h-screen w-64 flex-col bg-brand-navy text-slate-100"
-      aria-label="Navegacao principal"
-    >
+    <div className="flex h-full flex-col bg-brand-navy text-slate-100">
       <div className="flex items-center gap-3 border-b border-white/10 px-6 py-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10">
           <Landmark className="h-5 w-5" />
@@ -193,6 +190,6 @@ export function Sidebar({
           <p>v0.1.0</p>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

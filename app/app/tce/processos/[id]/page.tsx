@@ -243,7 +243,7 @@ export default async function ProcessoTceDetailPage({
   const canDeleteDocumentos = session!.user.role === Role.ADMIN;
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 md:px-8">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
         <Link href="/app/tce/processos">
           <ArrowLeft className="mr-1 h-4 w-4" />

@@ -145,7 +145,7 @@ export default async function PendenciasJudiciaisPage() {
   const agregado = agregarPendenciasJud(cards);
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 md:px-8">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <PendenciasView
         cards={cards}
         agregado={agregado}

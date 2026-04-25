@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   description: "Painel de gestao processual para escritorios de advocacia.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-brand-beige antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen overflow-x-hidden bg-brand-beige antialiased`}
       >
         <Providers>{children}</Providers>
         <Toaster />
