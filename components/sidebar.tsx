@@ -49,6 +49,37 @@ export function Sidebar({
 }: Props) {
   const groups: NavGroup[] = [
     {
+      title: "Tribunal de Contas",
+      items: [
+        { label: "Dashboard TCE", href: "/app/tce", icon: LayoutDashboard },
+        {
+          label: "Processos TCE",
+          href: "/app/tce/processos",
+          icon: Gavel,
+          badge: processosTceTotal > 0 ? processosTceTotal : undefined,
+          badgeTone: "navy",
+        },
+        { label: "Pauta", href: "/app/tce/pauta", icon: CalendarRange },
+        { label: "Municipios", href: "/app/tce/municipios", icon: Building2 },
+        { label: "Interessados", href: "/app/tce/interessados", icon: UserCheck },
+        {
+          label: "Prazos TCE",
+          href: "/app/tce/prazos",
+          icon: CalendarClock,
+          badge: prazosTceUrgentes > 0 ? prazosTceUrgentes : undefined,
+          badgeTone: "red",
+        },
+        {
+          label: "Despachos",
+          href: "/app/tce/despachos",
+          icon: ClipboardCheck,
+          badge:
+            despachosTcePendentes > 0 ? despachosTcePendentes : undefined,
+          badgeTone: "navy",
+        },
+      ],
+    },
+    {
       title: "Judicial",
       items: [
         { label: "Dashboard", href: "/app", icon: LayoutDashboard },
@@ -78,37 +109,6 @@ export function Sidebar({
           badgeTone: "red",
         },
         { label: "Relatorios", href: "/app/relatorios", icon: BarChart3 },
-      ],
-    },
-    {
-      title: "Tribunal de Contas",
-      items: [
-        { label: "Dashboard TCE", href: "/app/tce", icon: LayoutDashboard },
-        {
-          label: "Processos TCE",
-          href: "/app/tce/processos",
-          icon: Gavel,
-          badge: processosTceTotal > 0 ? processosTceTotal : undefined,
-          badgeTone: "navy",
-        },
-        { label: "Pauta", href: "/app/tce/pauta", icon: CalendarRange },
-        { label: "Municipios", href: "/app/tce/municipios", icon: Building2 },
-        { label: "Interessados", href: "/app/tce/interessados", icon: UserCheck },
-        {
-          label: "Prazos TCE",
-          href: "/app/tce/prazos",
-          icon: CalendarClock,
-          badge: prazosTceUrgentes > 0 ? prazosTceUrgentes : undefined,
-          badgeTone: "red",
-        },
-        {
-          label: "Despachos",
-          href: "/app/tce/despachos",
-          icon: ClipboardCheck,
-          badge:
-            despachosTcePendentes > 0 ? despachosTcePendentes : undefined,
-          badgeTone: "navy",
-        },
       ],
     },
   ];
