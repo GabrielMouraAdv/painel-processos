@@ -9,6 +9,7 @@ import {
   Check,
   ClipboardCheck,
   ExternalLink,
+  FileDown,
   FileText,
   Loader2,
   StickyNote,
@@ -90,6 +91,12 @@ export function PendenciasView({
             Contrarrazoes, memoriais, despachos e prazos pendentes.
           </p>
         </div>
+        <Button asChild variant="outline">
+          <a href="/api/tce/pendencias/export" download>
+            <FileDown className="mr-2 h-4 w-4" />
+            Exportar PDF
+          </a>
+        </Button>
       </header>
 
       {/* KPIs clicaveis */}

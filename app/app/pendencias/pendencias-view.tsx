@@ -9,6 +9,7 @@ import {
   Check,
   ClipboardCheck,
   ExternalLink,
+  FileDown,
   Loader2,
   Search,
   StickyNote,
@@ -117,6 +118,12 @@ export function PendenciasView({
             Memoriais, despachos e prazos pendentes.
           </p>
         </div>
+        <Button asChild variant="outline">
+          <a href="/api/pendencias/export" download>
+            <FileDown className="mr-2 h-4 w-4" />
+            Exportar PDF
+          </a>
+        </Button>
       </header>
 
       {/* KPIs clicaveis */}
