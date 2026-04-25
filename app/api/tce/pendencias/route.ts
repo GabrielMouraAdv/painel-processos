@@ -10,11 +10,13 @@ const baseProcessoSchema = z.object({
   processoId: z.string().min(1),
 });
 
-const memorialPrazoSchema = baseProcessoSchema.extend({
+const criarPrazoSchema = baseProcessoSchema.extend({
+  tipo: z.string().min(1),
   advogadoRespId: z.string().min(1),
   dataVencimento: z.union([z.string(), z.date()]).transform((v) =>
     v instanceof Date ? v : new Date(v),
   ),
+  observacoes: z.string().nullish(),
 });
 
 const despachoFeitoSchema = baseProcessoSchema.extend({
@@ -28,7 +30,7 @@ const prazoCumpridoSchema = z.object({
 const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_nt") }),
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_mpco") }),
-  memorialPrazoSchema.extend({ acao: z.literal("memorial_prazo") }),
+  criarPrazoSchema.extend({ acao: z.literal("criar_prazo") }),
   baseProcessoSchema.extend({ acao: z.literal("memorial_pronto") }),
   despachoFeitoSchema.extend({ acao: z.literal("despacho_feito") }),
   prazoCumpridoSchema.extend({ acao: z.literal("prazo_cumprido") }),
@@ -104,7 +106,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (data.acao === "memorial_prazo") {
+  if (data.acao === "criar_prazo") {
     const adv = await prisma.user.findFirst({
       where: { id: data.advogadoRespId, escritorioId },
       select: { id: true },
@@ -120,18 +122,18 @@ export async function POST(req: Request) {
     const dataVenc = new Date(data.dataVencimento);
     dataVenc.setHours(0, 0, 0, 0);
     const dias = Math.max(1, diasUteisEntre(hoje, dataVenc));
-    // Garante que o vencimento usado seja em dia util
     const dataVencFinal = calcularDataVencimento(hoje, dias);
 
     const prazo = await prisma.prazoTce.create({
       data: {
         processoId: data.processoId,
-        tipo: "Memorial",
+        tipo: data.tipo,
         dataIntimacao: hoje,
         dataVencimento: dataVencFinal,
         diasUteis: dias,
         prorrogavel: true,
         advogadoRespId: data.advogadoRespId,
+        observacoes: data.observacoes?.trim() || null,
       },
       select: { id: true },
     });

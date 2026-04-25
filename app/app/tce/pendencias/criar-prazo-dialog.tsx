@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 type Advogado = { id: string; nome: string };
@@ -31,22 +32,25 @@ function isoTodayPlus(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function ElaborarMemorialDialog({
+export function CriarPrazoDialog({
   open,
   onOpenChange,
   processoId,
+  tipoPrazo,
   advogados,
   onCreated,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   processoId: string;
+  tipoPrazo: string;
   advogados: Advogado[];
   onCreated: () => void;
 }) {
   const { toast } = useToast();
   const [advogadoId, setAdvogadoId] = React.useState("");
   const [dataVencimento, setDataVencimento] = React.useState(isoTodayPlus(7));
+  const [observacoes, setObservacoes] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
 
@@ -54,6 +58,7 @@ export function ElaborarMemorialDialog({
     if (!open) return;
     setAdvogadoId("");
     setDataVencimento(isoTodayPlus(7));
+    setObservacoes("");
     setErro(null);
   }, [open]);
 
@@ -74,10 +79,12 @@ export function ElaborarMemorialDialog({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          acao: "memorial_prazo",
+          acao: "criar_prazo",
           processoId,
+          tipo: tipoPrazo,
           advogadoRespId: advogadoId,
           dataVencimento,
+          observacoes: observacoes.trim() || null,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -85,7 +92,7 @@ export function ElaborarMemorialDialog({
         setErro(json.error ?? "Erro ao criar prazo.");
         return;
       }
-      toast({ title: "Prazo de Memorial criado" });
+      toast({ title: `Prazo "${tipoPrazo}" criado` });
       onCreated();
     } finally {
       setSubmitting(false);
@@ -96,16 +103,22 @@ export function ElaborarMemorialDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Elaborar Memorial</DialogTitle>
+          <DialogTitle>Criar Prazo</DialogTitle>
           <DialogDescription>
-            Crie um prazo TCE do tipo &quot;Memorial&quot; para acompanhar a
-            elaboracao. O prazo aparecera na aba Prazos TCE.
+            Cria um prazo TCE do tipo &quot;{tipoPrazo}&quot;. O prazo aparece
+            automaticamente na aba Prazos TCE.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label>Advogado responsavel</Label>
+            <Label>Tipo do prazo</Label>
+            <Input value={tipoPrazo} disabled />
+          </div>
+          <div className="space-y-1.5">
+            <Label>
+              Advogado responsavel <span className="text-red-600">*</span>
+            </Label>
             <Select value={advogadoId} onValueChange={setAdvogadoId}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o advogado" />
@@ -120,11 +133,22 @@ export function ElaborarMemorialDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Data de vencimento</Label>
+            <Label>
+              Data de vencimento <span className="text-red-600">*</span>
+            </Label>
             <Input
               type="date"
               value={dataVencimento}
               onChange={(e) => setDataVencimento(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Observacoes (opcional)</Label>
+            <Textarea
+              rows={3}
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+              placeholder="Detalhes adicionais sobre o prazo..."
             />
           </div>
           {erro && (
@@ -147,7 +171,7 @@ export function ElaborarMemorialDialog({
             disabled={submitting}
             className="bg-brand-navy hover:bg-brand-navy/90"
           >
-            {submitting ? "Salvando..." : "Criar prazo"}
+            {submitting ? "Salvando..." : "Criar Prazo"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -35,7 +35,7 @@ import type {
 } from "@/lib/tce-pendencias";
 import { cn } from "@/lib/utils";
 
-import { ElaborarMemorialDialog } from "./elaborar-memorial-dialog";
+import { CriarPrazoDialog } from "./criar-prazo-dialog";
 
 const CAMARA_LABEL: Record<CamaraTce, string> = {
   PRIMEIRA: "1a Camara",
@@ -257,7 +257,16 @@ function ProcessoCardComponent({
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [retornoOpen, setRetornoOpen] = React.useState(false);
   const [retornoTexto, setRetornoTexto] = React.useState("");
-  const [memorialOpen, setMemorialOpen] = React.useState(false);
+  const [criarPrazoFor, setCriarPrazoFor] =
+    React.useState<TipoPendencia | null>(null);
+
+  const TIPO_PRAZO_POR_PENDENCIA: Record<TipoPendencia, string | null> = {
+    contrarrazoes_nt: "Contrarrazoes a Nota Tecnica",
+    contrarrazoes_mpco: "Contrarrazoes ao Parecer MPCO",
+    memorial: "Memorial",
+    despacho: "Despacho com Relator",
+    prazo: null,
+  };
 
   async function chamarAcao(
     body: Record<string, unknown>,
@@ -302,7 +311,11 @@ function ProcessoCardComponent({
         "Contrarrazoes registradas",
       );
     } else if (pd.tipo === "memorial") {
-      setMemorialOpen(true);
+      await chamarAcao(
+        { acao: "memorial_pronto", processoId: processo.id },
+        pd.id,
+        "Memorial marcado como pronto",
+      );
     } else if (pd.tipo === "despacho") {
       setRetornoOpen(true);
     } else if (pd.tipo === "prazo") {
@@ -313,14 +326,6 @@ function ProcessoCardComponent({
         "Prazo marcado como cumprido",
       );
     }
-  }
-
-  async function memorialPronto() {
-    await chamarAcao(
-      { acao: "memorial_pronto", processoId: processo.id },
-      `${processo.id}-memorial-pronto`,
-      "Memorial marcado como pronto",
-    );
   }
 
   async function confirmarDespacho() {
@@ -424,20 +429,16 @@ function ProcessoCardComponent({
                     </Link>
                   </Button>
                 )}
-                {pd.tipo === "memorial" && processo.memorialPronto === false &&
-                  (() => {
-                    // Se ja existe um prazo de Memorial, mostra "Memorial Pronto"
-                    return (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={memorialPronto}
-                        disabled={busyId !== null}
-                      >
-                        Memorial Pronto
-                      </Button>
-                    );
-                  })()}
+                {TIPO_PRAZO_POR_PENDENCIA[pd.tipo] && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCriarPrazoFor(pd.tipo)}
+                    disabled={busyId !== null}
+                  >
+                    Criar Prazo
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   className="bg-brand-navy hover:bg-brand-navy/90"
@@ -447,7 +448,7 @@ function ProcessoCardComponent({
                   {busyId === pd.id ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : pd.tipo === "memorial" ? (
-                    "Criar Prazo"
+                    "Memorial Pronto"
                   ) : pd.tipo === "despacho" ? (
                     "Marcar Despachado"
                   ) : pd.tipo === "prazo" ? (
@@ -462,13 +463,18 @@ function ProcessoCardComponent({
         ))}
       </ul>
 
-      <ElaborarMemorialDialog
-        open={memorialOpen}
-        onOpenChange={setMemorialOpen}
+      <CriarPrazoDialog
+        open={criarPrazoFor !== null}
+        onOpenChange={(v) => {
+          if (!v) setCriarPrazoFor(null);
+        }}
         processoId={processo.id}
+        tipoPrazo={
+          (criarPrazoFor && TIPO_PRAZO_POR_PENDENCIA[criarPrazoFor]) || ""
+        }
         advogados={advogados}
         onCreated={() => {
-          setMemorialOpen(false);
+          setCriarPrazoFor(null);
           router.refresh();
         }}
       />
