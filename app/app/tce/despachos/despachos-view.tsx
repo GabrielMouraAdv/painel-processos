@@ -117,6 +117,9 @@ export function DespachosView({
   const [filtroCamara, setFiltroCamara] = React.useState<string>(TODOS);
   const [filtroRelator, setFiltroRelator] = React.useState("");
   const [filtroStatus, setFiltroStatus] = React.useState<string>("todos");
+  const [filtroKpi, setFiltroKpi] = React.useState<
+    "todos" | "pendentes" | "despachados" | null
+  >(null);
   const [adicionarOpen, setAdicionarOpen] = React.useState(false);
 
   const filtrados = React.useMemo(() => {
@@ -126,6 +129,8 @@ export function DespachosView({
       if (q && !normalizar(c.numero).includes(q)) return false;
       if (filtroCamara !== TODOS && c.camara !== filtroCamara) return false;
       if (r && !normalizar(c.relator ?? "").includes(r)) return false;
+      if (filtroKpi === "pendentes" && c.despachadoComRelator) return false;
+      if (filtroKpi === "despachados" && !c.despachadoComRelator) return false;
       if (filtroStatus === "pendente") {
         if (!(c.memorialPronto && !c.despachadoComRelator)) return false;
       } else if (filtroStatus === "despachado") {
@@ -135,7 +140,7 @@ export function DespachosView({
       }
       return true;
     });
-  }, [cards, busca, filtroCamara, filtroRelator, filtroStatus]);
+  }, [cards, busca, filtroCamara, filtroRelator, filtroStatus, filtroKpi]);
 
   const totalPendentes = cards.filter(
     (c) => c.memorialPronto && !c.despachadoComRelator,
@@ -173,15 +178,29 @@ export function DespachosView({
         </div>
       </header>
 
-      {/* KPIs rapidos */}
+      {/* KPIs rapidos clicaveis */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Kpi
           label="Pendentes de despacho"
           value={totalPendentes}
           tone="amber"
+          ativo={filtroKpi === "pendentes"}
+          onClick={() => setFiltroKpi("pendentes")}
         />
-        <Kpi label="Despachados" value={totalDespachados} tone="green" />
-        <Kpi label="Total na lista" value={cards.length} tone="navy" />
+        <Kpi
+          label="Despachados"
+          value={totalDespachados}
+          tone="green"
+          ativo={filtroKpi === "despachados"}
+          onClick={() => setFiltroKpi("despachados")}
+        />
+        <Kpi
+          label="Total na lista"
+          value={cards.length}
+          tone="navy"
+          ativo={filtroKpi === "todos"}
+          onClick={() => setFiltroKpi("todos")}
+        />
       </section>
 
       {/* Filtros */}
@@ -243,7 +262,8 @@ export function DespachosView({
           {(busca ||
             filtroCamara !== TODOS ||
             filtroRelator ||
-            filtroStatus !== "todos") && (
+            filtroStatus !== "todos" ||
+            filtroKpi !== null) && (
             <Button
               variant="ghost"
               size="sm"
@@ -252,6 +272,7 @@ export function DespachosView({
                 setFiltroCamara(TODOS);
                 setFiltroRelator("");
                 setFiltroStatus("todos");
+                setFiltroKpi(null);
               }}
             >
               Limpar
@@ -299,21 +320,41 @@ function Kpi({
   label,
   value,
   tone,
+  ativo,
+  onClick,
 }: {
   label: string;
   value: number;
   tone: "amber" | "green" | "navy";
+  ativo: boolean;
+  onClick: () => void;
 }) {
   const toneClass = {
-    amber: "border-amber-200 bg-amber-50 text-amber-900",
-    green: "border-emerald-200 bg-emerald-50 text-emerald-900",
-    navy: "border-slate-200 bg-white text-brand-navy",
+    amber: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100",
+    green:
+      "border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100",
+    navy: "border-slate-200 bg-white text-brand-navy hover:bg-slate-50",
+  }[tone];
+  const ativoClass = {
+    amber: "border-amber-500 bg-amber-100 ring-2 ring-amber-400 ring-offset-1",
+    green:
+      "border-emerald-600 bg-emerald-100 ring-2 ring-emerald-500 ring-offset-1",
+    navy: "border-brand-navy bg-brand-navy/10 ring-2 ring-brand-navy ring-offset-1",
   }[tone];
   return (
-    <div className={cn("rounded-md border p-4 shadow-sm", toneClass)}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativo}
+      className={cn(
+        "rounded-md border p-4 text-left shadow-sm transition-all",
+        toneClass,
+        ativo && ativoClass,
+      )}
+    >
       <p className="text-2xl font-semibold leading-tight">{value}</p>
       <p className="text-xs uppercase tracking-wide opacity-80">{label}</p>
-    </div>
+    </button>
   );
 }
 
