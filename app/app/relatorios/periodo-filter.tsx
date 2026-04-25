@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Download } from "lucide-react";
+import { Download, FileDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,16 @@ export function PeriodoFilter({ de: initialDe, ate: initialAte }: Props) {
     return qs ? `/api/relatorios/csv?${qs}` : "/api/relatorios/csv";
   })();
 
+  const pdfHref = (() => {
+    const params = new URLSearchParams();
+    if (de) params.set("de", de);
+    if (ate) params.set("ate", ate);
+    const qs = params.toString();
+    return qs
+      ? `/api/relatorios/gerencial-pdf?${qs}`
+      : "/api/relatorios/gerencial-pdf";
+  })();
+
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="flex min-w-[140px] flex-col gap-1">
@@ -56,11 +66,17 @@ export function PeriodoFilter({ de: initialDe, ate: initialAte }: Props) {
       <Button variant="ghost" onClick={clearAll}>
         Limpar
       </Button>
-      <div className="ml-auto">
+      <div className="ml-auto flex gap-2">
         <Button asChild variant="outline">
           <a href={csvHref} download>
             <Download className="mr-2 h-4 w-4" />
             Exportar CSV
+          </a>
+        </Button>
+        <Button asChild variant="outline">
+          <a href={pdfHref} download>
+            <FileDown className="mr-2 h-4 w-4" />
+            Exportar PDF
           </a>
         </Button>
       </div>
