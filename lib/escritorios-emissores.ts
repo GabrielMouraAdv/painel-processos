@@ -34,17 +34,30 @@ export const ESCRITORIOS_EMISSORES: EscritorioEmissor[] = [
   },
 ];
 
+export const EMISSOR_SLUGS_VALIDOS: readonly string[] = ESCRITORIOS_EMISSORES.map(
+  (e) => e.slug,
+);
+
+const EMISSOR_SLUGS_SET = new Set<string>(EMISSOR_SLUGS_VALIDOS);
+
+function normalizarSlug(raw: string | null | undefined): string {
+  return (raw ?? "").trim().toLowerCase();
+}
+
 export function findEscritorio(slug: string): EscritorioEmissor | null {
-  return ESCRITORIOS_EMISSORES.find((e) => e.slug === slug) ?? null;
+  const norm = normalizarSlug(slug);
+  if (!EMISSOR_SLUGS_SET.has(norm)) return null;
+  return ESCRITORIOS_EMISSORES.find((e) => e.slug === norm) ?? null;
 }
 
 export function resolveEmissor(
-  slug: string,
+  slug: string | null | undefined,
   advogadoIdx: number,
 ): { escritorio: EscritorioEmissor; advogado: AdvogadoEmissor } | null {
-  const esc = findEscritorio(slug);
+  const esc = findEscritorio(slug ?? "");
   if (!esc) return null;
-  const adv = esc.advogados[advogadoIdx] ?? esc.advogados[0];
+  const idx = Number.isFinite(advogadoIdx) ? Math.max(0, Math.trunc(advogadoIdx)) : 0;
+  const adv = esc.advogados[idx] ?? esc.advogados[0];
   if (!adv) return null;
   return { escritorio: esc, advogado: adv };
 }

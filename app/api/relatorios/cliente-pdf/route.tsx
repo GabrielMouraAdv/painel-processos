@@ -5,7 +5,10 @@ import { Risco, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { resolveEmissor } from "@/lib/escritorios-emissores";
+import {
+  EMISSOR_SLUGS_VALIDOS,
+  resolveEmissor,
+} from "@/lib/escritorios-emissores";
 import { diasAte } from "@/lib/prazos";
 import {
   faseLabel,
@@ -63,8 +66,9 @@ export async function GET(req: Request) {
   const statusParam = url.searchParams.get("status");
   const status: RelatorioStatusFiltro =
     statusParam === "todos" ? "todos" : "ativos";
-  const emissorSlug = url.searchParams.get("emissor") ?? "";
-  const advogadoIdx = Number(url.searchParams.get("advogado") ?? "0") || 0;
+  const emissorSlug = (url.searchParams.get("emissor") ?? "").trim().toLowerCase();
+  const advogadoRaw = url.searchParams.get("advogado");
+  const advogadoIdx = advogadoRaw !== null ? Number(advogadoRaw) : 0;
 
   if (tipo !== "gestor" && tipo !== "municipio") {
     return NextResponse.json(
@@ -85,7 +89,11 @@ export async function GET(req: Request) {
   const emissorResolvido = resolveEmissor(emissorSlug, advogadoIdx);
   if (!emissorResolvido) {
     return NextResponse.json(
-      { error: "escritorio emissor invalido" },
+      {
+        error: "escritorio emissor invalido",
+        slugRecebido: emissorSlug || null,
+        slugsValidos: EMISSOR_SLUGS_VALIDOS,
+      },
       { status: 400 },
     );
   }
