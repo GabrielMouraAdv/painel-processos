@@ -29,7 +29,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { diasUteisEntre } from "@/lib/dias-uteis";
+import {
+  diasUteisEntre,
+  isDataNoRecesso,
+  periodoIncluiRecesso,
+} from "@/lib/dias-uteis";
 import { TCE_CAMARA_LABELS, TCE_TIPO_LABELS } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 import {
@@ -282,8 +286,19 @@ export function PrazosTceView({
     return { diasUrgentes: u, diasProximos: p };
   }, [prazos]);
 
+  const emRecesso = isDataNoRecesso(new Date());
+
   return (
     <div className="flex flex-col gap-6">
+      {emRecesso && (
+        <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span className="font-bold">ATENCAO:</span>
+          <span>
+            Periodo de Recesso Forense (20/12 a 20/01). Os prazos estao
+            suspensos.
+          </span>
+        </div>
+      )}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -293,7 +308,8 @@ export function PrazosTceView({
             Prazos TCE
           </h1>
           <p className="text-sm text-muted-foreground">
-            Contagem em dias uteis considerando feriados nacionais.
+            Contagem em dias uteis considerando feriados nacionais e recesso
+            forense (20/12 a 20/01).
           </p>
         </div>
         <div className="flex gap-2">
@@ -692,6 +708,14 @@ function PrazoTceCard({
           {prazo.prorrogacaoPedida && (
             <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800">
               prorrogacao pedida
+            </span>
+          )}
+          {periodoIncluiRecesso(prazo.dataIntimacao, prazo.dataVencimento) && (
+            <span
+              className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
+              title="A contagem deste prazo passa pelo recesso forense (20/12 a 20/01) e foi suspensa nesse periodo."
+            >
+              Inclui recesso
             </span>
           )}
         </div>
