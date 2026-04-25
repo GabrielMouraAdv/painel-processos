@@ -27,6 +27,13 @@ const prazoCumpridoSchema = z.object({
   prazoId: z.string().min(1),
 });
 
+const agendarSchema = baseProcessoSchema.extend({
+  data: z.union([z.string(), z.date()]).transform((v) =>
+    v instanceof Date ? v : new Date(v),
+  ),
+  advogadoId: z.string().min(1),
+});
+
 const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_nt") }),
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_mpco") }),
@@ -34,6 +41,10 @@ const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("memorial_pronto") }),
   despachoFeitoSchema.extend({ acao: z.literal("despacho_feito") }),
   prazoCumpridoSchema.extend({ acao: z.literal("prazo_cumprido") }),
+  agendarSchema.extend({ acao: z.literal("agendar_memorial") }),
+  agendarSchema.extend({ acao: z.literal("agendar_despacho") }),
+  baseProcessoSchema.extend({ acao: z.literal("desfazer_agendamento_memorial") }),
+  baseProcessoSchema.extend({ acao: z.literal("desfazer_agendamento_despacho") }),
 ]);
 
 export async function POST(req: Request) {
@@ -141,24 +152,120 @@ export async function POST(req: Request) {
   }
 
   if (data.acao === "memorial_pronto") {
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: {
+          memorialPronto: true,
+          memorialAgendadoData: null,
+          memorialAgendadoAdvogadoId: null,
+        },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: new Date(),
+          fase: "memorial_pronto",
+          descricao: "Memorial elaborado e marcado como pronto.",
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "agendar_memorial") {
+    const adv = await prisma.user.findFirst({
+      where: { id: data.advogadoId, escritorioId },
+      select: { id: true, nome: true },
+    });
+    if (!adv) {
+      return NextResponse.json(
+        { error: "Advogado responsavel nao encontrado" },
+        { status: 400 },
+      );
+    }
     await prisma.processoTce.update({
       where: { id: data.processoId },
-      data: { memorialPronto: true },
+      data: {
+        memorialAgendadoData: data.data,
+        memorialAgendadoAdvogadoId: adv.id,
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "agendar_despacho") {
+    const adv = await prisma.user.findFirst({
+      where: { id: data.advogadoId, escritorioId },
+      select: { id: true, nome: true },
+    });
+    if (!adv) {
+      return NextResponse.json(
+        { error: "Advogado responsavel nao encontrado" },
+        { status: 400 },
+      );
+    }
+    await prisma.processoTce.update({
+      where: { id: data.processoId },
+      data: {
+        despachoAgendadoData: data.data,
+        despachoAgendadoAdvogadoId: adv.id,
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "desfazer_agendamento_memorial") {
+    await prisma.processoTce.update({
+      where: { id: data.processoId },
+      data: {
+        memorialAgendadoData: null,
+        memorialAgendadoAdvogadoId: null,
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "desfazer_agendamento_despacho") {
+    await prisma.processoTce.update({
+      where: { id: data.processoId },
+      data: {
+        despachoAgendadoData: null,
+        despachoAgendadoAdvogadoId: null,
+      },
     });
     return NextResponse.json({ ok: true });
   }
 
   if (data.acao === "despacho_feito") {
-    await prisma.processoTce.update({
-      where: { id: data.processoId },
-      data: {
-        despachadoComRelator: true,
-        dataDespacho: new Date(),
-        ...(data.retorno !== undefined && {
-          retornoDespacho: data.retorno?.trim() || null,
-        }),
-      },
-    });
+    const dataDesp = new Date();
+    const retorno = data.retorno?.trim() || null;
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: {
+          despachadoComRelator: true,
+          dataDespacho: dataDesp,
+          despachoAgendadoData: null,
+          despachoAgendadoAdvogadoId: null,
+          ...(data.retorno !== undefined && {
+            retornoDespacho: retorno,
+          }),
+        },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: dataDesp,
+          fase: "despacho_realizado",
+          descricao:
+            "Despacho realizado com o relator." +
+            (retorno ? ` Retorno: ${retorno}` : ""),
+          autorId: userId,
+        },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 
@@ -168,7 +275,7 @@ export async function POST(req: Request) {
         id: data.prazoId,
         processo: { escritorioId },
       },
-      select: { id: true },
+      select: { id: true, tipo: true, processoId: true },
     });
     if (!prazo) {
       return NextResponse.json(
@@ -176,10 +283,47 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
-    await prisma.prazoTce.update({
-      where: { id: data.prazoId },
-      data: { cumprido: true },
+    // Detecta tipo do prazo para auto-fechar pendencias correlatas.
+    const tipoNorm = prazo.tipo.toLowerCase();
+    const isContrarrazoesNt = /contrarraz.*nota\s*tecnica/i.test(prazo.tipo);
+    const isContrarrazoesMpco = /contrarraz.*(mpco|parecer)/i.test(prazo.tipo);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.prazoTce.update({
+        where: { id: data.prazoId },
+        data: { cumprido: true },
+      });
+      if (isContrarrazoesNt) {
+        await tx.processoTce.update({
+          where: { id: prazo.processoId },
+          data: { contrarrazoesNtApresentadas: true },
+        });
+        await tx.andamentoTce.create({
+          data: {
+            processoId: prazo.processoId,
+            data: new Date(),
+            fase: "contrarrazoes_nt",
+            descricao: "Contrarrazoes a Nota Tecnica apresentadas.",
+            autorId: userId,
+          },
+        });
+      } else if (isContrarrazoesMpco) {
+        await tx.processoTce.update({
+          where: { id: prazo.processoId },
+          data: { contrarrazoesMpcoApresentadas: true },
+        });
+        await tx.andamentoTce.create({
+          data: {
+            processoId: prazo.processoId,
+            data: new Date(),
+            fase: "contrarrazoes_mpco",
+            descricao: "Contrarrazoes ao Parecer MPCO apresentadas.",
+            autorId: userId,
+          },
+        });
+      }
     });
+    void tipoNorm;
     return NextResponse.json({ ok: true });
   }
 

@@ -29,6 +29,12 @@ export type Pendencia = {
   // Apenas para tipo "prazo":
   prazoStatus?: PrazoStatus | null;
   advogadoResp?: string | null; // nome
+  prazoTipo?: string | null; // texto do tipo do PrazoTce
+  // Apenas para "memorial" / "despacho" — quando ja foi agendado
+  agendado?: {
+    data: string; // ISO
+    advogadoNome: string;
+  } | null;
 };
 
 export type ProcessoComPendencias = {
@@ -71,6 +77,10 @@ export function detectarPendencias(
     contrarrazoesNtApresentadas: boolean;
     contrarrazoesMpcoApresentadas: boolean;
     faseAtual: string;
+    memorialAgendadoData?: Date | null;
+    memorialAgendadoAdvogadoNome?: string | null;
+    despachoAgendadoData?: Date | null;
+    despachoAgendadoAdvogadoNome?: string | null;
   },
   andamentos: AndamentoMin[],
   prazos: {
@@ -111,6 +121,15 @@ export function detectarPendencias(
   }
 
   if (!semFluxoRelator && !FASES_ENCERRADAS.has(processo.faseAtual)) {
+    const memAgendado =
+      !processo.memorialPronto &&
+      processo.memorialAgendadoData &&
+      processo.memorialAgendadoAdvogadoNome
+        ? {
+            data: processo.memorialAgendadoData.toISOString(),
+            advogadoNome: processo.memorialAgendadoAdvogadoNome,
+          }
+        : null;
     out.push({
       id: `${processo.id}-memorial`,
       tipo: "memorial",
@@ -118,11 +137,23 @@ export function detectarPendencias(
       descricao: "Elaborar Memorial",
       detalhe: processo.memorialPronto
         ? "Memorial pronto"
-        : "Memorial pendente de elaboracao",
+        : memAgendado
+          ? `Memorial agendado para ${new Date(memAgendado.data).toLocaleDateString("pt-BR")} com ${memAgendado.advogadoNome}`
+          : "Memorial pendente de elaboracao",
+      agendado: memAgendado,
     });
   }
 
   if (!semFluxoRelator && processo.memorialPronto) {
+    const despAgendado =
+      !processo.despachadoComRelator &&
+      processo.despachoAgendadoData &&
+      processo.despachoAgendadoAdvogadoNome
+        ? {
+            data: processo.despachoAgendadoData.toISOString(),
+            advogadoNome: processo.despachoAgendadoAdvogadoNome,
+          }
+        : null;
     out.push({
       id: `${processo.id}-despacho`,
       tipo: "despacho",
@@ -130,7 +161,10 @@ export function detectarPendencias(
       descricao: "Agendar Despacho com Relator",
       detalhe: processo.despachadoComRelator
         ? "Despachado"
-        : "Aguardando agendamento de despacho",
+        : despAgendado
+          ? `Despacho agendado para ${new Date(despAgendado.data).toLocaleDateString("pt-BR")} com ${despAgendado.advogadoNome}`
+          : "Aguardando agendamento de despacho",
+      agendado: despAgendado,
     });
   }
 
@@ -174,6 +208,7 @@ export function detectarPendencias(
       prazoId: p.id,
       prazoStatus: status,
       advogadoResp: p.advogadoResp ?? null,
+      prazoTipo: p.tipo,
     });
   }
 

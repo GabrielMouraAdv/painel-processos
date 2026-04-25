@@ -101,6 +101,27 @@ export default async function PendenciasTcePage() {
       )
     : new Map<string, string>();
 
+  const advAgendamentoIds = Array.from(
+    new Set(
+      processos
+        .flatMap((p) => [
+          p.memorialAgendadoAdvogadoId,
+          p.despachoAgendadoAdvogadoId,
+        ])
+        .filter((id): id is string => !!id),
+    ),
+  );
+  const advsAgendamentoMap = advAgendamentoIds.length
+    ? new Map(
+        (
+          await prisma.user.findMany({
+            where: { id: { in: advAgendamentoIds } },
+            select: { id: true, nome: true },
+          })
+        ).map((u) => [u.id, u.nome]),
+      )
+    : new Map<string, string>();
+
   const cards: ProcessoComPendencias[] = processos
     .map((p) => {
       // Inclui prazos do processo + prazos de todos os subprocessos
@@ -152,6 +173,14 @@ export default async function PendenciasTcePage() {
           contrarrazoesNtApresentadas: p.contrarrazoesNtApresentadas,
           contrarrazoesMpcoApresentadas: p.contrarrazoesMpcoApresentadas,
           faseAtual: p.faseAtual,
+          memorialAgendadoData: p.memorialAgendadoData,
+          memorialAgendadoAdvogadoNome: p.memorialAgendadoAdvogadoId
+            ? advsAgendamentoMap.get(p.memorialAgendadoAdvogadoId) ?? null
+            : null,
+          despachoAgendadoData: p.despachoAgendadoData,
+          despachoAgendadoAdvogadoNome: p.despachoAgendadoAdvogadoId
+            ? advsAgendamentoMap.get(p.despachoAgendadoAdvogadoId) ?? null
+            : null,
         },
         p.andamentos,
         prazosFiltrados,

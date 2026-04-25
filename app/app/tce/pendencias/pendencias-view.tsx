@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { TCE_TIPO_LABELS, faseTceLabel } from "@/lib/tce-config";
 import type {
@@ -37,6 +36,9 @@ import type {
 import { cn } from "@/lib/utils";
 
 import { CriarPrazoDialog } from "./criar-prazo-dialog";
+import { AgendarPendenciaDialog } from "./agendar-dialog";
+import { DespachoFeitoDialog } from "./despacho-feito-dialog";
+import { MemorialProntoDialog } from "./memorial-pronto-dialog";
 
 const CAMARA_LABEL: Record<CamaraTce, string> = {
   PRIMEIRA: "1a Camara",
@@ -262,16 +264,27 @@ function ProcessoCardComponent({
   const router = useRouter();
   const { toast } = useToast();
   const [busyId, setBusyId] = React.useState<string | null>(null);
-  const [retornoOpen, setRetornoOpen] = React.useState(false);
-  const [retornoTexto, setRetornoTexto] = React.useState("");
   const [criarPrazoFor, setCriarPrazoFor] =
     React.useState<TipoPendencia | null>(null);
+  const [agendarMemorialOpen, setAgendarMemorialOpen] = React.useState(false);
+  const [agendarDespachoOpen, setAgendarDespachoOpen] = React.useState(false);
+  const [memorialProntoOpen, setMemorialProntoOpen] = React.useState(false);
+  const [despachoFeitoOpen, setDespachoFeitoOpen] = React.useState(false);
+
+  // Quando o user marca cumprido um prazo do tipo "Agendar..." abrimos o modal
+  // de agendamento com a data pre-preenchida.
+  function isAgendarMemorialPrazo(tipo: string | null | undefined): boolean {
+    return !!tipo && /agendar.*memorial|memorial.*elabora/i.test(tipo);
+  }
+  function isAgendarDespachoPrazo(tipo: string | null | undefined): boolean {
+    return !!tipo && /agendar.*despacho|marca.*despacho/i.test(tipo);
+  }
 
   const TIPO_PRAZO_POR_PENDENCIA: Record<TipoPendencia, string | null> = {
     contrarrazoes_nt: "Contrarrazoes a Nota Tecnica",
     contrarrazoes_mpco: "Contrarrazoes ao Parecer MPCO",
-    memorial: "Memorial",
-    despacho: "Despacho com Relator",
+    memorial: "Agendar Elaboracao do Memorial",
+    despacho: "Agendar Marcacao do Despacho",
     prazo: null,
   };
 
@@ -318,50 +331,22 @@ function ProcessoCardComponent({
         "Contrarrazoes registradas",
       );
     } else if (pd.tipo === "memorial") {
-      await chamarAcao(
-        { acao: "memorial_pronto", processoId: processo.id },
-        pd.id,
-        "Memorial marcado como pronto",
-      );
+      setMemorialProntoOpen(true);
     } else if (pd.tipo === "despacho") {
-      setRetornoOpen(true);
+      setDespachoFeitoOpen(true);
     } else if (pd.tipo === "prazo") {
       if (!pd.prazoId) return;
-      await chamarAcao(
+      const ok = await chamarAcao(
         { acao: "prazo_cumprido", prazoId: pd.prazoId },
         pd.id,
         "Prazo marcado como cumprido",
       );
-    }
-  }
-
-  async function confirmarDespacho() {
-    setBusyId(`${processo.id}-despacho`);
-    try {
-      const res = await fetch("/api/tce/pendencias", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          acao: "despacho_feito",
-          processoId: processo.id,
-          retorno: retornoTexto.trim() || null,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: json.error ?? "Tente novamente.",
-        });
-        return;
+      if (ok && isAgendarMemorialPrazo(pd.prazoTipo)) {
+        setAgendarMemorialOpen(true);
+      } else if (ok && isAgendarDespachoPrazo(pd.prazoTipo)) {
+        setAgendarDespachoOpen(true);
       }
-      toast({ title: "Despacho registrado" });
-      setRetornoOpen(false);
-      setRetornoTexto("");
-      router.refresh();
-    } finally {
-      setBusyId(null);
+      return;
     }
   }
 
@@ -399,13 +384,16 @@ function ProcessoCardComponent({
       <ul className="divide-y">
         {processo.pendencias.map((pd) => {
           const isVencido = pd.tipo === "prazo" && pd.prazoStatus === "vencido";
+          const isAgendado = !!pd.agendado;
           return (
           <li
             key={pd.id}
             className={
               isVencido
                 ? "flex flex-wrap items-center gap-3 border-l-4 border-l-red-700 bg-red-50 px-5 py-3"
-                : "flex flex-wrap items-center gap-3 px-5 py-3"
+                : isAgendado
+                  ? "flex flex-wrap items-center gap-3 border-l-4 border-l-blue-500 bg-blue-50 px-5 py-3"
+                  : "flex flex-wrap items-center gap-3 px-5 py-3"
             }
           >
             <PendenciaIcon tipo={pd.tipo} />
@@ -475,7 +463,7 @@ function ProcessoCardComponent({
                     </Link>
                   </Button>
                 )}
-                {TIPO_PRAZO_POR_PENDENCIA[pd.tipo] && (
+                {TIPO_PRAZO_POR_PENDENCIA[pd.tipo] && !isAgendado && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -483,6 +471,26 @@ function ProcessoCardComponent({
                     disabled={busyId !== null}
                   >
                     Criar Prazo
+                  </Button>
+                )}
+                {isAgendado && pd.tipo === "memorial" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAgendarMemorialOpen(true)}
+                    disabled={busyId !== null}
+                  >
+                    Reagendar
+                  </Button>
+                )}
+                {isAgendado && pd.tipo === "despacho" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAgendarDespachoOpen(true)}
+                    disabled={busyId !== null}
+                  >
+                    Reagendar
                   </Button>
                 )}
                 <Button
@@ -526,43 +534,38 @@ function ProcessoCardComponent({
         }}
       />
 
-      {/* Modal de retorno do despacho */}
-      {retornoOpen && (
-        <div className="border-t bg-amber-50 px-5 py-4">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-amber-900">
-            Retorno do despacho (opcional)
-          </Label>
-          <Textarea
-            value={retornoTexto}
-            onChange={(e) => setRetornoTexto(e.target.value)}
-            rows={3}
-            placeholder="O que o relator decidiu ou comentou..."
-            className="mt-1 text-xs"
-          />
-          <div className="mt-2 flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setRetornoOpen(false);
-                setRetornoTexto("");
-              }}
-              disabled={busyId !== null}
-            >
-              Cancelar
-            </Button>
-            <Button
-              size="sm"
-              className="bg-brand-navy hover:bg-brand-navy/90"
-              onClick={confirmarDespacho}
-              disabled={busyId !== null}
-            >
-              <ClipboardCheck className="mr-1 h-3.5 w-3.5" />
-              Marcar como Despachado
-            </Button>
-          </div>
-        </div>
-      )}
+      <AgendarPendenciaDialog
+        open={agendarMemorialOpen}
+        onOpenChange={setAgendarMemorialOpen}
+        modo="memorial"
+        processoId={processo.id}
+        advogados={advogados}
+        apiPath="/api/tce/pendencias"
+      />
+
+      <AgendarPendenciaDialog
+        open={agendarDespachoOpen}
+        onOpenChange={setAgendarDespachoOpen}
+        modo="despacho"
+        processoId={processo.id}
+        advogados={advogados}
+        apiPath="/api/tce/pendencias"
+      />
+
+      <MemorialProntoDialog
+        open={memorialProntoOpen}
+        onOpenChange={setMemorialProntoOpen}
+        processoId={processo.id}
+        escopo="tce"
+        pendenciasApiPath="/api/tce/pendencias"
+      />
+
+      <DespachoFeitoDialog
+        open={despachoFeitoOpen}
+        onOpenChange={setDespachoFeitoOpen}
+        processoId={processo.id}
+        pendenciasApiPath="/api/tce/pendencias"
+      />
     </Card>
   );
 }

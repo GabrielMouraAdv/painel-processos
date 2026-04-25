@@ -56,6 +56,27 @@ export default async function PendenciasJudiciaisPage() {
     return Math.round((ref.getTime() - hoje.getTime()) / 86_400_000);
   }
 
+  const advAgendamentoIds = Array.from(
+    new Set(
+      processos
+        .flatMap((p) => [
+          p.memorialAgendadoAdvogadoId,
+          p.despachoAgendadoAdvogadoId,
+        ])
+        .filter((id): id is string => !!id),
+    ),
+  );
+  const advsAgendamentoMap = advAgendamentoIds.length
+    ? new Map(
+        (
+          await prisma.user.findMany({
+            where: { id: { in: advAgendamentoIds } },
+            select: { id: true, nome: true },
+          })
+        ).map((u) => [u.id, u.nome]),
+      )
+    : new Map<string, string>();
+
   const cards: ProcessoComPendenciasJud[] = processos
     .map((p) => {
       const prazosFiltrados = p.prazos
@@ -80,6 +101,14 @@ export default async function PendenciasJudiciaisPage() {
           grau: p.grau,
           memorialPronto: p.memorialPronto,
           despachadoComRelator: p.despachadoComRelator,
+          memorialAgendadoData: p.memorialAgendadoData,
+          memorialAgendadoAdvogadoNome: p.memorialAgendadoAdvogadoId
+            ? advsAgendamentoMap.get(p.memorialAgendadoAdvogadoId) ?? null
+            : null,
+          despachoAgendadoData: p.despachoAgendadoData,
+          despachoAgendadoAdvogadoNome: p.despachoAgendadoAdvogadoId
+            ? advsAgendamentoMap.get(p.despachoAgendadoAdvogadoId) ?? null
+            : null,
         },
         prazosFiltrados,
       );

@@ -26,11 +26,22 @@ const prazoCumpridoSchema = z.object({
   prazoId: z.string().min(1),
 });
 
+const agendarSchema = baseProcessoSchema.extend({
+  data: z
+    .union([z.string(), z.date()])
+    .transform((v) => (v instanceof Date ? v : new Date(v))),
+  advogadoId: z.string().min(1),
+});
+
 const inputSchema = z.discriminatedUnion("acao", [
   criarPrazoSchema.extend({ acao: z.literal("criar_prazo") }),
   baseProcessoSchema.extend({ acao: z.literal("memorial_pronto") }),
   despachoFeitoSchema.extend({ acao: z.literal("despacho_feito") }),
   prazoCumpridoSchema.extend({ acao: z.literal("prazo_cumprido") }),
+  agendarSchema.extend({ acao: z.literal("agendar_memorial") }),
+  agendarSchema.extend({ acao: z.literal("agendar_despacho") }),
+  baseProcessoSchema.extend({ acao: z.literal("desfazer_agendamento_memorial") }),
+  baseProcessoSchema.extend({ acao: z.literal("desfazer_agendamento_despacho") }),
 ]);
 
 export async function POST(req: Request) {
@@ -91,41 +102,121 @@ export async function POST(req: Request) {
   }
 
   if (data.acao === "memorial_pronto") {
-    await prisma.processo.update({
-      where: { id: data.processoId },
-      data: { memorialPronto: true },
-    });
+    await prisma.$transaction([
+      prisma.processo.update({
+        where: { id: data.processoId },
+        data: {
+          memorialPronto: true,
+          memorialAgendadoData: null,
+          memorialAgendadoAdvogadoId: null,
+        },
+      }),
+      prisma.andamento.create({
+        data: {
+          processoId: data.processoId,
+          data: new Date(),
+          grau: "PRIMEIRO",
+          fase: "memorial_pronto",
+          texto: "Memorial elaborado e marcado como pronto.",
+          autorId: session.user.id,
+        },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 
   if (data.acao === "despacho_feito") {
+    const dataDesp = new Date();
+    const retorno = data.retorno?.trim() || null;
+    await prisma.$transaction([
+      prisma.processo.update({
+        where: { id: data.processoId },
+        data: {
+          despachadoComRelator: true,
+          dataDespacho: dataDesp,
+          despachoAgendadoData: null,
+          despachoAgendadoAdvogadoId: null,
+          ...(data.retorno !== undefined && {
+            retornoDespacho: retorno,
+          }),
+        },
+      }),
+      prisma.andamento.create({
+        data: {
+          processoId: data.processoId,
+          data: dataDesp,
+          grau: "PRIMEIRO",
+          fase: "despacho_realizado",
+          texto:
+            "Despacho realizado com o relator." +
+            (retorno ? ` Retorno: ${retorno}` : ""),
+          autorId: session.user.id,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "agendar_memorial") {
+    const adv = await prisma.user.findFirst({
+      where: { id: data.advogadoId, escritorioId },
+      select: { id: true },
+    });
+    if (!adv) {
+      return NextResponse.json(
+        { error: "Advogado nao encontrado" },
+        { status: 400 },
+      );
+    }
     await prisma.processo.update({
       where: { id: data.processoId },
       data: {
-        despachadoComRelator: true,
-        dataDespacho: new Date(),
-        ...(data.retorno !== undefined && {
-          retornoDespacho: data.retorno?.trim() || null,
-        }),
+        memorialAgendadoData: data.data,
+        memorialAgendadoAdvogadoId: adv.id,
       },
     });
     return NextResponse.json({ ok: true });
   }
 
-  if (data.acao === "prazo_cumprido") {
-    const prazo = await prisma.prazo.findFirst({
-      where: { id: data.prazoId, processo: { escritorioId } },
+  if (data.acao === "agendar_despacho") {
+    const adv = await prisma.user.findFirst({
+      where: { id: data.advogadoId, escritorioId },
       select: { id: true },
     });
-    if (!prazo) {
+    if (!adv) {
       return NextResponse.json(
-        { error: "Prazo nao encontrado" },
-        { status: 404 },
+        { error: "Advogado nao encontrado" },
+        { status: 400 },
       );
     }
-    await prisma.prazo.update({
-      where: { id: data.prazoId },
-      data: { cumprido: true },
+    await prisma.processo.update({
+      where: { id: data.processoId },
+      data: {
+        despachoAgendadoData: data.data,
+        despachoAgendadoAdvogadoId: adv.id,
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "desfazer_agendamento_memorial") {
+    await prisma.processo.update({
+      where: { id: data.processoId },
+      data: {
+        memorialAgendadoData: null,
+        memorialAgendadoAdvogadoId: null,
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "desfazer_agendamento_despacho") {
+    await prisma.processo.update({
+      where: { id: data.processoId },
+      data: {
+        despachoAgendadoData: null,
+        despachoAgendadoAdvogadoId: null,
+      },
     });
     return NextResponse.json({ ok: true });
   }

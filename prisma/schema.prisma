@@ -157,12 +157,16 @@ model Processo {
   valor                Decimal?     @db.Decimal(15, 2)
   dataDistribuicao     DateTime
   objeto               String       @db.Text
-  memorialPronto       Boolean      @default(false)
-  despachadoComRelator Boolean      @default(false)
-  dataDespacho         DateTime?
-  retornoDespacho      String?      @db.Text
-  tipoLivre            String?
-  gestorId             String
+  memorialPronto             Boolean      @default(false)
+  despachadoComRelator       Boolean      @default(false)
+  dataDespacho               DateTime?
+  retornoDespacho            String?      @db.Text
+  memorialAgendadoData       DateTime?
+  memorialAgendadoAdvogadoId String?
+  despachoAgendadoData       DateTime?
+  despachoAgendadoAdvogadoId String?
+  tipoLivre                  String?
+  gestorId                   String
   advogadoId           String
   escritorioId     String
   createdAt        DateTime     @default(now())
@@ -327,12 +331,16 @@ model ProcessoTce {
   parecerMpco                   Boolean   @default(false)
   despachadoComRelator          Boolean   @default(false)
   memorialPronto                Boolean   @default(false)
+  memorialAgendadoData          DateTime?
+  memorialAgendadoAdvogadoId    String?
   contrarrazoesNtApresentadas   Boolean   @default(false)
   contrarrazoesMpcoApresentadas Boolean   @default(false)
   prognosticoDespacho           String?   @db.Text
   retornoDespacho               String?   @db.Text
   dataDespacho                  DateTime?
   incluidoNoDespacho            Boolean   @default(false)
+  despachoAgendadoData          DateTime?
+  despachoAgendadoAdvogadoId    String?
   exercicio             String?
   valorAutuado          Decimal?        @db.Decimal(15, 2)
   objeto                String          @db.Text
@@ -576,12 +584,16 @@ model SubprocessoTce {
   relator              String?
   decisao              String?        @db.Text
   observacoes          String?        @db.Text
-  memorialPronto       Boolean        @default(false)
-  despachadoComRelator Boolean        @default(false)
-  prognosticoDespacho  String?        @db.Text
-  retornoDespacho      String?        @db.Text
-  dataDespacho         DateTime?
-  prazos               PrazoSubprocessoTce[]
+  memorialPronto             Boolean        @default(false)
+  despachadoComRelator       Boolean        @default(false)
+  prognosticoDespacho        String?        @db.Text
+  retornoDespacho            String?        @db.Text
+  dataDespacho               DateTime?
+  memorialAgendadoData       DateTime?
+  memorialAgendadoAdvogadoId String?
+  despachoAgendadoData       DateTime?
+  despachoAgendadoAdvogadoId String?
+  prazos                     PrazoSubprocessoTce[]
   andamentos           AndamentoSubprocessoTce[]
   documentos           DocumentoSubprocessoTce[]
   createdAt            DateTime       @default(now())
