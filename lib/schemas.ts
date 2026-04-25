@@ -40,9 +40,23 @@ export type ProcessoInput = z.infer<typeof processoInputSchema>;
 
 export const gestorInputSchema = z.object({
   nome: z.string().min(1, "Informe o nome"),
-  cpf: z.string().min(11, "CPF invalido").max(20),
+  cpf: z
+    .string()
+    .max(20)
+    .nullish()
+    .transform((v) => (v ? v.trim() : null) || null),
   municipio: z.string().min(1, "Informe o municipio"),
   cargo: z.string().min(1, "Informe o cargo"),
+  email: z
+    .string()
+    .max(120)
+    .nullish()
+    .transform((v) => (v ? v.trim() : null) || null),
+  telefone: z
+    .string()
+    .max(40)
+    .nullish()
+    .transform((v) => (v ? v.trim() : null) || null),
   observacoes: z.string().nullish(),
 });
 

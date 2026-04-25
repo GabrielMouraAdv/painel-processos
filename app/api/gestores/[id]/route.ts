@@ -40,9 +40,11 @@ export async function PATCH(
       where: { id: params.id },
       data: {
         nome: data.nome,
-        cpf: data.cpf,
+        cpf: data.cpf ?? null,
         municipio: data.municipio,
         cargo: data.cargo,
+        email: data.email ?? null,
+        telefone: data.telefone ?? null,
         observacoes: data.observacoes ?? null,
       },
     });
@@ -70,10 +72,18 @@ export async function DELETE(
   const existing = await ensureOwned(params.id, session.user.escritorioId);
   if (!existing) return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
-  const count = await prisma.processo.count({ where: { gestorId: params.id } });
-  if (count > 0) {
+  const [judCount, tceCount] = await Promise.all([
+    prisma.processo.count({ where: { gestorId: params.id } }),
+    prisma.interessadoProcessoTce.count({ where: { gestorId: params.id } }),
+  ]);
+  const total = judCount + tceCount;
+  if (total > 0) {
     return NextResponse.json(
-      { error: `Gestor possui ${count} processo(s) vinculado(s). Remova-os antes.` },
+      {
+        error: `Nao e possivel excluir: existem ${total} processo${total === 1 ? "" : "s"} vinculado${total === 1 ? "" : "s"}. Remova ou transfira os processos antes.`,
+        processosJudiciais: judCount,
+        processosTce: tceCount,
+      },
       { status: 409 },
     );
   }

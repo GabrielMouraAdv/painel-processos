@@ -25,9 +25,11 @@ export async function POST(req: Request) {
     const gestor = await prisma.gestor.create({
       data: {
         nome: data.nome,
-        cpf: data.cpf,
+        cpf: data.cpf ?? null,
         municipio: data.municipio,
         cargo: data.cargo,
+        email: data.email ?? null,
+        telefone: data.telefone ?? null,
         observacoes: data.observacoes ?? null,
         escritorioId: session.user.escritorioId,
       },

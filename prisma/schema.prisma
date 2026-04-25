@@ -81,9 +81,11 @@ model User {
 model Gestor {
   id           String   @id @default(cuid())
   nome         String
-  cpf          String   @unique
+  cpf          String?  @unique
   municipio    String
   cargo        String
+  email        String?
+  telefone     String?
   observacoes  String?
   escritorioId String
   createdAt    DateTime @default(now())

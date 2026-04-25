@@ -62,6 +62,28 @@ export async function DELETE(
   if (!existing)
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
+  const [tceCount, gestoesCount] = await Promise.all([
+    prisma.processoTce.count({ where: { municipioId: params.id } }),
+    prisma.historicoGestao.count({ where: { municipioId: params.id } }),
+  ]);
+  if (tceCount > 0 || gestoesCount > 0) {
+    const partes: string[] = [];
+    if (tceCount > 0)
+      partes.push(`${tceCount} processo${tceCount === 1 ? "" : "s"} TCE`);
+    if (gestoesCount > 0)
+      partes.push(
+        `${gestoesCount} gesta${gestoesCount === 1 ? "o" : "es"} historica${gestoesCount === 1 ? "" : "s"}`,
+      );
+    return NextResponse.json(
+      {
+        error: `Nao e possivel excluir: existem ${partes.join(" e ")} vinculado${tceCount + gestoesCount === 1 ? "" : "s"}. Remova ou transfira antes.`,
+        processosTce: tceCount,
+        gestoes: gestoesCount,
+      },
+      { status: 409 },
+    );
+  }
+
   await prisma.municipio.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }

@@ -82,7 +82,8 @@ export default async function InteressadoDetailPage({
             {gestor.nome}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {gestor.cargo} • {gestor.municipio} • CPF {gestor.cpf}
+            {gestor.cargo} • {gestor.municipio}
+            {gestor.cpf ? ` • CPF ${gestor.cpf}` : ""}
           </p>
         </div>
       </header>

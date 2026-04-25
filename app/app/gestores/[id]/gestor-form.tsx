@@ -26,7 +26,7 @@ type Props = {
   gestorId: string;
   initial: {
     nome: string;
-    cpf: string;
+    cpf: string | null;
     municipio: string;
     cargo: string;
     observacoes: string | null;
@@ -47,7 +47,7 @@ export function GestorForm({ gestorId, initial }: Props) {
     resolver: zodResolver(schema),
     defaultValues: {
       nome: initial.nome,
-      cpf: initial.cpf,
+      cpf: initial.cpf ?? "",
       municipio: initial.municipio,
       cargo: initial.cargo,
       observacoes: initial.observacoes ?? "",
@@ -79,7 +79,7 @@ export function GestorForm({ gestorId, initial }: Props) {
       <div className="space-y-3">
         <Info label="Nome" value={initial.nome} />
         <div className="grid grid-cols-2 gap-3">
-          <Info label="CPF" value={initial.cpf} />
+          <Info label="CPF" value={initial.cpf ?? "-"} />
           <Info label="Cargo" value={initial.cargo} />
         </div>
         <Info label="Municipio" value={initial.municipio} />
