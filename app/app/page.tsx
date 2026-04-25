@@ -5,6 +5,7 @@ import { ArrowRight, Landmark, Scale } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
+import { fasesEmPauta } from "@/lib/processo-labels";
 
 export default async function ModuloHomePage() {
   const session = await getServerSession(authOptions);
@@ -22,6 +23,9 @@ export default async function ModuloHomePage() {
   const [
     totalJud,
     prazosJudAbertos,
+    memoriaisPendJud,
+    despachosPendJud,
+    prazosVencendoJud,
     totalTce,
     prazosTceAbertos,
     contrarrazoesNtPend,
@@ -33,6 +37,31 @@ export default async function ModuloHomePage() {
     prisma.processo.count({ where: { escritorioId } }),
     prisma.prazo.count({
       where: { cumprido: false, processo: { escritorioId } },
+    }),
+    prisma.processo.count({
+      where: {
+        escritorioId,
+        memorialPronto: false,
+        fase: { not: "transitado" },
+        OR: [
+          { fase: { in: fasesEmPauta } },
+          { grau: { in: ["SEGUNDO", "SUPERIOR"] } },
+        ],
+      },
+    }),
+    prisma.processo.count({
+      where: {
+        escritorioId,
+        memorialPronto: true,
+        despachadoComRelator: false,
+      },
+    }),
+    prisma.prazo.count({
+      where: {
+        cumprido: false,
+        data: { gte: hoje, lte: em7 },
+        processo: { escritorioId },
+      },
     }),
     prisma.processoTce.count({ where: { escritorioId } }),
     prisma.prazoTce.count({
@@ -85,6 +114,8 @@ export default async function ModuloHomePage() {
     memoriaisPend +
     despachosPend +
     prazosTceVencendo;
+  const totalPendenciasJud =
+    memoriaisPendJud + despachosPendJud + prazosVencendoJud;
 
   const nome = session?.user?.name ?? "usuario";
 
@@ -147,8 +178,13 @@ export default async function ModuloHomePage() {
                 TJPE • TRF5 • TRF1 • STJ
               </p>
             </div>
-            <dl className="grid grid-cols-2 gap-2 border-t pt-4">
+            <dl className="grid grid-cols-3 gap-2 border-t pt-4">
               <Stat label="Processos" value={totalJud} />
+              <Stat
+                label="Pendencias"
+                value={totalPendenciasJud}
+                tone="rose"
+              />
               <Stat label="Prazos abertos" value={prazosJudAbertos} tone="red" />
             </dl>
           </Link>
