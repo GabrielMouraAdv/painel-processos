@@ -17,6 +17,8 @@ export type TipoPendencia =
   | "despacho"
   | "prazo";
 
+export type PrazoStatus = "alerta" | "vencido" | "cumprido_com_atraso";
+
 export type Pendencia = {
   id: string; // unique key (processoId + tipo + suffix opcional)
   tipo: TipoPendencia;
@@ -24,6 +26,9 @@ export type Pendencia = {
   descricao: string;
   detalhe?: string | null;
   prazoId?: string | null;
+  // Apenas para tipo "prazo":
+  prazoStatus?: PrazoStatus | null;
+  advogadoResp?: string | null; // nome
 };
 
 export type ProcessoComPendencias = {
@@ -74,6 +79,7 @@ export function detectarPendencias(
     dataVencimento: Date;
     cumprido: boolean;
     diasRestantes: number;
+    advogadoResp?: string | null;
   }[],
 ): Pendencia[] {
   const out: Pendencia[] = [];
@@ -129,13 +135,45 @@ export function detectarPendencias(
   }
 
   for (const p of prazos) {
+    let status: PrazoStatus | null = null;
+    let descricao: string;
+    let detalhe: string | null = null;
+    let concluida = p.cumprido;
+
+    if (p.cumprido) {
+      // Cumprido com atraso: vencimento ja passou, mantem visivel por ate 7
+      // dias uteis. Cumprido normal (no prazo) some da lista de pendencias.
+      const venceuHaDiasUteis = -p.diasRestantes;
+      if (p.diasRestantes < 0 && venceuHaDiasUteis <= 7) {
+        status = "cumprido_com_atraso";
+        // mantem visivel apesar de cumprido
+        concluida = false;
+        descricao = `Prazo de ${p.tipo} cumprido com atraso`;
+        detalhe = `Vencimento ha ${venceuHaDiasUteis} dia${venceuHaDiasUteis === 1 ? "" : "s"} ute${venceuHaDiasUteis === 1 ? "l" : "is"}`;
+      } else {
+        // cumprido normal: marca como concluida, lista esconde
+        descricao = `Prazo de ${p.tipo} cumprido`;
+        detalhe = "Cumprido";
+      }
+    } else if (p.diasRestantes < 0) {
+      status = "vencido";
+      const venceuHaDiasUteis = -p.diasRestantes;
+      descricao = `PRAZO VENCIDO SEM PROVIDENCIAS - ${p.tipo}`;
+      detalhe = `Venceu ha ${venceuHaDiasUteis} dia${venceuHaDiasUteis === 1 ? "" : "s"} ute${venceuHaDiasUteis === 1 ? "l" : "is"}`;
+    } else {
+      status = "alerta";
+      descricao = `Prazo de ${p.tipo} vencendo em ${p.diasRestantes <= 0 ? "hoje" : `${p.diasRestantes} dia${p.diasRestantes === 1 ? "" : "s"} ute${p.diasRestantes === 1 ? "l" : "is"}`}`;
+    }
+
     out.push({
       id: `${processo.id}-prazo-${p.id}`,
       tipo: "prazo",
-      concluida: p.cumprido,
-      descricao: `Prazo de ${p.tipo} vencendo em ${p.diasRestantes <= 0 ? "hoje" : `${p.diasRestantes} dia${p.diasRestantes === 1 ? "" : "s"} ute${p.diasRestantes === 1 ? "l" : "is"}`}`,
-      detalhe: p.cumprido ? "Cumprido" : null,
+      concluida,
+      descricao,
+      detalhe,
       prazoId: p.id,
+      prazoStatus: status,
+      advogadoResp: p.advogadoResp ?? null,
     });
   }
 
@@ -165,6 +203,9 @@ export function agregarPendencias(
   for (const p of itens) {
     for (const pd of p.pendencias) {
       if (pd.concluida) continue;
+      // Nao conta cumprido_com_atraso como pendencia ativa (ja foi resolvido).
+      if (pd.tipo === "prazo" && pd.prazoStatus === "cumprido_com_atraso")
+        continue;
       if (pd.tipo === "contrarrazoes_nt") agg.contrarrazoesNt++;
       else if (pd.tipo === "contrarrazoes_mpco") agg.contrarrazoesMpco++;
       else if (pd.tipo === "memorial") agg.memorial++;

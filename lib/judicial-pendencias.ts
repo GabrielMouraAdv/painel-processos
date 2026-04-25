@@ -4,6 +4,8 @@ import { fasesEmPauta } from "@/lib/processo-labels";
 
 export type TipoPendenciaJud = "memorial" | "despacho" | "prazo";
 
+export type PrazoStatusJud = "alerta" | "vencido" | "cumprido_com_atraso";
+
 export type PendenciaJud = {
   id: string;
   tipo: TipoPendenciaJud;
@@ -11,6 +13,9 @@ export type PendenciaJud = {
   descricao: string;
   detalhe?: string | null;
   prazoId?: string | null;
+  // Apenas para tipo "prazo":
+  prazoStatus?: PrazoStatusJud | null;
+  advogadoResp?: string | null;
 };
 
 export type ProcessoComPendenciasJud = {
@@ -51,6 +56,7 @@ export function detectarPendenciasJud(
     data: Date;
     cumprido: boolean;
     diasRestantes: number;
+    advogadoResp?: string | null;
   }[],
 ): PendenciaJud[] {
   const out: PendenciaJud[] = [];
@@ -80,13 +86,41 @@ export function detectarPendenciasJud(
   }
 
   for (const p of prazos) {
+    let status: PrazoStatusJud | null = null;
+    let descricao: string;
+    let detalhe: string | null = null;
+    let concluida = p.cumprido;
+
+    if (p.cumprido) {
+      const venceuHaDias = -p.diasRestantes;
+      if (p.diasRestantes < 0 && venceuHaDias <= 7) {
+        status = "cumprido_com_atraso";
+        concluida = false;
+        descricao = `Prazo de ${p.tipo} cumprido com atraso`;
+        detalhe = `Vencimento ha ${venceuHaDias} dia${venceuHaDias === 1 ? "" : "s"}`;
+      } else {
+        descricao = `Prazo de ${p.tipo} cumprido`;
+        detalhe = "Cumprido";
+      }
+    } else if (p.diasRestantes < 0) {
+      status = "vencido";
+      const venceuHaDias = -p.diasRestantes;
+      descricao = `PRAZO VENCIDO SEM PROVIDENCIAS - ${p.tipo}`;
+      detalhe = `Venceu ha ${venceuHaDias} dia${venceuHaDias === 1 ? "" : "s"}`;
+    } else {
+      status = "alerta";
+      descricao = `Prazo de ${p.tipo} vencendo em ${p.diasRestantes <= 0 ? "hoje" : `${p.diasRestantes} dia${p.diasRestantes === 1 ? "" : "s"}`}`;
+    }
+
     out.push({
       id: `${processo.id}-prazo-${p.id}`,
       tipo: "prazo",
-      concluida: p.cumprido,
-      descricao: `Prazo de ${p.tipo} vencendo em ${p.diasRestantes <= 0 ? "hoje ou atrasado" : `${p.diasRestantes} dia${p.diasRestantes === 1 ? "" : "s"}`}`,
-      detalhe: p.cumprido ? "Cumprido" : null,
+      concluida,
+      descricao,
+      detalhe,
       prazoId: p.id,
+      prazoStatus: status,
+      advogadoResp: p.advogadoResp ?? null,
     });
   }
 
@@ -112,6 +146,8 @@ export function agregarPendenciasJud(
   for (const p of itens) {
     for (const pd of p.pendencias) {
       if (pd.concluida) continue;
+      if (pd.tipo === "prazo" && pd.prazoStatus === "cumprido_com_atraso")
+        continue;
       if (pd.tipo === "memorial") agg.memorial++;
       else if (pd.tipo === "despacho") agg.despacho++;
       else if (pd.tipo === "prazo") agg.prazo++;

@@ -397,21 +397,60 @@ function ProcessoCardComponent({
 
       {/* Lista de pendencias */}
       <ul className="divide-y">
-        {processo.pendencias.map((pd) => (
+        {processo.pendencias.map((pd) => {
+          const isVencido = pd.tipo === "prazo" && pd.prazoStatus === "vencido";
+          return (
           <li
             key={pd.id}
-            className="flex flex-wrap items-center gap-3 px-5 py-3"
+            className={
+              isVencido
+                ? "flex flex-wrap items-center gap-3 border-l-4 border-l-red-700 bg-red-50 px-5 py-3"
+                : "flex flex-wrap items-center gap-3 px-5 py-3"
+            }
           >
             <PendenciaIcon tipo={pd.tipo} />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-slate-800">
+              <p
+                className={
+                  isVencido
+                    ? "text-sm font-bold uppercase tracking-wide text-red-800"
+                    : "text-sm font-medium text-slate-800"
+                }
+              >
                 {pd.descricao}
               </p>
               {pd.detalhe && (
                 <p className="text-xs text-muted-foreground">{pd.detalhe}</p>
               )}
+              {pd.tipo === "prazo" && (
+                <p
+                  className={
+                    pd.advogadoResp
+                      ? "text-xs text-muted-foreground"
+                      : "text-xs font-semibold text-orange-800"
+                  }
+                >
+                  Responsavel:{" "}
+                  {pd.advogadoResp ? `Dr. ${pd.advogadoResp}` : "nao vinculado"}
+                </p>
+              )}
             </div>
-            {pd.concluida ? (
+            {pd.tipo === "prazo" ? (
+              pd.prazoStatus === "vencido" ? (
+                <span className="inline-flex items-center gap-1 rounded-md border border-red-700 bg-[#fecaca] px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#7f1d1d]">
+                  Vencido
+                </span>
+              ) : pd.prazoStatus === "cumprido_com_atraso" ? (
+                <span className="inline-flex items-center gap-1 rounded-md bg-slate-200 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700">
+                  <Check className="h-3 w-3" />
+                  Cumprido com atraso
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-md bg-[#fed7aa] px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#9a3412]">
+                  Alerta
+                </span>
+              )
+            ) : pd.concluida ? (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-700">
                 <Check className="h-3 w-3" />
                 Concluida
@@ -467,7 +506,8 @@ function ProcessoCardComponent({
               </div>
             )}
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <CriarPrazoDialog

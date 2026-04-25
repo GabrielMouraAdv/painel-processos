@@ -45,6 +45,7 @@ export default async function PendenciasTcePage() {
             tipo: true,
             dataVencimento: true,
             cumprido: true,
+            advogadoResp: { select: { nome: true } },
           },
         },
         subprocessos: {
@@ -65,6 +66,7 @@ export default async function PendenciasTcePage() {
                 tipo: true,
                 dataVencimento: true,
                 cumprido: true,
+                advogadoRespId: true,
               },
             },
           },
@@ -78,6 +80,27 @@ export default async function PendenciasTcePage() {
     }),
   ]);
 
+  // Advogados responsaveis dos prazos de subprocesso (sem relation no schema)
+  const advRespIdsSub = Array.from(
+    new Set(
+      processos
+        .flatMap((p) => p.subprocessos)
+        .flatMap((sp) => sp.prazos)
+        .map((pr) => pr.advogadoRespId)
+        .filter((id): id is string => !!id),
+    ),
+  );
+  const advsSubMap = advRespIdsSub.length
+    ? new Map(
+        (
+          await prisma.user.findMany({
+            where: { id: { in: advRespIdsSub } },
+            select: { id: true, nome: true },
+          })
+        ).map((u) => [u.id, u.nome]),
+      )
+    : new Map<string, string>();
+
   const cards: ProcessoComPendencias[] = processos
     .map((p) => {
       // Inclui prazos do processo + prazos de todos os subprocessos
@@ -87,6 +110,7 @@ export default async function PendenciasTcePage() {
           tipo: pr.tipo,
           dataVencimento: pr.dataVencimento,
           cumprido: pr.cumprido,
+          advogadoResp: pr.advogadoResp?.nome ?? null,
         })),
         ...p.subprocessos.flatMap((sp) =>
           sp.prazos.map((pr) => ({
@@ -94,6 +118,9 @@ export default async function PendenciasTcePage() {
             tipo: `${pr.tipo} (${sp.numero})`,
             dataVencimento: pr.dataVencimento,
             cumprido: pr.cumprido,
+            advogadoResp: pr.advogadoRespId
+              ? advsSubMap.get(pr.advogadoRespId) ?? null
+              : null,
           })),
         ),
       ];
@@ -105,6 +132,7 @@ export default async function PendenciasTcePage() {
           tipo: pr.tipo,
           dataVencimento: pr.dataVencimento,
           cumprido: pr.cumprido,
+          advogadoResp: pr.advogadoResp,
           diasRestantes: diasUteisEntre(hoje, pr.dataVencimento),
         }))
         .filter(

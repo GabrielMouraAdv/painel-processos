@@ -33,7 +33,13 @@ export default async function PendenciasJudiciaisPage() {
             OR: [{ cumprido: false, data: { lte: em15 } }, { cumprido: true }],
           },
           orderBy: { data: "asc" },
-          select: { id: true, tipo: true, data: true, cumprido: true },
+          select: {
+            id: true,
+            tipo: true,
+            data: true,
+            cumprido: true,
+            advogadoResp: { select: { nome: true } },
+          },
         },
       },
     }),
@@ -58,6 +64,7 @@ export default async function PendenciasJudiciaisPage() {
           tipo: pr.tipo,
           data: pr.data,
           cumprido: pr.cumprido,
+          advogadoResp: pr.advogadoResp?.nome ?? null,
           diasRestantes: diasCorridos(pr.data),
         }))
         .filter(
