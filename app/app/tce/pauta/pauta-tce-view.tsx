@@ -160,7 +160,7 @@ export function PautaTceView({
   const [excluirSessao, setExcluirSessao] = React.useState<SessaoRow | null>(null);
   const [sessaoPending, setSessaoPending] = React.useState(false);
   const [exportando, setExportando] = React.useState<
-    "docx" | "whatsapp" | null
+    "pdf" | "whatsapp" | null
   >(null);
   const [whatsappTexto, setWhatsappTexto] = React.useState<string | null>(null);
   const [itemDialog, setItemDialog] = React.useState<{
@@ -253,21 +253,21 @@ export function PautaTceView({
     }
   }
 
-  async function exportarDocx() {
-    setExportando("docx");
+  async function exportarPdf() {
+    setExportando("pdf");
     try {
       const res = await fetch(
-        `/api/tce/pauta/export?semana=${weekStart}&format=docx`,
+        `/api/tce/pauta/export?semana=${weekStart}&format=pdf`,
       );
       if (!res.ok) {
-        toast({ variant: "destructive", title: "Erro ao exportar DOCX" });
+        toast({ variant: "destructive", title: "Erro ao exportar PDF" });
         return;
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `pauta-tce-${weekStart}.docx`;
+      a.download = `pauta-tce-${weekStart}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -331,11 +331,11 @@ export function PautaTceView({
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
-            onClick={exportarDocx}
-            disabled={exportando === "docx"}
+            onClick={exportarPdf}
+            disabled={exportando === "pdf"}
           >
             <Download className="mr-2 h-4 w-4" />
-            {exportando === "docx" ? "Gerando..." : "Exportar semana"}
+            {exportando === "pdf" ? "Gerando..." : "Exportar semana"}
           </Button>
           <Button
             variant="outline"
