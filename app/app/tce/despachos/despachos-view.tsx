@@ -69,11 +69,8 @@ type ProcessoLite = {
   incluidoNoDespacho: boolean;
 };
 
-const COR_CAMARA: Record<CamaraTce, string> = {
-  PRIMEIRA: "#1e40af",
-  SEGUNDA: "#047857",
-  PLENO: "#6b21a8",
-};
+const COR_PENDENTE = "#92400e";
+const COR_DESPACHADO = "#065f46";
 const CAMARA_LABEL: Record<CamaraTce, string> = {
   PRIMEIRA: "1a Camara",
   SEGUNDA: "2a Camara",
@@ -372,12 +369,12 @@ function DespachoCardComponent({
     variant?: "default" | "destructive";
   }) => void;
 }) {
-  const corHeader = COR_CAMARA[card.camara];
   const [prognostico, setPrognostico] = React.useState(
     card.prognosticoDespacho ?? "",
   );
   const [retorno, setRetorno] = React.useState(card.retornoDespacho ?? "");
   const [despachado, setDespachado] = React.useState(card.despachadoComRelator);
+  const corHeader = despachado ? COR_DESPACHADO : COR_PENDENTE;
   const [savingPg, setSavingPg] = React.useState(false);
   const [savingRet, setSavingRet] = React.useState(false);
   const [togglingDespacho, setTogglingDespacho] = React.useState(false);
