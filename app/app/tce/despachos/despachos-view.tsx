@@ -57,6 +57,12 @@ export type DespachoCard = {
   memorialPronto: boolean;
   incluidoNoDespacho: boolean;
   memoriais: { id: string; nome: string; url: string; createdAt: Date }[];
+  // Quando o card representa um SubprocessoTce em vez de ProcessoTce
+  subprocesso?: {
+    isSubprocesso: true;
+    tipoRecursoCode: string;
+    processoPai: { id: string; numero: string };
+  } | null;
 };
 
 type ProcessoLite = {
@@ -472,8 +478,13 @@ function DespachoCardComponent({
         style={{ backgroundColor: corHeader }}
       >
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-sm font-bold tracking-wide">
+          <p className="flex flex-wrap items-center gap-2 font-mono text-sm font-bold tracking-wide">
             {card.numero}
+            {card.subprocesso && (
+              <span className="rounded bg-white/25 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                {card.subprocesso.tipoRecursoCode}
+              </span>
+            )}
           </p>
           <p className="text-xs opacity-95">
             {TCE_TIPO_LABELS[card.tipo]}
@@ -482,6 +493,11 @@ function DespachoCardComponent({
               : ""}
             {card.exercicio ? ` • exercicio ${card.exercicio}` : ""}
           </p>
+          {card.subprocesso && (
+            <p className="text-[11px] italic opacity-80">
+              Recurso vinculado ao processo {card.subprocesso.processoPai.numero}
+            </p>
+          )}
         </div>
         <span className="rounded bg-white/20 px-2 py-1 text-[11px] font-bold uppercase tracking-wide">
           {CAMARA_LABEL[card.camara]}
@@ -640,36 +656,38 @@ function DespachoCardComponent({
               </span>
             )}
           </div>
-          <div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf,.pdf"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) uploadMemorial(f);
-              }}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-3.5 w-3.5" />
-                  Anexar Memorial
-                </>
-              )}
-            </Button>
-          </div>
+          {!card.subprocesso && (
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadMemorial(f);
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-3.5 w-3.5" />
+                    Anexar Memorial
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </Card>

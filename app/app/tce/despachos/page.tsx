@@ -2,7 +2,11 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CONSELHEIROS_SUBSTITUTOS, TCE_CAMARAS } from "@/lib/tce-config";
+import {
+  CONSELHEIROS_SUBSTITUTOS,
+  TCE_CAMARAS,
+  TCE_RECURSO_CODE,
+} from "@/lib/tce-config";
 
 import { DespachosView, type DespachoCard } from "./despachos-view";
 
@@ -10,7 +14,7 @@ export default async function DespachosTcePage() {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
 
-  const [processos, todosProcessos] = await Promise.all([
+  const [processos, subprocessos, todosProcessos] = await Promise.all([
     prisma.processoTce.findMany({
       where: {
         escritorioId,
@@ -37,6 +41,34 @@ export default async function DespachosTcePage() {
         },
       },
     }),
+    prisma.subprocessoTce.findMany({
+      where: {
+        processoPai: { escritorioId },
+        OR: [
+          { memorialPronto: true },
+          { despachadoComRelator: true },
+        ],
+      },
+      orderBy: [
+        { despachadoComRelator: "asc" },
+        { memorialPronto: "desc" },
+        { dataInterposicao: "desc" },
+      ],
+      include: {
+        processoPai: {
+          select: {
+            id: true,
+            numero: true,
+            tipo: true,
+            camara: true,
+            municipio: { select: { id: true, nome: true, uf: true } },
+            interessados: {
+              include: { gestor: { select: { id: true, nome: true } } },
+            },
+          },
+        },
+      },
+    }),
     prisma.processoTce.findMany({
       where: { escritorioId },
       orderBy: { numero: "asc" },
@@ -52,7 +84,7 @@ export default async function DespachosTcePage() {
     }),
   ]);
 
-  const cards: DespachoCard[] = processos.map((p) => ({
+  const cardsProcessos: DespachoCard[] = processos.map((p) => ({
     id: p.id,
     numero: p.numero,
     tipo: p.tipo,
@@ -79,7 +111,51 @@ export default async function DespachosTcePage() {
       url: d.url,
       createdAt: d.createdAt,
     })),
+    subprocesso: null,
   }));
+
+  const cardsSubprocessos: DespachoCard[] = subprocessos.map((sp) => ({
+    id: sp.id,
+    numero: sp.numero,
+    tipo: sp.processoPai.tipo,
+    camara: sp.processoPai.camara,
+    faseAtual: sp.fase,
+    exercicio: null,
+    relator: sp.relator,
+    conselheiroSubstituto: null,
+    municipio: sp.processoPai.municipio,
+    interessados: sp.processoPai.interessados.map((i) => ({
+      id: i.gestor.id,
+      nome: i.gestor.nome,
+      cargo: i.cargo,
+    })),
+    prognosticoDespacho: sp.prognosticoDespacho,
+    retornoDespacho: sp.retornoDespacho,
+    despachadoComRelator: sp.despachadoComRelator,
+    dataDespacho: sp.dataDespacho,
+    memorialPronto: sp.memorialPronto,
+    incluidoNoDespacho: false,
+    memoriais: [],
+    subprocesso: {
+      isSubprocesso: true,
+      tipoRecursoCode: TCE_RECURSO_CODE[sp.tipoRecurso],
+      processoPai: { id: sp.processoPai.id, numero: sp.processoPai.numero },
+    },
+  }));
+
+  // Pendentes (despachado false) primeiro, depois ordem natural
+  const cards: DespachoCard[] = [
+    ...cardsProcessos,
+    ...cardsSubprocessos,
+  ].sort((a, b) => {
+    if (a.despachadoComRelator !== b.despachadoComRelator) {
+      return a.despachadoComRelator ? 1 : -1;
+    }
+    if (a.memorialPronto !== b.memorialPronto) {
+      return a.memorialPronto ? -1 : 1;
+    }
+    return 0;
+  });
 
   // Conselheiros para autocomplete: titulares + substitutos
   const conselheirosUnicos = new Set<string>();

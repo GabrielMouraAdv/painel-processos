@@ -572,15 +572,20 @@ model SubprocessoTce {
   numeroSequencial  Int
   dataInterposicao  DateTime
   dataIntimacao     DateTime?
-  fase              String
-  relator           String?
-  decisao           String?        @db.Text
-  observacoes       String?        @db.Text
-  prazos            PrazoSubprocessoTce[]
-  andamentos        AndamentoSubprocessoTce[]
-  documentos        DocumentoSubprocessoTce[]
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  fase                 String
+  relator              String?
+  decisao              String?        @db.Text
+  observacoes          String?        @db.Text
+  memorialPronto       Boolean        @default(false)
+  despachadoComRelator Boolean        @default(false)
+  prognosticoDespacho  String?        @db.Text
+  retornoDespacho      String?        @db.Text
+  dataDespacho         DateTime?
+  prazos               PrazoSubprocessoTce[]
+  andamentos           AndamentoSubprocessoTce[]
+  documentos           DocumentoSubprocessoTce[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
   @@index([processoPaiId])
   @@index([subprocessoPaiId])

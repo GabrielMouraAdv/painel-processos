@@ -105,9 +105,22 @@ export default async function ModuloHomePage() {
     }),
   ]);
 
-  const prazosTceVencendo = prazosTceCandidatos.filter(
-    (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
-  ).length;
+  const prazosSubTceCandidatos = await prisma.prazoSubprocessoTce.findMany({
+    where: {
+      cumprido: false,
+      subprocesso: { processoPai: { escritorioId } },
+      dataVencimento: { lte: em15 },
+    },
+    select: { dataVencimento: true },
+  });
+
+  const prazosTceVencendo =
+    prazosTceCandidatos.filter(
+      (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
+    ).length +
+    prazosSubTceCandidatos.filter(
+      (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
+    ).length;
   const totalPendenciasTce =
     contrarrazoesNtPend +
     contrarrazoesMpcoPend +

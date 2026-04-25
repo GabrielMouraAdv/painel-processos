@@ -62,6 +62,11 @@ export type PrazoTceRow = {
     municipio: { id: string; nome: string; uf: string } | null;
     interessados: { nome: string }[];
   };
+  subprocesso?: {
+    id: string;
+    numero: string;
+    tipoRecursoCode: string; // RO, ED, AG, AGR, PR, PSC
+  } | null;
 };
 
 type Filters = {
@@ -696,12 +701,26 @@ function PrazoTceCard({
             prazo.cumprido && "line-through",
           )}
         >
-          <Link
-            href={`/app/tce/processos/${prazo.processo.id}`}
-            className="font-mono text-brand-navy hover:underline"
-          >
-            {prazo.processo.numero}
-          </Link>
+          {prazo.subprocesso ? (
+            <>
+              <Link
+                href={`/app/tce/processos/${prazo.processo.id}/recursos/${prazo.subprocesso.id}`}
+                className="font-mono font-bold text-brand-navy hover:underline"
+              >
+                {prazo.subprocesso.numero}
+              </Link>
+              <span className="ml-1.5 inline-block rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-purple-800">
+                {prazo.subprocesso.tipoRecursoCode}
+              </span>
+            </>
+          ) : (
+            <Link
+              href={`/app/tce/processos/${prazo.processo.id}`}
+              className="font-mono text-brand-navy hover:underline"
+            >
+              {prazo.processo.numero}
+            </Link>
+          )}
           {prazo.processo.municipio && (
             <>
               {" — "}
@@ -713,6 +732,17 @@ function PrazoTceCard({
           {" • "}
           <span>{TCE_TIPO_LABELS[prazo.processo.tipo]}</span>
         </p>
+        {prazo.subprocesso && (
+          <p className="text-[11px] italic text-muted-foreground">
+            Recurso vinculado ao processo{" "}
+            <Link
+              href={`/app/tce/processos/${prazo.processo.id}`}
+              className="font-mono not-italic hover:underline"
+            >
+              {prazo.processo.numero}
+            </Link>
+          </p>
+        )}
         <p className="text-xs text-muted-foreground capitalize">
           {formatDateFull(venc)} • {prazo.diasUteis} dias uteis totais
         </p>

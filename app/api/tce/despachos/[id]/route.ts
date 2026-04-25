@@ -22,11 +22,22 @@ export async function PATCH(
   }
   const escritorioId = session.user.escritorioId;
 
-  const existing = await prisma.processoTce.findFirst({
+  // Tenta ProcessoTce primeiro
+  const processo = await prisma.processoTce.findFirst({
     where: { id: params.id, escritorioId },
     select: { id: true, despachadoComRelator: true },
   });
-  if (!existing) {
+
+  // Se nao for processo, tenta SubprocessoTce
+  let subprocesso: { id: string; despachadoComRelator: boolean } | null = null;
+  if (!processo) {
+    subprocesso = await prisma.subprocessoTce.findFirst({
+      where: { id: params.id, processoPai: { escritorioId } },
+      select: { id: true, despachadoComRelator: true },
+    });
+  }
+
+  if (!processo && !subprocesso) {
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
   }
 
@@ -48,30 +59,43 @@ export async function PATCH(
     dataDespacho?: Date | null;
   } = {};
 
+  const ehProcesso = !!processo;
+  const atual = (processo ?? subprocesso)!;
+
   if (data.prognosticoDespacho !== undefined) {
-    update.prognosticoDespacho =
-      data.prognosticoDespacho?.trim() || null;
+    update.prognosticoDespacho = data.prognosticoDespacho?.trim() || null;
   }
   if (data.retornoDespacho !== undefined) {
     update.retornoDespacho = data.retornoDespacho?.trim() || null;
   }
   if (data.despachadoComRelator !== undefined) {
     update.despachadoComRelator = data.despachadoComRelator;
-    if (data.despachadoComRelator && !existing.despachadoComRelator) {
+    if (data.despachadoComRelator && !atual.despachadoComRelator) {
       update.dataDespacho = new Date();
     }
     if (!data.despachadoComRelator) {
       update.dataDespacho = null;
     }
   }
-  if (data.incluidoNoDespacho !== undefined) {
+  // Subprocessos nao tem incluidoNoDespacho — ignoramos silenciosamente
+  if (ehProcesso && data.incluidoNoDespacho !== undefined) {
     update.incluidoNoDespacho = data.incluidoNoDespacho;
   }
 
-  await prisma.processoTce.update({
-    where: { id: params.id },
-    data: update,
-  });
+  if (ehProcesso) {
+    await prisma.processoTce.update({
+      where: { id: params.id },
+      data: update,
+    });
+  } else {
+    // omit incluidoNoDespacho que nao existe no subprocesso
+    const subUpdate = { ...update };
+    delete subUpdate.incluidoNoDespacho;
+    await prisma.subprocessoTce.update({
+      where: { id: params.id },
+      data: subUpdate,
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

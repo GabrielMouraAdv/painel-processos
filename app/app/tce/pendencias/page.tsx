@@ -47,6 +47,28 @@ export default async function PendenciasTcePage() {
             cumprido: true,
           },
         },
+        subprocessos: {
+          include: {
+            prazos: {
+              where: {
+                OR: [
+                  {
+                    cumprido: false,
+                    dataVencimento: { lte: em15Corridos },
+                  },
+                  { cumprido: true },
+                ],
+              },
+              orderBy: { dataVencimento: "asc" },
+              select: {
+                id: true,
+                tipo: true,
+                dataVencimento: true,
+                cumprido: true,
+              },
+            },
+          },
+        },
       },
     }),
     prisma.user.findMany({
@@ -58,8 +80,26 @@ export default async function PendenciasTcePage() {
 
   const cards: ProcessoComPendencias[] = processos
     .map((p) => {
+      // Inclui prazos do processo + prazos de todos os subprocessos
+      const todosPrazos = [
+        ...p.prazos.map((pr) => ({
+          id: pr.id,
+          tipo: pr.tipo,
+          dataVencimento: pr.dataVencimento,
+          cumprido: pr.cumprido,
+        })),
+        ...p.subprocessos.flatMap((sp) =>
+          sp.prazos.map((pr) => ({
+            id: `sub-${pr.id}`,
+            tipo: `${pr.tipo} (${sp.numero})`,
+            dataVencimento: pr.dataVencimento,
+            cumprido: pr.cumprido,
+          })),
+        ),
+      ];
+
       // Filtra prazos vencendo em 7 dias uteis ou que ja foram cumpridos
-      const prazosFiltrados = p.prazos
+      const prazosFiltrados = todosPrazos
         .map((pr) => ({
           id: pr.id,
           tipo: pr.tipo,
