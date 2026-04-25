@@ -78,6 +78,7 @@ export default async function ProcessosPage({
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       select: {
+        tipoLivre: true,
         id: true,
         numero: true,
         tipo: true,

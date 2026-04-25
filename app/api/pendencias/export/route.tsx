@@ -13,7 +13,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import {
   faseLabel,
-  tipoLabels,
+  tipoProcessoLabel,
   tribunalLabels,
 } from "@/lib/processo-labels";
 
@@ -101,7 +101,7 @@ export async function GET() {
 
     cards.push({
       numero: p.numero,
-      tipoProcesso: tipoLabels[p.tipo],
+      tipoProcesso: tipoProcessoLabel(p.tipo, p.tipoLivre),
       tribunal: tribunalLabels[p.tribunal],
       gestor: p.gestor.nome,
       fase: faseLabel(p.fase),

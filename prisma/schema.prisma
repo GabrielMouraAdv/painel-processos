@@ -19,6 +19,27 @@ enum TipoProcesso {
   IMPROBIDADE
   ACP
   CRIMINAL
+  ACAO_POPULAR
+  MANDADO_SEGURANCA
+  MANDADO_SEGURANCA_COLETIVO
+  HABEAS_CORPUS
+  HABEAS_DATA
+  ACAO_RESCISORIA
+  EXECUCAO_FISCAL
+  EXECUCAO_TITULO_EXTRAJUDICIAL
+  CUMPRIMENTO_SENTENCA
+  ACAO_ORDINARIA
+  ACAO_DECLARATORIA
+  ACAO_ANULATORIA
+  EMBARGOS_EXECUCAO
+  EMBARGOS_TERCEIRO
+  RECLAMACAO
+  CONFLITO_COMPETENCIA
+  MEDIDA_CAUTELAR
+  TUTELA_CAUTELAR_ANTECEDENTE
+  PROCEDIMENTO_COMUM
+  JUIZADO_ESPECIAL
+  OUTRO
 }
 
 enum Tribunal {
@@ -140,6 +161,7 @@ model Processo {
   despachadoComRelator Boolean      @default(false)
   dataDespacho         DateTime?
   retornoDespacho      String?      @db.Text
+  tipoLivre            String?
   gestorId             String
   advogadoId           String
   escritorioId     String

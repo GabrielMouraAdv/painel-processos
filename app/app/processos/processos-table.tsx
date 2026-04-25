@@ -23,6 +23,7 @@ export type ProcessoRow = {
   id: string;
   numero: string;
   tipo: TipoProcesso;
+  tipoLivre: string | null;
   tribunal: Tribunal;
   risco: Risco;
   grau: Grau;
@@ -74,7 +75,7 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                 <TribunalBadge tribunal={p.tribunal} />
               </TableCell>
               <TableCell>
-                <TipoBadge tipo={p.tipo} />
+                <TipoBadge tipo={p.tipo} tipoLivre={p.tipoLivre} />
               </TableCell>
               <TableCell>
                 <RiscoBadge risco={p.risco} />

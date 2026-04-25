@@ -114,6 +114,8 @@ function objetoDe(tipo: TipoProcesso, entidade: string): string {
       return `Ação civil pública proposta em face de ${entidade}, questionando conduta com potencial impacto coletivo e pedindo obrigação de fazer/não fazer e reparação de danos.`;
     case TipoProcesso.CRIMINAL:
       return `Ação penal em face de representantes de ${entidade}, imputando prática de crimes contra a administração pública e o patrimônio.`;
+    default:
+      return `Ação judicial envolvendo ${entidade}.`;
   }
 }
 

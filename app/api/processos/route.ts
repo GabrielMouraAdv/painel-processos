@@ -40,6 +40,7 @@ export async function POST(req: Request) {
       data: {
         numero: data.numero,
         tipo: data.tipo,
+        tipoLivre: data.tipo === "OUTRO" ? (data.tipoLivre ?? null) : null,
         tribunal: data.tribunal,
         juizo: data.juizo,
         grau: data.grau,

@@ -4,7 +4,38 @@ export const tipoLabels: Record<TipoProcesso, string> = {
   IMPROBIDADE: "Improbidade",
   ACP: "ACP",
   CRIMINAL: "Criminal",
+  ACAO_POPULAR: "Acao Popular",
+  MANDADO_SEGURANCA: "Mandado de Seguranca",
+  MANDADO_SEGURANCA_COLETIVO: "Mandado de Seguranca Coletivo",
+  HABEAS_CORPUS: "Habeas Corpus",
+  HABEAS_DATA: "Habeas Data",
+  ACAO_RESCISORIA: "Acao Rescisoria",
+  EXECUCAO_FISCAL: "Acao de Execucao Fiscal",
+  EXECUCAO_TITULO_EXTRAJUDICIAL: "Execucao de Titulo Extrajudicial",
+  CUMPRIMENTO_SENTENCA: "Cumprimento de Sentenca",
+  ACAO_ORDINARIA: "Acao Ordinaria",
+  ACAO_DECLARATORIA: "Acao Declaratoria",
+  ACAO_ANULATORIA: "Acao Anulatoria",
+  EMBARGOS_EXECUCAO: "Embargos a Execucao",
+  EMBARGOS_TERCEIRO: "Embargos de Terceiro",
+  RECLAMACAO: "Reclamacao",
+  CONFLITO_COMPETENCIA: "Conflito de Competencia",
+  MEDIDA_CAUTELAR: "Medida Cautelar",
+  TUTELA_CAUTELAR_ANTECEDENTE: "Tutela Cautelar Antecedente",
+  PROCEDIMENTO_COMUM: "Procedimento Comum",
+  JUIZADO_ESPECIAL: "Procedimento do Juizado Especial",
+  OUTRO: "Outro",
 };
+
+export function tipoProcessoLabel(
+  tipo: TipoProcesso,
+  tipoLivre?: string | null,
+): string {
+  if (tipo === "OUTRO" && tipoLivre && tipoLivre.trim()) {
+    return tipoLivre.trim();
+  }
+  return tipoLabels[tipo];
+}
 
 export const riscoLabels: Record<Risco, string> = {
   ALTO: "Alto",

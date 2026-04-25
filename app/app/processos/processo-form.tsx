@@ -37,21 +37,32 @@ import {
   tribunalLabels,
 } from "@/lib/processo-labels";
 
-const formSchema = z.object({
-  numero: z.string().min(1, "Informe o numero do processo"),
-  tipo: z.nativeEnum(TipoProcesso),
-  tribunal: z.nativeEnum(Tribunal),
-  juizo: z.string().min(1, "Informe o juizo"),
-  grau: z.nativeEnum(Grau),
-  fase: z.string().min(1, "Selecione a fase"),
-  resultado: z.string().optional(),
-  risco: z.nativeEnum(Risco),
-  valor: z.string().optional(),
-  dataDistribuicao: z.string().min(1, "Informe a data de distribuicao"),
-  objeto: z.string().min(1, "Informe o objeto"),
-  gestorId: z.string().min(1, "Selecione o gestor"),
-  advogadoId: z.string().min(1, "Selecione o advogado"),
-});
+const formSchema = z
+  .object({
+    numero: z.string().min(1, "Informe o numero do processo"),
+    tipo: z.nativeEnum(TipoProcesso),
+    tipoLivre: z.string().optional(),
+    tribunal: z.nativeEnum(Tribunal),
+    juizo: z.string().min(1, "Informe o juizo"),
+    grau: z.nativeEnum(Grau),
+    fase: z.string().min(1, "Selecione a fase"),
+    resultado: z.string().optional(),
+    risco: z.nativeEnum(Risco),
+    valor: z.string().optional(),
+    dataDistribuicao: z.string().min(1, "Informe a data de distribuicao"),
+    objeto: z.string().min(1, "Informe o objeto"),
+    gestorId: z.string().min(1, "Selecione o gestor"),
+    advogadoId: z.string().min(1, "Selecione o advogado"),
+  })
+  .refine(
+    (data) =>
+      data.tipo !== TipoProcesso.OUTRO ||
+      (!!data.tipoLivre && data.tipoLivre.trim().length > 0),
+    {
+      message: "Descreva o tipo da acao",
+      path: ["tipoLivre"],
+    },
+  );
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -127,6 +138,7 @@ export function ProcessoForm({
     defaultValues: {
       numero: initial?.numero ?? "",
       tipo: initial?.tipo ?? TipoProcesso.IMPROBIDADE,
+      tipoLivre: initial?.tipoLivre ?? "",
       tribunal: initial?.tribunal ?? Tribunal.TJPE,
       juizo: initial?.juizo ?? "",
       grau: initial?.grau ?? Grau.PRIMEIRO,
@@ -243,6 +255,17 @@ export function ProcessoForm({
             )}
           />
         </Field>
+        {watch("tipo") === TipoProcesso.OUTRO && (
+          <Field
+            label="Descreva o tipo da acao"
+            error={errors.tipoLivre?.message}
+          >
+            <Input
+              placeholder="Ex.: Acao Civil de Improbidade Administrativa"
+              {...register("tipoLivre")}
+            />
+          </Field>
+        )}
         <Field label="Tribunal" error={errors.tribunal?.message}>
           <Controller
             control={control}

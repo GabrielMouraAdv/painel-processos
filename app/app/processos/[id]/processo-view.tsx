@@ -100,6 +100,7 @@ export type ProcessoDetail = {
   id: string;
   numero: string;
   tipo: TipoProcesso;
+  tipoLivre: string | null;
   tribunal: Tribunal;
   juizo: string;
   grau: Grau;
@@ -192,6 +193,7 @@ export function ProcessoView({
   const initial: ProcessoFormInitial = {
     numero: processo.numero,
     tipo: processo.tipo,
+    tipoLivre: processo.tipoLivre ?? "",
     tribunal: processo.tribunal,
     juizo: processo.juizo,
     grau: processo.grau,
@@ -262,7 +264,7 @@ export function ProcessoView({
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <TipoBadge tipo={processo.tipo} />
+            <TipoBadge tipo={processo.tipo} tipoLivre={processo.tipoLivre} />
             <TribunalBadge tribunal={processo.tribunal} />
             <GrauBadge grau={processo.grau} />
             <RiscoBadge risco={processo.risco} />

@@ -81,6 +81,7 @@ export default async function PendenciasJudiciaisPage() {
         id: p.id,
         numero: p.numero,
         tipo: p.tipo,
+        tipoLivre: p.tipoLivre,
         tribunal: p.tribunal,
         grau: p.grau,
         fase: p.fase,

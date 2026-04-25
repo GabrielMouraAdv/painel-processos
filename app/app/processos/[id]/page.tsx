@@ -88,6 +88,7 @@ export default async function ProcessoDetailPage({
     id: processo.id,
     numero: processo.numero,
     tipo: processo.tipo,
+    tipoLivre: processo.tipoLivre,
     tribunal: processo.tribunal,
     juizo: processo.juizo,
     grau: processo.grau,

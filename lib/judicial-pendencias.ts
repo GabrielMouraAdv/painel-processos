@@ -17,6 +17,7 @@ export type ProcessoComPendenciasJud = {
   id: string;
   numero: string;
   tipo: TipoProcesso;
+  tipoLivre: string | null;
   tribunal: Tribunal;
   grau: Grau;
   fase: string;

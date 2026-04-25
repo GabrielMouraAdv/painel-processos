@@ -9,7 +9,7 @@ import {
   grauLabels,
   riscoLabels,
   tribunalLabels,
-  tipoLabels,
+  tipoProcessoLabel,
 } from "@/lib/processo-labels";
 
 function csvEscape(v: unknown): string {
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
 
   const linhas = processos.map((p) => [
     p.numero,
-    tipoLabels[p.tipo],
+    tipoProcessoLabel(p.tipo, p.tipoLivre),
     tribunalLabels[p.tribunal],
     p.juizo,
     grauLabels[p.grau],

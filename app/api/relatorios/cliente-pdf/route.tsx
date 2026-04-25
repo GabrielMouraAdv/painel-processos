@@ -13,7 +13,7 @@ import { diasAte } from "@/lib/prazos";
 import {
   faseLabel,
   fasesEmPauta,
-  tipoLabels,
+  tipoProcessoLabel,
   tribunalLabels,
 } from "@/lib/processo-labels";
 import {
@@ -219,7 +219,7 @@ export async function GET(req: Request) {
       judiciais.push({
         numero: p.numero,
         tribunal: tribunalLabels[p.tribunal as Tribunal] ?? p.tribunal,
-        tipo: tipoLabels[p.tipo] ?? p.tipo,
+        tipo: tipoProcessoLabel(p.tipo, p.tipoLivre),
         fase: faseLabel(p.fase),
         valor: p.valor ? Number(p.valor) : null,
         advogado: p.advogado.nome,

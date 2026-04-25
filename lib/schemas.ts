@@ -9,33 +9,48 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
-export const processoInputSchema = z.object({
-  numero: z
-    .string()
-    .min(1, "Informe o numero do processo")
-    .max(50, "Numero muito longo"),
-  tipo: z.nativeEnum(TipoProcesso),
-  tribunal: z.nativeEnum(Tribunal),
-  juizo: z.string().min(1, "Informe o juizo"),
-  grau: z.nativeEnum(Grau),
-  fase: z.string().min(1, "Selecione a fase"),
-  resultado: z.string().nullish(),
-  risco: z.nativeEnum(Risco),
-  valor: z
-    .union([z.string(), z.number()])
-    .nullish()
-    .transform((v) => {
-      if (v === null || v === undefined || v === "") return null;
-      const n = typeof v === "number" ? v : Number(String(v).replace(/\./g, "").replace(",", "."));
-      return Number.isFinite(n) ? n : null;
-    }),
-  dataDistribuicao: z
-    .union([z.string(), z.date()])
-    .transform((v) => (v instanceof Date ? v : new Date(v))),
-  objeto: z.string().min(1, "Informe o objeto da acao"),
-  gestorId: z.string().min(1, "Selecione o gestor"),
-  advogadoId: z.string().min(1, "Selecione o advogado responsavel"),
-});
+export const processoInputSchema = z
+  .object({
+    numero: z
+      .string()
+      .min(1, "Informe o numero do processo")
+      .max(50, "Numero muito longo"),
+    tipo: z.nativeEnum(TipoProcesso),
+    tipoLivre: z
+      .string()
+      .max(120)
+      .nullish()
+      .transform((v) => (v ? v.trim() || null : null)),
+    tribunal: z.nativeEnum(Tribunal),
+    juizo: z.string().min(1, "Informe o juizo"),
+    grau: z.nativeEnum(Grau),
+    fase: z.string().min(1, "Selecione a fase"),
+    resultado: z.string().nullish(),
+    risco: z.nativeEnum(Risco),
+    valor: z
+      .union([z.string(), z.number()])
+      .nullish()
+      .transform((v) => {
+        if (v === null || v === undefined || v === "") return null;
+        const n = typeof v === "number" ? v : Number(String(v).replace(/\./g, "").replace(",", "."));
+        return Number.isFinite(n) ? n : null;
+      }),
+    dataDistribuicao: z
+      .union([z.string(), z.date()])
+      .transform((v) => (v instanceof Date ? v : new Date(v))),
+    objeto: z.string().min(1, "Informe o objeto da acao"),
+    gestorId: z.string().min(1, "Selecione o gestor"),
+    advogadoId: z.string().min(1, "Selecione o advogado responsavel"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.tipo === TipoProcesso.OUTRO && !data.tipoLivre) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["tipoLivre"],
+        message: "Descreva o tipo da acao",
+      });
+    }
+  });
 
 export type ProcessoInput = z.infer<typeof processoInputSchema>;
 

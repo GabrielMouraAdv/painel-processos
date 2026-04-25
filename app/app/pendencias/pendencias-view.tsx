@@ -36,7 +36,7 @@ import type {
 } from "@/lib/judicial-pendencias";
 import {
   faseLabel,
-  tipoLabels,
+  tipoProcessoLabel,
   tribunalLabels,
 } from "@/lib/processo-labels";
 import { cn } from "@/lib/utils";
@@ -425,7 +425,7 @@ function ProcessoCardComponent({
             </span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {tipoLabels[processo.tipo]}
+            {tipoProcessoLabel(processo.tipo, processo.tipoLivre)}
             {` • Gestor: ${processo.gestorNome}`}
             {` • Adv: ${processo.advogadoNome}`}
           </p>
