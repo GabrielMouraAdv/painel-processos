@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Files,
   Gavel,
   Scale,
   ShieldAlert,
@@ -187,7 +186,6 @@ export default async function AppHome({
     parados,
     emPauta,
     prazos30d,
-    documentosTotal,
     riscoAltoLista,
     paradosLista,
     prazosProximos,
@@ -211,9 +209,6 @@ export default async function AppHome({
         data: { gte: hoje, lte: em30 },
         processo: base,
       },
-    }),
-    prisma.documento.count({
-      where: { processo: { escritorioId } },
     }),
     prisma.processo.findMany({
       where: { ...base, risco: Risco.ALTO },
@@ -480,13 +475,6 @@ export default async function AppHome({
       icon: CalendarClock,
       href: "/app/prazos?status=pendente",
       tone: "navy" as const,
-    },
-    {
-      label: "Documentos",
-      value: documentosTotal,
-      icon: Files,
-      href: "/app/processos",
-      tone: "slate" as const,
     },
   ];
 
