@@ -38,6 +38,16 @@ const dispensarSchema = baseProcessoSchema.extend({
   motivo: z.string().optional().nullable(),
 });
 
+const dispensarPrazoSchema = z.object({
+  prazoId: z.string().min(1),
+  advogadoId: z.string().min(1),
+  motivo: z.string().optional().nullable(),
+});
+
+const reverterDispensaPrazoSchema = z.object({
+  prazoId: z.string().min(1),
+});
+
 const inputSchema = z.discriminatedUnion("acao", [
   criarPrazoSchema.extend({ acao: z.literal("criar_prazo") }),
   baseProcessoSchema.extend({ acao: z.literal("memorial_pronto") }),
@@ -51,6 +61,8 @@ const inputSchema = z.discriminatedUnion("acao", [
   dispensarSchema.extend({ acao: z.literal("dispensar_despacho") }),
   baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_memorial") }),
   baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_despacho") }),
+  dispensarPrazoSchema.extend({ acao: z.literal("dispensar_prazo") }),
+  reverterDispensaPrazoSchema.extend({ acao: z.literal("reverter_dispensa_prazo") }),
 ]);
 
 export async function POST(req: Request) {
@@ -70,9 +82,15 @@ export async function POST(req: Request) {
   }
   const data = parsed.data;
 
-  if (data.acao !== "prazo_cumprido") {
+  const acoesSemProcessoId = new Set([
+    "prazo_cumprido",
+    "dispensar_prazo",
+    "reverter_dispensa_prazo",
+  ]);
+  if (!acoesSemProcessoId.has(data.acao)) {
+    const processoId = (data as { processoId: string }).processoId;
     const proc = await prisma.processo.findFirst({
-      where: { id: data.processoId, escritorioId },
+      where: { id: processoId, escritorioId },
       select: { id: true },
     });
     if (!proc) {
@@ -320,6 +338,89 @@ export async function POST(req: Request) {
           texto: ehMemorial
             ? "Dispensa do memorial revertida. Pendencia reaberta."
             : "Dispensa do despacho revertida. Pendencia reaberta.",
+          autorId: session.user.id,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "dispensar_prazo") {
+    const adv = await prisma.user.findFirst({
+      where: { id: data.advogadoId, escritorioId },
+      select: { id: true, nome: true },
+    });
+    if (!adv) {
+      return NextResponse.json(
+        { error: "Advogado nao encontrado" },
+        { status: 400 },
+      );
+    }
+    const prazo = await prisma.prazo.findFirst({
+      where: { id: data.prazoId, processo: { escritorioId } },
+      select: { id: true, tipo: true, processoId: true },
+    });
+    if (!prazo) {
+      return NextResponse.json(
+        { error: "Prazo nao encontrado" },
+        { status: 404 },
+      );
+    }
+    const motivo = data.motivo?.trim() || null;
+    const agora = new Date();
+    await prisma.$transaction([
+      prisma.prazo.update({
+        where: { id: prazo.id },
+        data: {
+          dispensado: true,
+          dispensadoPor: adv.nome,
+          dispensadoEm: agora,
+          dispensadoMotivo: motivo,
+        },
+      }),
+      prisma.andamento.create({
+        data: {
+          processoId: prazo.processoId,
+          data: agora,
+          grau: "PRIMEIRO",
+          fase: "prazo_dispensado",
+          texto: `Prazo "${prazo.tipo}" dispensado por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`,
+          autorId: session.user.id,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "reverter_dispensa_prazo") {
+    const prazo = await prisma.prazo.findFirst({
+      where: { id: data.prazoId, processo: { escritorioId } },
+      select: { id: true, tipo: true, processoId: true },
+    });
+    if (!prazo) {
+      return NextResponse.json(
+        { error: "Prazo nao encontrado" },
+        { status: 404 },
+      );
+    }
+    const agora = new Date();
+    await prisma.$transaction([
+      prisma.prazo.update({
+        where: { id: prazo.id },
+        data: {
+          dispensado: false,
+          dispensadoPor: null,
+          dispensadoEm: null,
+          dispensadoMotivo: null,
+        },
+      }),
+      prisma.andamento.create({
+        data: {
+          processoId: prazo.processoId,
+          data: agora,
+          grau: "PRIMEIRO",
+          fase: "prazo_dispensa_revertida",
+          texto: `Dispensa do prazo "${prazo.tipo}" revertida.`,
           autorId: session.user.id,
         },
       }),

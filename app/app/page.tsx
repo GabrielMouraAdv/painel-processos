@@ -36,7 +36,7 @@ export default async function ModuloHomePage() {
   ] = await Promise.all([
     prisma.processo.count({ where: { escritorioId } }),
     prisma.prazo.count({
-      where: { cumprido: false, processo: { escritorioId } },
+      where: { cumprido: false, dispensado: false, processo: { escritorioId } },
     }),
     prisma.processo.count({
       where: {
@@ -61,13 +61,14 @@ export default async function ModuloHomePage() {
     prisma.prazo.count({
       where: {
         cumprido: false,
+        dispensado: false,
         data: { gte: hoje, lte: em7 },
         processo: { escritorioId },
       },
     }),
     prisma.processoTce.count({ where: { escritorioId } }),
     prisma.prazoTce.count({
-      where: { cumprido: false, processo: { escritorioId } },
+      where: { cumprido: false, dispensado: false, processo: { escritorioId } },
     }),
     prisma.processoTce.count({
       where: {
@@ -102,6 +103,7 @@ export default async function ModuloHomePage() {
     prisma.prazoTce.findMany({
       where: {
         cumprido: false,
+        dispensado: false,
         processo: { escritorioId },
         dataVencimento: { lte: em15 },
       },
@@ -112,6 +114,7 @@ export default async function ModuloHomePage() {
   const prazosSubTceCandidatos = await prisma.prazoSubprocessoTce.findMany({
     where: {
       cumprido: false,
+      dispensado: false,
       subprocesso: { processoPai: { escritorioId } },
       dataVencimento: { lte: em15 },
     },

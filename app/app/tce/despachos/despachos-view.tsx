@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
+  Ban,
   Check,
   ClipboardCheck,
   ExternalLink,
@@ -39,6 +40,14 @@ import { useToast } from "@/hooks/use-toast";
 import { faseTceLabel, TCE_TIPO_LABELS } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 
+import { DispensarPendenciaDialog } from "../pendencias/dispensar-dialog";
+
+type DispensaInfo = {
+  por: string;
+  em: Date;
+  motivo: string | null;
+};
+
 export type DespachoCard = {
   id: string;
   numero: string;
@@ -57,6 +66,8 @@ export type DespachoCard = {
   memorialPronto: boolean;
   incluidoNoDespacho: boolean;
   memoriais: { id: string; nome: string; url: string; createdAt: Date }[];
+  memorialDispensado: DispensaInfo | null;
+  despachoDispensado: DispensaInfo | null;
   // Quando o card representa um SubprocessoTce em vez de ProcessoTce
   subprocesso?: {
     isSubprocesso: true;
@@ -64,6 +75,8 @@ export type DespachoCard = {
     processoPai: { id: string; numero: string };
   } | null;
 };
+
+type Advogado = { id: string; nome: string };
 
 type ProcessoLite = {
   id: string;
@@ -108,10 +121,12 @@ export function DespachosView({
   cards,
   conselheiros,
   processosDisponiveis,
+  advogados,
 }: {
   cards: DespachoCard[];
   conselheiros: string[];
   processosDisponiveis: ProcessoLite[];
+  advogados: Advogado[];
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -121,7 +136,7 @@ export function DespachosView({
   const [filtroRelator, setFiltroRelator] = React.useState("");
   const [filtroStatus, setFiltroStatus] = React.useState<string>("todos");
   const [filtroKpi, setFiltroKpi] = React.useState<
-    "todos" | "pendentes" | "despachados" | null
+    "todos" | "pendentes" | "despachados" | "dispensados" | null
   >(null);
   const [adicionarOpen, setAdicionarOpen] = React.useState(false);
 
@@ -132,8 +147,20 @@ export function DespachosView({
       if (q && !normalizar(c.numero).includes(q)) return false;
       if (filtroCamara !== TODOS && c.camara !== filtroCamara) return false;
       if (r && !normalizar(c.relator ?? "").includes(r)) return false;
-      if (filtroKpi === "pendentes" && c.despachadoComRelator) return false;
-      if (filtroKpi === "despachados" && !c.despachadoComRelator) return false;
+      const algumDispensado = !!c.memorialDispensado || !!c.despachoDispensado;
+      if (filtroKpi === "pendentes") {
+        if (c.despachadoComRelator || algumDispensado) return false;
+      }
+      if (filtroKpi === "despachados") {
+        if (!c.despachadoComRelator) return false;
+      }
+      if (filtroKpi === "dispensados") {
+        if (!algumDispensado) return false;
+      }
+      // O filtro "todos" exibe tudo, independente de dispensa.
+      // Sem filtroKpi, escondemos os dispensados para nao poluir a lista
+      // padrao (so aparecem se o usuario pedir explicitamente).
+      if (filtroKpi === null && algumDispensado) return false;
       if (filtroStatus === "pendente") {
         if (!(c.memorialPronto && !c.despachadoComRelator)) return false;
       } else if (filtroStatus === "despachado") {
@@ -146,9 +173,16 @@ export function DespachosView({
   }, [cards, busca, filtroCamara, filtroRelator, filtroStatus, filtroKpi]);
 
   const totalPendentes = cards.filter(
-    (c) => c.memorialPronto && !c.despachadoComRelator,
+    (c) =>
+      c.memorialPronto &&
+      !c.despachadoComRelator &&
+      !c.memorialDispensado &&
+      !c.despachoDispensado,
   ).length;
   const totalDespachados = cards.filter((c) => c.despachadoComRelator).length;
+  const totalDispensados = cards.filter(
+    (c) => c.memorialDispensado || c.despachoDispensado,
+  ).length;
 
   const naoListadosIds = new Set(cards.map((c) => c.id));
   const processosParaAdicionar = processosDisponiveis.filter(
@@ -182,7 +216,7 @@ export function DespachosView({
       </header>
 
       {/* KPIs rapidos clicaveis */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi
           label="Pendentes de despacho"
           value={totalPendentes}
@@ -196,6 +230,13 @@ export function DespachosView({
           tone="green"
           ativo={filtroKpi === "despachados"}
           onClick={() => setFiltroKpi("despachados")}
+        />
+        <Kpi
+          label="Dispensados"
+          value={totalDispensados}
+          tone="slate"
+          ativo={filtroKpi === "dispensados"}
+          onClick={() => setFiltroKpi("dispensados")}
         />
         <Kpi
           label="Total na lista"
@@ -299,6 +340,7 @@ export function DespachosView({
             <DespachoCardComponent
               key={c.id}
               card={c}
+              advogados={advogados}
               onChanged={() => router.refresh()}
               toastFn={toast}
             />
@@ -328,7 +370,7 @@ function Kpi({
 }: {
   label: string;
   value: number;
-  tone: "amber" | "green" | "navy";
+  tone: "amber" | "green" | "navy" | "slate";
   ativo: boolean;
   onClick: () => void;
 }) {
@@ -337,12 +379,14 @@ function Kpi({
     green:
       "border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100",
     navy: "border-slate-200 bg-white text-brand-navy hover:bg-slate-50",
+    slate: "border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200",
   }[tone];
   const ativoClass = {
     amber: "border-amber-500 bg-amber-100 ring-2 ring-amber-400 ring-offset-1",
     green:
       "border-emerald-600 bg-emerald-100 ring-2 ring-emerald-500 ring-offset-1",
     navy: "border-brand-navy bg-brand-navy/10 ring-2 ring-brand-navy ring-offset-1",
+    slate: "border-slate-500 bg-slate-200 ring-2 ring-slate-500 ring-offset-1",
   }[tone];
   return (
     <button
@@ -364,10 +408,12 @@ function Kpi({
 // ============== Card individual ==============
 function DespachoCardComponent({
   card,
+  advogados,
   onChanged,
   toastFn,
 }: {
   card: DespachoCard;
+  advogados: Advogado[];
   onChanged: () => void;
   toastFn: (opts: {
     title?: string;
@@ -385,7 +431,46 @@ function DespachoCardComponent({
   const [savingRet, setSavingRet] = React.useState(false);
   const [togglingDespacho, setTogglingDespacho] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  const [dispensarMemorialOpen, setDispensarMemorialOpen] = React.useState(false);
+  const [dispensarDespachoOpen, setDispensarDespachoOpen] = React.useState(false);
+  const [revertingMemorial, setRevertingMemorial] = React.useState(false);
+  const [revertingDespacho, setRevertingDespacho] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const memorialDispensado = card.memorialDispensado;
+  const despachoDispensado = card.despachoDispensado;
+
+  async function reverterDispensa(modo: "memorial" | "despacho") {
+    if (modo === "memorial") setRevertingMemorial(true);
+    else setRevertingDespacho(true);
+    try {
+      const res = await fetch("/api/tce/pendencias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acao:
+            modo === "memorial"
+              ? "reverter_dispensa_memorial"
+              : "reverter_dispensa_despacho",
+          processoId: card.id,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toastFn({
+          variant: "destructive",
+          title: "Erro",
+          description: json.error ?? "Tente novamente.",
+        });
+        return;
+      }
+      toastFn({ title: "Dispensa revertida" });
+      onChanged();
+    } finally {
+      if (modo === "memorial") setRevertingMemorial(false);
+      else setRevertingDespacho(false);
+    }
+  }
 
   React.useEffect(() => {
     setPrognostico(card.prognosticoDespacho ?? "");
@@ -504,6 +589,61 @@ function DespachoCardComponent({
         </span>
       </div>
 
+      {(memorialDispensado || despachoDispensado) && (
+        <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-100 px-5 py-3">
+          {memorialDispensado && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-700">
+                <Ban className="h-3.5 w-3.5" />
+                Memorial dispensado por {memorialDispensado.por} em{" "}
+                {new Date(memorialDispensado.em).toLocaleDateString("pt-BR")}
+                {memorialDispensado.motivo && (
+                  <span className="ml-2 text-[11px] font-normal normal-case text-slate-600">
+                    — {memorialDispensado.motivo}
+                  </span>
+                )}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => reverterDispensa("memorial")}
+                disabled={revertingMemorial}
+              >
+                {revertingMemorial ? (
+                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                Reverter
+              </Button>
+            </div>
+          )}
+          {despachoDispensado && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-700">
+                <Ban className="h-3.5 w-3.5" />
+                Despacho dispensado por {despachoDispensado.por} em{" "}
+                {new Date(despachoDispensado.em).toLocaleDateString("pt-BR")}
+                {despachoDispensado.motivo && (
+                  <span className="ml-2 text-[11px] font-normal normal-case text-slate-600">
+                    — {despachoDispensado.motivo}
+                  </span>
+                )}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => reverterDispensa("despacho")}
+                disabled={revertingDespacho}
+              >
+                {revertingDespacho ? (
+                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                Reverter
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Corpo em 3 colunas */}
       <div className="grid grid-cols-1 gap-4 border-b border-slate-100 bg-white px-5 py-4 md:grid-cols-3">
         <div>
@@ -597,12 +737,26 @@ function DespachoCardComponent({
               </span>
             )}
           </label>
-          {despachado && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
-              <Check className="h-3 w-3" />
-              Despachado
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {despachado ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
+                <Check className="h-3 w-3" />
+                Despachado
+              </span>
+            ) : (
+              !despachoDispensado && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                  onClick={() => setDispensarDespachoOpen(true)}
+                >
+                  <Ban className="mr-1 h-3.5 w-3.5" />
+                  Dispensar
+                </Button>
+              )
+            )}
+          </div>
         </div>
 
         {despachado && (
@@ -657,7 +811,7 @@ function DespachoCardComponent({
             )}
           </div>
           {!card.subprocesso && (
-            <div>
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -686,10 +840,50 @@ function DespachoCardComponent({
                   </>
                 )}
               </Button>
+              {!card.memorialPronto && !memorialDispensado && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                  onClick={() => setDispensarMemorialOpen(true)}
+                >
+                  <Ban className="mr-1 h-3.5 w-3.5" />
+                  Dispensar Memorial
+                </Button>
+              )}
             </div>
+          )}
+          {card.subprocesso && !card.memorialPronto && !memorialDispensado && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-slate-300 text-slate-700 hover:bg-slate-100"
+              onClick={() => setDispensarMemorialOpen(true)}
+            >
+              <Ban className="mr-1 h-3.5 w-3.5" />
+              Dispensar Memorial
+            </Button>
           )}
         </div>
       </div>
+
+      <DispensarPendenciaDialog
+        open={dispensarMemorialOpen}
+        onOpenChange={setDispensarMemorialOpen}
+        modo="memorial"
+        processoId={card.id}
+        advogados={advogados}
+        apiPath="/api/tce/pendencias"
+      />
+
+      <DispensarPendenciaDialog
+        open={dispensarDespachoOpen}
+        onOpenChange={setDispensarDespachoOpen}
+        modo="despacho"
+        processoId={card.id}
+        advogados={advogados}
+        apiPath="/api/tce/pendencias"
+      />
     </Card>
   );
 }

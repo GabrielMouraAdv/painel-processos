@@ -43,6 +43,7 @@ export default async function AppLayout({
     prisma.prazo.count({
       where: {
         cumprido: false,
+        dispensado: false,
         data: { gte: hoje, lte: em7 },
         processo: { escritorioId },
       },
@@ -50,6 +51,7 @@ export default async function AppLayout({
     prisma.prazoTce.findMany({
       where: {
         cumprido: false,
+        dispensado: false,
         dataVencimento: { gte: hoje, lte: em15Corridos },
         processo: { escritorioId },
       },

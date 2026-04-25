@@ -44,6 +44,10 @@ export type PrazoItem = {
   geradoAuto: boolean;
   origemFase: string | null;
   advogadoResp: { id: string; nome: string } | null;
+  dispensado: boolean;
+  dispensadoPor: string | null;
+  dispensadoEm: string | null;
+  dispensadoMotivo: string | null;
   processo: {
     id: string;
     numero: string;
@@ -589,6 +593,15 @@ function PrazoCard({
           {prazo.geradoAuto && (
             <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-600">
               auto
+            </span>
+          )}
+          {prazo.dispensado && (
+            <span
+              className="rounded bg-slate-300 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-800"
+              title={prazo.dispensadoMotivo ?? undefined}
+            >
+              Dispensado
+              {prazo.dispensadoPor ? ` por ${prazo.dispensadoPor}` : ""}
             </span>
           )}
         </div>

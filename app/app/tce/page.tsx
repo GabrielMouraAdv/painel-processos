@@ -136,7 +136,10 @@ export default async function TceDashboardPage({
   ] = await Promise.all([
     prisma.processoTce.count({ where: base }),
     prisma.processoTce.count({
-      where: { ...base, prazos: { some: { cumprido: false } } },
+      where: {
+        ...base,
+        prazos: { some: { cumprido: false, dispensado: false } },
+      },
     }),
     prisma.processoTce.count({
       where: {
@@ -199,6 +202,7 @@ export default async function TceDashboardPage({
     prisma.prazoTce.findMany({
       where: {
         cumprido: false,
+        dispensado: false,
         processo: base,
         dataVencimento: { lte: em15Corridos },
       },
@@ -207,6 +211,7 @@ export default async function TceDashboardPage({
     prisma.prazoSubprocessoTce.findMany({
       where: {
         cumprido: false,
+        dispensado: false,
         subprocesso: { processoPai: base },
         dataVencimento: { lte: em15Corridos },
       },
@@ -215,6 +220,7 @@ export default async function TceDashboardPage({
     prisma.prazoTce.findMany({
       where: {
         cumprido: false,
+        dispensado: false,
         processo: base,
       },
       orderBy: { dataVencimento: "asc" },
@@ -251,6 +257,7 @@ export default async function TceDashboardPage({
       ? prisma.prazoTce.findMany({
           where: {
             cumprido: false,
+            dispensado: false,
             advogadoRespId: userId,
             processo: base,
           },

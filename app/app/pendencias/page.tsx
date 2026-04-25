@@ -30,6 +30,7 @@ export default async function PendenciasJudiciaisPage() {
         advogado: { select: { id: true, nome: true } },
         prazos: {
           where: {
+            dispensado: false,
             OR: [{ cumprido: false, data: { lte: em15 } }, { cumprido: true }],
           },
           orderBy: { data: "asc" },

@@ -25,13 +25,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 type Advogado = { id: string; nome: string };
-type Modo = "memorial" | "despacho";
+type Modo = "memorial" | "despacho" | "prazo";
 
 export function DispensarPendenciaDialog({
   open,
   onOpenChange,
   modo,
   processoId,
+  prazoId,
+  prazoTipo,
   advogados,
   apiPath,
   onSuccess,
@@ -39,7 +41,9 @@ export function DispensarPendenciaDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   modo: Modo;
-  processoId: string;
+  processoId?: string;
+  prazoId?: string;
+  prazoTipo?: string;
   advogados: Advogado[];
   apiPath: string;
   onSuccess?: () => void;
@@ -66,15 +70,20 @@ export function DispensarPendenciaDialog({
     }
     setSubmitting(true);
     try {
+      const acao =
+        modo === "memorial"
+          ? "dispensar_memorial"
+          : modo === "despacho"
+            ? "dispensar_despacho"
+            : "dispensar_prazo";
+      const body =
+        modo === "prazo"
+          ? { acao, prazoId, advogadoId, motivo: motivo.trim() || null }
+          : { acao, processoId, advogadoId, motivo: motivo.trim() || null };
       const res = await fetch(apiPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          acao: modo === "memorial" ? "dispensar_memorial" : "dispensar_despacho",
-          processoId,
-          advogadoId,
-          motivo: motivo.trim() || null,
-        }),
+        body: JSON.stringify(body),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -82,7 +91,12 @@ export function DispensarPendenciaDialog({
         return;
       }
       toast({
-        title: modo === "memorial" ? "Memorial dispensado" : "Despacho dispensado",
+        title:
+          modo === "memorial"
+            ? "Memorial dispensado"
+            : modo === "despacho"
+              ? "Despacho dispensado"
+              : "Prazo dispensado",
       });
       onOpenChange(false);
       onSuccess?.();
@@ -97,12 +111,18 @@ export function DispensarPendenciaDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {modo === "memorial" ? "Dispensar Memorial" : "Dispensar Despacho"}
+            {modo === "memorial"
+              ? "Dispensar Memorial"
+              : modo === "despacho"
+                ? "Dispensar Despacho"
+                : `Dispensar Prazo${prazoTipo ? `: ${prazoTipo}` : ""}`}
           </DialogTitle>
           <DialogDescription>
             {modo === "memorial"
               ? "Marque o memorial como dispensado neste processo. A pendencia sai da lista."
-              : "Marque o despacho como dispensado neste processo. A pendencia sai da lista."}
+              : modo === "despacho"
+                ? "Marque o despacho como dispensado neste processo. A pendencia sai da lista."
+                : "Marque o prazo como dispensado. O alerta sai da lista de pendencias e o prazo nao conta nos KPIs."}
           </DialogDescription>
         </DialogHeader>
 

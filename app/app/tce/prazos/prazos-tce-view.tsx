@@ -58,6 +58,10 @@ export type PrazoTceRow = {
   cumprido: boolean;
   observacoes: string | null;
   advogadoResp: { id: string; nome: string } | null;
+  dispensado: boolean;
+  dispensadoPor: string | null;
+  dispensadoEm: string | null;
+  dispensadoMotivo: string | null;
   processo: {
     id: string;
     numero: string;
@@ -703,6 +707,15 @@ function PrazoTceCard({
           {(isCautelar || !prazo.prorrogavel) && (
             <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-orange-800">
               improrrogavel
+            </span>
+          )}
+          {prazo.dispensado && (
+            <span
+              className="inline-flex items-center rounded-full bg-slate-300 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-800"
+              title={prazo.dispensadoMotivo ?? undefined}
+            >
+              Dispensado
+              {prazo.dispensadoPor ? ` por ${prazo.dispensadoPor}` : ""}
             </span>
           )}
           {prazo.prorrogacaoPedida && (

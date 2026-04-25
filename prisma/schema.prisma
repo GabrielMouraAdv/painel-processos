@@ -217,17 +217,21 @@ model Andamento {
 }
 
 model Prazo {
-  id             String   @id @default(cuid())
-  processoId     String
-  tipo           String
-  data           DateTime
-  hora           String?
-  observacoes    String?
-  cumprido       Boolean  @default(false)
-  geradoAuto     Boolean  @default(false)
-  origemFase     String?
-  advogadoRespId String?
-  createdAt      DateTime @default(now())
+  id               String   @id @default(cuid())
+  processoId       String
+  tipo             String
+  data             DateTime
+  hora             String?
+  observacoes      String?
+  cumprido         Boolean  @default(false)
+  geradoAuto       Boolean  @default(false)
+  origemFase       String?
+  advogadoRespId   String?
+  dispensado       Boolean  @default(false)
+  dispensadoPor    String?
+  dispensadoEm     DateTime?
+  dispensadoMotivo String?  @db.Text
+  createdAt        DateTime @default(now())
 
   processo     Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
   advogadoResp User?    @relation("PrazoAdvogadoResp", fields: [advogadoRespId], references: [id])
@@ -424,6 +428,10 @@ model PrazoTce {
   cumprido          Boolean   @default(false)
   advogadoRespId    String?
   observacoes       String?
+  dispensado        Boolean   @default(false)
+  dispensadoPor     String?
+  dispensadoEm      DateTime?
+  dispensadoMotivo  String?   @db.Text
   createdAt         DateTime  @default(now())
 
   processo     ProcessoTce @relation(fields: [processoId], references: [id], onDelete: Cascade)
@@ -640,6 +648,10 @@ model PrazoSubprocessoTce {
   cumprido          Boolean        @default(false)
   advogadoRespId    String?
   observacoes       String?
+  dispensado        Boolean        @default(false)
+  dispensadoPor     String?
+  dispensadoEm      DateTime?
+  dispensadoMotivo  String?        @db.Text
   createdAt         DateTime       @default(now())
 
   @@index([subprocessoId])

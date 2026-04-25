@@ -349,6 +349,10 @@ function ProcessoCardComponent({
   const [despachoFeitoOpen, setDespachoFeitoOpen] = React.useState(false);
   const [dispensarMemorialOpen, setDispensarMemorialOpen] = React.useState(false);
   const [dispensarDespachoOpen, setDispensarDespachoOpen] = React.useState(false);
+  const [dispensarPrazoCtx, setDispensarPrazoCtx] = React.useState<{
+    prazoId: string;
+    prazoTipo: string;
+  } | null>(null);
 
   async function reverterDispensa(modo: "memorial" | "despacho") {
     setBusyId(`reverter-${modo}`);
@@ -559,6 +563,25 @@ function ProcessoCardComponent({
                     </Link>
                   </Button>
                 )}
+                {pd.tipo === "prazo" &&
+                  pd.prazoId &&
+                  pd.prazoStatus === "alerta" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                      onClick={() =>
+                        setDispensarPrazoCtx({
+                          prazoId: pd.prazoId!,
+                          prazoTipo: pd.prazoTipo ?? pd.descricao,
+                        })
+                      }
+                      disabled={busyId !== null}
+                    >
+                      <Ban className="mr-1 h-3.5 w-3.5" />
+                      Dispensar
+                    </Button>
+                  )}
                 {TIPO_PRAZO_POR_PENDENCIA[pd.tipo] && !isAgendado && (
                   <Button
                     variant="outline"
@@ -693,6 +716,19 @@ function ProcessoCardComponent({
         processoId={processo.id}
         advogados={advogados}
         apiPath="/api/pendencias"
+      />
+
+      <DispensarPendenciaDialog
+        open={dispensarPrazoCtx !== null}
+        onOpenChange={(v) => {
+          if (!v) setDispensarPrazoCtx(null);
+        }}
+        modo="prazo"
+        prazoId={dispensarPrazoCtx?.prazoId}
+        prazoTipo={dispensarPrazoCtx?.prazoTipo}
+        advogados={advogados}
+        apiPath="/api/pendencias"
+        onSuccess={() => setDispensarPrazoCtx(null)}
       />
     </Card>
   );

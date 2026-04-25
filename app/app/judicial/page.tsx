@@ -213,6 +213,7 @@ export default async function AppHome({
     prisma.prazo.count({
       where: {
         cumprido: false,
+        dispensado: false,
         data: { gte: hoje, lte: em30 },
         processo: base,
       },
@@ -240,6 +241,7 @@ export default async function AppHome({
     prisma.prazo.count({
       where: {
         cumprido: false,
+        dispensado: false,
         data: { gte: hoje, lte: em7Pendencias },
         processo: base,
       },
@@ -280,6 +282,7 @@ export default async function AppHome({
     prisma.prazo.findMany({
       where: {
         cumprido: false,
+        dispensado: false,
         data: { gte: hoje, lte: em30 },
         processo: base,
       },
@@ -387,6 +390,7 @@ export default async function AppHome({
       prisma.prazo.findMany({
         where: {
           cumprido: false,
+          dispensado: false,
           advogadoRespId: userId,
           processo: { escritorioId },
         },
@@ -405,6 +409,7 @@ export default async function AppHome({
       prisma.prazoTce.findMany({
         where: {
           cumprido: false,
+          dispensado: false,
           advogadoRespId: userId,
           processo: { escritorioId },
         },

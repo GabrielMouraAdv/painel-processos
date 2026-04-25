@@ -31,6 +31,7 @@ export default async function PendenciasTcePage() {
         andamentos: { select: { data: true, descricao: true } },
         prazos: {
           where: {
+            dispensado: false,
             OR: [
               {
                 cumprido: false,
@@ -52,6 +53,7 @@ export default async function PendenciasTcePage() {
           include: {
             prazos: {
               where: {
+                dispensado: false,
                 OR: [
                   {
                     cumprido: false,

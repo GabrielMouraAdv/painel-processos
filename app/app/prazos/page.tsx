@@ -103,6 +103,10 @@ export default async function PrazosPage({
     advogadoResp: p.advogadoResp
       ? { id: p.advogadoResp.id, nome: p.advogadoResp.nome }
       : null,
+    dispensado: p.dispensado,
+    dispensadoPor: p.dispensadoPor,
+    dispensadoEm: p.dispensadoEm ? p.dispensadoEm.toISOString() : null,
+    dispensadoMotivo: p.dispensadoMotivo,
     processo: {
       id: p.processo.id,
       numero: p.processo.numero,

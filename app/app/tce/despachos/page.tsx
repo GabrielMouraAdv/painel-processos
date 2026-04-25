@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { Role } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ export default async function DespachosTcePage() {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
 
-  const [processos, subprocessos, todosProcessos] = await Promise.all([
+  const [processos, subprocessos, todosProcessos, advogados] = await Promise.all([
     prisma.processoTce.findMany({
       where: {
         escritorioId,
@@ -82,6 +83,11 @@ export default async function DespachosTcePage() {
         incluidoNoDespacho: true,
       },
     }),
+    prisma.user.findMany({
+      where: { escritorioId, role: Role.ADVOGADO },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true },
+    }),
   ]);
 
   const cardsProcessos: DespachoCard[] = processos.map((p) => ({
@@ -111,6 +117,22 @@ export default async function DespachosTcePage() {
       url: d.url,
       createdAt: d.createdAt,
     })),
+    memorialDispensado:
+      p.memorialDispensado && p.memorialDispensadoPor && p.memorialDispensadoEm
+        ? {
+            por: p.memorialDispensadoPor,
+            em: p.memorialDispensadoEm,
+            motivo: p.memorialDispensadoMotivo,
+          }
+        : null,
+    despachoDispensado:
+      p.despachoDispensado && p.despachoDispensadoPor && p.despachoDispensadoEm
+        ? {
+            por: p.despachoDispensadoPor,
+            em: p.despachoDispensadoEm,
+            motivo: p.despachoDispensadoMotivo,
+          }
+        : null,
     subprocesso: null,
   }));
 
@@ -136,6 +158,22 @@ export default async function DespachosTcePage() {
     memorialPronto: sp.memorialPronto,
     incluidoNoDespacho: false,
     memoriais: [],
+    memorialDispensado:
+      sp.memorialDispensado && sp.memorialDispensadoPor && sp.memorialDispensadoEm
+        ? {
+            por: sp.memorialDispensadoPor,
+            em: sp.memorialDispensadoEm,
+            motivo: sp.memorialDispensadoMotivo,
+          }
+        : null,
+    despachoDispensado:
+      sp.despachoDispensado && sp.despachoDispensadoPor && sp.despachoDispensadoEm
+        ? {
+            por: sp.despachoDispensadoPor,
+            em: sp.despachoDispensadoEm,
+            motivo: sp.despachoDispensadoMotivo,
+          }
+        : null,
     subprocesso: {
       isSubprocesso: true,
       tipoRecursoCode: TCE_RECURSO_CODE[sp.tipoRecurso],
@@ -171,6 +209,7 @@ export default async function DespachosTcePage() {
         cards={cards}
         conselheiros={conselheiros}
         processosDisponiveis={todosProcessos}
+        advogados={advogados}
       />
     </div>
   );
