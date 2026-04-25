@@ -295,6 +295,10 @@ model ProcessoTce {
   parecerMpco           Boolean         @default(false)
   despachadoComRelator  Boolean         @default(false)
   memorialPronto        Boolean         @default(false)
+  prognosticoDespacho   String?         @db.Text
+  retornoDespacho       String?         @db.Text
+  dataDespacho          DateTime?
+  incluidoNoDespacho    Boolean         @default(false)
   exercicio             String?
   valorAutuado          Decimal?        @db.Decimal(15, 2)
   objeto                String          @db.Text

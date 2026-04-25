@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarClock,
   CalendarRange,
+  ClipboardCheck,
   Gavel,
   Landmark,
   LayoutDashboard,
@@ -35,6 +36,7 @@ type Props = {
   processosTceTotal?: number;
   pautasJudiciaisTotal?: number;
   alertasMonitoramento?: number;
+  despachosTcePendentes?: number;
 };
 
 export function Sidebar({
@@ -43,6 +45,7 @@ export function Sidebar({
   processosTceTotal = 0,
   pautasJudiciaisTotal = 0,
   alertasMonitoramento = 0,
+  despachosTcePendentes = 0,
 }: Props) {
   const groups: NavGroup[] = [
     {
@@ -97,6 +100,14 @@ export function Sidebar({
           icon: CalendarClock,
           badge: prazosTceUrgentes > 0 ? prazosTceUrgentes : undefined,
           badgeTone: "red",
+        },
+        {
+          label: "Despachos",
+          href: "/app/tce/despachos",
+          icon: ClipboardCheck,
+          badge:
+            despachosTcePendentes > 0 ? despachosTcePendentes : undefined,
+          badgeTone: "navy",
         },
       ],
     },

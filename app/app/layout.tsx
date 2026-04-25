@@ -38,6 +38,7 @@ export default async function AppLayout({
     pautasJudiciaisTotal,
     movsNaoLidas,
     pubsNaoLidas,
+    despachosTcePendentes,
   ] = await Promise.all([
     prisma.prazo.count({
       where: {
@@ -70,6 +71,13 @@ export default async function AppLayout({
     prisma.publicacaoDJEN.count({
       where: { lida: false, processo: { escritorioId } },
     }),
+    prisma.processoTce.count({
+      where: {
+        escritorioId,
+        memorialPronto: true,
+        despachadoComRelator: false,
+      },
+    }),
   ]);
 
   const prazosTceUrgentes = prazosTceCandidatos.filter(
@@ -84,6 +92,7 @@ export default async function AppLayout({
         processosTceTotal={processosTceTotal}
         pautasJudiciaisTotal={pautasJudiciaisTotal}
         alertasMonitoramento={movsNaoLidas + pubsNaoLidas}
+        despachosTcePendentes={despachosTcePendentes}
       />
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
