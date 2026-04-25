@@ -81,9 +81,9 @@ function formatDateTimeBR(d: Date): string {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 36,
+    paddingTop: 32,
     paddingBottom: 56,
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     fontFamily: "Helvetica",
     fontSize: 9,
     color: COLOR_TEXT,
@@ -127,18 +127,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
+  },
+  sessaoHeaderLeft: {
+    flex: 1,
+    paddingRight: 10,
+    minWidth: 0,
+  },
+  sessaoHeaderRight: {
+    flexShrink: 0,
+    alignItems: "flex-end",
   },
   sessaoOrgao: {
     fontFamily: "Helvetica-Bold",
     fontSize: 11,
     color: "#ffffff",
-    flex: 1,
   },
   sessaoMeta: {
     fontSize: 9,
     color: "#ffffff",
     fontFamily: "Helvetica-Bold",
+    textAlign: "right",
+  },
+  continuacaoBadge: {
+    fontSize: 7,
+    color: "#ffffff",
+    fontStyle: "italic",
+    marginTop: 2,
     textAlign: "right",
   },
   obsBox: {
@@ -147,7 +162,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fffbeb",
     borderBottomWidth: 1,
     borderBottomColor: "#fde68a",
-    fontSize: 8,
+    fontSize: 9,
     color: "#92400e",
     fontStyle: "italic",
   },
@@ -160,17 +175,18 @@ const styles = StyleSheet.create({
   },
   th: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 7.5,
+    fontSize: 10,
     color: COLOR_NAVY,
-    paddingVertical: 5,
+    paddingVertical: 7,
     paddingHorizontal: 6,
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: COLOR_GRAY_BORDER,
+    alignItems: "stretch",
   },
   tableRowAlt: {
     backgroundColor: COLOR_ROW_ALT,
@@ -179,10 +195,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLOR_RETIRADO_BG,
   },
   td: {
-    fontSize: 8,
+    fontSize: 9,
     color: COLOR_TEXT,
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 6,
+    lineHeight: 1.35,
   },
   tdRetirado: {
     textDecoration: "line-through",
@@ -190,8 +207,14 @@ const styles = StyleSheet.create({
   },
   numeroFonte: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 7.5,
+    fontSize: 9,
     color: COLOR_NAVY,
+  },
+  numeroParte: {
+    fontSize: 8,
+    color: COLOR_MUTED,
+    marginTop: 2,
+    lineHeight: 1.3,
   },
   flagsCell: {
     flexDirection: "row",
@@ -246,14 +269,23 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
 }
 
 const COLS_TCE = [
-  { key: "numero", label: "Numero", width: "16%" },
+  { key: "numero", label: "Numero", width: "21%" },
   { key: "tipo", label: "Tipo", width: "14%" },
   { key: "municipio", label: "Municipio", width: "14%" },
-  { key: "relator", label: "Relator", width: "14%" },
+  { key: "relator", label: "Relator", width: "13%" },
   { key: "advogadoResp", label: "Adv.", width: "12%" },
-  { key: "situacao", label: "Situacao", width: "14%" },
-  { key: "observacoes", label: "Observacoes", width: "16%" },
+  { key: "situacao", label: "Situacao", width: "13%" },
+  { key: "observacoes", label: "Observacoes", width: "13%" },
 ] as const;
+
+const ITEMS_POR_BLOCO = 14;
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  if (arr.length === 0) return [[]];
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
 
 function municipioExercicio(it: ItemPautaTcePdf): string {
   if (it.exercicio) return `${it.municipio} (${it.exercicio})`;
@@ -277,33 +309,60 @@ function ItemFlags({ item }: { item: ItemPautaTcePdf }) {
   );
 }
 
-function SessaoCard({ sessao }: { sessao: SessaoTcePdf }) {
+function SessaoChunk({
+  sessao,
+  itens,
+  blocoIdx,
+  totalBlocos,
+}: {
+  sessao: SessaoTcePdf;
+  itens: ItemPautaTcePdf[];
+  blocoIdx: number;
+  totalBlocos: number;
+}) {
   const cor = COR_CAMARA[sessao.camara];
+  const isContinuacao = blocoIdx > 0;
   return (
-    <View style={styles.sessaoBox} wrap={false}>
+    <View
+      style={styles.sessaoBox}
+      break={isContinuacao}
+      minPresenceAhead={120}
+    >
       <View style={[styles.sessaoHeader, { backgroundColor: cor }]}>
-        <Text style={styles.sessaoOrgao}>{CAMARA_LABEL[sessao.camara]}</Text>
-        <Text style={styles.sessaoMeta}>
-          {sessao.diaSemanaLabel} {formatDateBR(sessao.data)}
-        </Text>
+        <View style={styles.sessaoHeaderLeft}>
+          <Text style={styles.sessaoOrgao}>
+            {CAMARA_LABEL[sessao.camara]}
+          </Text>
+        </View>
+        <View style={styles.sessaoHeaderRight}>
+          <Text style={styles.sessaoMeta}>
+            {sessao.diaSemanaLabel} {formatDateBR(sessao.data)}
+          </Text>
+          {totalBlocos > 1 ? (
+            <Text style={styles.continuacaoBadge}>
+              {isContinuacao ? "(continuacao) " : ""}
+              parte {blocoIdx + 1}/{totalBlocos}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
-      {sessao.observacoesGerais ? (
+      {!isContinuacao && sessao.observacoesGerais ? (
         <Text style={styles.obsBox}>{sessao.observacoesGerais}</Text>
       ) : null}
 
       <View style={styles.table}>
-        <View style={styles.tableHeader}>
+        <View style={styles.tableHeader} wrap={false}>
           {COLS_TCE.map((c) => (
             <Text key={c.key} style={[styles.th, { width: c.width }]}>
               {c.label}
             </Text>
           ))}
         </View>
-        {sessao.itens.length === 0 ? (
+        {itens.length === 0 ? (
           <Text
             style={{
-              fontSize: 8,
+              fontSize: 9,
               color: COLOR_MUTED,
               fontStyle: "italic",
               padding: 8,
@@ -312,16 +371,17 @@ function SessaoCard({ sessao }: { sessao: SessaoTcePdf }) {
             Sem itens cadastrados.
           </Text>
         ) : (
-          sessao.itens.map((it, idx) => {
+          itens.map((it, idx) => {
+            const offset = blocoIdx * ITEMS_POR_BLOCO + idx;
             const rowStyle = it.retiradoDePauta
               ? styles.tableRowRetirado
-              : idx % 2 === 1
+              : offset % 2 === 1
                 ? styles.tableRowAlt
                 : {};
             const tdRetirado = it.retiradoDePauta ? styles.tdRetirado : {};
             return (
               <View
-                key={`${it.numeroProcesso}-${idx}`}
+                key={`${it.numeroProcesso}-${offset}`}
                 style={[styles.tableRow, rowStyle]}
                 wrap={false}
               >
@@ -330,29 +390,54 @@ function SessaoCard({ sessao }: { sessao: SessaoTcePdf }) {
                     {it.numeroProcesso}
                   </Text>
                   {it.tituloProcesso && (
-                    <Text
-                      style={[
-                        { fontSize: 7, color: COLOR_MUTED },
-                        tdRetirado,
-                      ]}
-                    >
+                    <Text style={[styles.numeroParte, tdRetirado]}>
                       {it.tituloProcesso}
                     </Text>
                   )}
                 </View>
-                <Text style={[styles.td, { width: COLS_TCE[1].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_TCE[1].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.tipoProcesso ?? "-"}
                 </Text>
-                <Text style={[styles.td, { width: COLS_TCE[2].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_TCE[2].width },
+                    tdRetirado,
+                  ]}
+                >
                   {municipioExercicio(it)}
                 </Text>
-                <Text style={[styles.td, { width: COLS_TCE[3].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_TCE[3].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.relator}
                 </Text>
-                <Text style={[styles.td, { width: COLS_TCE[4].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_TCE[4].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.advogadoResp}
                 </Text>
-                <Text style={[styles.td, { width: COLS_TCE[5].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_TCE[5].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.situacao ?? "-"}
                 </Text>
                 <View style={[styles.td, { width: COLS_TCE[6].width }]}>
@@ -365,6 +450,23 @@ function SessaoCard({ sessao }: { sessao: SessaoTcePdf }) {
         )}
       </View>
     </View>
+  );
+}
+
+function SessaoCard({ sessao }: { sessao: SessaoTcePdf }) {
+  const blocos = chunk(sessao.itens, ITEMS_POR_BLOCO);
+  return (
+    <>
+      {blocos.map((bloco, bi) => (
+        <SessaoChunk
+          key={bi}
+          sessao={sessao}
+          itens={bloco}
+          blocoIdx={bi}
+          totalBlocos={blocos.length}
+        />
+      ))}
+    </>
   );
 }
 

@@ -98,9 +98,9 @@ function formatDateTimeBR(d: Date): string {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 36,
+    paddingTop: 32,
     paddingBottom: 56,
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     fontFamily: "Helvetica",
     fontSize: 9,
     color: COLOR_TEXT,
@@ -144,13 +144,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
+  },
+  sessaoHeaderLeft: {
+    flex: 1,
+    paddingRight: 10,
+    minWidth: 0,
+  },
+  sessaoHeaderRight: {
+    flexShrink: 0,
+    alignItems: "flex-end",
   },
   sessaoOrgao: {
     fontFamily: "Helvetica-Bold",
     fontSize: 11,
     color: "#ffffff",
-    flex: 1,
   },
   sessaoMeta: {
     fontSize: 9,
@@ -165,8 +173,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 2,
-    marginTop: 2,
+    marginTop: 3,
     fontFamily: "Helvetica-Bold",
+    alignSelf: "flex-start",
+  },
+  continuacaoBadge: {
+    fontSize: 7,
+    color: "#ffffff",
+    fontStyle: "italic",
+    marginTop: 2,
+    textAlign: "right",
   },
   obsBox: {
     paddingHorizontal: 10,
@@ -174,7 +190,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fffbeb",
     borderBottomWidth: 1,
     borderBottomColor: "#fde68a",
-    fontSize: 8,
+    fontSize: 9,
     color: "#92400e",
     fontStyle: "italic",
   },
@@ -187,17 +203,18 @@ const styles = StyleSheet.create({
   },
   th: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 7.5,
+    fontSize: 10,
     color: COLOR_NAVY,
-    paddingVertical: 5,
+    paddingVertical: 7,
     paddingHorizontal: 6,
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: COLOR_GRAY_BORDER,
+    alignItems: "stretch",
   },
   tableRowAlt: {
     backgroundColor: COLOR_ROW_ALT,
@@ -206,10 +223,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLOR_RETIRADO_BG,
   },
   td: {
-    fontSize: 8,
+    fontSize: 9,
     color: COLOR_TEXT,
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 6,
+    lineHeight: 1.35,
   },
   tdRetirado: {
     textDecoration: "line-through",
@@ -217,8 +235,14 @@ const styles = StyleSheet.create({
   },
   numeroFonte: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 7.5,
+    fontSize: 9,
     color: COLOR_NAVY,
+  },
+  numeroParte: {
+    fontSize: 8,
+    color: COLOR_MUTED,
+    marginTop: 2,
+    lineHeight: 1.3,
   },
   flagsCell: {
     flexDirection: "row",
@@ -304,14 +328,23 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
 }
 
 const COLS_JUD = [
-  { key: "numero", label: "Numero", width: "16%" },
+  { key: "numero", label: "Numero", width: "23%" },
   { key: "tipoRecurso", label: "Tipo", width: "11%" },
-  { key: "relator", label: "Relator", width: "16%" },
-  { key: "advogadoResp", label: "Adv.", width: "13%" },
-  { key: "situacao", label: "Situacao", width: "15%" },
+  { key: "relator", label: "Relator", width: "15%" },
+  { key: "advogadoResp", label: "Adv.", width: "12%" },
+  { key: "situacao", label: "Situacao", width: "14%" },
   { key: "prognostico", label: "Prognostico", width: "13%" },
-  { key: "flags", label: "Flags", width: "16%" },
+  { key: "flags", label: "Flags", width: "12%" },
 ] as const;
+
+const ITEMS_POR_BLOCO = 14;
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  if (arr.length === 0) return [[]];
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
 
 function ItemBadges({ item }: { item: ItemPautaJudicialPdf }) {
   return (
@@ -344,11 +377,17 @@ function ItemBadges({ item }: { item: ItemPautaJudicialPdf }) {
   );
 }
 
-function SessaoCard({
+function SessaoChunk({
   sessao,
+  itens,
+  blocoIdx,
+  totalBlocos,
   tribunal,
 }: {
   sessao: SessaoJudicialPdf;
+  itens: ItemPautaJudicialPdf[];
+  blocoIdx: number;
+  totalBlocos: number;
   tribunal: "TJPE" | "TRF5";
 }) {
   const cor = corDoOrgao(sessao.orgaoJulgador, tribunal);
@@ -358,35 +397,50 @@ function SessaoCard({
       : sessao.tipoSessao === "plenario_virtual"
         ? "Plenario Virtual"
         : "Presencial";
+  const isContinuacao = blocoIdx > 0;
   return (
-    <View style={styles.sessaoBox} wrap={false}>
+    <View
+      style={styles.sessaoBox}
+      break={isContinuacao}
+      minPresenceAhead={120}
+    >
       <View style={[styles.sessaoHeader, { backgroundColor: cor }]}>
-        <View style={{ flex: 1 }}>
+        <View style={styles.sessaoHeaderLeft}>
           <Text style={styles.sessaoOrgao}>{sessao.orgaoJulgador}</Text>
           <Text style={styles.sessaoTipoBadge}>{tipoLabel.toUpperCase()}</Text>
         </View>
-        <Text style={styles.sessaoMeta}>
-          {sessao.diaSemanaLabel} {formatDateBR(sessao.data)}
-          {sessao.horario ? `  •  ${sessao.horario}` : ""}
-        </Text>
+        <View style={styles.sessaoHeaderRight}>
+          <Text style={styles.sessaoMeta}>
+            {sessao.diaSemanaLabel} {formatDateBR(sessao.data)}
+          </Text>
+          {sessao.horario ? (
+            <Text style={styles.sessaoMeta}>{sessao.horario}</Text>
+          ) : null}
+          {totalBlocos > 1 ? (
+            <Text style={styles.continuacaoBadge}>
+              {isContinuacao ? "(continuacao) " : ""}
+              parte {blocoIdx + 1}/{totalBlocos}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
-      {sessao.observacoesGerais ? (
+      {!isContinuacao && sessao.observacoesGerais ? (
         <Text style={styles.obsBox}>{sessao.observacoesGerais}</Text>
       ) : null}
 
       <View style={styles.table}>
-        <View style={styles.tableHeader}>
+        <View style={styles.tableHeader} wrap={false}>
           {COLS_JUD.map((c) => (
             <Text key={c.key} style={[styles.th, { width: c.width }]}>
               {c.label}
             </Text>
           ))}
         </View>
-        {sessao.itens.length === 0 ? (
+        {itens.length === 0 ? (
           <Text
             style={{
-              fontSize: 8,
+              fontSize: 9,
               color: COLOR_MUTED,
               fontStyle: "italic",
               padding: 8,
@@ -395,16 +449,17 @@ function SessaoCard({
             Sem itens cadastrados.
           </Text>
         ) : (
-          sessao.itens.map((it, idx) => {
+          itens.map((it, idx) => {
+            const offset = blocoIdx * ITEMS_POR_BLOCO + idx;
             const rowStyle = it.retiradoDePauta
               ? styles.tableRowRetirado
-              : idx % 2 === 1
+              : offset % 2 === 1
                 ? styles.tableRowAlt
                 : {};
             const tdRetirado = it.retiradoDePauta ? styles.tdRetirado : {};
             return (
               <View
-                key={`${it.numeroProcesso}-${idx}`}
+                key={`${it.numeroProcesso}-${offset}`}
                 style={[styles.tableRow, rowStyle]}
                 wrap={false}
               >
@@ -413,29 +468,54 @@ function SessaoCard({
                     {it.numeroProcesso}
                   </Text>
                   {(it.partes || it.tituloProcesso) && (
-                    <Text
-                      style={[
-                        { fontSize: 7, color: COLOR_MUTED },
-                        tdRetirado,
-                      ]}
-                    >
+                    <Text style={[styles.numeroParte, tdRetirado]}>
                       {it.partes ?? it.tituloProcesso}
                     </Text>
                   )}
                 </View>
-                <Text style={[styles.td, { width: COLS_JUD[1].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_JUD[1].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.tipoRecurso ?? "-"}
                 </Text>
-                <Text style={[styles.td, { width: COLS_JUD[2].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_JUD[2].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.relator}
                 </Text>
-                <Text style={[styles.td, { width: COLS_JUD[3].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_JUD[3].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.advogadoResp}
                 </Text>
-                <Text style={[styles.td, { width: COLS_JUD[4].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_JUD[4].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.situacao ?? "-"}
                 </Text>
-                <Text style={[styles.td, { width: COLS_JUD[5].width }, tdRetirado]}>
+                <Text
+                  style={[
+                    styles.td,
+                    { width: COLS_JUD[5].width },
+                    tdRetirado,
+                  ]}
+                >
                   {it.prognostico ?? "-"}
                 </Text>
                 <View style={[styles.td, { width: COLS_JUD[6].width }]}>
@@ -447,6 +527,30 @@ function SessaoCard({
         )}
       </View>
     </View>
+  );
+}
+
+function SessaoCard({
+  sessao,
+  tribunal,
+}: {
+  sessao: SessaoJudicialPdf;
+  tribunal: "TJPE" | "TRF5";
+}) {
+  const blocos = chunk(sessao.itens, ITEMS_POR_BLOCO);
+  return (
+    <>
+      {blocos.map((bloco, bi) => (
+        <SessaoChunk
+          key={bi}
+          sessao={sessao}
+          itens={bloco}
+          blocoIdx={bi}
+          totalBlocos={blocos.length}
+          tribunal={tribunal}
+        />
+      ))}
+    </>
   );
 }
 
