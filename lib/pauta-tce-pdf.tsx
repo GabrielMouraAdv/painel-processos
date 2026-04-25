@@ -323,11 +323,7 @@ function SessaoChunk({
   const cor = COR_CAMARA[sessao.camara];
   const isContinuacao = blocoIdx > 0;
   return (
-    <View
-      style={styles.sessaoBox}
-      break={isContinuacao}
-      minPresenceAhead={120}
-    >
+    <View style={styles.sessaoBox} break={isContinuacao}>
       <View style={[styles.sessaoHeader, { backgroundColor: cor }]}>
         <View style={styles.sessaoHeaderLeft}>
           <Text style={styles.sessaoOrgao}>
