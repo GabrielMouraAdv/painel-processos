@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { TipoInteressado } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -23,7 +24,8 @@ export async function PATCH(
   const escritorioId = session.user.escritorioId;
 
   const existing = await ensureOwned(params.id, escritorioId);
-  if (!existing) return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
+  if (!existing)
+    return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
   const body = await req.json().catch(() => null);
   const parsed = gestorInputSchema.safeParse(body);
@@ -34,30 +36,79 @@ export async function PATCH(
     );
   }
   const data = parsed.data;
+  const isPj = data.tipoInteressado === TipoInteressado.PESSOA_JURIDICA;
+
+  let municipiosValidados: { id: string; nome: string }[] = [];
+  if (isPj && data.municipioIds.length > 0) {
+    municipiosValidados = await prisma.municipio.findMany({
+      where: { id: { in: data.municipioIds }, escritorioId },
+      select: { id: true, nome: true },
+    });
+    if (municipiosValidados.length !== data.municipioIds.length) {
+      return NextResponse.json(
+        { error: "Algum municipio informado e invalido" },
+        { status: 400 },
+      );
+    }
+  }
+
+  const nomePrincipal = isPj
+    ? (data.razaoSocial as string)
+    : (data.nome as string);
 
   try {
-    await prisma.gestor.update({
-      where: { id: params.id },
-      data: {
-        nome: data.nome,
-        cpf: data.cpf ?? null,
-        municipio: data.municipio,
-        cargo: data.cargo,
-        email: data.email ?? null,
-        telefone: data.telefone ?? null,
-        observacoes: data.observacoes ?? null,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.gestor.update({
+        where: { id: params.id },
+        data: {
+          tipoInteressado: data.tipoInteressado,
+          nome: nomePrincipal,
+          cpf: isPj ? null : (data.cpf ?? null),
+          municipio: isPj ? "" : (data.municipio ?? ""),
+          cargo: isPj ? "" : (data.cargo ?? ""),
+          email: data.email ?? null,
+          telefone: data.telefone ?? null,
+          observacoes: data.observacoes ?? null,
+          razaoSocial: isPj ? (data.razaoSocial ?? null) : null,
+          nomeFantasia: isPj ? (data.nomeFantasia ?? null) : null,
+          cnpj: isPj ? (data.cnpj ?? null) : null,
+          ramoAtividade: isPj ? (data.ramoAtividade ?? null) : null,
+        },
+      });
+
+      // Atualiza vinculos de municipios apenas para PJ
+      if (isPj) {
+        await tx.gestorMunicipio.deleteMany({
+          where: { gestorId: params.id },
+        });
+        if (municipiosValidados.length > 0) {
+          await tx.gestorMunicipio.createMany({
+            data: municipiosValidados.map((m) => ({
+              gestorId: params.id,
+              municipioId: m.id,
+            })),
+          });
+        }
+      } else {
+        // Trocou para PF: limpa eventuais vinculos antigos de PJ
+        await tx.gestorMunicipio.deleteMany({
+          where: { gestorId: params.id },
+        });
+      }
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "erro";
     if (msg.includes("Unique")) {
       return NextResponse.json(
-        { error: "Ja existe um gestor com esse CPF" },
+        { error: "Ja existe um interessado com esse CPF/CNPJ" },
         { status: 409 },
       );
     }
-    return NextResponse.json({ error: "Erro ao atualizar gestor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao atualizar interessado" },
+      { status: 500 },
+    );
   }
 }
 
@@ -70,7 +121,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
   }
   const existing = await ensureOwned(params.id, session.user.escritorioId);
-  if (!existing) return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
+  if (!existing)
+    return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
   const [judCount, tceCount] = await Promise.all([
     prisma.processo.count({ where: { gestorId: params.id } }),

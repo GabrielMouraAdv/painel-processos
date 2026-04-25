@@ -2,6 +2,7 @@ import {
   CamaraTce,
   Grau,
   Risco,
+  TipoInteressado,
   TipoProcesso,
   TipoProcessoTce,
   Tribunal,
@@ -38,27 +39,68 @@ export const processoInputSchema = z.object({
 
 export type ProcessoInput = z.infer<typeof processoInputSchema>;
 
-export const gestorInputSchema = z.object({
-  nome: z.string().min(1, "Informe o nome"),
-  cpf: z
+const optionalString = (max: number) =>
+  z
     .string()
-    .max(20)
+    .max(max)
     .nullish()
-    .transform((v) => (v ? v.trim() : null) || null),
-  municipio: z.string().min(1, "Informe o municipio"),
-  cargo: z.string().min(1, "Informe o cargo"),
-  email: z
-    .string()
-    .max(120)
-    .nullish()
-    .transform((v) => (v ? v.trim() : null) || null),
-  telefone: z
-    .string()
-    .max(40)
-    .nullish()
-    .transform((v) => (v ? v.trim() : null) || null),
-  observacoes: z.string().nullish(),
-});
+    .transform((v) => (v ? v.trim() || null : null));
+
+export const gestorInputSchema = z
+  .object({
+    tipoInteressado: z
+      .nativeEnum(TipoInteressado)
+      .optional()
+      .default(TipoInteressado.PESSOA_FISICA),
+    // PF
+    nome: z.string().nullish(),
+    cpf: optionalString(20),
+    cargo: z.string().nullish(),
+    municipio: z.string().nullish(),
+    // PJ
+    razaoSocial: optionalString(160),
+    nomeFantasia: optionalString(160),
+    cnpj: optionalString(20),
+    ramoAtividade: optionalString(120),
+    municipioIds: z.array(z.string()).optional().default([]),
+    // Comum
+    email: optionalString(120),
+    telefone: optionalString(40),
+    observacoes: z.string().nullish(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.tipoInteressado === TipoInteressado.PESSOA_FISICA) {
+      if (!data.nome || !data.nome.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["nome"],
+          message: "Informe o nome",
+        });
+      }
+      if (!data.cargo || !data.cargo.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cargo"],
+          message: "Informe o cargo",
+        });
+      }
+      if (!data.municipio || !data.municipio.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["municipio"],
+          message: "Informe o municipio",
+        });
+      }
+    } else {
+      if (!data.razaoSocial || !data.razaoSocial.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["razaoSocial"],
+          message: "Informe a razao social",
+        });
+      }
+    }
+  });
 
 export type GestorInput = z.infer<typeof gestorInputSchema>;
 

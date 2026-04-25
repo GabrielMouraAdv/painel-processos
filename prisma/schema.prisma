@@ -42,6 +42,11 @@ enum Risco {
   BAIXO
 }
 
+enum TipoInteressado {
+  PESSOA_FISICA
+  PESSOA_JURIDICA
+}
+
 model Escritorio {
   id        String   @id @default(cuid())
   nome      String
@@ -79,23 +84,43 @@ model User {
 }
 
 model Gestor {
-  id           String   @id @default(cuid())
-  nome         String
-  cpf          String?  @unique
-  municipio    String
-  cargo        String
-  email        String?
-  telefone     String?
-  observacoes  String?
-  escritorioId String
-  createdAt    DateTime @default(now())
+  id              String          @id @default(cuid())
+  nome            String
+  cpf             String?         @unique
+  municipio       String
+  cargo           String
+  email           String?
+  telefone        String?
+  observacoes     String?
+  tipoInteressado TipoInteressado @default(PESSOA_FISICA)
+  razaoSocial     String?
+  nomeFantasia    String?
+  cnpj            String?
+  ramoAtividade   String?
+  escritorioId    String
+  createdAt       DateTime        @default(now())
 
   escritorio              Escritorio               @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
   processos               Processo[]
   historicoGestoes        HistoricoGestao[]
   interessadoProcessosTce InteressadoProcessoTce[]
+  municipiosAtuacao       GestorMunicipio[]
 
   @@index([escritorioId])
+  @@index([tipoInteressado])
+}
+
+model GestorMunicipio {
+  id          String   @id @default(cuid())
+  gestorId    String
+  gestor      Gestor   @relation(fields: [gestorId], references: [id], onDelete: Cascade)
+  municipioId String
+  municipio   Municipio @relation(fields: [municipioId], references: [id])
+  observacao  String?
+  createdAt   DateTime @default(now())
+
+  @@unique([gestorId, municipioId])
+  @@index([municipioId])
 }
 
 model Processo {
@@ -233,9 +258,10 @@ model Municipio {
   escritorioId   String
   createdAt      DateTime @default(now())
 
-  escritorio   Escritorio        @relation(fields: [escritorioId], references: [id])
-  processosTce ProcessoTce[]     @relation("MunicipioProcessos")
-  gestoes      HistoricoGestao[]
+  escritorio         Escritorio        @relation(fields: [escritorioId], references: [id])
+  processosTce       ProcessoTce[]     @relation("MunicipioProcessos")
+  gestoes            HistoricoGestao[]
+  gestoresVinculados GestorMunicipio[]
 
   @@index([escritorioId])
 }

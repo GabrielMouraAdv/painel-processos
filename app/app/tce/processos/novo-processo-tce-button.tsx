@@ -35,7 +35,13 @@ import {
 } from "@/lib/tce-config";
 
 export type MunicipioOption = { id: string; nome: string; uf: string };
-export type GestorOption = { id: string; nome: string; cargo: string };
+export type GestorOption = {
+  id: string;
+  nome: string;
+  cargo: string;
+  tipoInteressado: "PESSOA_FISICA" | "PESSOA_JURIDICA";
+  nomeFantasia?: string | null;
+};
 
 type InteressadoRow = { gestorId: string; cargo: string };
 
@@ -432,7 +438,12 @@ export function NovoProcessoTceButton({ municipios: initialMun, gestores }: Prop
                         <SelectContent>
                           {gestores.map((g) => (
                             <SelectItem key={g.id} value={g.id}>
-                              {g.nome}
+                              [
+                              {g.tipoInteressado === "PESSOA_JURIDICA"
+                                ? "PJ"
+                                : "PF"}
+                              ] {g.nome}
+                              {g.nomeFantasia ? ` (${g.nomeFantasia})` : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { ArrowLeft } from "lucide-react";
+import { TipoInteressado } from "@prisma/client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,14 @@ import {
 import { authOptions } from "@/lib/auth";
 import { iniciais } from "@/lib/iniciais";
 import { prisma } from "@/lib/prisma";
-import { TCE_CAMARA_LABELS, TCE_TIPO_LABELS, faseTceLabel } from "@/lib/tce-config";
+import {
+  TCE_CAMARA_LABELS,
+  TCE_TIPO_LABELS,
+  faseTceLabel,
+} from "@/lib/tce-config";
+import { cn } from "@/lib/utils";
+
+import { MunicipiosAtuacaoManager } from "./municipios-atuacao-manager";
 
 function formatDate(d: Date | null | undefined): string {
   if (!d) return "em curso";
@@ -30,34 +38,55 @@ export default async function InteressadoDetailPage({
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
 
-  const gestor = await prisma.gestor.findFirst({
-    where: { id: params.id, escritorioId },
-    include: {
-      historicoGestoes: {
-        orderBy: { dataInicio: "desc" },
-        include: { municipio: { select: { id: true, nome: true, uf: true } } },
-      },
-      interessadoProcessosTce: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          processo: {
-            select: {
-              id: true,
-              numero: true,
-              tipo: true,
-              camara: true,
-              faseAtual: true,
-              exercicio: true,
-              relator: true,
-              municipio: { select: { nome: true } },
+  const [gestor, todosMunicipios] = await Promise.all([
+    prisma.gestor.findFirst({
+      where: { id: params.id, escritorioId },
+      include: {
+        historicoGestoes: {
+          orderBy: { dataInicio: "desc" },
+          include: {
+            municipio: { select: { id: true, nome: true, uf: true } },
+          },
+        },
+        municipiosAtuacao: {
+          include: {
+            municipio: { select: { id: true, nome: true, uf: true } },
+          },
+        },
+        interessadoProcessosTce: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            processo: {
+              select: {
+                id: true,
+                numero: true,
+                tipo: true,
+                camara: true,
+                faseAtual: true,
+                exercicio: true,
+                relator: true,
+                municipio: { select: { nome: true } },
+              },
             },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.municipio.findMany({
+      where: { escritorioId },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true, uf: true },
+    }),
+  ]);
 
   if (!gestor) notFound();
+
+  const isPj = gestor.tipoInteressado === TipoInteressado.PESSOA_JURIDICA;
+  const municipiosPj = gestor.municipiosAtuacao.map((mm) => ({
+    id: mm.municipio.id,
+    nome: mm.municipio.nome,
+    uf: mm.municipio.uf,
+  }));
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 md:px-8">
@@ -78,13 +107,40 @@ export default async function InteressadoDetailPage({
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Interessado
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-            {gestor.nome}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {gestor.cargo} • {gestor.municipio}
-            {gestor.cpf ? ` • CPF ${gestor.cpf}` : ""}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
+              {gestor.nome}
+            </h1>
+            <span
+              className={cn(
+                "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                isPj
+                  ? "bg-purple-100 text-purple-700"
+                  : "bg-blue-100 text-blue-700",
+              )}
+            >
+              {isPj ? "Pessoa Juridica" : "Pessoa Fisica"}
+            </span>
+          </div>
+          {isPj ? (
+            <p className="text-sm text-muted-foreground">
+              {gestor.nomeFantasia ? `${gestor.nomeFantasia} • ` : ""}
+              {gestor.ramoAtividade ?? "Pessoa juridica"}
+              {gestor.cnpj ? ` • CNPJ ${gestor.cnpj}` : ""}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {gestor.cargo} • {gestor.municipio}
+              {gestor.cpf ? ` • CPF ${gestor.cpf}` : ""}
+            </p>
+          )}
+          {(gestor.email || gestor.telefone) && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {gestor.email ?? ""}
+              {gestor.email && gestor.telefone ? " • " : ""}
+              {gestor.telefone ?? ""}
+            </p>
+          )}
         </div>
       </header>
 
@@ -102,14 +158,23 @@ export default async function InteressadoDetailPage({
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.3fr]">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Historico de cargos</CardTitle>
+            <CardTitle className="text-base">
+              {isPj ? "Municipios de atuacao" : "Historico de cargos"}
+            </CardTitle>
             <CardDescription>
-              {gestor.historicoGestoes.length} registro
-              {gestor.historicoGestoes.length === 1 ? "" : "s"}.
+              {isPj
+                ? `${municipiosPj.length} municipio${municipiosPj.length === 1 ? "" : "s"} vinculado${municipiosPj.length === 1 ? "" : "s"}.`
+                : `${gestor.historicoGestoes.length} registro${gestor.historicoGestoes.length === 1 ? "" : "s"}.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {gestor.historicoGestoes.length === 0 ? (
+            {isPj ? (
+              <MunicipiosAtuacaoManager
+                gestorId={gestor.id}
+                vinculados={municipiosPj}
+                todosMunicipios={todosMunicipios}
+              />
+            ) : gestor.historicoGestoes.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Sem historico de cargos em municipios.
               </p>

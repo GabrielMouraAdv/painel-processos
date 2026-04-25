@@ -102,7 +102,12 @@ export default async function ProcessoTceDetailPage({
     prisma.gestor.findMany({
       where: { escritorioId },
       orderBy: { nome: "asc" },
-      select: { id: true, nome: true },
+      select: {
+        id: true,
+        nome: true,
+        tipoInteressado: true,
+        nomeFantasia: true,
+      },
     }),
     prisma.user.findMany({
       where: { escritorioId, role: Role.ADVOGADO },

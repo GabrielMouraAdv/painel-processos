@@ -31,7 +31,12 @@ export type InteressadoItem = {
   gestor: { id: string; nome: string };
 };
 
-export type GestorOption = { id: string; nome: string };
+export type GestorOption = {
+  id: string;
+  nome: string;
+  tipoInteressado: "PESSOA_FISICA" | "PESSOA_JURIDICA";
+  nomeFantasia?: string | null;
+};
 
 type Props = {
   processoId: string;
@@ -167,7 +172,9 @@ export function InteressadosTceManager({
                 <SelectContent>
                   {gestores.map((g) => (
                     <SelectItem key={g.id} value={g.id}>
+                      [{g.tipoInteressado === "PESSOA_JURIDICA" ? "PJ" : "PF"}]{" "}
                       {g.nome}
+                      {g.nomeFantasia ? ` (${g.nomeFantasia})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

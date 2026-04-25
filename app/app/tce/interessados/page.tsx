@@ -17,9 +17,8 @@ export default async function TceInteressadosPage() {
       where: { escritorioId },
       orderBy: { nome: "asc" },
       include: {
-        historicoGestoes: {
-          orderBy: { dataInicio: "desc" },
-          include: { municipio: { select: { nome: true, uf: true } } },
+        municipiosAtuacao: {
+          include: { municipio: { select: { id: true, nome: true, uf: true } } },
         },
         _count: { select: { interessadoProcessosTce: true } },
       },
@@ -33,6 +32,7 @@ export default async function TceInteressadosPage() {
 
   const interessados: InteressadoCard[] = gestores.map((g) => ({
     id: g.id,
+    tipoInteressado: g.tipoInteressado,
     nome: g.nome,
     cargo: g.cargo,
     cpf: g.cpf,
@@ -40,9 +40,15 @@ export default async function TceInteressadosPage() {
     telefone: g.telefone,
     observacoes: g.observacoes,
     municipio: g.municipio,
-    municipiosVinculados: Array.from(
-      new Set(g.historicoGestoes.map((h) => h.municipio.nome)),
-    ),
+    razaoSocial: g.razaoSocial,
+    nomeFantasia: g.nomeFantasia,
+    cnpj: g.cnpj,
+    ramoAtividade: g.ramoAtividade,
+    municipiosLista: g.municipiosAtuacao.map((mm) => ({
+      id: mm.municipio.id,
+      nome: mm.municipio.nome,
+      uf: mm.municipio.uf,
+    })),
     totalProcessosTce: g._count.interessadoProcessosTce,
   }));
 
