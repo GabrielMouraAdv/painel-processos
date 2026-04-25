@@ -1,6 +1,14 @@
-import type { CamaraTce, TipoProcessoTce } from "@prisma/client";
+import { type CamaraTce, type TipoProcessoTce } from "@prisma/client";
 
 import { diasUteisEntre } from "@/lib/dias-uteis";
+
+// Tipos que nao seguem o fluxo de defesa/memorial/despacho com relator.
+// Para eles nao geramos pendencia automatica de memorial nem de despacho.
+const TIPOS_SEM_FLUXO_RELATOR = new Set<TipoProcessoTce>([
+  "TERMO_AJUSTE_GESTAO",
+  "PEDIDO_RESCISAO",
+  "CONSULTA",
+]);
 
 export type TipoPendencia =
   | "contrarrazoes_nt"
@@ -50,6 +58,7 @@ const FASES_ENCERRADAS = new Set(["transitado", "transitado_cautelar"]);
 export function detectarPendencias(
   processo: {
     id: string;
+    tipo: TipoProcessoTce;
     notaTecnica: boolean;
     parecerMpco: boolean;
     memorialPronto: boolean;
@@ -69,6 +78,7 @@ export function detectarPendencias(
 ): Pendencia[] {
   const out: Pendencia[] = [];
   const temContrarraz = temAndamentoContrarrazoes(andamentos);
+  const semFluxoRelator = TIPOS_SEM_FLUXO_RELATOR.has(processo.tipo);
 
   if (processo.notaTecnica) {
     const concluida =
@@ -94,7 +104,7 @@ export function detectarPendencias(
     });
   }
 
-  if (!FASES_ENCERRADAS.has(processo.faseAtual)) {
+  if (!semFluxoRelator && !FASES_ENCERRADAS.has(processo.faseAtual)) {
     out.push({
       id: `${processo.id}-memorial`,
       tipo: "memorial",
@@ -106,7 +116,7 @@ export function detectarPendencias(
     });
   }
 
-  if (processo.memorialPronto) {
+  if (!semFluxoRelator && processo.memorialPronto) {
     out.push({
       id: `${processo.id}-despacho`,
       tipo: "despacho",

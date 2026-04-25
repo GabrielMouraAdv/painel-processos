@@ -76,6 +76,7 @@ export default async function PendenciasTcePage() {
       const pendencias = detectarPendencias(
         {
           id: p.id,
+          tipo: p.tipo,
           notaTecnica: p.notaTecnica,
           parecerMpco: p.parecerMpco,
           memorialPronto: p.memorialPronto,

@@ -148,6 +148,9 @@ export default async function TceDashboardPage({
         ...base,
         memorialPronto: false,
         faseAtual: { notIn: ["transitado", "transitado_cautelar"] },
+        tipo: {
+          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
+        },
       },
     }),
     prisma.processoTce.count({
@@ -157,7 +160,13 @@ export default async function TceDashboardPage({
       where: { ...base, parecerMpco: true },
     }),
     prisma.processoTce.count({
-      where: { ...base, despachadoComRelator: false },
+      where: {
+        ...base,
+        despachadoComRelator: false,
+        tipo: {
+          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
+        },
+      },
     }),
     prisma.processoTce.count({
       where: {
@@ -178,6 +187,9 @@ export default async function TceDashboardPage({
         ...base,
         memorialPronto: true,
         despachadoComRelator: false,
+        tipo: {
+          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
+        },
       },
     }),
     prisma.prazoTce.findMany({

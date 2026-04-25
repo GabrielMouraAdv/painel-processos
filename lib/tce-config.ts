@@ -49,7 +49,88 @@ export const TCE_TIPO_LABELS: Record<TipoProcessoTce, string> = {
   RGF: "Relatorio de Gestao Fiscal (RGF)",
   AUTO_INFRACAO: "Auto de Infracao",
   MEDIDA_CAUTELAR: "Medida Cautelar",
+  TOMADA_CONTAS_ESPECIAL: "Tomada de Contas Especial",
+  DESTAQUE: "Destaque",
+  DENUNCIA: "Denuncia",
+  TERMO_AJUSTE_GESTAO: "Termo de Ajuste de Gestao",
+  PEDIDO_RESCISAO: "Pedido de Rescisao",
+  CONSULTA: "Consulta",
 };
+
+// Configuracao de prazos automaticos por tipo de processo TCE.
+// Baseada na legislacao do TCE-PE.
+export type PrazoDefesaConfig = {
+  tipo: string; // descricao do prazo (ex: "Defesa Previa")
+  diasUteis: number;
+  prorrogavel: boolean;
+  diasProrrogacao?: number; // quando aplicavel
+  observacao?: string; // notas para UI (ex: "criterio do relator")
+};
+
+export const PRAZOS_AUTOMATICOS: Partial<
+  Record<TipoProcessoTce, PrazoDefesaConfig>
+> = {
+  PRESTACAO_CONTAS_GOVERNO: {
+    tipo: "Defesa Previa",
+    diasUteis: 30,
+    prorrogavel: true,
+    diasProrrogacao: 30,
+  },
+  PRESTACAO_CONTAS_GESTAO: {
+    tipo: "Defesa Previa",
+    diasUteis: 30,
+    prorrogavel: true,
+    diasProrrogacao: 30,
+  },
+  TOMADA_CONTAS_ESPECIAL: {
+    tipo: "Defesa Previa",
+    diasUteis: 30,
+    prorrogavel: true,
+    diasProrrogacao: 30,
+  },
+  RGF: {
+    tipo: "Defesa Previa",
+    diasUteis: 5,
+    prorrogavel: true,
+    observacao: "Prorrogacao a criterio do relator",
+  },
+  AUDITORIA_ESPECIAL: {
+    tipo: "Defesa Previa",
+    diasUteis: 30,
+    prorrogavel: true,
+    diasProrrogacao: 30,
+  },
+  DESTAQUE: {
+    tipo: "Defesa Previa",
+    diasUteis: 2,
+    prorrogavel: false,
+    observacao: "48 horas — improrrogavel",
+  },
+  DENUNCIA: {
+    tipo: "Defesa Previa",
+    diasUteis: 30,
+    prorrogavel: true,
+    diasProrrogacao: 30,
+  },
+  AUTO_INFRACAO: {
+    tipo: "Defesa Previa",
+    diasUteis: 5,
+    prorrogavel: true,
+  },
+  MEDIDA_CAUTELAR: {
+    tipo: "Manifestacao Previa",
+    diasUteis: 5,
+    prorrogavel: false,
+    observacao: "Improrrogavel",
+  },
+  // TERMO_AJUSTE_GESTAO, PEDIDO_RESCISAO e CONSULTA nao tem prazo automatico de defesa
+};
+
+export function getPrazoDefesaPorTipo(
+  tipo: TipoProcessoTce,
+): PrazoDefesaConfig | null {
+  return PRAZOS_AUTOMATICOS[tipo] ?? null;
+}
 
 export const TCE_CAMARA_LABELS: Record<CamaraTce, string> = {
   PRIMEIRA: "Primeira Camara",
@@ -147,6 +228,17 @@ export function prazoAutomaticoDaFase(
   tipo: TipoProcessoTce,
   key: string,
 ): PrazoAutomatico | undefined {
+  // Para fases de "defesa previa" / "manifestacao previa", a configuracao
+  // por tipo de processo (PRAZOS_AUTOMATICOS) tem prioridade.
+  if (key === "defesa_previa" || key === "manifestacao_previa") {
+    const cfg = PRAZOS_AUTOMATICOS[tipo];
+    if (!cfg) return undefined;
+    return {
+      tipo: cfg.tipo,
+      diasUteis: cfg.diasUteis,
+      prorrogavel: cfg.prorrogavel,
+    };
+  }
   return fasesDoTipo(tipo).find((f) => f.key === key)?.prazo;
 }
 
