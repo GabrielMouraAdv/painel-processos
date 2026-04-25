@@ -36,7 +36,6 @@ import {
   parseISODate,
   startOfWeekUTC,
 } from "@/lib/semana";
-import { computeTceAlertas } from "@/lib/tce-alertas";
 import { TCE_CAMARA_LABELS, faseTceLabel } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 
@@ -131,7 +130,6 @@ export default async function TceDashboardPage({
     prazosVencendoCandidatos,
     proximosPrazos,
     ultimosAndamentos,
-    alertasProcessos,
     meusPrazos,
     sessoesSemana,
   ] = await Promise.all([
@@ -225,26 +223,6 @@ export default async function TceDashboardPage({
         },
       },
     }),
-    prisma.processoTce.findMany({
-      where: {
-        ...base,
-        OR: [
-          { notaTecnica: true },
-          { parecerMpco: true },
-          { AND: [{ memorialPronto: true }, { despachadoComRelator: false }] },
-        ],
-      },
-      select: {
-        id: true,
-        numero: true,
-        notaTecnica: true,
-        parecerMpco: true,
-        memorialPronto: true,
-        despachadoComRelator: true,
-        municipio: { select: { nome: true } },
-      },
-      take: 20,
-    }),
     isAdvogado
       ? prisma.prazoTce.findMany({
           where: {
@@ -295,18 +273,6 @@ export default async function TceDashboardPage({
     memoriaisPendentes +
     despachosPend +
     prazosVencendoCount;
-
-  const totalAlertas = alertasProcessos.reduce(
-    (acc, p) =>
-      acc +
-      computeTceAlertas({
-        notaTecnica: p.notaTecnica,
-        parecerMpco: p.parecerMpco,
-        despachadoComRelator: p.despachadoComRelator,
-        memorialPronto: p.memorialPronto,
-      }).length,
-    0,
-  );
 
   const kpis: {
     label: string;
@@ -397,7 +363,7 @@ export default async function TceDashboardPage({
         </p>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
         {kpis.map((k) => {
           const Icon = k.icon;
           return (
@@ -405,50 +371,23 @@ export default async function TceDashboardPage({
               key={k.label}
               href={k.href}
               className={cn(
-                "group rounded-lg border p-4 shadow-sm transition hover:shadow-md",
+                "group rounded-lg border p-2.5 shadow-sm transition hover:shadow-md",
                 toneStyles[k.tone],
               )}
             >
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">
+              <div className="flex items-start justify-between gap-1">
+                <p className="text-[9px] font-semibold uppercase tracking-tight leading-tight opacity-80">
                   {k.label}
                 </p>
-                <Icon className="h-4 w-4 opacity-80" aria-hidden="true" />
+                <Icon className="h-3 w-3 shrink-0 opacity-80" aria-hidden="true" />
               </div>
-              <p className="mt-2 text-3xl font-semibold leading-tight">
+              <p className="mt-1 text-2xl font-semibold leading-tight">
                 {k.value}
               </p>
             </Link>
           );
         })}
       </section>
-
-      {totalAlertas > 0 && (
-        <div className="flex gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div className="flex-1">
-            <p className="font-medium">
-              {totalAlertas} alerta{totalAlertas === 1 ? "" : "s"} automatico
-              {totalAlertas === 1 ? "" : "s"} ativo
-              {totalAlertas === 1 ? "" : "s"} em processos TCE.
-            </p>
-            <p className="text-amber-800">
-              Contrarrazoes pendentes e despachos ainda nao agendados.
-            </p>
-          </div>
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
-          >
-            <Link href="/app/tce/processos?contrarrazoes=pendentes">
-              Ver processos
-              <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Link>
-          </Button>
-        </div>
-      )}
 
       <Card className="border-brand-navy/20">
         <CardHeader className="border-b bg-brand-navy/5 pb-4">
