@@ -112,7 +112,6 @@ export function Sidebar({
             alertasMonitoramento > 0 ? alertasMonitoramento : undefined,
           badgeTone: "red",
         },
-        { label: "Relatorios", href: "/app/relatorios", icon: BarChart3 },
       ],
     },
   ];
@@ -154,6 +153,16 @@ export function Sidebar({
           >
             <Home className="h-4 w-4" aria-hidden="true" />
             <span>Inicio</span>
+          </Link>
+          <Link
+            href="/app/relatorios"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+              "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
+            )}
+          >
+            <BarChart3 className="h-4 w-4" aria-hidden="true" />
+            <span>Relatorios</span>
           </Link>
         </div>
         {groups.map((group, index) => (

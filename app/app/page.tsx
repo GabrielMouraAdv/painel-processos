@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { ArrowRight, Landmark, Scale } from "lucide-react";
+import { ArrowRight, BarChart3, Landmark, Scale } from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
@@ -207,6 +207,33 @@ export default async function ModuloHomePage() {
               />
               <Stat label="Prazos abertos" value={prazosJudAbertos} tone="red" />
             </dl>
+          </Link>
+
+          <Link
+            href="/app/relatorios"
+            className="group col-span-1 flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8 md:col-span-2"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
+                <BarChart3 className="h-7 w-7" />
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
+            </div>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
+                  Relatorios
+                </h2>
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                  Gerencial e por cliente
+                </p>
+              </div>
+              <dl className="flex flex-wrap gap-x-6 gap-y-2 border-t pt-4 md:border-t-0 md:pt-0">
+                <Stat label="Processos TCE" value={totalTce} />
+                <Stat label="Processos Judiciais" value={totalJud} />
+                <Stat label="Total geral" value={totalTce + totalJud} />
+              </dl>
+            </div>
           </Link>
         </div>
       </div>
