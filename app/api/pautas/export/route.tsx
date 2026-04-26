@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { renderToBuffer } from "@react-pdf/renderer";
 
 import { authOptions } from "@/lib/auth";
+import { ESCRITORIOS_EMISSORES } from "@/lib/escritorios-emissores";
 import {
   buildPautaWhatsApp,
   type SessaoExport,
@@ -21,6 +22,39 @@ import {
 } from "@/lib/semana";
 import { ORGAOS_JULGADORES } from "@/lib/tjpe-config";
 import { ORGAOS_JULGADORES_TRF5 } from "@/lib/trf5-config";
+
+function normalizarNome(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildOabIndex(): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const esc of ESCRITORIOS_EMISSORES) {
+    for (const adv of esc.advogados) {
+      const n = normalizarNome(adv.nome);
+      map.set(n, adv.oab);
+      const partes = n.split(" ").filter(Boolean);
+      if (partes.length > 0) {
+        const prim = partes[0];
+        if (!map.has(prim)) map.set(prim, adv.oab);
+      }
+    }
+  }
+  return map;
+}
+
+function buscarOab(nome: string, idx: Map<string, string>): string | null {
+  const n = normalizarNome(nome);
+  if (idx.has(n)) return idx.get(n) ?? null;
+  const prim = n.split(" ")[0];
+  if (prim && idx.has(prim)) return idx.get(prim) ?? null;
+  return null;
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -113,6 +147,7 @@ export async function GET(req: Request) {
   }
 
   // PDF (default)
+  const oabIdx = buildOabIndex();
   const sessoesPdf: SessaoJudicialPdf[] = sessoes.map((s) => ({
     data: s.data,
     orgaoJulgador: s.orgaoJulgador,
@@ -127,8 +162,11 @@ export async function GET(req: Request) {
       partes: it.partes,
       relator: it.relator,
       advogadoResp: it.advogadoResp,
+      advogadoOab: buscarOab(it.advogadoResp, oabIdx),
       situacao: it.situacao,
       prognostico: it.prognostico,
+      observacoes: it.observacoes,
+      providencia: it.providencia,
       sustentacaoOral: it.sustentacaoOral,
       sessaoVirtual: it.sessaoVirtual,
       pedidoRetPresencial: it.pedidoRetPresencial,

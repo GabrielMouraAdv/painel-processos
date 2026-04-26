@@ -5,8 +5,6 @@ import {
   Text,
   View,
   StyleSheet,
-  Svg,
-  Path,
 } from "@react-pdf/renderer";
 
 export type ItemPautaJudicialPdf = {
@@ -16,8 +14,11 @@ export type ItemPautaJudicialPdf = {
   partes: string | null;
   relator: string;
   advogadoResp: string;
+  advogadoOab: string | null;
   situacao: string | null;
   prognostico: string | null;
+  observacoes: string | null;
+  providencia: string | null;
   sustentacaoOral: boolean;
   sessaoVirtual: boolean;
   pedidoRetPresencial: boolean;
@@ -47,41 +48,33 @@ export type PautaJudicialPdfData = {
 };
 
 const COLOR_NAVY = "#0b2a4a";
-const COLOR_GRAY_BORDER = "#cbd5e1";
-const COLOR_GRAY_BG = "#f1f4f9";
-const COLOR_ROW_ALT = "#f8fafc";
+const COLOR_BORDER = "#000000";
+const COLOR_GRAY_BG = "#f3f4f6";
+const COLOR_ROW_ALT = "#fafafa";
 const COLOR_MUTED = "#64748b";
 const COLOR_TEXT = "#0f172a";
-const COLOR_RETIRADO_BG = "#e2e8f0";
+const COLOR_RED = "#b91c1c";
+const COLOR_GREEN = "#15803d";
 
-const COR_DIREITO_PUBLICO = "#1e3a8a";
-const COR_CRIMINAL = "#991b1b";
-const COR_REGIONAL_CARUARU = "#047857";
-const COR_PLENO = "#6b21a8";
-const COR_TURMA_TRF5 = "#0f766e";
-const COR_SECAO_TRF5 = "#be185d";
-
-export function corDoOrgao(
-  orgao: string,
-  tribunal: "TJPE" | "TRF5",
-): string {
-  if (tribunal === "TRF5") {
-    if (orgao.includes("Pleno") || orgao.includes("Plenario Virtual"))
-      return COR_PLENO;
-    if (orgao.includes("Secao")) return COR_SECAO_TRF5;
-    return COR_TURMA_TRF5;
-  }
-  if (orgao.includes("Regional Caruaru")) return COR_REGIONAL_CARUARU;
-  if (orgao.includes("Pleno") || orgao === "Plenario Virtual") return COR_PLENO;
-  if (orgao.includes("Criminal")) return COR_CRIMINAL;
-  return COR_DIREITO_PUBLICO;
-}
+const TIPO_SESSAO_LABEL: Record<string, string> = {
+  presencial: "Presencial",
+  virtual: "Virtual",
+  plenario_virtual: "Plenario Virtual",
+};
 
 function formatDateBR(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "UTC",
+  }).format(d);
+}
+
+function formatDayMonthBR(d: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
     timeZone: "UTC",
   }).format(d);
 }
@@ -96,32 +89,47 @@ function formatDateTimeBR(d: Date): string {
   }).format(d);
 }
 
+const DIAS_SEMANA_LONGO: Record<number, string> = {
+  0: "Domingo",
+  1: "Segunda-feira",
+  2: "Terca-feira",
+  3: "Quarta-feira",
+  4: "Quinta-feira",
+  5: "Sexta-feira",
+  6: "Sabado",
+};
+
+function diaSemanaLongo(d: Date): string {
+  return DIAS_SEMANA_LONGO[d.getUTCDay()] ?? "";
+}
+
+const MARGIN_PT = 57; // ~2cm
+
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 32,
-    paddingBottom: 56,
-    paddingHorizontal: 24,
+    paddingTop: MARGIN_PT,
+    paddingBottom: MARGIN_PT + 16,
+    paddingHorizontal: MARGIN_PT,
     fontFamily: "Helvetica",
     fontSize: 9,
     color: COLOR_TEXT,
   },
   capaTitulo: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 22,
+    fontSize: 18,
     textAlign: "center",
     color: COLOR_NAVY,
-    letterSpacing: 1.5,
-    marginTop: 4,
+    letterSpacing: 1,
   },
   capaSubtitulo: {
-    fontSize: 11,
+    fontSize: 10,
     textAlign: "center",
     color: COLOR_MUTED,
-    marginTop: 4,
+    marginTop: 3,
   },
   divider: {
-    marginTop: 12,
-    marginBottom: 14,
+    marginTop: 8,
+    marginBottom: 16,
     height: 2,
     backgroundColor: COLOR_NAVY,
   },
@@ -132,106 +140,67 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 30,
   },
-  sessaoBox: {
-    marginBottom: 14,
-    borderRadius: 4,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: COLOR_GRAY_BORDER,
-  },
-  sessaoHeader: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  sessaoSubtitulo: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "baseline",
+    marginTop: 14,
+    marginBottom: 6,
   },
-  sessaoHeaderLeft: {
-    flex: 1,
-    paddingRight: 10,
-    minWidth: 0,
-  },
-  sessaoHeaderRight: {
-    flexShrink: 0,
-    alignItems: "flex-end",
-  },
-  sessaoOrgao: {
+  sessaoSubtituloOrgao: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 11,
-    color: "#ffffff",
+    fontSize: 12,
+    color: COLOR_NAVY,
   },
-  sessaoMeta: {
-    fontSize: 9,
-    color: "#ffffff",
-    fontFamily: "Helvetica-Bold",
-    textAlign: "right",
+  sessaoSubtituloData: {
+    fontSize: 10,
+    color: COLOR_TEXT,
+    marginLeft: 6,
   },
-  sessaoTipoBadge: {
-    fontSize: 7,
-    color: "#ffffff",
-    backgroundColor: "rgba(255,255,255,0.25)",
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 2,
-    marginTop: 3,
-    fontFamily: "Helvetica-Bold",
-    alignSelf: "flex-start",
+  table: {
+    borderWidth: 0.7,
+    borderColor: COLOR_BORDER,
   },
-  continuacaoBadge: {
-    fontSize: 7,
-    color: "#ffffff",
-    fontStyle: "italic",
-    marginTop: 2,
-    textAlign: "right",
-  },
-  obsBox: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "#fffbeb",
-    borderBottomWidth: 1,
-    borderBottomColor: "#fde68a",
-    fontSize: 9,
-    color: "#92400e",
-    fontStyle: "italic",
-  },
-  table: { backgroundColor: "#ffffff" },
   tableHeader: {
     flexDirection: "row",
     backgroundColor: COLOR_GRAY_BG,
-    borderBottomWidth: 1,
-    borderBottomColor: COLOR_GRAY_BORDER,
+    borderBottomWidth: 0.7,
+    borderBottomColor: COLOR_BORDER,
   },
   th: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 10,
+    fontSize: 9,
     color: COLOR_NAVY,
-    paddingVertical: 7,
-    paddingHorizontal: 6,
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRightWidth: 0.5,
+    borderRightColor: COLOR_BORDER,
+  },
+  thLast: {
+    borderRightWidth: 0,
   },
   tableRow: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: COLOR_GRAY_BORDER,
+    borderBottomWidth: 0.5,
+    borderBottomColor: COLOR_BORDER,
     alignItems: "stretch",
+  },
+  tableRowLast: {
+    borderBottomWidth: 0,
   },
   tableRowAlt: {
     backgroundColor: COLOR_ROW_ALT,
   },
-  tableRowRetirado: {
-    backgroundColor: COLOR_RETIRADO_BG,
-  },
   td: {
     fontSize: 9,
     color: COLOR_TEXT,
-    paddingVertical: 6,
-    paddingHorizontal: 6,
-    lineHeight: 1.35,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    lineHeight: 1.3,
+    borderRightWidth: 0.5,
+    borderRightColor: COLOR_BORDER,
   },
-  tdRetirado: {
-    textDecoration: "line-through",
-    color: COLOR_MUTED,
+  tdLast: {
+    borderRightWidth: 0,
   },
   numeroFonte: {
     fontFamily: "Helvetica-Bold",
@@ -241,13 +210,24 @@ const styles = StyleSheet.create({
   numeroParte: {
     fontSize: 8,
     color: COLOR_MUTED,
-    marginTop: 2,
-    lineHeight: 1.3,
+    marginTop: 1,
+    lineHeight: 1.25,
   },
-  flagsCell: {
+  responsavelOab: {
+    fontSize: 7.5,
+    color: COLOR_MUTED,
+    marginTop: 1,
+  },
+  partesTexto: {
+    fontSize: 8,
+    color: COLOR_MUTED,
+    fontStyle: "italic",
+    marginTop: 2,
+  },
+  badgeFlagsBox: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 2,
+    marginTop: 2,
   },
   badge: {
     fontSize: 6.5,
@@ -258,9 +238,21 @@ const styles = StyleSheet.create({
     marginBottom: 1,
     fontFamily: "Helvetica-Bold",
   },
-  badgeSust: {
+  badgeSusten: {
+    backgroundColor: "#dbeafe",
+    color: "#1e40af",
+  },
+  badgeVirtual: {
+    backgroundColor: "#fef3c7",
+    color: "#92400e",
+  },
+  badgeRetPresencial: {
     backgroundColor: "#dcfce7",
-    color: "#15803d",
+    color: "#166534",
+  },
+  badgeMpf: {
+    backgroundColor: "#ede9fe",
+    color: "#5b21b6",
   },
   badgeVistas: {
     backgroundColor: "#ffedd5",
@@ -270,47 +262,43 @@ const styles = StyleSheet.create({
     backgroundColor: "#fee2e2",
     color: "#991b1b",
   },
-  badgeVirtual: {
-    backgroundColor: "#dbeafe",
-    color: "#1e40af",
+  obsGeraisTitulo: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 12,
+    color: COLOR_NAVY,
+    marginTop: 18,
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
-  badgePresencial: {
-    backgroundColor: "#fef9c3",
-    color: "#854d0e",
+  obsGeraisSessao: {
+    marginBottom: 10,
   },
-  badgeMpf: {
-    backgroundColor: "#e0e7ff",
-    color: "#3730a3",
+  obsGeraisSessaoTitulo: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    color: COLOR_NAVY,
+    marginBottom: 3,
   },
-  micWrap: {
-    flexDirection: "row",
-    alignItems: "center",
+  obsGeraisTexto: {
+    fontSize: 9,
+    color: COLOR_TEXT,
+    lineHeight: 1.4,
+    textAlign: "justify",
   },
   footer: {
     position: "absolute",
     bottom: 22,
-    left: 28,
-    right: 28,
+    left: MARGIN_PT,
+    right: MARGIN_PT,
     flexDirection: "row",
     justifyContent: "space-between",
     fontSize: 7.5,
     color: COLOR_MUTED,
-    borderTopWidth: 1,
-    borderTopColor: COLOR_GRAY_BORDER,
+    borderTopWidth: 0.5,
+    borderTopColor: COLOR_BORDER,
     paddingTop: 5,
   },
 });
-
-function MicIcon() {
-  return (
-    <Svg width={8} height={8} viewBox="0 0 24 24" style={{ marginRight: 2 }}>
-      <Path
-        d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"
-        fill="#15803d"
-      />
-    </Svg>
-  );
-}
 
 function PageFooter({ geradoEm }: { geradoEm: Date }) {
   return (
@@ -328,16 +316,17 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
 }
 
 const COLS_JUD = [
-  { key: "numero", label: "Numero", width: "23%" },
-  { key: "tipoRecurso", label: "Tipo", width: "11%" },
-  { key: "relator", label: "Relator", width: "15%" },
-  { key: "advogadoResp", label: "Adv.", width: "12%" },
+  { key: "numero", label: "N do Processo", width: "18%" },
+  { key: "tipoRecurso", label: "Tipo de Recurso", width: "11%" },
+  { key: "relator", label: "Relator", width: "12%" },
+  { key: "orgaoData", label: "Orgao/Data", width: "12%" },
+  { key: "tribunal", label: "Tribunal", width: "8%" },
+  { key: "responsavel", label: "Adv.", width: "13%" },
   { key: "situacao", label: "Situacao", width: "14%" },
-  { key: "prognostico", label: "Prognostico", width: "13%" },
-  { key: "flags", label: "Flags", width: "12%" },
+  { key: "providencia", label: "Observacoes/Providencia", width: "12%" },
 ] as const;
 
-const ITEMS_POR_BLOCO = 14;
+const ITEMS_POR_BLOCO = 12;
 
 function chunk<T>(arr: T[], size: number): T[][] {
   if (arr.length === 0) return [[]];
@@ -346,14 +335,106 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
-function ItemBadges({ item }: { item: ItemPautaJudicialPdf }) {
+// =================== Markdown bold ===================
+
+type Segmento = { text: string; bold: boolean };
+
+function parseBold(text: string): Segmento[] {
+  const out: Segmento[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const start = text.indexOf("**", i);
+    if (start === -1) {
+      out.push({ text: text.slice(i), bold: false });
+      break;
+    }
+    if (start > i) out.push({ text: text.slice(i, start), bold: false });
+    const end = text.indexOf("**", start + 2);
+    if (end === -1) {
+      out.push({ text: text.slice(start), bold: false });
+      break;
+    }
+    out.push({ text: text.slice(start + 2, end), bold: true });
+    i = end + 2;
+  }
+  return out;
+}
+
+function corDoBold(t: string): string | null {
+  const s = t.toLowerCase();
+  if (
+    /alto risco|altamente desfavor[aá]vel|perigoso|condena[cç][aã]o|procedente|seguran[cç]a denegada|denegada a ordem|cautelar deferida/i.test(
+      s,
+    )
+  ) {
+    return COLOR_RED;
+  }
+  if (
+    /baixo risco|favor[aá]vel|improcedente|absolvi[cç][aã]o|prescri[cç][aã]o|extin[cç][aã]o|seguran[cç]a concedida|concedida a ordem|cautelar (n[aã]o concedida|indeferida)/i.test(
+      s,
+    )
+  ) {
+    return COLOR_GREEN;
+  }
+  return null;
+}
+
+function RichText({
+  text,
+  baseStyle,
+}: {
+  text: string;
+  baseStyle?: object;
+}) {
+  const segs = parseBold(text);
   return (
-    <View style={styles.flagsCell}>
+    <Text style={baseStyle as never}>
+      {segs.map((s, i) => {
+        if (!s.bold) return <Text key={i}>{s.text}</Text>;
+        const cor = corDoBold(s.text);
+        const style: { fontFamily: string; color?: string } = {
+          fontFamily: "Helvetica-Bold",
+        };
+        if (cor) style.color = cor;
+        return (
+          <Text key={i} style={style}>
+            {s.text}
+          </Text>
+        );
+      })}
+    </Text>
+  );
+}
+
+// =================== Componentes ===================
+
+function ItemFlags({ item }: { item: ItemPautaJudicialPdf }) {
+  const algumaFlag =
+    item.sustentacaoOral ||
+    item.sessaoVirtual ||
+    item.pedidoRetPresencial ||
+    item.parecerMpf ||
+    item.pedidoVistas ||
+    item.retiradoDePauta;
+  if (!algumaFlag) return null;
+  return (
+    <View style={styles.badgeFlagsBox}>
       {item.sustentacaoOral && (
-        <View style={[styles.badge, styles.badgeSust, styles.micWrap]}>
-          <MicIcon />
-          <Text>Sust.</Text>
-        </View>
+        <Text style={[styles.badge, styles.badgeSusten]}>
+          Sustentacao
+          {item.advogadoSustentacao ? ` (${item.advogadoSustentacao})` : ""}
+        </Text>
+      )}
+      {item.sessaoVirtual && (
+        <Text style={[styles.badge, styles.badgeVirtual]}>Virtual</Text>
+      )}
+      {item.pedidoRetPresencial && (
+        <Text style={[styles.badge, styles.badgeRetPresencial]}>
+          Pedido p/ presencial
+        </Text>
+      )}
+      {item.parecerMpf && (
+        <Text style={[styles.badge, styles.badgeMpf]}>MPF</Text>
       )}
       {item.pedidoVistas && (
         <Text style={[styles.badge, styles.badgeVistas]}>
@@ -364,14 +445,47 @@ function ItemBadges({ item }: { item: ItemPautaJudicialPdf }) {
       {item.retiradoDePauta && (
         <Text style={[styles.badge, styles.badgeRetirado]}>Retirado</Text>
       )}
-      {item.sessaoVirtual && (
-        <Text style={[styles.badge, styles.badgeVirtual]}>Virtual</Text>
+    </View>
+  );
+}
+
+function CelulaSituacao({ item }: { item: ItemPautaJudicialPdf }) {
+  const partes: string[] = [];
+  if (item.prognostico) partes.push(item.prognostico);
+  if (item.situacao) partes.push(item.situacao);
+  return (
+    <View>
+      {partes.length === 0 ? (
+        <Text>-</Text>
+      ) : (
+        partes.map((p, i) => (
+          <View key={i} style={i > 0 ? { marginTop: 3 } : undefined}>
+            <RichText text={p} />
+          </View>
+        ))
       )}
-      {item.pedidoRetPresencial && (
-        <Text style={[styles.badge, styles.badgePresencial]}>Ret. presencial</Text>
+      <ItemFlags item={item} />
+    </View>
+  );
+}
+
+function CelulaProvidencia({ item }: { item: ItemPautaJudicialPdf }) {
+  const partes: string[] = [];
+  if (item.providencia) partes.push(item.providencia);
+  if (item.observacoes) partes.push(item.observacoes);
+  return (
+    <View>
+      {partes.length === 0 ? (
+        <Text>-</Text>
+      ) : (
+        partes.map((p, i) => (
+          <View key={i} style={i > 0 ? { marginTop: 3 } : undefined}>
+            <RichText text={p} />
+          </View>
+        ))
       )}
-      {item.parecerMpf && (
-        <Text style={[styles.badge, styles.badgeMpf]}>MPF</Text>
+      {item.partes && (
+        <Text style={styles.partesTexto}>Partes: {item.partes}</Text>
       )}
     </View>
   );
@@ -390,45 +504,34 @@ function SessaoChunk({
   totalBlocos: number;
   tribunal: "TJPE" | "TRF5";
 }) {
-  const cor = corDoOrgao(sessao.orgaoJulgador, tribunal);
-  const tipoLabel =
-    sessao.tipoSessao === "virtual"
-      ? "Virtual"
-      : sessao.tipoSessao === "plenario_virtual"
-        ? "Plenario Virtual"
-        : "Presencial";
   const isContinuacao = blocoIdx > 0;
+  const horarioStr = sessao.horario ? ` ${sessao.horario}` : "";
+  const tipoStr =
+    TIPO_SESSAO_LABEL[sessao.tipoSessao] ?? sessao.tipoSessao;
   return (
-    <View style={styles.sessaoBox} break={isContinuacao}>
-      <View style={[styles.sessaoHeader, { backgroundColor: cor }]}>
-        <View style={styles.sessaoHeaderLeft}>
-          <Text style={styles.sessaoOrgao}>{sessao.orgaoJulgador}</Text>
-          <Text style={styles.sessaoTipoBadge}>{tipoLabel.toUpperCase()}</Text>
-        </View>
-        <View style={styles.sessaoHeaderRight}>
-          <Text style={styles.sessaoMeta}>
-            {sessao.diaSemanaLabel} {formatDateBR(sessao.data)}
-          </Text>
-          {sessao.horario ? (
-            <Text style={styles.sessaoMeta}>{sessao.horario}</Text>
-          ) : null}
-          {totalBlocos > 1 ? (
-            <Text style={styles.continuacaoBadge}>
-              {isContinuacao ? "(continuacao) " : ""}
-              parte {blocoIdx + 1}/{totalBlocos}
-            </Text>
-          ) : null}
-        </View>
+    <View break={isContinuacao}>
+      <View style={styles.sessaoSubtitulo}>
+        <Text style={styles.sessaoSubtituloOrgao}>{sessao.orgaoJulgador}</Text>
+        <Text style={styles.sessaoSubtituloData}>
+          ({diaSemanaLongo(sessao.data)}, {formatDayMonthBR(sessao.data)}
+          {horarioStr}) — {tipoStr}
+          {totalBlocos > 1
+            ? ` — parte ${blocoIdx + 1}/${totalBlocos}${isContinuacao ? " (continuacao)" : ""}`
+            : ""}
+        </Text>
       </View>
-
-      {!isContinuacao && sessao.observacoesGerais ? (
-        <Text style={styles.obsBox}>{sessao.observacoesGerais}</Text>
-      ) : null}
 
       <View style={styles.table}>
         <View style={styles.tableHeader} wrap={false}>
-          {COLS_JUD.map((c) => (
-            <Text key={c.key} style={[styles.th, { width: c.width }]}>
+          {COLS_JUD.map((c, i) => (
+            <Text
+              key={c.key}
+              style={[
+                styles.th,
+                { width: c.width },
+                i === COLS_JUD.length - 1 ? styles.thLast : {},
+              ]}
+            >
               {c.label}
             </Text>
           ))}
@@ -447,75 +550,56 @@ function SessaoChunk({
         ) : (
           itens.map((it, idx) => {
             const offset = blocoIdx * ITEMS_POR_BLOCO + idx;
-            const rowStyle = it.retiradoDePauta
-              ? styles.tableRowRetirado
-              : offset % 2 === 1
-                ? styles.tableRowAlt
-                : {};
-            const tdRetirado = it.retiradoDePauta ? styles.tdRetirado : {};
+            const isLast = idx === itens.length - 1;
+            const rowStyle = [
+              styles.tableRow,
+              offset % 2 === 1 ? styles.tableRowAlt : {},
+              isLast ? styles.tableRowLast : {},
+            ];
+            const colWidths = COLS_JUD.map((c) => c.width);
             return (
               <View
                 key={`${it.numeroProcesso}-${offset}`}
-                style={[styles.tableRow, rowStyle]}
+                style={rowStyle}
                 wrap={false}
               >
-                <View style={[styles.td, { width: COLS_JUD[0].width }]}>
-                  <Text style={[styles.numeroFonte, tdRetirado]}>
-                    {it.numeroProcesso}
-                  </Text>
-                  {(it.partes || it.tituloProcesso) && (
-                    <Text style={[styles.numeroParte, tdRetirado]}>
-                      {it.partes ?? it.tituloProcesso}
-                    </Text>
+                <View style={[styles.td, { width: colWidths[0] }]}>
+                  <Text style={styles.numeroFonte}>{it.numeroProcesso}</Text>
+                  {it.tituloProcesso && (
+                    <Text style={styles.numeroParte}>{it.tituloProcesso}</Text>
                   )}
                 </View>
-                <Text
-                  style={[
-                    styles.td,
-                    { width: COLS_JUD[1].width },
-                    tdRetirado,
-                  ]}
-                >
+                <Text style={[styles.td, { width: colWidths[1] }]}>
                   {it.tipoRecurso ?? "-"}
                 </Text>
-                <Text
+                <Text style={[styles.td, { width: colWidths[2] }]}>
+                  {it.relator || "-"}
+                </Text>
+                <Text style={[styles.td, { width: colWidths[3] }]}>
+                  {sessao.orgaoJulgador}
+                  {"\n"}
+                  {formatDayMonthBR(sessao.data)}
+                </Text>
+                <Text style={[styles.td, { width: colWidths[4] }]}>
+                  {tribunal}
+                </Text>
+                <View style={[styles.td, { width: colWidths[5] }]}>
+                  <Text>{it.advogadoResp || "-"}</Text>
+                  {it.advogadoOab && (
+                    <Text style={styles.responsavelOab}>{it.advogadoOab}</Text>
+                  )}
+                </View>
+                <View style={[styles.td, { width: colWidths[6] }]}>
+                  <CelulaSituacao item={it} />
+                </View>
+                <View
                   style={[
                     styles.td,
-                    { width: COLS_JUD[2].width },
-                    tdRetirado,
+                    { width: colWidths[7] },
+                    styles.tdLast,
                   ]}
                 >
-                  {it.relator}
-                </Text>
-                <Text
-                  style={[
-                    styles.td,
-                    { width: COLS_JUD[3].width },
-                    tdRetirado,
-                  ]}
-                >
-                  {it.advogadoResp}
-                </Text>
-                <Text
-                  style={[
-                    styles.td,
-                    { width: COLS_JUD[4].width },
-                    tdRetirado,
-                  ]}
-                >
-                  {it.situacao ?? "-"}
-                </Text>
-                <Text
-                  style={[
-                    styles.td,
-                    { width: COLS_JUD[5].width },
-                    tdRetirado,
-                  ]}
-                >
-                  {it.prognostico ?? "-"}
-                </Text>
-                <View style={[styles.td, { width: COLS_JUD[6].width }]}>
-                  <ItemBadges item={it} />
+                  <CelulaProvidencia item={it} />
                 </View>
               </View>
             );
@@ -550,21 +634,58 @@ function SessaoCard({
   );
 }
 
+function ObservacoesGeraisSection({
+  sessoes,
+}: {
+  sessoes: SessaoJudicialPdf[];
+}) {
+  const comObs = sessoes.filter(
+    (s) => s.observacoesGerais && s.observacoesGerais.trim(),
+  );
+  if (comObs.length === 0) return null;
+  return (
+    <View>
+      <Text style={styles.obsGeraisTitulo}>OBSERVACOES GERAIS</Text>
+      {comObs.map((s, i) => (
+        <View key={i} style={styles.obsGeraisSessao} wrap={false}>
+          <Text style={styles.obsGeraisSessaoTitulo}>
+            {s.orgaoJulgador} —{" "}
+            {diaSemanaLongo(s.data)}, {formatDayMonthBR(s.data)}
+          </Text>
+          <RichText
+            text={s.observacoesGerais ?? ""}
+            baseStyle={styles.obsGeraisTexto}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function PautaJudicialDocument({
   data,
 }: {
   data: PautaJudicialPdfData;
 }) {
   const { tribunal, weekStart, weekEnd, sessoes, geradoEm } = data;
-  const subtitulo = `${tribunal} — Semana de ${formatDateBR(weekStart)} a ${formatDateBR(weekEnd)}`;
+
+  let inicio = weekStart;
+  let fim = weekEnd;
+  if (sessoes.length > 0) {
+    const datas = sessoes.map((s) => s.data.getTime()).sort((a, b) => a - b);
+    inicio = new Date(datas[0]);
+    fim = new Date(datas[datas.length - 1]);
+  }
+  const titulo = `PAUTA - ${formatDayMonthBR(inicio)} a ${formatDateBR(fim)}`;
+
   return (
     <Document
       title={`Pauta da Semana — ${tribunal}`}
       author="Painel Juridico"
     >
       <Page size="A4" style={styles.page}>
-        <Text style={styles.capaTitulo}>PAUTA DA SEMANA</Text>
-        <Text style={styles.capaSubtitulo}>{subtitulo}</Text>
+        <Text style={styles.capaTitulo}>{titulo}</Text>
+        <Text style={styles.capaSubtitulo}>{tribunal}</Text>
         <View style={styles.divider} />
 
         {sessoes.length === 0 ? (
@@ -572,13 +693,16 @@ export function PautaJudicialDocument({
             Nenhuma sessao cadastrada nesta semana.
           </Text>
         ) : (
-          sessoes.map((s, idx) => (
-            <SessaoCard
-              key={`${s.orgaoJulgador}-${idx}`}
-              sessao={s}
-              tribunal={tribunal}
-            />
-          ))
+          <>
+            {sessoes.map((s, idx) => (
+              <SessaoCard
+                key={`${s.orgaoJulgador}-${idx}`}
+                sessao={s}
+                tribunal={tribunal}
+              />
+            ))}
+            <ObservacoesGeraisSection sessoes={sessoes} />
+          </>
         )}
 
         <PageFooter geradoEm={geradoEm} />
