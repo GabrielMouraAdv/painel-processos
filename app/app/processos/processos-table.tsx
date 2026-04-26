@@ -50,19 +50,42 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
     );
   }
 
+  const cellBase = "px-2 py-2 align-top text-xs break-words";
+  const headBase = "h-auto px-2 py-2 align-top text-xs";
+
   return (
     <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="md:table-fixed">
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
-              <TableHead>Numero</TableHead>
-              <TableHead>Gestor</TableHead>
-              <TableHead className="hidden md:table-cell">Tribunal</TableHead>
-              <TableHead className="hidden md:table-cell">Tipo</TableHead>
-              <TableHead className="hidden md:table-cell">Risco</TableHead>
-              <TableHead>Situacao</TableHead>
-              <TableHead>Resultado</TableHead>
+              <TableHead className={cn(headBase, "md:w-[140px]")}>
+                Numero
+              </TableHead>
+              <TableHead className={cn(headBase, "md:w-[200px]")}>
+                Gestor
+              </TableHead>
+              <TableHead
+                className={cn(headBase, "hidden md:table-cell md:w-[80px]")}
+              >
+                Tribunal
+              </TableHead>
+              <TableHead
+                className={cn(headBase, "hidden md:table-cell md:w-[160px]")}
+              >
+                Tipo
+              </TableHead>
+              <TableHead
+                className={cn(headBase, "hidden md:table-cell md:w-[90px]")}
+              >
+                Risco
+              </TableHead>
+              <TableHead className={cn(headBase, "md:w-[200px]")}>
+                Situacao
+              </TableHead>
+              <TableHead className={cn(headBase, "md:w-[120px]")}>
+                Resultado
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -72,37 +95,44 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                 onClick={() => router.push(`/app/processos/${p.id}`)}
                 className="cursor-pointer transition-colors hover:bg-slate-50"
               >
-                <TableCell className="font-mono text-xs font-medium text-brand-navy">
+                <TableCell
+                  className={cn(
+                    cellBase,
+                    "font-mono font-medium text-brand-navy",
+                  )}
+                >
                   {p.numero}
                 </TableCell>
-                <TableCell>
-                  <div className="font-medium">{p.gestor.nome}</div>
-                  <div className="text-xs text-muted-foreground">
+                <TableCell className={cellBase}>
+                  <div className="break-words font-medium">
+                    {p.gestor.nome}
+                  </div>
+                  <div className="break-words text-[11px] text-muted-foreground">
                     {p.gestor.municipio}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className={cn(cellBase, "hidden md:table-cell")}>
                   <TribunalBadge tribunal={p.tribunal} />
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className={cn(cellBase, "hidden md:table-cell")}>
                   <TipoBadge tipo={p.tipo} tipoLivre={p.tipoLivre} />
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className={cn(cellBase, "hidden md:table-cell")}>
                   <RiscoBadge risco={p.risco} />
                 </TableCell>
-                <TableCell>
+                <TableCell className={cellBase}>
                   <div className="flex flex-col gap-1">
                     <GrauBadge grau={p.grau} />
-                    <span className="text-xs text-muted-foreground">
+                    <span className="break-words text-[11px] text-muted-foreground">
                       {faseLabel(p.fase)}
                     </span>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className={cellBase}>
                   {p.julgado && p.resultadoJulgamento ? (
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                        "inline-block break-words rounded-full border px-1.5 py-0.5 text-[10px] font-semibold",
                         classeBadgeResultado(
                           classificarResultadoJud(
                             p.tipo,
@@ -117,7 +147,7 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                   ) : (
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        "inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
                         classeBadgeNaoJulgado(),
                       )}
                     >

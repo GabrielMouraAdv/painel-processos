@@ -101,17 +101,15 @@ function PrazoBadge({
           ? "bg-yellow-100 text-yellow-800"
           : "bg-slate-100 text-slate-700";
   const label =
-    dias < 0
-      ? `vencido ${-dias}d`
-      : dias === 0
-        ? "hoje"
-        : `${dias}d uteis`;
+    dias < 0 ? `vencido ${-dias}d` : dias === 0 ? "hoje" : `${dias}d`;
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[11px] text-muted-foreground">{tipo}</span>
+      <span className="break-words text-[11px] text-muted-foreground">
+        {tipo}
+      </span>
       <span
         className={cn(
-          "inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+          "inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
           cor,
         )}
       >
@@ -132,25 +130,84 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
     );
   }
 
+  const cellBase = "px-2 py-2 align-top text-xs break-words";
+  const headBase = "h-auto px-2 py-2 align-top text-xs";
+
   return (
     <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="md:table-fixed">
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
-              <TableHead>Numero</TableHead>
-              <TableHead>Municipio</TableHead>
-              <TableHead className="hidden md:table-cell">Interessados</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead className="hidden md:table-cell">Camara</TableHead>
-              <TableHead className="hidden md:table-cell">Relator</TableHead>
-              <TableHead>Fase</TableHead>
-              <TableHead>Resultado</TableHead>
-              <TableHead className="hidden text-center md:table-cell">NT</TableHead>
-              <TableHead className="hidden text-center md:table-cell">Parecer MPCO</TableHead>
-              <TableHead className="hidden text-center md:table-cell">Despacho</TableHead>
-              <TableHead className="hidden text-center md:table-cell">Memorial</TableHead>
-              <TableHead>Prazo aberto</TableHead>
+              <TableHead className={cn(headBase, "md:w-[110px]")}>
+                Numero
+              </TableHead>
+              <TableHead className={cn(headBase, "md:w-[130px]")}>
+                Municipio
+              </TableHead>
+              <TableHead
+                className={cn(headBase, "hidden md:table-cell md:w-[180px]")}
+              >
+                Interessados
+              </TableHead>
+              <TableHead className={cn(headBase, "md:w-[120px]")}>
+                Tipo
+              </TableHead>
+              <TableHead
+                className={cn(headBase, "hidden md:table-cell md:w-[90px]")}
+              >
+                Camara
+              </TableHead>
+              <TableHead
+                className={cn(headBase, "hidden md:table-cell md:w-[110px]")}
+              >
+                Relator
+              </TableHead>
+              <TableHead className={cn(headBase, "md:w-[130px]")}>
+                Fase
+              </TableHead>
+              <TableHead className={cn(headBase, "md:w-[110px]")}>
+                Resultado
+              </TableHead>
+              <TableHead
+                className={cn(
+                  headBase,
+                  "hidden text-center md:table-cell md:w-[40px]",
+                )}
+                title="Nota Tecnica"
+              >
+                NT
+              </TableHead>
+              <TableHead
+                className={cn(
+                  headBase,
+                  "hidden text-center md:table-cell md:w-[50px]",
+                )}
+                title="Parecer MPCO"
+              >
+                MPCO
+              </TableHead>
+              <TableHead
+                className={cn(
+                  headBase,
+                  "hidden text-center md:table-cell md:w-[50px]",
+                )}
+                title="Despacho com relator"
+              >
+                Desp.
+              </TableHead>
+              <TableHead
+                className={cn(
+                  headBase,
+                  "hidden text-center md:table-cell md:w-[50px]",
+                )}
+                title="Memorial"
+              >
+                Mem.
+              </TableHead>
+              <TableHead className={cn(headBase, "md:w-[130px]")}>
+                Prazo aberto
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -160,38 +217,56 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                 onClick={() => router.push(`/app/tce/processos/${p.id}`)}
                 className="cursor-pointer transition-colors hover:bg-slate-50"
               >
-                <TableCell className="font-mono text-xs font-medium text-brand-navy">
+                <TableCell
+                  className={cn(
+                    cellBase,
+                    "font-mono font-medium text-brand-navy",
+                  )}
+                >
                   {p.numero}
                 </TableCell>
-                <TableCell className="text-sm">
+                <TableCell className={cellBase}>
                   {p.municipio?.nome ?? (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
-                <TableCell className="hidden max-w-[220px] truncate text-xs text-slate-700 md:table-cell">
-                  {p.interessados.length
-                    ? p.interessados.map((i) => i.nome).join(", ")
-                    : "—"}
+                <TableCell
+                  className={cn(
+                    cellBase,
+                    "hidden text-slate-700 md:table-cell",
+                  )}
+                >
+                  {p.interessados.length === 0 ? (
+                    "—"
+                  ) : (
+                    <div className="flex flex-col gap-0.5">
+                      {p.interessados.map((i, idx) => (
+                        <div key={idx} className="break-words leading-tight">
+                          {i.nome}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </TableCell>
-                <TableCell className="text-xs">
+                <TableCell className={cellBase}>
                   {TCE_TIPO_LABELS[p.tipo]}
                 </TableCell>
-                <TableCell className="hidden text-xs md:table-cell">
+                <TableCell className={cn(cellBase, "hidden md:table-cell")}>
                   {TCE_CAMARA_LABELS[p.camara]}
                 </TableCell>
-                <TableCell className="hidden text-xs md:table-cell">
+                <TableCell className={cn(cellBase, "hidden md:table-cell")}>
                   {p.relator ?? (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
-                <TableCell className="text-xs">
+                <TableCell className={cellBase}>
                   {faseTceLabel(p.tipo, p.faseAtual)}
                 </TableCell>
-                <TableCell>
+                <TableCell className={cellBase}>
                   {p.julgado && p.resultadoJulgamento ? (
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                        "inline-block break-words rounded-full border px-1.5 py-0.5 text-[10px] font-semibold",
                         classeBadgeResultado(
                           classificarResultadoTce(
                             p.tipo,
@@ -206,7 +281,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                   ) : (
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        "inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
                         classeBadgeNaoJulgado(),
                       )}
                     >
@@ -214,32 +289,48 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="hidden text-center md:table-cell">
-                  <StatusIcon active={p.notaTecnica} />
+                <TableCell
+                  className={cn(cellBase, "hidden text-center md:table-cell")}
+                >
+                  <div className="flex justify-center">
+                    <StatusIcon active={p.notaTecnica} />
+                  </div>
                 </TableCell>
-                <TableCell className="hidden text-center md:table-cell">
-                  <StatusIcon active={p.parecerMpco} />
+                <TableCell
+                  className={cn(cellBase, "hidden text-center md:table-cell")}
+                >
+                  <div className="flex justify-center">
+                    <StatusIcon active={p.parecerMpco} />
+                  </div>
                 </TableCell>
-                <TableCell className="hidden text-center md:table-cell">
-                  <StatusIconComDispensa
-                    active={p.despachadoComRelator}
-                    dispensado={p.despachoDispensado}
-                  />
+                <TableCell
+                  className={cn(cellBase, "hidden text-center md:table-cell")}
+                >
+                  <div className="flex justify-center">
+                    <StatusIconComDispensa
+                      active={p.despachadoComRelator}
+                      dispensado={p.despachoDispensado}
+                    />
+                  </div>
                 </TableCell>
-                <TableCell className="hidden text-center md:table-cell">
-                  <StatusIconComDispensa
-                    active={p.memorialPronto}
-                    dispensado={p.memorialDispensado}
-                  />
+                <TableCell
+                  className={cn(cellBase, "hidden text-center md:table-cell")}
+                >
+                  <div className="flex justify-center">
+                    <StatusIconComDispensa
+                      active={p.memorialPronto}
+                      dispensado={p.memorialDispensado}
+                    />
+                  </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className={cellBase}>
                   {p.prazoAberto ? (
                     <PrazoBadge
                       dias={p.prazoAberto.diasUteisRestantes}
                       tipo={p.prazoAberto.tipo}
                     />
                   ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
               </TableRow>
