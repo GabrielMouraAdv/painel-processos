@@ -3,8 +3,9 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, Search, X } from "lucide-react";
 
+import { GlobalSearch } from "./global-search";
 import { Sidebar } from "./sidebar";
 import { cn } from "@/lib/utils";
 
@@ -28,12 +29,25 @@ export function AppShell({
   despachosTcePendentes,
 }: Props) {
   const [open, setOpen] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
   const pathname = usePathname();
 
   // Fecha o drawer ao navegar (mobile)
   React.useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  // Atalho global Ctrl+K (Win/Linux) ou Cmd+K (Mac)
+  React.useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div className="flex min-h-screen">
@@ -72,6 +86,7 @@ export function AppShell({
           pautasJudiciaisTotal={pautasJudiciaisTotal}
           alertasMonitoramento={alertasMonitoramento}
           despachosTcePendentes={despachosTcePendentes}
+          onOpenSearch={() => setSearchOpen(true)}
         />
       </aside>
 
@@ -89,18 +104,30 @@ export function AppShell({
           <p className="truncate text-sm font-semibold text-brand-navy">
             Gestao Processual
           </p>
-          <button
-            type="button"
-            aria-label="Sair"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="Buscar"
+              onClick={() => setSearchOpen(true)}
+              className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Sair"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
+
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 }

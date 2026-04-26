@@ -11,6 +11,7 @@ import {
   Landmark,
   LayoutDashboard,
   Scale,
+  Search,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -38,6 +39,7 @@ type Props = {
   pautasJudiciaisTotal?: number;
   alertasMonitoramento?: number;
   despachosTcePendentes?: number;
+  onOpenSearch?: () => void;
 };
 
 export function Sidebar({
@@ -47,6 +49,7 @@ export function Sidebar({
   pautasJudiciaisTotal = 0,
   alertasMonitoramento = 0,
   despachosTcePendentes = 0,
+  onOpenSearch,
 }: Props) {
   const groups: NavGroup[] = [
     {
@@ -120,10 +123,24 @@ export function Sidebar({
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10">
           <Landmark className="h-5 w-5" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold leading-tight">Gestao</p>
           <p className="text-xs leading-tight text-slate-300">Processual</p>
         </div>
+        {onOpenSearch && (
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            aria-label="Buscar (Ctrl+K)"
+            title="Buscar (Ctrl+K)"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-slate-200 transition-colors hover:bg-white/15 hover:text-white"
+          >
+            <Search className="h-3.5 w-3.5" aria-hidden="true" />
+            <kbd className="hidden font-mono text-[10px] font-semibold leading-none text-slate-300 lg:inline">
+              Ctrl+K
+            </kbd>
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-6">
