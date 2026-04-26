@@ -296,17 +296,17 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
 }
 
 const COLS_TCE = [
-  { key: "numero", label: "N do Processo", width: "18%" },
-  { key: "relator", label: "Relator", width: "11%" },
-  { key: "camaraData", label: "Camara/Data", width: "10%" },
-  { key: "municipio", label: "Municipio", width: "10%" },
-  { key: "exercicio", label: "Ano", width: "6%" },
-  { key: "responsavel", label: "Responsavel", width: "13%" },
-  { key: "situacao", label: "Situacao", width: "16%" },
-  { key: "providencia", label: "Providencia", width: "16%" },
+  { key: "numero", label: "N do Processo", width: "16%" },
+  { key: "relator", label: "Relator", width: "9%" },
+  { key: "camaraData", label: "Camara/Data", width: "8%" },
+  { key: "municipio", label: "Municipio", width: "9%" },
+  { key: "exercicio", label: "Ano", width: "5%" },
+  { key: "responsavel", label: "Responsavel", width: "11%" },
+  { key: "situacao", label: "Situacao", width: "21%" },
+  { key: "providencia", label: "Providencia", width: "21%" },
 ] as const;
 
-const ITEMS_POR_BLOCO = 12;
+const ITEMS_POR_BLOCO = 8;
 
 function chunk<T>(arr: T[], size: number): T[][] {
   if (arr.length === 0) return [[]];
@@ -628,7 +628,7 @@ export function PautaTceDocument({ data }: { data: PautaTcePdfData }) {
 
   return (
     <Document title="Pauta TCE-PE" author="Painel Juridico">
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={styles.page}>
         <Text style={styles.capaTitulo}>{titulo}</Text>
         <View style={styles.divider} />
 

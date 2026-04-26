@@ -316,17 +316,17 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
 }
 
 const COLS_JUD = [
-  { key: "numero", label: "N do Processo", width: "18%" },
-  { key: "tipoRecurso", label: "Tipo de Recurso", width: "11%" },
-  { key: "relator", label: "Relator", width: "12%" },
-  { key: "orgaoData", label: "Orgao/Data", width: "12%" },
-  { key: "tribunal", label: "Tribunal", width: "8%" },
-  { key: "responsavel", label: "Adv.", width: "13%" },
-  { key: "situacao", label: "Situacao", width: "14%" },
-  { key: "providencia", label: "Observacoes/Providencia", width: "12%" },
+  { key: "numero", label: "N do Processo", width: "16%" },
+  { key: "tipoRecurso", label: "Tipo de Recurso", width: "10%" },
+  { key: "relator", label: "Relator", width: "10%" },
+  { key: "orgaoData", label: "Orgao/Data", width: "10%" },
+  { key: "tribunal", label: "Tribunal", width: "6%" },
+  { key: "responsavel", label: "Adv.", width: "11%" },
+  { key: "situacao", label: "Situacao", width: "19%" },
+  { key: "providencia", label: "Observacoes/Providencia", width: "18%" },
 ] as const;
 
-const ITEMS_POR_BLOCO = 12;
+const ITEMS_POR_BLOCO = 8;
 
 function chunk<T>(arr: T[], size: number): T[][] {
   if (arr.length === 0) return [[]];
@@ -683,7 +683,7 @@ export function PautaJudicialDocument({
       title={`Pauta da Semana — ${tribunal}`}
       author="Painel Juridico"
     >
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={styles.page}>
         <Text style={styles.capaTitulo}>{titulo}</Text>
         <Text style={styles.capaSubtitulo}>{tribunal}</Text>
         <View style={styles.divider} />
