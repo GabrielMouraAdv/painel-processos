@@ -44,6 +44,7 @@ export default async function ProcessosPage({
   const risco = parseEnum(asString(searchParams.risco), Object.values(Risco));
   const grau = parseEnum(asString(searchParams.grau), Object.values(Grau));
   const status = asString(searchParams.status);
+  const julgamentoFiltro = asString(searchParams.julgamento);
   const page = Math.max(1, Number(asString(searchParams.page) ?? "1") || 1);
 
   const sessentaDiasAtras = new Date();
@@ -59,6 +60,8 @@ export default async function ProcessosPage({
       andamentos: { none: { data: { gte: sessentaDiasAtras } } },
     }),
     ...(status === "em-pauta" && { fase: { in: fasesEmPauta } }),
+    ...(julgamentoFiltro === "julgados" && { julgado: true }),
+    ...(julgamentoFiltro === "nao_julgados" && { julgado: false }),
     ...(q && {
       OR: [
         { numero: { contains: q, mode: "insensitive" } },
@@ -86,6 +89,8 @@ export default async function ProcessosPage({
         risco: true,
         grau: true,
         fase: true,
+        julgado: true,
+        resultadoJulgamento: true,
         gestor: { select: { nome: true, municipio: true } },
       },
     }),

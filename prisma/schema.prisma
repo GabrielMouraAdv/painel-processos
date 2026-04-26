@@ -173,6 +173,12 @@ model Processo {
   despachoDispensadoPor      String?
   despachoDispensadoEm       DateTime?
   despachoDispensadoMotivo   String?      @db.Text
+  julgado                    Boolean      @default(false)
+  dataJulgamento             DateTime?
+  resultadoJulgamento        String?
+  penalidade                 String?
+  valorCondenacao            Decimal?     @db.Decimal(15, 2)
+  observacoesJulgamento      String?      @db.Text
   tipoLivre                  String?
   gestorId                   String
   advogadoId           String
@@ -355,6 +361,13 @@ model ProcessoTce {
   contrarrazoesMpcoDispensadoPor    String?
   contrarrazoesMpcoDispensadoEm     DateTime?
   contrarrazoesMpcoDispensadoMotivo String?   @db.Text
+  julgado                       Boolean   @default(false)
+  dataJulgamento                DateTime?
+  resultadoJulgamento           String?
+  penalidade                    String?
+  valorMulta                    Decimal?  @db.Decimal(15, 2)
+  valorDevolucao                Decimal?  @db.Decimal(15, 2)
+  observacoesJulgamento         String?   @db.Text
   prognosticoDespacho           String?   @db.Text
   retornoDespacho               String?   @db.Text
   dataDespacho                  DateTime?

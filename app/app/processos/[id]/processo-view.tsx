@@ -55,6 +55,7 @@ import {
   type MovimentacaoAutoItem,
   type PublicacaoDjenItem,
 } from "./monitoramento-section";
+import { JulgamentoCardJud } from "./julgamento-card";
 import { DispensaBadgesTce } from "../../tce/processos/[id]/dispensa-badges";
 import {
   ProcessoForm,
@@ -138,6 +139,14 @@ export type ProcessoDetail = {
     em: string;
     motivo: string | null;
   } | null;
+  julgamento: {
+    julgado: boolean;
+    dataJulgamento: string | null;
+    resultadoJulgamento: string | null;
+    penalidade: string | null;
+    valorCondenacao: number | null;
+    observacoesJulgamento: string | null;
+  };
 };
 
 type Props = {
@@ -303,6 +312,12 @@ export function ProcessoView({
         memorial={processo.memorialDispensado}
         despacho={processo.despachoDispensado}
         apiPath="/api/pendencias"
+      />
+
+      <JulgamentoCardJud
+        processoId={processo.id}
+        tipo={processo.tipo}
+        julgamento={processo.julgamento}
       />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">

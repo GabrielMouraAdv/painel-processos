@@ -9,6 +9,17 @@ import {
 
 export type RelatorioStatusFiltro = "ativos" | "todos";
 
+export type JulgamentoItem = {
+  julgado: boolean;
+  dataJulgamento: Date | null;
+  resultadoJulgamento: string | null;
+  classificacao: "favoravel" | "desfavoravel" | "parcial" | "neutro" | null;
+  penalidade: string | null;
+  valorMulta: number | null;
+  valorDevolucao: number | null;
+  valorCondenacao: number | null;
+};
+
 export type ProcessoJudicialItem = {
   numero: string;
   tribunal: string;
@@ -25,6 +36,7 @@ export type ProcessoJudicialItem = {
     diasRestantes: number;
   }[];
   proximaSessao: { data: Date; orgao: string; tribunal: string } | null;
+  julgamento?: JulgamentoItem;
 };
 
 export type ProcessoTceItem = {
@@ -47,6 +59,7 @@ export type ProcessoTceItem = {
     advogado: string | null;
     diasRestantes: number;
   }[];
+  julgamento?: JulgamentoItem;
 };
 
 export type RelatorioClienteData = {
@@ -600,6 +613,187 @@ function ProcessoTceCard({ p }: { p: ProcessoTceItem }) {
   );
 }
 
+function fmtBRL(v: number | null | undefined): string {
+  if (v === null || v === undefined) return "-";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+
+function ResultadoBadgePdf({
+  resultado,
+  classificacao,
+}: {
+  resultado: string;
+  classificacao: JulgamentoItem["classificacao"];
+}) {
+  const cor =
+    classificacao === "favoravel"
+      ? COLOR_GREEN
+      : classificacao === "desfavoravel"
+        ? COLOR_RED
+        : classificacao === "parcial"
+          ? COLOR_AMBER
+          : COLOR_MUTED;
+  return (
+    <Text
+      style={{
+        fontFamily: "Helvetica-Bold",
+        fontSize: 9,
+        color: cor,
+      }}
+    >
+      {resultado}
+    </Text>
+  );
+}
+
+function ProcessosJulgadosSection({
+  judiciais,
+  tce,
+  incluiJudicial,
+  incluiTce,
+}: {
+  judiciais: ProcessoJudicialItem[];
+  tce: ProcessoTceItem[];
+  incluiJudicial: boolean;
+  incluiTce: boolean;
+}) {
+  type Linha = {
+    numero: string;
+    tipo: string;
+    julgamento: JulgamentoItem;
+  };
+
+  const linhas: Linha[] = [];
+  if (incluiJudicial) {
+    for (const p of judiciais) {
+      if (p.julgamento && p.julgamento.julgado) {
+        linhas.push({ numero: p.numero, tipo: p.tipo, julgamento: p.julgamento });
+      }
+    }
+  }
+  if (incluiTce) {
+    for (const p of tce) {
+      if (p.julgamento && p.julgamento.julgado) {
+        linhas.push({ numero: p.numero, tipo: p.tipo, julgamento: p.julgamento });
+      }
+    }
+  }
+
+  if (linhas.length === 0) return null;
+
+  let favoraveis = 0;
+  let desfavoraveis = 0;
+  let totalMultas = 0;
+  let totalDevolucoes = 0;
+  let totalCondenacoes = 0;
+  for (const l of linhas) {
+    if (l.julgamento.classificacao === "favoravel") favoraveis++;
+    if (l.julgamento.classificacao === "desfavoravel") desfavoraveis++;
+    totalMultas += l.julgamento.valorMulta ?? 0;
+    totalDevolucoes += l.julgamento.valorDevolucao ?? 0;
+    totalCondenacoes += l.julgamento.valorCondenacao ?? 0;
+  }
+
+  return (
+    <View>
+      <Text style={styles.sectionTitulo}>Processos Julgados</Text>
+      <View
+        style={{
+          borderWidth: 1,
+          borderColor: COLOR_GRAY_BORDER,
+          borderRadius: 4,
+          marginBottom: 12,
+        }}
+      >
+        {linhas.map((l, i) => (
+          <View
+            key={`${l.numero}-${i}`}
+            style={{
+              flexDirection: "row",
+              padding: 8,
+              borderBottomWidth: i < linhas.length - 1 ? 1 : 0,
+              borderBottomColor: COLOR_GRAY_BORDER,
+            }}
+          >
+            <View style={{ flex: 2.5, paddingRight: 6 }}>
+              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9 }}>
+                {l.numero}
+              </Text>
+              <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 1 }}>
+                {l.tipo}
+              </Text>
+            </View>
+            <View style={{ flex: 2, paddingRight: 6 }}>
+              {l.julgamento.resultadoJulgamento && (
+                <ResultadoBadgePdf
+                  resultado={l.julgamento.resultadoJulgamento}
+                  classificacao={l.julgamento.classificacao}
+                />
+              )}
+              {l.julgamento.dataJulgamento && (
+                <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 1 }}>
+                  {formatDateShort(l.julgamento.dataJulgamento)}
+                </Text>
+              )}
+            </View>
+            <View style={{ flex: 2.5 }}>
+              {l.julgamento.penalidade && (
+                <Text style={{ fontSize: 9 }}>{l.julgamento.penalidade}</Text>
+              )}
+              {l.julgamento.valorMulta != null && (
+                <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 1 }}>
+                  Multa: {fmtBRL(l.julgamento.valorMulta)}
+                </Text>
+              )}
+              {l.julgamento.valorDevolucao != null && (
+                <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 1 }}>
+                  Devolucao: {fmtBRL(l.julgamento.valorDevolucao)}
+                </Text>
+              )}
+              {l.julgamento.valorCondenacao != null && (
+                <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 1 }}>
+                  Condenacao: {fmtBRL(l.julgamento.valorCondenacao)}
+                </Text>
+              )}
+            </View>
+          </View>
+        ))}
+      </View>
+      <View
+        style={{
+          backgroundColor: COLOR_BLUE_BG,
+          borderWidth: 1,
+          borderColor: COLOR_BLUE_BORDER,
+          borderRadius: 4,
+          padding: 8,
+          marginBottom: 16,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 9,
+            color: COLOR_NAVY,
+            fontFamily: "Helvetica-Bold",
+          }}
+        >
+          {linhas.length} julgado{linhas.length === 1 ? "" : "s"} •{" "}
+          {favoraveis} favoravel{favoraveis === 1 ? "" : "is"} •{" "}
+          {desfavoraveis} desfavoravel{desfavoraveis === 1 ? "" : "is"}
+        </Text>
+        <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 2 }}>
+          Total multas: {fmtBRL(totalMultas)} • Total devolucoes:{" "}
+          {fmtBRL(totalDevolucoes)} • Total condenacoes:{" "}
+          {fmtBRL(totalCondenacoes)}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export function RelatorioClienteDocument({
   data,
 }: {
@@ -717,6 +911,13 @@ export function RelatorioClienteDocument({
             )}
           </>
         )}
+
+        <ProcessosJulgadosSection
+          judiciais={judiciais}
+          tce={tce}
+          incluiJudicial={incluiJudicial}
+          incluiTce={incluiTce}
+        />
 
         {/* Assinatura
             Slot futuro para footer.png em

@@ -194,6 +194,18 @@ export default async function ProcessoDetailPage({
             motivo: processo.despachoDispensadoMotivo ?? null,
           }
         : null,
+    julgamento: {
+      julgado: processo.julgado,
+      dataJulgamento: processo.dataJulgamento
+        ? processo.dataJulgamento.toISOString()
+        : null,
+      resultadoJulgamento: processo.resultadoJulgamento,
+      penalidade: processo.penalidade,
+      valorCondenacao: processo.valorCondenacao
+        ? Number(processo.valorCondenacao)
+        : null,
+      observacoesJulgamento: processo.observacoesJulgamento,
+    },
   };
 
   return (

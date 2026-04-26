@@ -13,6 +13,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  classeBadgeNaoJulgado,
+  classeBadgeResultado,
+  classificarResultadoTce,
+} from "@/lib/julgamento-config";
+import {
   TCE_CAMARA_LABELS,
   TCE_TIPO_LABELS,
   faseTceLabel,
@@ -39,6 +44,8 @@ export type ProcessoTceRow = {
   memorialPronto: boolean;
   despachoDispensado: DispensaInfo;
   memorialDispensado: DispensaInfo;
+  julgado: boolean;
+  resultadoJulgamento: string | null;
   prazoAberto: {
     tipo: string;
     dataVencimento: string;
@@ -138,6 +145,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
               <TableHead className="hidden md:table-cell">Camara</TableHead>
               <TableHead className="hidden md:table-cell">Relator</TableHead>
               <TableHead>Fase</TableHead>
+              <TableHead>Resultado</TableHead>
               <TableHead className="hidden text-center md:table-cell">NT</TableHead>
               <TableHead className="hidden text-center md:table-cell">Parecer MPCO</TableHead>
               <TableHead className="hidden text-center md:table-cell">Despacho</TableHead>
@@ -178,6 +186,33 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                 </TableCell>
                 <TableCell className="text-xs">
                   {faseTceLabel(p.tipo, p.faseAtual)}
+                </TableCell>
+                <TableCell>
+                  {p.julgado && p.resultadoJulgamento ? (
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                        classeBadgeResultado(
+                          classificarResultadoTce(
+                            p.tipo,
+                            p.resultadoJulgamento,
+                          ),
+                        ),
+                      )}
+                      title={p.resultadoJulgamento}
+                    >
+                      {p.resultadoJulgamento}
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        classeBadgeNaoJulgado(),
+                      )}
+                    >
+                      Nao julgado
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="hidden text-center md:table-cell">
                   <StatusIcon active={p.notaTecnica} />

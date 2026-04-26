@@ -17,7 +17,13 @@ import {
   TipoBadge,
   TribunalBadge,
 } from "@/components/processo-badges";
+import {
+  classeBadgeNaoJulgado,
+  classeBadgeResultado,
+  classificarResultadoJud,
+} from "@/lib/julgamento-config";
 import { faseLabel } from "@/lib/processo-labels";
+import { cn } from "@/lib/utils";
 
 export type ProcessoRow = {
   id: string;
@@ -28,6 +34,8 @@ export type ProcessoRow = {
   risco: Risco;
   grau: Grau;
   fase: string;
+  julgado: boolean;
+  resultadoJulgamento: string | null;
   gestor: { nome: string; municipio: string };
 };
 
@@ -54,6 +62,7 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
               <TableHead className="hidden md:table-cell">Tipo</TableHead>
               <TableHead className="hidden md:table-cell">Risco</TableHead>
               <TableHead>Situacao</TableHead>
+              <TableHead>Resultado</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,6 +97,33 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                       {faseLabel(p.fase)}
                     </span>
                   </div>
+                </TableCell>
+                <TableCell>
+                  {p.julgado && p.resultadoJulgamento ? (
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                        classeBadgeResultado(
+                          classificarResultadoJud(
+                            p.tipo,
+                            p.resultadoJulgamento,
+                          ),
+                        ),
+                      )}
+                      title={p.resultadoJulgamento}
+                    >
+                      {p.resultadoJulgamento}
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        classeBadgeNaoJulgado(),
+                      )}
+                    >
+                      Nao julgado
+                    </span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

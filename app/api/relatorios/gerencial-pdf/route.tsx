@@ -4,6 +4,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { Grau, Risco, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { classificarResultadoJud } from "@/lib/julgamento-config";
 import { prisma } from "@/lib/prisma";
 import {
   EMISSOR_SLUGS_VALIDOS,
@@ -60,24 +61,29 @@ export async function GET(req: Request) {
     }),
   };
 
-  const [totalFiltrado, porTribunal, porRisco, porFase] = await Promise.all([
-    prisma.processo.count({ where }),
-    prisma.processo.groupBy({
-      by: ["tribunal"],
-      where,
-      _count: { _all: true },
-    }),
-    prisma.processo.groupBy({
-      by: ["risco"],
-      where,
-      _count: { _all: true },
-    }),
-    prisma.processo.groupBy({
-      by: ["fase", "grau"],
-      where,
-      _count: { _all: true },
-    }),
-  ]);
+  const [totalFiltrado, porTribunal, porRisco, porFase, julgados] =
+    await Promise.all([
+      prisma.processo.count({ where }),
+      prisma.processo.groupBy({
+        by: ["tribunal"],
+        where,
+        _count: { _all: true },
+      }),
+      prisma.processo.groupBy({
+        by: ["risco"],
+        where,
+        _count: { _all: true },
+      }),
+      prisma.processo.groupBy({
+        by: ["fase", "grau"],
+        where,
+        _count: { _all: true },
+      }),
+      prisma.processo.findMany({
+        where: { ...where, julgado: true },
+        select: { tipo: true, resultadoJulgamento: true },
+      }),
+    ]);
 
   const linhasTribunal = porTribunal
     .map((row) => ({
@@ -101,6 +107,21 @@ export async function GET(req: Request) {
     }))
     .sort((a, b) => b.total - a.total);
 
+  // Por resultado de julgamento (favoraveis vs desfavoraveis)
+  let julgFavoravel = 0;
+  let julgDesfavoravel = 0;
+  let julgParcial = 0;
+  let julgNeutro = 0;
+  for (const j of julgados) {
+    const c = classificarResultadoJud(j.tipo, j.resultadoJulgamento);
+    if (c === "favoravel") julgFavoravel++;
+    else if (c === "desfavoravel") julgDesfavoravel++;
+    else if (c === "parcial") julgParcial++;
+    else julgNeutro++;
+  }
+  const totalJulgados = julgados.length;
+  const naoJulgados = totalFiltrado - totalJulgados;
+
   const tabelas: TabelaRelatorio[] = [
     {
       titulo: "Por tribunal",
@@ -119,6 +140,20 @@ export async function GET(req: Request) {
       descricao: "Fase atual e grau.",
       cabecalho: ["Fase", "Grau", "Processos"],
       linhas: linhasFase.map((l) => [l.fase, l.grau, String(l.total)]),
+    },
+    {
+      titulo: "Por resultado",
+      descricao:
+        "Distribuicao de resultados nos processos ja julgados (perspectiva da defesa).",
+      cabecalho: ["Classificacao", "Processos"],
+      linhas: [
+        ["Favoraveis", String(julgFavoravel)],
+        ["Parciais (ressalvas)", String(julgParcial)],
+        ["Desfavoraveis", String(julgDesfavoravel)],
+        ["Neutros", String(julgNeutro)],
+        ["Nao julgados", String(naoJulgados)],
+        ["Total julgados", String(totalJulgados)],
+      ],
     },
   ];
 

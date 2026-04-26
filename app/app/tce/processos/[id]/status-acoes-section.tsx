@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import type { TipoProcessoTce } from "@prisma/client";
 import {
   AlertTriangle,
   Ban,
@@ -10,7 +11,9 @@ import {
   Clock,
   Download,
   FileText,
+  Gavel,
   Loader2,
+  Pencil,
   RotateCcw,
   StickyNote,
   X,
@@ -19,6 +22,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { JulgamentoDialog } from "@/components/julgamento-dialog";
+import {
+  classeBadgeResultado,
+  classificarResultadoTce,
+} from "@/lib/julgamento-config";
 import { cn } from "@/lib/utils";
 
 import { CriarPrazoDialog } from "../../pendencias/criar-prazo-dialog";
@@ -44,6 +52,7 @@ type MemorialDoc = {
 
 type Props = {
   processoId: string;
+  tipo: TipoProcessoTce;
   notaTecnica: boolean;
   parecerMpco: boolean;
   contrarrazoesNtApresentadas: boolean;
@@ -62,6 +71,15 @@ type Props = {
   despachoAgendadoAdvogadoNome: string | null;
   memorialDoc: MemorialDoc | null;
   advogados: Advogado[];
+  julgamento: {
+    julgado: boolean;
+    dataJulgamento: string | null;
+    resultadoJulgamento: string | null;
+    penalidade: string | null;
+    valorMulta: number | null;
+    valorDevolucao: number | null;
+    observacoesJulgamento: string | null;
+  };
 };
 
 const API = "/api/tce/pendencias";
@@ -83,7 +101,177 @@ export function StatusAcoesSection(props: Props) {
         <CardMemorial {...props} />
         <CardDespacho {...props} />
       </div>
+      <CardResultadoJulgamento {...props} />
     </section>
+  );
+}
+
+// ============================== CARD JULGAMENTO ==============================
+
+function fmtBRL(v: number | null | undefined): string {
+  if (v === null || v === undefined) return "-";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+
+function CardResultadoJulgamento(props: Props) {
+  const { busy, call } = useAcao();
+  const [open, setOpen] = React.useState(false);
+
+  const j = props.julgamento;
+  const classificacao = classificarResultadoTce(
+    props.tipo,
+    j.resultadoJulgamento,
+  );
+
+  const corCard = !j.julgado
+    ? "border-slate-200 bg-slate-50"
+    : classificacao === "favoravel"
+      ? "border-emerald-300 bg-emerald-50"
+      : classificacao === "desfavoravel"
+        ? "border-red-300 bg-red-50"
+        : classificacao === "parcial"
+          ? "border-yellow-300 bg-yellow-50"
+          : "border-slate-300 bg-slate-100";
+
+  return (
+    <Card id="card-julgamento" className={cn("scroll-mt-24 border", corCard)}>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Gavel className="h-4 w-4" />
+          Resultado do Julgamento
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!j.julgado && (
+          <>
+            <p className="text-sm text-slate-600">Processo ainda nao julgado</p>
+            <Button
+              size="sm"
+              className="bg-brand-navy hover:bg-brand-navy/90"
+              onClick={() => setOpen(true)}
+              disabled={busy}
+            >
+              <Gavel className="mr-1 h-3.5 w-3.5" />
+              Registrar Julgamento
+            </Button>
+          </>
+        )}
+
+        {j.julgado && (
+          <>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-2">
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold uppercase tracking-wide",
+                    classeBadgeResultado(classificacao),
+                  )}
+                >
+                  {j.resultadoJulgamento}
+                </span>
+                {j.dataJulgamento && (
+                  <p className="text-xs text-muted-foreground">
+                    Julgado em{" "}
+                    {new Date(j.dataJulgamento).toLocaleDateString("pt-BR")}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOpen(true)}
+                  disabled={busy}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-red-200 text-red-700 hover:bg-red-50"
+                  onClick={() =>
+                    call(
+                      {
+                        acao: "desfazer_julgamento",
+                        processoId: props.processoId,
+                      },
+                      "Julgamento desfeito",
+                    )
+                  }
+                  disabled={busy}
+                >
+                  Desfazer
+                </Button>
+              </div>
+            </div>
+
+            {(j.penalidade || j.valorMulta || j.valorDevolucao) && (
+              <div className="rounded-md border bg-white px-3 py-2 text-xs">
+                {j.penalidade && (
+                  <p>
+                    <span className="font-semibold text-slate-700">
+                      Penalidade:
+                    </span>{" "}
+                    {j.penalidade}
+                  </p>
+                )}
+                {j.valorMulta != null && (
+                  <p>
+                    <span className="font-semibold text-slate-700">Multa:</span>{" "}
+                    {fmtBRL(j.valorMulta)}
+                  </p>
+                )}
+                {j.valorDevolucao != null && (
+                  <p>
+                    <span className="font-semibold text-slate-700">
+                      Devolucao ao erario:
+                    </span>{" "}
+                    {fmtBRL(j.valorDevolucao)}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {j.observacoesJulgamento && (
+              <div className="rounded-md border bg-white px-3 py-2 text-xs">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Observacoes
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-slate-700">
+                  {j.observacoesJulgamento}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        <JulgamentoDialog
+          open={open}
+          onOpenChange={setOpen}
+          escopo="tce"
+          processoId={props.processoId}
+          tipo={props.tipo}
+          initial={
+            j.julgado
+              ? {
+                  dataJulgamento: j.dataJulgamento,
+                  resultadoJulgamento: j.resultadoJulgamento,
+                  penalidade: j.penalidade,
+                  valorMulta: j.valorMulta,
+                  valorDevolucao: j.valorDevolucao,
+                  valorCondenacao: null,
+                  observacoesJulgamento: j.observacoesJulgamento,
+                }
+              : null
+          }
+        />
+      </CardContent>
+    </Card>
   );
 }
 

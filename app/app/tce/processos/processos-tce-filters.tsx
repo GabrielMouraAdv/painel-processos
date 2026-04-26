@@ -183,6 +183,20 @@ export function ProcessosTceFilters({
           </SelectContent>
         </Select>
 
+        <Select
+          value={searchParams.get("julgamento") ?? ALL}
+          onValueChange={(v) => pushWith("julgamento", v)}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Status Julgamento" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todos</SelectItem>
+            <SelectItem value="julgados">Julgados</SelectItem>
+            <SelectItem value="nao_julgados">Nao Julgados</SelectItem>
+          </SelectContent>
+        </Select>
+
         {temFiltros && (
           <Button type="button" variant="ghost" onClick={limpar} className="ml-auto">
             <X className="mr-1 h-4 w-4" />

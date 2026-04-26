@@ -4,6 +4,10 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { Risco, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import {
+  classificarResultadoJud,
+  classificarResultadoTce,
+} from "@/lib/julgamento-config";
 import { prisma } from "@/lib/prisma";
 import {
   EMISSOR_SLUGS_VALIDOS,
@@ -236,6 +240,18 @@ export async function GET(req: Request) {
           diasRestantes: diasAte(pr.data, hoje),
         })),
         proximaSessao,
+        julgamento: {
+          julgado: p.julgado,
+          dataJulgamento: p.dataJulgamento,
+          resultadoJulgamento: p.resultadoJulgamento,
+          classificacao: p.julgado
+            ? classificarResultadoJud(p.tipo, p.resultadoJulgamento)
+            : null,
+          penalidade: p.penalidade,
+          valorMulta: null,
+          valorDevolucao: null,
+          valorCondenacao: p.valorCondenacao ? Number(p.valorCondenacao) : null,
+        },
       });
     }
   }
@@ -298,6 +314,18 @@ export async function GET(req: Request) {
           advogado: pr.advogadoResp?.nome ?? null,
           diasRestantes: diasAte(pr.dataVencimento, hoje),
         })),
+        julgamento: {
+          julgado: p.julgado,
+          dataJulgamento: p.dataJulgamento,
+          resultadoJulgamento: p.resultadoJulgamento,
+          classificacao: p.julgado
+            ? classificarResultadoTce(p.tipo, p.resultadoJulgamento)
+            : null,
+          penalidade: p.penalidade,
+          valorMulta: p.valorMulta ? Number(p.valorMulta) : null,
+          valorDevolucao: p.valorDevolucao ? Number(p.valorDevolucao) : null,
+          valorCondenacao: null,
+        },
       });
     }
   }

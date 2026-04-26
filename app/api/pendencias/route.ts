@@ -48,6 +48,16 @@ const reverterDispensaPrazoSchema = z.object({
   prazoId: z.string().min(1),
 });
 
+const julgamentoSchema = baseProcessoSchema.extend({
+  dataJulgamento: z
+    .union([z.string(), z.date()])
+    .transform((v) => (v instanceof Date ? v : new Date(v))),
+  resultadoJulgamento: z.string().min(1),
+  penalidade: z.string().optional().nullable(),
+  valorCondenacao: z.number().optional().nullable(),
+  observacoesJulgamento: z.string().optional().nullable(),
+});
+
 const inputSchema = z.discriminatedUnion("acao", [
   criarPrazoSchema.extend({ acao: z.literal("criar_prazo") }),
   baseProcessoSchema.extend({ acao: z.literal("memorial_pronto") }),
@@ -63,6 +73,8 @@ const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_despacho") }),
   dispensarPrazoSchema.extend({ acao: z.literal("dispensar_prazo") }),
   reverterDispensaPrazoSchema.extend({ acao: z.literal("reverter_dispensa_prazo") }),
+  julgamentoSchema.extend({ acao: z.literal("registrar_julgamento") }),
+  baseProcessoSchema.extend({ acao: z.literal("desfazer_julgamento") }),
 ]);
 
 export async function POST(req: Request) {
@@ -430,6 +442,75 @@ export async function POST(req: Request) {
           grau: "PRIMEIRO",
           fase: "prazo_dispensa_revertida",
           texto: `Dispensa do prazo "${prazo.tipo}" revertida.`,
+          autorId: session.user.id,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "registrar_julgamento") {
+    const dataJ = new Date(data.dataJulgamento);
+    dataJ.setHours(0, 0, 0, 0);
+    const penalidade = data.penalidade?.trim() || null;
+    const obs = data.observacoesJulgamento?.trim() || null;
+
+    const partes: string[] = [];
+    if (penalidade) partes.push(`Penalidade: ${penalidade}`);
+    if (data.valorCondenacao && data.valorCondenacao > 0) {
+      partes.push(`Condenacao R$ ${data.valorCondenacao.toFixed(2)}`);
+    }
+    const sufixo = partes.length ? ` ${partes.join(" • ")}.` : "";
+
+    await prisma.$transaction([
+      prisma.processo.update({
+        where: { id: data.processoId },
+        data: {
+          julgado: true,
+          dataJulgamento: dataJ,
+          resultadoJulgamento: data.resultadoJulgamento,
+          penalidade,
+          valorCondenacao:
+            data.valorCondenacao !== undefined && data.valorCondenacao !== null
+              ? data.valorCondenacao
+              : null,
+          observacoesJulgamento: obs,
+        },
+      }),
+      prisma.andamento.create({
+        data: {
+          processoId: data.processoId,
+          data: dataJ,
+          grau: "PRIMEIRO",
+          fase: "julgamento",
+          texto: `Processo julgado em ${dataJ.toLocaleDateString("pt-BR")}: ${data.resultadoJulgamento}.${sufixo}${obs ? ` Observacoes: ${obs}` : ""}`,
+          autorId: session.user.id,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "desfazer_julgamento") {
+    await prisma.$transaction([
+      prisma.processo.update({
+        where: { id: data.processoId },
+        data: {
+          julgado: false,
+          dataJulgamento: null,
+          resultadoJulgamento: null,
+          penalidade: null,
+          valorCondenacao: null,
+          observacoesJulgamento: null,
+        },
+      }),
+      prisma.andamento.create({
+        data: {
+          processoId: data.processoId,
+          data: new Date(),
+          grau: "PRIMEIRO",
+          fase: "julgamento_desfeito",
+          texto: "Registro de julgamento desfeito.",
           autorId: session.user.id,
         },
       }),

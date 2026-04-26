@@ -47,6 +47,7 @@ export default async function TceProcessosPage({
   const memorialFiltro = asString(searchParams.memorial);
   const contrarrazoesFiltro = asString(searchParams.contrarrazoes);
   const pautaFiltro = asString(searchParams.pauta) === "1";
+  const julgamentoFiltro = asString(searchParams.julgamento);
 
   const where: Prisma.ProcessoTceWhereInput = {
     escritorioId,
@@ -76,6 +77,8 @@ export default async function TceProcessosPage({
     ...(pautaFiltro && {
       faseAtual: { in: ["acordao_1", "referendo_pleno", "acordao_agravo"] },
     }),
+    ...(julgamentoFiltro === "julgados" && { julgado: true }),
+    ...(julgamentoFiltro === "nao_julgados" && { julgado: false }),
   };
 
   const [
@@ -201,6 +204,8 @@ export default async function TceProcessosPage({
               em: p.memorialDispensadoEm.toISOString(),
             }
           : null,
+      julgado: p.julgado,
+      resultadoJulgamento: p.resultadoJulgamento,
       prazoAberto: primeiroPrazo
         ? {
             tipo: primeiroPrazo.tipo,

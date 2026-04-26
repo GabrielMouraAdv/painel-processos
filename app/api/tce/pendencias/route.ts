@@ -53,6 +53,19 @@ const registrarSchema = baseProcessoSchema.extend({
   valor: z.boolean(),
 });
 
+const julgamentoSchema = baseProcessoSchema.extend({
+  dataJulgamento: z.union([z.string(), z.date()]).transform((v) =>
+    v instanceof Date ? v : new Date(v),
+  ),
+  resultadoJulgamento: z.string().min(1),
+  penalidade: z.string().optional().nullable(),
+  valorMulta: z.number().optional().nullable(),
+  valorDevolucao: z.number().optional().nullable(),
+  observacoesJulgamento: z.string().optional().nullable(),
+});
+
+const desfazerJulgamentoSchema = baseProcessoSchema;
+
 const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_nt") }),
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_mpco") }),
@@ -76,6 +89,8 @@ const inputSchema = z.discriminatedUnion("acao", [
   dispensarSchema.extend({ acao: z.literal("dispensar_contrarrazoes_mpco") }),
   baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_contrarrazoes_nt") }),
   baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_contrarrazoes_mpco") }),
+  julgamentoSchema.extend({ acao: z.literal("registrar_julgamento") }),
+  desfazerJulgamentoSchema.extend({ acao: z.literal("desfazer_julgamento") }),
 ]);
 
 export async function POST(req: Request) {
@@ -844,6 +859,81 @@ export async function POST(req: Request) {
           descricao: ehNt
             ? "Dispensa das contrarrazoes a NT revertida."
             : "Dispensa das contrarrazoes ao MPCO revertida.",
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "registrar_julgamento") {
+    const dataJ = new Date(data.dataJulgamento);
+    dataJ.setHours(0, 0, 0, 0);
+    const penalidade = data.penalidade?.trim() || null;
+    const obs = data.observacoesJulgamento?.trim() || null;
+
+    const partes: string[] = [];
+    if (penalidade) partes.push(`Penalidade: ${penalidade}`);
+    if (data.valorMulta && data.valorMulta > 0) {
+      partes.push(`Multa R$ ${data.valorMulta.toFixed(2)}`);
+    }
+    if (data.valorDevolucao && data.valorDevolucao > 0) {
+      partes.push(`Devolucao R$ ${data.valorDevolucao.toFixed(2)}`);
+    }
+    const sufixo = partes.length ? ` ${partes.join(" • ")}.` : "";
+
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: {
+          julgado: true,
+          dataJulgamento: dataJ,
+          resultadoJulgamento: data.resultadoJulgamento,
+          penalidade,
+          valorMulta:
+            data.valorMulta !== undefined && data.valorMulta !== null
+              ? data.valorMulta
+              : null,
+          valorDevolucao:
+            data.valorDevolucao !== undefined && data.valorDevolucao !== null
+              ? data.valorDevolucao
+              : null,
+          observacoesJulgamento: obs,
+        },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: dataJ,
+          fase: "julgamento",
+          descricao: `Processo julgado em ${dataJ.toLocaleDateString("pt-BR")}: ${data.resultadoJulgamento}.${sufixo}${obs ? ` Observacoes: ${obs}` : ""}`,
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "desfazer_julgamento") {
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: {
+          julgado: false,
+          dataJulgamento: null,
+          resultadoJulgamento: null,
+          penalidade: null,
+          valorMulta: null,
+          valorDevolucao: null,
+          observacoesJulgamento: null,
+        },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: new Date(),
+          fase: "julgamento_desfeito",
+          descricao: "Registro de julgamento desfeito.",
           autorId: userId,
         },
       }),

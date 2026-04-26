@@ -393,6 +393,22 @@ export default async function ProcessoTceDetailPage({
 
       <StatusAcoesSection
         processoId={processo.id}
+        tipo={processo.tipo}
+        julgamento={{
+          julgado: processo.julgado,
+          dataJulgamento: processo.dataJulgamento
+            ? processo.dataJulgamento.toISOString()
+            : null,
+          resultadoJulgamento: processo.resultadoJulgamento,
+          penalidade: processo.penalidade,
+          valorMulta: processo.valorMulta
+            ? Number(processo.valorMulta)
+            : null,
+          valorDevolucao: processo.valorDevolucao
+            ? Number(processo.valorDevolucao)
+            : null,
+          observacoesJulgamento: processo.observacoesJulgamento,
+        }}
         notaTecnica={processo.notaTecnica}
         parecerMpco={processo.parecerMpco}
         contrarrazoesNtApresentadas={processo.contrarrazoesNtApresentadas}
