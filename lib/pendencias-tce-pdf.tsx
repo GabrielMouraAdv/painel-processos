@@ -47,8 +47,8 @@ const COLOR_RED = "#b91c1c";
 const COLOR_AMBER = "#b45309";
 
 const TIPO_LABEL: Record<PendenciaItemPdf["tipo"], string> = {
-  contrarrazoes_nt: "Contrarrazoes a Nota Tecnica",
-  contrarrazoes_mpco: "Contrarrazoes ao Parecer MPCO",
+  contrarrazoes_nt: "Contrarrazões a Nota Técnica",
+  contrarrazoes_mpco: "Contrarrazões ao Parecer MPCO",
   memorial: "Elaborar Memorial",
   despacho: "Agendar Despacho com Relator",
 };
@@ -61,8 +61,8 @@ const TIPO_COLOR: Record<PendenciaItemPdf["tipo"], string> = {
 };
 
 const CAMARA_LABEL: Record<CamaraTce, string> = {
-  PRIMEIRA: "1a Camara",
-  SEGUNDA: "2a Camara",
+  PRIMEIRA: "1a Câmara",
+  SEGUNDA: "2a Câmara",
   PLENO: "Pleno",
 };
 
@@ -261,7 +261,7 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
       </Text>
       <Text
         render={({ pageNumber, totalPages }) =>
-          `Pagina ${pageNumber} de ${totalPages}`
+          `Página ${pageNumber} de ${totalPages}`
         }
       />
     </View>
@@ -315,7 +315,7 @@ export function PendenciasTceDocument({
 }) {
   const { cards, resumo, geradoEm } = data;
   return (
-    <Document title="Pendencias TCE" author="Painel Juridico">
+    <Document title="Pendências TCE" author="Painel Jurídico">
       <Page size="A4" style={styles.page}>
         <Text style={styles.capaTitulo}>PENDENCIAS TCE</Text>
         <Text style={styles.capaSubtitulo}>
@@ -337,11 +337,11 @@ export function PendenciasTceDocument({
           <View style={styles.resumoBox} wrap={false}>
             <Text style={styles.resumoTitulo}>Resumo de pendencias</Text>
             <View style={styles.resumoRow}>
-              <Text style={styles.resumoLabel}>Contrarrazoes NT</Text>
+              <Text style={styles.resumoLabel}>Contrarrazões NT</Text>
               <Text style={styles.resumoValor}>{resumo.contrarrazoesNt}</Text>
             </View>
             <View style={styles.resumoRow}>
-              <Text style={styles.resumoLabel}>Contrarrazoes MPCO</Text>
+              <Text style={styles.resumoLabel}>Contrarrazões MPCO</Text>
               <Text style={styles.resumoValor}>{resumo.contrarrazoesMpco}</Text>
             </View>
             <View style={styles.resumoRow}>

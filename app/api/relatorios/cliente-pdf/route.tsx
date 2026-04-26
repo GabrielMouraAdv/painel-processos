@@ -13,13 +13,13 @@ import {
   EMISSOR_SLUGS_VALIDOS,
   resolveEmissor,
 } from "@/lib/escritorios-emissores";
-import { diasAte } from "@/lib/prazos";
 import {
-  faseLabel,
-  fasesEmPauta,
-  tipoProcessoLabel,
-  tribunalLabels,
-} from "@/lib/processo-labels";
+  faseLabelPt,
+  faseTceLabelPt,
+  tipoProcessoLabelPt,
+} from "@/lib/pdf-pt-br";
+import { diasAte } from "@/lib/prazos";
+import { fasesEmPauta, tribunalLabels } from "@/lib/processo-labels";
 import {
   RelatorioClienteDocument,
   type ProcessoJudicialItem,
@@ -32,17 +32,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TIPO_TCE_LABEL: Record<string, string> = {
-  PRESTACAO_CONTAS_GOVERNO: "Prestacao de Contas - Governo",
-  PRESTACAO_CONTAS_GESTAO: "Prestacao de Contas - Gestao",
+  PRESTACAO_CONTAS_GOVERNO: "Prestação de Contas - Governo",
+  PRESTACAO_CONTAS_GESTAO: "Prestação de Contas - Gestão",
   AUDITORIA_ESPECIAL: "Auditoria Especial",
   RGF: "RGF",
-  AUTO_INFRACAO: "Auto de Infracao",
+  AUTO_INFRACAO: "Auto de Infração",
   MEDIDA_CAUTELAR: "Medida Cautelar",
+  TOMADA_CONTAS_ESPECIAL: "Tomada de Contas Especial",
+  DESTAQUE: "Destaque",
+  DENUNCIA: "Denúncia",
+  TERMO_AJUSTE_GESTAO: "Termo de Ajuste de Gestão",
+  PEDIDO_RESCISAO: "Pedido de Rescisão",
+  CONSULTA: "Consulta",
 };
 
 const CAMARA_LABEL: Record<string, string> = {
-  PRIMEIRA: "1a Camara",
-  SEGUNDA: "2a Camara",
+  PRIMEIRA: "1ª Câmara",
+  SEGUNDA: "2ª Câmara",
   PLENO: "Pleno",
 };
 
@@ -223,15 +229,15 @@ export async function GET(req: Request) {
       judiciais.push({
         numero: p.numero,
         tribunal: tribunalLabels[p.tribunal as Tribunal] ?? p.tribunal,
-        tipo: tipoProcessoLabel(p.tipo, p.tipoLivre),
-        fase: faseLabel(p.fase),
+        tipo: tipoProcessoLabelPt(p.tipo, p.tipoLivre),
+        fase: faseLabelPt(p.fase),
         valor: p.valor ? Number(p.valor) : null,
         advogado: p.advogado.nome,
         risco: p.risco as "ALTO" | "MEDIO" | "BAIXO",
         ultimosAndamentos: p.andamentos.map((a) => ({
           data: a.data,
           texto: a.texto,
-          fase: faseLabel(a.fase),
+          fase: faseLabelPt(a.fase),
         })),
         prazos: p.prazos.map((pr) => ({
           tipo: pr.tipo,
@@ -296,7 +302,7 @@ export async function GET(req: Request) {
         exercicio: p.exercicio,
         camara: CAMARA_LABEL[p.camara] ?? p.camara,
         relator: p.relator,
-        faseAtual: p.faseAtual,
+        faseAtual: faseTceLabelPt(p.faseAtual),
         status: {
           notaTecnica: p.notaTecnica,
           parecerMpco: p.parecerMpco,
@@ -306,7 +312,7 @@ export async function GET(req: Request) {
         ultimosAndamentos: p.andamentos.map((a) => ({
           data: a.data,
           descricao: a.descricao,
-          fase: a.fase,
+          fase: faseTceLabelPt(a.fase),
         })),
         prazos: p.prazos.map((pr) => ({
           tipo: pr.tipo,

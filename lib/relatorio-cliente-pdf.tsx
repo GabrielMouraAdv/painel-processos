@@ -106,7 +106,7 @@ const RISCO_COLOR: Record<"ALTO" | "MEDIO" | "BAIXO", string> = {
 
 const RISCO_LABEL: Record<"ALTO" | "MEDIO" | "BAIXO", string> = {
   ALTO: "Risco Alto",
-  MEDIO: "Risco Medio",
+  MEDIO: "Risco Médio",
   BAIXO: "Risco Baixo",
 };
 
@@ -419,7 +419,7 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
       <Text>Gerado em {formatDate(geradoEm)} — Confidencial — Uso interno</Text>
       <Text
         render={({ pageNumber, totalPages }) =>
-          `Pagina ${pageNumber} de ${totalPages}`
+          `Página ${pageNumber} de ${totalPages}`
         }
       />
     </View>
@@ -432,7 +432,7 @@ function StatusTceBadges({
   status: ProcessoTceItem["status"];
 }) {
   const items: { label: string; on: boolean }[] = [
-    { label: "Nota Tecnica", on: status.notaTecnica },
+    { label: "Nota Técnica", on: status.notaTecnica },
     { label: "Parecer MPCO", on: status.parecerMpco },
     { label: "Despachado", on: status.despachado },
     { label: "Memorial pronto", on: status.memorialPronto },
@@ -489,7 +489,7 @@ function ProcessoJudicialCard({ p }: { p: ProcessoJudicialItem }) {
 
         {p.proximaSessao && (
           <>
-            <Text style={styles.subTitulo}>Proxima sessao</Text>
+            <Text style={styles.subTitulo}>Próxima sessao</Text>
             <Text style={styles.bullet}>
               <Text style={styles.bulletData}>
                 {formatDate(p.proximaSessao.data)}
@@ -500,7 +500,7 @@ function ProcessoJudicialCard({ p }: { p: ProcessoJudicialItem }) {
           </>
         )}
 
-        <Text style={styles.subTitulo}>Ultimos andamentos</Text>
+        <Text style={styles.subTitulo}>Últimos andamentos</Text>
         {p.ultimosAndamentos.length === 0 ? (
           <Text style={styles.bulletMuted}>Sem andamentos registrados.</Text>
         ) : (
@@ -551,12 +551,12 @@ function ProcessoTceCard({ p }: { p: ProcessoTceItem }) {
         <View style={styles.metaLinha}>
           {p.exercicio ? (
             <Text style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Exercicio: </Text>
+              <Text style={styles.metaLabel}>Exercício: </Text>
               {p.exercicio}
             </Text>
           ) : null}
           <Text style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Camara: </Text>
+            <Text style={styles.metaLabel}>Câmara: </Text>
             {p.camara}
           </Text>
           {p.relator ? (
@@ -573,7 +573,7 @@ function ProcessoTceCard({ p }: { p: ProcessoTceItem }) {
 
         <StatusTceBadges status={p.status} />
 
-        <Text style={styles.subTitulo}>Ultimos andamentos</Text>
+        <Text style={styles.subTitulo}>Últimos andamentos</Text>
         {p.ultimosAndamentos.length === 0 ? (
           <Text style={styles.bulletMuted}>Sem andamentos registrados.</Text>
         ) : (
@@ -751,7 +751,7 @@ function ProcessosJulgadosSection({
               )}
               {l.julgamento.valorDevolucao != null && (
                 <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 1 }}>
-                  Devolucao: {fmtBRL(l.julgamento.valorDevolucao)}
+                  Devolução: {fmtBRL(l.julgamento.valorDevolucao)}
                 </Text>
               )}
               {l.julgamento.valorCondenacao != null && (
@@ -781,12 +781,14 @@ function ProcessosJulgadosSection({
           }}
         >
           {linhas.length} julgado{linhas.length === 1 ? "" : "s"} •{" "}
-          {favoraveis} favoravel{favoraveis === 1 ? "" : "is"} •{" "}
-          {desfavoraveis} desfavoravel{desfavoraveis === 1 ? "" : "is"}
+          {favoraveis}{" "}
+          {favoraveis === 1 ? "favorável" : "favoráveis"} •{" "}
+          {desfavoraveis}{" "}
+          {desfavoraveis === 1 ? "desfavorável" : "desfavoráveis"}
         </Text>
         <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 2 }}>
-          Total multas: {fmtBRL(totalMultas)} • Total devolucoes:{" "}
-          {fmtBRL(totalDevolucoes)} • Total condenacoes:{" "}
+          Total multas: {fmtBRL(totalMultas)} • Total devoluções:{" "}
+          {fmtBRL(totalDevolucoes)} • Total condenações:{" "}
           {fmtBRL(totalCondenacoes)}
         </Text>
       </View>
@@ -814,21 +816,21 @@ export function RelatorioClienteDocument({
 
   return (
     <Document
-      title={`Relatorio de Processos — ${cliente.nome}`}
+      title={`Relatório de Processos — ${cliente.nome}`}
       author={emissor.nome}
     >
       <Page size="A4" style={styles.page}>
         {/* Capa
             Slot futuro para header.png em
             public/escritorios/{emissor.slug}/header.png */}
-        <Text style={styles.capaTitulo}>RELATORIO DE PROCESSOS</Text>
+        <Text style={styles.capaTitulo}>RELATÓRIO DE PROCESSOS</Text>
         <Text style={styles.capaEscritorio}>{emissor.nome}</Text>
         <View style={styles.divider} />
 
         {/* Cliente */}
         <View style={styles.clienteBox}>
           <Text style={styles.clienteLabel}>
-            {cliente.tipo === "gestor" ? "Gestor" : "Municipio"}
+            {cliente.tipo === "gestor" ? "Gestor" : "Município"}
           </Text>
           <Text style={styles.clienteNome}>{cliente.nome}</Text>
           {cliente.tipo === "gestor" && cliente.cargo ? (
@@ -839,7 +841,7 @@ export function RelatorioClienteDocument({
           ) : null}
           {cliente.tipo === "gestor" && cliente.municipio ? (
             <Text style={styles.clienteLinha}>
-              <Text style={styles.metaLabel}>Municipio de atuacao: </Text>
+              <Text style={styles.metaLabel}>Município de atuacao: </Text>
               {cliente.municipio}
             </Text>
           ) : null}

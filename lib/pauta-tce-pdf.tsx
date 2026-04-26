@@ -52,14 +52,14 @@ const COLOR_RED = "#b91c1c";
 const COLOR_GREEN = "#15803d";
 
 const CAMARA_LABEL: Record<CamaraTce, string> = {
-  PRIMEIRA: "Primeira Camara",
-  SEGUNDA: "Segunda Camara",
+  PRIMEIRA: "Primeira Câmara",
+  SEGUNDA: "Segunda Câmara",
   PLENO: "Pleno",
 };
 
 const CAMARA_LABEL_CURTO: Record<CamaraTce, string> = {
-  PRIMEIRA: "1a Camara",
-  SEGUNDA: "2a Camara",
+  PRIMEIRA: "1a Câmara",
+  SEGUNDA: "2a Câmara",
   PLENO: "Pleno",
 };
 
@@ -93,11 +93,11 @@ function formatDateTimeBR(d: Date): string {
 const DIAS_SEMANA_LONGO: Record<number, string> = {
   0: "Domingo",
   1: "Segunda-feira",
-  2: "Terca-feira",
+  2: "Terça-feira",
   3: "Quarta-feira",
   4: "Quinta-feira",
   5: "Sexta-feira",
-  6: "Sabado",
+  6: "Sábado",
 };
 
 function diaSemanaLongo(d: Date): string {
@@ -288,7 +288,7 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
       </Text>
       <Text
         render={({ pageNumber, totalPages }) =>
-          `Pagina ${pageNumber} de ${totalPages}`
+          `Página ${pageNumber} de ${totalPages}`
         }
       />
     </View>
@@ -296,14 +296,14 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
 }
 
 const COLS_TCE = [
-  { key: "numero", label: "N do Processo", width: "16%" },
+  { key: "numero", label: "Nº do Processo", width: "16%" },
   { key: "relator", label: "Relator", width: "9%" },
-  { key: "camaraData", label: "Camara/Data", width: "8%" },
-  { key: "municipio", label: "Municipio", width: "9%" },
+  { key: "camaraData", label: "Câmara/Data", width: "8%" },
+  { key: "municipio", label: "Município", width: "9%" },
   { key: "exercicio", label: "Ano", width: "5%" },
-  { key: "responsavel", label: "Responsavel", width: "11%" },
-  { key: "situacao", label: "Situacao", width: "21%" },
-  { key: "providencia", label: "Providencia", width: "21%" },
+  { key: "responsavel", label: "Responsável", width: "11%" },
+  { key: "situacao", label: "Situação", width: "21%" },
+  { key: "providencia", label: "Providência", width: "21%" },
 ] as const;
 
 const ITEMS_POR_BLOCO = 8;
@@ -467,7 +467,7 @@ function SessaoChunk({
         <Text style={styles.sessaoSubtituloData}>
           ({diaSemanaLongo(sessao.data)}, {formatDayMonthBR(sessao.data)})
           {totalBlocos > 1
-            ? ` — parte ${blocoIdx + 1}/${totalBlocos}${isContinuacao ? " (continuacao)" : ""}`
+            ? ` — parte ${blocoIdx + 1}/${totalBlocos}${isContinuacao ? " (continuação)" : ""}`
             : ""}
         </Text>
       </View>
@@ -596,7 +596,7 @@ function ObservacoesGeraisSection({ sessoes }: { sessoes: SessaoTcePdf[] }) {
   if (comObs.length === 0) return null;
   return (
     <View>
-      <Text style={styles.obsGeraisTitulo}>OBSERVACOES GERAIS</Text>
+      <Text style={styles.obsGeraisTitulo}>OBSERVAÇÕES GERAIS</Text>
       {comObs.map((s, i) => (
         <View key={i} style={styles.obsGeraisCamara} wrap={false}>
           <Text style={styles.obsGeraisCamaraTitulo}>
@@ -627,7 +627,7 @@ export function PautaTceDocument({ data }: { data: PautaTcePdfData }) {
   const titulo = `PAUTA - ${formatDayMonthBR(inicio)} a ${formatDateBR(fim)}`;
 
   return (
-    <Document title="Pauta TCE-PE" author="Painel Juridico">
+    <Document title="Pauta TCE-PE" author="Painel Jurídico">
       <Page size="A4" orientation="landscape" style={styles.page}>
         <Text style={styles.capaTitulo}>{titulo}</Text>
         <View style={styles.divider} />

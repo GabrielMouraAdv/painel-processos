@@ -207,14 +207,14 @@ function formatDateLong(d: Date): string {
 }
 
 function formatPeriodo(p: { de: string | null; ate: string | null }): string {
-  if (!p.de && !p.ate) return "Sem filtro de periodo";
+  if (!p.de && !p.ate) return "Sem filtro de período";
   const fmt = (iso: string) => {
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? iso : formatDateBR(d);
   };
   if (p.de && p.ate) return `${fmt(p.de)} a ${fmt(p.ate)}`;
   if (p.de) return `A partir de ${fmt(p.de)}`;
-  return `Ate ${fmt(p.ate as string)}`;
+  return `Até ${fmt(p.ate as string)}`;
 }
 
 function PageFooter({ geradoEm }: { geradoEm: Date }) {
@@ -225,7 +225,7 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
       </Text>
       <Text
         render={({ pageNumber, totalPages }) =>
-          `Pagina ${pageNumber} de ${totalPages}`
+          `Página ${pageNumber} de ${totalPages}`
         }
       />
     </View>
@@ -316,17 +316,17 @@ export function RelatorioGerencialDocument({
     tabelas,
   } = data;
   return (
-    <Document title="Relatorio Gerencial de Processos" author={emissor.nome}>
+    <Document title="Relatório Gerencial de Processos" author={emissor.nome}>
       <Page size="A4" style={styles.page}>
         {/* Slot futuro para header.png em
             public/escritorios/{emissor.slug}/header.png */}
-        <Text style={styles.capaTitulo}>RELATORIO GERENCIAL</Text>
+        <Text style={styles.capaTitulo}>RELATÓRIO GERENCIAL</Text>
         <Text style={styles.capaEscritorio}>{emissor.nome}</Text>
         <View style={styles.divider} />
 
         <View style={styles.metaBox}>
           <Text style={styles.metaLinha}>
-            <Text style={styles.metaLabel}>Periodo: </Text>
+            <Text style={styles.metaLabel}>Período: </Text>
             {formatPeriodo(periodo)}
           </Text>
           <Text style={styles.metaLinha}>

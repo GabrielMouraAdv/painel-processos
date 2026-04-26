@@ -59,7 +59,7 @@ const COLOR_GREEN = "#15803d";
 const TIPO_SESSAO_LABEL: Record<string, string> = {
   presencial: "Presencial",
   virtual: "Virtual",
-  plenario_virtual: "Plenario Virtual",
+  plenario_virtual: "Plenário Virtual",
 };
 
 function formatDateBR(d: Date): string {
@@ -92,11 +92,11 @@ function formatDateTimeBR(d: Date): string {
 const DIAS_SEMANA_LONGO: Record<number, string> = {
   0: "Domingo",
   1: "Segunda-feira",
-  2: "Terca-feira",
+  2: "Terça-feira",
   3: "Quarta-feira",
   4: "Quinta-feira",
   5: "Sexta-feira",
-  6: "Sabado",
+  6: "Sábado",
 };
 
 function diaSemanaLongo(d: Date): string {
@@ -308,7 +308,7 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
       </Text>
       <Text
         render={({ pageNumber, totalPages }) =>
-          `Pagina ${pageNumber} de ${totalPages}`
+          `Página ${pageNumber} de ${totalPages}`
         }
       />
     </View>
@@ -316,14 +316,14 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
 }
 
 const COLS_JUD = [
-  { key: "numero", label: "N do Processo", width: "16%" },
+  { key: "numero", label: "Nº do Processo", width: "16%" },
   { key: "tipoRecurso", label: "Tipo de Recurso", width: "10%" },
   { key: "relator", label: "Relator", width: "10%" },
-  { key: "orgaoData", label: "Orgao/Data", width: "10%" },
+  { key: "orgaoData", label: "Órgão/Data", width: "10%" },
   { key: "tribunal", label: "Tribunal", width: "6%" },
   { key: "responsavel", label: "Adv.", width: "11%" },
-  { key: "situacao", label: "Situacao", width: "19%" },
-  { key: "providencia", label: "Observacoes/Providencia", width: "18%" },
+  { key: "situacao", label: "Situação", width: "19%" },
+  { key: "providencia", label: "Observações/Providência", width: "18%" },
 ] as const;
 
 const ITEMS_POR_BLOCO = 8;
@@ -516,7 +516,7 @@ function SessaoChunk({
           ({diaSemanaLongo(sessao.data)}, {formatDayMonthBR(sessao.data)}
           {horarioStr}) — {tipoStr}
           {totalBlocos > 1
-            ? ` — parte ${blocoIdx + 1}/${totalBlocos}${isContinuacao ? " (continuacao)" : ""}`
+            ? ` — parte ${blocoIdx + 1}/${totalBlocos}${isContinuacao ? " (continuação)" : ""}`
             : ""}
         </Text>
       </View>
@@ -645,7 +645,7 @@ function ObservacoesGeraisSection({
   if (comObs.length === 0) return null;
   return (
     <View>
-      <Text style={styles.obsGeraisTitulo}>OBSERVACOES GERAIS</Text>
+      <Text style={styles.obsGeraisTitulo}>OBSERVAÇÕES GERAIS</Text>
       {comObs.map((s, i) => (
         <View key={i} style={styles.obsGeraisSessao} wrap={false}>
           <Text style={styles.obsGeraisSessaoTitulo}>
@@ -681,7 +681,7 @@ export function PautaJudicialDocument({
   return (
     <Document
       title={`Pauta da Semana — ${tribunal}`}
-      author="Painel Juridico"
+      author="Painel Jurídico"
     >
       <Page size="A4" orientation="landscape" style={styles.page}>
         <Text style={styles.capaTitulo}>{titulo}</Text>

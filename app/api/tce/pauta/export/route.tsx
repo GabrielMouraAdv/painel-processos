@@ -16,7 +16,7 @@ import {
   parseISODate,
   startOfWeekUTC,
 } from "@/lib/semana";
-import { TCE_TIPO_LABELS } from "@/lib/tce-config";
+import { TCE_TIPO_LABELS_PT } from "@/lib/pdf-pt-br";
 
 function normalizarNome(s: string): string {
   return s
@@ -151,7 +151,7 @@ export async function GET(req: Request) {
       numeroProcesso: it.numeroProcesso,
       tituloProcesso: it.tituloProcesso,
       tipoProcesso: it.processoTce
-        ? TCE_TIPO_LABELS[it.processoTce.tipo]
+        ? TCE_TIPO_LABELS_PT[it.processoTce.tipo]
         : null,
       municipio: it.municipio,
       exercicio: it.exercicio,

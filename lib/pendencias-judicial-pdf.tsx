@@ -244,7 +244,7 @@ function PageFooter({ geradoEm }: { geradoEm: Date }) {
       </Text>
       <Text
         render={({ pageNumber, totalPages }) =>
-          `Pagina ${pageNumber} de ${totalPages}`
+          `Página ${pageNumber} de ${totalPages}`
         }
       />
     </View>
@@ -295,7 +295,7 @@ export function PendenciasJudicialDocument({
 }) {
   const { cards, resumo, geradoEm } = data;
   return (
-    <Document title="Pendencias Judiciais" author="Painel Juridico">
+    <Document title="Pendências Judiciais" author="Painel Jurídico">
       <Page size="A4" style={styles.page}>
         <Text style={styles.capaTitulo}>PENDENCIAS JUDICIAIS</Text>
         <Text style={styles.capaSubtitulo}>

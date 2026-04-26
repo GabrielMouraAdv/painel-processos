@@ -11,11 +11,11 @@ import {
   resolveEmissor,
 } from "@/lib/escritorios-emissores";
 import {
-  faseLabel,
-  grauLabels,
-  riscoLabels,
-  tribunalLabels,
-} from "@/lib/processo-labels";
+  GRAU_LABELS_PT,
+  RISCO_LABELS_PT,
+  faseLabelPt,
+} from "@/lib/pdf-pt-br";
+import { tribunalLabels } from "@/lib/processo-labels";
 import {
   RelatorioGerencialDocument,
   type RelatorioGerencialData,
@@ -94,15 +94,15 @@ export async function GET(req: Request) {
 
   const linhasRisco = porRisco
     .map((row) => ({
-      risco: riscoLabels[row.risco as Risco],
+      risco: RISCO_LABELS_PT[row.risco as Risco],
       total: row._count._all,
     }))
     .sort((a, b) => b.total - a.total);
 
   const linhasFase = porFase
     .map((row) => ({
-      fase: faseLabel(row.fase),
-      grau: grauLabels[row.grau as Grau],
+      fase: faseLabelPt(row.fase),
+      grau: GRAU_LABELS_PT[row.grau as Grau],
       total: row._count._all,
     }))
     .sort((a, b) => b.total - a.total);
@@ -125,13 +125,13 @@ export async function GET(req: Request) {
   const tabelas: TabelaRelatorio[] = [
     {
       titulo: "Por tribunal",
-      descricao: "Distribuicao entre cortes.",
+      descricao: "Distribuição entre cortes.",
       cabecalho: ["Tribunal", "Processos"],
       linhas: linhasTribunal.map((l) => [l.tribunal, String(l.total)]),
     },
     {
       titulo: "Por risco",
-      descricao: "Classificacao de risco.",
+      descricao: "Classificação de risco.",
       cabecalho: ["Risco", "Processos"],
       linhas: linhasRisco.map((l) => [l.risco, String(l.total)]),
     },
@@ -144,14 +144,14 @@ export async function GET(req: Request) {
     {
       titulo: "Por resultado",
       descricao:
-        "Distribuicao de resultados nos processos ja julgados (perspectiva da defesa).",
-      cabecalho: ["Classificacao", "Processos"],
+        "Distribuição de resultados nos processos já julgados (perspectiva da defesa).",
+      cabecalho: ["Classificação", "Processos"],
       linhas: [
-        ["Favoraveis", String(julgFavoravel)],
+        ["Favoráveis", String(julgFavoravel)],
         ["Parciais (ressalvas)", String(julgParcial)],
-        ["Desfavoraveis", String(julgDesfavoravel)],
+        ["Desfavoráveis", String(julgDesfavoravel)],
         ["Neutros", String(julgNeutro)],
-        ["Nao julgados", String(naoJulgados)],
+        ["Não julgados", String(naoJulgados)],
         ["Total julgados", String(totalJulgados)],
       ],
     },
