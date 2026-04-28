@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { CamaraTce, Role, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { prisma } from "@/lib/prisma";
 import { TCE_RECURSO_CODE } from "@/lib/tce-config";
 
@@ -35,6 +36,7 @@ export default async function TcePrazosPage({
     Object.values(CamaraTce),
     asString(searchParams.camara),
   );
+  const bancasFiltro = parseBancasParam(searchParams.banca);
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -44,6 +46,9 @@ export default async function TcePrazosPage({
     ...(municipioId && { municipioId }),
     ...(camara && { camara }),
     ...(numero && { numero: { contains: numero, mode: "insensitive" } }),
+    ...(bancasFiltro.length > 0 && {
+      bancasSlug: { hasSome: bancasFiltro },
+    }),
   };
 
   const where: Prisma.PrazoTceWhereInput = {
@@ -84,6 +89,7 @@ export default async function TcePrazosPage({
               numero: true,
               tipo: true,
               camara: true,
+              bancasSlug: true,
               municipio: { select: { id: true, nome: true, uf: true } },
               interessados: {
                 include: { gestor: { select: { nome: true } } },
@@ -102,12 +108,14 @@ export default async function TcePrazosPage({
               id: true,
               numero: true,
               tipoRecurso: true,
+              bancasSlug: true,
               processoPai: {
                 select: {
                   id: true,
                   numero: true,
                   tipo: true,
                   camara: true,
+                  bancasSlug: true,
                   municipio: { select: { id: true, nome: true, uf: true } },
                   interessados: {
                     include: { gestor: { select: { nome: true } } },
@@ -191,6 +199,7 @@ export default async function TcePrazosPage({
         numero: p.processo.numero,
         tipo: p.processo.tipo,
         camara: p.processo.camara,
+        bancasSlug: p.processo.bancasSlug,
         municipio: p.processo.municipio,
         interessados: p.processo.interessados.map((i) => ({
           nome: i.gestor.nome,
@@ -223,6 +232,10 @@ export default async function TcePrazosPage({
           numero: p.subprocesso.processoPai.numero,
           tipo: p.subprocesso.processoPai.tipo,
           camara: p.subprocesso.processoPai.camara,
+          bancasSlug:
+            p.subprocesso.bancasSlug.length > 0
+              ? p.subprocesso.bancasSlug
+              : p.subprocesso.processoPai.bancasSlug,
           municipio: p.subprocesso.processoPai.municipio,
           interessados: p.subprocesso.processoPai.interessados.map((i) => ({
             nome: i.gestor.nome,

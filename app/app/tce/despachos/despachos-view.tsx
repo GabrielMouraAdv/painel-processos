@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { CamaraTce, type TipoProcessoTce } from "@prisma/client";
 
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -53,6 +55,7 @@ export type DespachoCard = {
   numero: string;
   tipo: TipoProcessoTce;
   camara: CamaraTce;
+  bancasSlug: string[];
   faseAtual: string;
   exercicio: string | null;
   relator: string | null;
@@ -322,6 +325,9 @@ export function DespachosView({
               Limpar
             </Button>
           )}
+          <div className="w-full">
+            <BancaFilter />
+          </div>
         </CardContent>
       </Card>
 
@@ -570,6 +576,7 @@ function DespachoCardComponent({
                 {card.subprocesso.tipoRecursoCode}
               </span>
             )}
+            <BancaBadgeList slugs={card.bancasSlug} max={3} />
           </p>
           <p className="text-xs opacity-95">
             {TCE_TIPO_LABELS[card.tipo]}

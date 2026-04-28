@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CamaraTce, TipoProcessoTce } from "@prisma/client";
 import { ListChecks, Plus, Trash2 } from "lucide-react";
 
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +69,7 @@ export type PrazoTceRow = {
     numero: string;
     tipo: TipoProcessoTce;
     camara: CamaraTce;
+    bancasSlug: string[];
     municipio: { id: string; nome: string; uf: string } | null;
     interessados: { nome: string }[];
   };
@@ -135,6 +138,7 @@ export function PrazosTceView({
   initialFilters,
 }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [filters, setFilters] = React.useState(initialFilters);
   const [numeroDraft, setNumeroDraft] = React.useState(initialFilters.numero);
@@ -171,14 +175,18 @@ export function PrazosTceView({
 
   function applyFilters(next: Filters) {
     setFilters(next);
-    const params = new URLSearchParams();
-    if (next.advogadoRespId)
-      params.set("advogadoRespId", next.advogadoRespId);
-    if (next.tipo) params.set("tipo", next.tipo);
-    if (next.municipioId) params.set("municipioId", next.municipioId);
-    if (next.status) params.set("status", next.status);
-    if (next.camara) params.set("camara", next.camara);
-    if (next.numero) params.set("numero", next.numero);
+    // Preserva params extras (ex.: banca) ao reescrever a query string
+    const params = new URLSearchParams(searchParams.toString());
+    const setOrDel = (key: string, value: string) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    };
+    setOrDel("advogadoRespId", next.advogadoRespId);
+    setOrDel("tipo", next.tipo);
+    setOrDel("municipioId", next.municipioId);
+    setOrDel("status", next.status);
+    setOrDel("camara", next.camara);
+    setOrDel("numero", next.numero);
     const qs = params.toString();
     router.push(qs ? `/app/tce/prazos?${qs}` : "/app/tce/prazos");
   }
@@ -550,6 +558,9 @@ export function PrazosTceView({
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             Limpar filtros
           </Button>
+          <div className="w-full">
+            <BancaFilter />
+          </div>
         </CardContent>
       </Card>
 
@@ -769,6 +780,9 @@ function PrazoTceCard({
           {" • "}
           <span>{TCE_TIPO_LABELS[prazo.processo.tipo]}</span>
         </p>
+        <div className="mt-1">
+          <BancaBadgeList slugs={prazo.processo.bancasSlug} max={3} />
+        </div>
         {prazo.subprocesso && (
           <p className="text-[11px] italic text-muted-foreground">
             Recurso vinculado ao processo{" "}

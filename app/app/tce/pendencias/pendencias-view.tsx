@@ -16,6 +16,8 @@ import {
   StickyNote,
 } from "lucide-react";
 
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -184,6 +186,9 @@ export function PendenciasView({
               Limpar filtros
             </Button>
           )}
+          <div className="w-full">
+            <BancaFilter />
+          </div>
           <p className="ml-auto text-xs text-muted-foreground">
             {cardsFiltrados.length} processo
             {cardsFiltrados.length === 1 ? "" : "s"} no recorte
@@ -407,6 +412,7 @@ function ProcessoCardComponent({
             <span className="rounded bg-brand-navy/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-navy">
               {CAMARA_LABEL[processo.camara]}
             </span>
+            <BancaBadgeList slugs={processo.bancasSlug} max={3} />
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {TCE_TIPO_LABELS[processo.tipo]}

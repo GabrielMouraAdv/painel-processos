@@ -52,6 +52,7 @@ export type ProcessoComPendencias = {
   faseAtual: string;
   relator: string | null;
   municipio: { nome: string; uf: string } | null;
+  bancasSlug: string[];
   notaTecnica: boolean;
   parecerMpco: boolean;
   memorialPronto: boolean;

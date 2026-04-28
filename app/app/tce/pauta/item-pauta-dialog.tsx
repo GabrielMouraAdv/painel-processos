@@ -32,7 +32,11 @@ export type ItemPautaInitial = {
   retiradoDePauta: boolean;
   pedidoVistas: boolean;
   conselheiroVistas: string | null;
-  processoTce: { id: string; numero: string } | null;
+  processoTce: {
+    id: string;
+    numero: string;
+    bancasSlug?: string[];
+  } | null;
 };
 
 export type ProcessoTceOption = {

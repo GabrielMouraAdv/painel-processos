@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { prisma } from "@/lib/prisma";
 import {
   CONSELHEIROS_SUBSTITUTOS,
@@ -11,9 +12,15 @@ import {
 
 import { DespachosView, type DespachoCard } from "./despachos-view";
 
-export default async function DespachosTcePage() {
+export default async function DespachosTcePage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
+
+  const bancasFiltro = parseBancasParam(searchParams.banca);
 
   const [processos, subprocessos, todosProcessos, advogados] = await Promise.all([
     prisma.processoTce.findMany({
@@ -24,6 +31,9 @@ export default async function DespachosTcePage() {
           { despachadoComRelator: true },
           { incluidoNoDespacho: true },
         ],
+        ...(bancasFiltro.length > 0 && {
+          bancasSlug: { hasSome: bancasFiltro },
+        }),
       },
       orderBy: [
         { despachadoComRelator: "asc" },
@@ -44,7 +54,12 @@ export default async function DespachosTcePage() {
     }),
     prisma.subprocessoTce.findMany({
       where: {
-        processoPai: { escritorioId },
+        processoPai: {
+          escritorioId,
+          ...(bancasFiltro.length > 0 && {
+            bancasSlug: { hasSome: bancasFiltro },
+          }),
+        },
         OR: [
           { memorialPronto: true },
           { despachadoComRelator: true },
@@ -62,6 +77,7 @@ export default async function DespachosTcePage() {
             numero: true,
             tipo: true,
             camara: true,
+            bancasSlug: true,
             municipio: { select: { id: true, nome: true, uf: true } },
             interessados: {
               include: { gestor: { select: { id: true, nome: true } } },
@@ -95,6 +111,7 @@ export default async function DespachosTcePage() {
     numero: p.numero,
     tipo: p.tipo,
     camara: p.camara,
+    bancasSlug: p.bancasSlug,
     faseAtual: p.faseAtual,
     exercicio: p.exercicio,
     relator: p.relator,
@@ -141,6 +158,8 @@ export default async function DespachosTcePage() {
     numero: sp.numero,
     tipo: sp.processoPai.tipo,
     camara: sp.processoPai.camara,
+    bancasSlug:
+      sp.bancasSlug.length > 0 ? sp.bancasSlug : sp.processoPai.bancasSlug,
     faseAtual: sp.fase,
     exercicio: null,
     relator: sp.relator,

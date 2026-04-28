@@ -17,6 +17,7 @@ import {
   UserCheck,
 } from "lucide-react";
 
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,6 +27,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 import {
@@ -114,7 +116,13 @@ export default async function TceDashboardPage({
   em15Corridos.setDate(em15Corridos.getDate() + 15);
   em15Corridos.setHours(23, 59, 59, 999);
 
-  const base = { escritorioId } as const;
+  const bancasFiltro = parseBancasParam(searchParams.banca);
+  const base = {
+    escritorioId,
+    ...(bancasFiltro.length > 0 && {
+      bancasSlug: { hasSome: bancasFiltro },
+    }),
+  };
 
   const [
     total,
@@ -397,6 +405,10 @@ export default async function TceDashboardPage({
           Visao consolidada dos processos do Tribunal de Contas.
         </p>
       </header>
+
+      <div className="rounded-lg border bg-white px-4 py-3 shadow-sm">
+        <BancaFilter />
+      </div>
 
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
         {kpis.map((k) => {

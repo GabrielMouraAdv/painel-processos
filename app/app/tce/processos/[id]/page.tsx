@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +38,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { AndamentoTceForm } from "./andamento-tce-form";
+import { BancasSection } from "./bancas-section";
 import {
   InteressadosTceManager,
   type InteressadoItem,
@@ -253,7 +255,12 @@ export default async function ProcessoTceDetailPage({
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-xs text-muted-foreground">{processo.numero}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-mono text-xs text-muted-foreground">
+              {processo.numero}
+            </p>
+            <BancaBadgeList slugs={processo.bancasSlug} size="sm" />
+          </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-brand-navy md:text-3xl">
             {TCE_TIPO_LABELS[processo.tipo]}
           </h1>
@@ -325,6 +332,11 @@ export default async function ProcessoTceDetailPage({
           </CardContent>
         </Card>
       )}
+
+      <BancasSection
+        processoId={processo.id}
+        initialBancas={processo.bancasSlug}
+      />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>

@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { CamaraTce, Role, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { prisma } from "@/lib/prisma";
 import {
   endOfWeekUTC,
@@ -41,6 +42,7 @@ export default async function PautaTcePage({
   const relator = asString(searchParams.relator).trim();
   const advogadoResp = asString(searchParams.advogadoResp).trim();
   const q = asString(searchParams.q).trim();
+  const bancasFiltro = parseBancasParam(searchParams.banca);
 
   const itemFilter: Prisma.ItemPautaWhereInput = {
     ...(relator && {
@@ -56,9 +58,12 @@ export default async function PautaTcePage({
         { tituloProcesso: { contains: q, mode: "insensitive" } },
       ],
     }),
+    ...(bancasFiltro.length > 0 && {
+      processoTce: { bancasSlug: { hasSome: bancasFiltro } },
+    }),
   };
 
-  const temFiltroItem = !!(relator || advogadoResp || q);
+  const temFiltroItem = !!(relator || advogadoResp || q || bancasFiltro.length > 0);
 
   const where: Prisma.SessaoPautaWhereInput = {
     escritorioId,
@@ -77,7 +82,9 @@ export default async function PautaTcePage({
             where: temFiltroItem ? itemFilter : undefined,
             orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
             include: {
-              processoTce: { select: { id: true, numero: true } },
+              processoTce: {
+                select: { id: true, numero: true, bancasSlug: true },
+              },
             },
           },
         },
@@ -124,7 +131,11 @@ export default async function PautaTcePage({
       pedidoVistas: i.pedidoVistas,
       conselheiroVistas: i.conselheiroVistas,
       processoTce: i.processoTce
-        ? { id: i.processoTce.id, numero: i.processoTce.numero }
+        ? {
+            id: i.processoTce.id,
+            numero: i.processoTce.numero,
+            bancasSlug: i.processoTce.bancasSlug,
+          }
         : null,
       ordem: i.ordem,
     })),

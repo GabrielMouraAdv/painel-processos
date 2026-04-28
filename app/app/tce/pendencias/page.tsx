@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 import {
@@ -12,9 +13,14 @@ import {
 
 import { PendenciasView } from "./pendencias-view";
 
-export default async function PendenciasTcePage() {
+export default async function PendenciasTcePage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
+  const bancasFiltro = parseBancasParam(searchParams.banca);
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -24,7 +30,12 @@ export default async function PendenciasTcePage() {
 
   const [processos, advogados] = await Promise.all([
     prisma.processoTce.findMany({
-      where: { escritorioId },
+      where: {
+        escritorioId,
+        ...(bancasFiltro.length > 0 && {
+          bancasSlug: { hasSome: bancasFiltro },
+        }),
+      },
       orderBy: [{ dataAutuacao: "desc" }],
       include: {
         municipio: { select: { nome: true, uf: true } },
@@ -214,6 +225,7 @@ export default async function PendenciasTcePage() {
         faseAtual: p.faseAtual,
         relator: p.relator,
         municipio: p.municipio,
+        bancasSlug: p.bancasSlug,
         notaTecnica: p.notaTecnica,
         parecerMpco: p.parecerMpco,
         memorialPronto: p.memorialPronto,

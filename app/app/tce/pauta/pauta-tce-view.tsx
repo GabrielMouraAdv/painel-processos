@@ -4,6 +4,9 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CamaraTce } from "@prisma/client";
+
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import {
   CalendarRange,
   ChevronLeft,
@@ -175,6 +178,10 @@ export function PautaTceView({
   const [itemPending, setItemPending] = React.useState(false);
 
   function pushWithFilters(next: Filters, week?: string) {
+    // Preserva params extras (ex.: banca) ao reconstruir a query string
+    const current = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : "",
+    );
     const params = new URLSearchParams();
     if (week) params.set("semana", week);
     else params.set("semana", weekStart);
@@ -182,6 +189,8 @@ export function PautaTceView({
     if (next.relator) params.set("relator", next.relator);
     if (next.advogadoResp) params.set("advogadoResp", next.advogadoResp);
     if (next.q) params.set("q", next.q);
+    const banca = current.get("banca");
+    if (banca) params.set("banca", banca);
     router.push(`/app/tce/pauta?${params.toString()}`);
   }
 
@@ -466,6 +475,9 @@ export function PautaTceView({
               Limpar filtros
             </Button>
           )}
+          <div className="w-full">
+            <BancaFilter />
+          </div>
         </CardContent>
       </Card>
 
@@ -764,6 +776,14 @@ function SessaoCard({
                           <p className="text-[11px] text-slate-700">
                             {item.tituloProcesso}
                           </p>
+                        )}
+                        {item.processoTce?.bancasSlug && (
+                          <div className="mt-1">
+                            <BancaBadgeList
+                              slugs={item.processoTce.bancasSlug}
+                              max={3}
+                            />
+                          </div>
                         )}
                         {item.processoTce && (
                           <Link

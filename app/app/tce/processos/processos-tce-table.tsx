@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { CamaraTce, TipoProcessoTce } from "@prisma/client";
 import { Ban, Check, X } from "lucide-react";
 
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import {
   Table,
   TableBody,
@@ -38,6 +39,7 @@ export type ProcessoTceRow = {
   camara: CamaraTce;
   relator: string | null;
   faseAtual: string;
+  bancasSlug: string[];
   notaTecnica: boolean;
   parecerMpco: boolean;
   despachadoComRelator: boolean;
@@ -142,6 +144,9 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
               <TableHead className={cn(headBase, "md:w-[110px]")}>
                 Numero
               </TableHead>
+              <TableHead className={cn(headBase, "md:w-[80px]")}>
+                Banca
+              </TableHead>
               <TableHead className={cn(headBase, "md:w-[130px]")}>
                 Municipio
               </TableHead>
@@ -224,6 +229,9 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                   )}
                 >
                   {p.numero}
+                </TableCell>
+                <TableCell className={cellBase}>
+                  <BancaBadgeList slugs={p.bancasSlug} max={2} />
                 </TableCell>
                 <TableCell className={cellBase}>
                   {p.municipio?.nome ?? (

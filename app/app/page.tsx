@@ -3,13 +3,25 @@ import { getServerSession } from "next-auth";
 import { ArrowRight, BarChart3, Landmark, Scale } from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 import { fasesEmPauta } from "@/lib/processo-labels";
 
-export default async function ModuloHomePage() {
+export default async function ModuloHomePage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
+  const bancasFiltro = parseBancasParam(searchParams.banca);
+  const tceBase: { escritorioId: string; bancasSlug?: { hasSome: string[] } } = {
+    escritorioId,
+    ...(bancasFiltro.length > 0 && {
+      bancasSlug: { hasSome: bancasFiltro },
+    }),
+  };
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -66,27 +78,27 @@ export default async function ModuloHomePage() {
         processo: { escritorioId },
       },
     }),
-    prisma.processoTce.count({ where: { escritorioId } }),
+    prisma.processoTce.count({ where: tceBase }),
     prisma.prazoTce.count({
-      where: { cumprido: false, dispensado: false, processo: { escritorioId } },
+      where: { cumprido: false, dispensado: false, processo: tceBase },
     }),
     prisma.processoTce.count({
       where: {
-        escritorioId,
+        ...tceBase,
         notaTecnica: true,
         contrarrazoesNtApresentadas: false,
       },
     }),
     prisma.processoTce.count({
       where: {
-        escritorioId,
+        ...tceBase,
         parecerMpco: true,
         contrarrazoesMpcoApresentadas: false,
       },
     }),
     prisma.processoTce.count({
       where: {
-        escritorioId,
+        ...tceBase,
         memorialPronto: false,
         memorialDispensado: false,
         faseAtual: { notIn: ["transitado", "transitado_cautelar"] },
@@ -94,7 +106,7 @@ export default async function ModuloHomePage() {
     }),
     prisma.processoTce.count({
       where: {
-        escritorioId,
+        ...tceBase,
         memorialPronto: true,
         despachadoComRelator: false,
         despachoDispensado: false,
@@ -104,7 +116,7 @@ export default async function ModuloHomePage() {
       where: {
         cumprido: false,
         dispensado: false,
-        processo: { escritorioId },
+        processo: tceBase,
         dataVencimento: { lte: em15 },
       },
       select: { dataVencimento: true },
@@ -115,7 +127,7 @@ export default async function ModuloHomePage() {
     where: {
       cumprido: false,
       dispensado: false,
-      subprocesso: { processoPai: { escritorioId } },
+      subprocesso: { processoPai: tceBase },
       dataVencimento: { lte: em15 },
     },
     select: { dataVencimento: true },

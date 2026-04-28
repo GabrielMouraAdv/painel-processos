@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { diasUteisRestantes } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 
@@ -48,6 +49,7 @@ export default async function TceProcessosPage({
   const contrarrazoesFiltro = asString(searchParams.contrarrazoes);
   const pautaFiltro = asString(searchParams.pauta) === "1";
   const julgamentoFiltro = asString(searchParams.julgamento);
+  const bancasFiltro = parseBancasParam(searchParams.banca);
 
   const where: Prisma.ProcessoTceWhereInput = {
     escritorioId,
@@ -56,6 +58,9 @@ export default async function TceProcessosPage({
     ...(relator && { relator }),
     ...(municipioId && { municipioId }),
     ...(fase && { faseAtual: fase }),
+    ...(bancasFiltro.length > 0 && {
+      bancasSlug: { hasSome: bancasFiltro },
+    }),
     ...(interessadoId && {
       interessados: { some: { gestorId: interessadoId } },
     }),
@@ -182,6 +187,7 @@ export default async function TceProcessosPage({
       camara: p.camara,
       relator: p.relator,
       faseAtual: p.faseAtual,
+      bancasSlug: p.bancasSlug,
       notaTecnica: p.notaTecnica,
       parecerMpco: p.parecerMpco,
       despachadoComRelator: p.despachadoComRelator,
