@@ -1,7 +1,26 @@
 // Helpers do modulo financeiro: status de notas, geracao automatica e permissoes.
 // Status nao e armazenado no banco — calculado em runtime a partir de pago + dataVencimento.
+//
+// IMPORTANTE: NAO importamos `StatusNota` do `@prisma/client` aqui.
+// O enum runtime do Prisma nao e confiavel em client components (o bundler
+// pode entregar objeto vazio em alguns setups, fazendo `StatusNota.VENCIDA`
+// virar `undefined.VENCIDA`). Usamos constantes locais de string ao inves.
 
-import { Role, StatusNota } from "@prisma/client";
+import { Role } from "@prisma/client";
+
+// ---------- Constantes de status (substitui o enum StatusNota do Prisma) ----------
+export const STATUS_NOTA = {
+  A_VENCER: "A_VENCER",
+  PAGA: "PAGA",
+  VENCIDA: "VENCIDA",
+  EM_ATRASO: "EM_ATRASO",
+} as const;
+
+export type StatusNotaT =
+  | "A_VENCER"
+  | "PAGA"
+  | "VENCIDA"
+  | "EM_ATRASO";
 
 const FINANCEIRO_BANCAS_AUTORIZADAS = new Set([
   "filipe-campos",
@@ -26,12 +45,12 @@ export type NotaParaStatus = {
 export function computeStatusNota(
   nota: NotaParaStatus,
   hoje: Date = new Date(),
-): StatusNota {
-  if (nota.pago) return StatusNota.PAGA;
+): StatusNotaT {
+  if (nota.pago) return STATUS_NOTA.PAGA;
   const ref = stripTime(hoje);
   const venc = stripTime(nota.dataVencimento);
-  if (venc.getTime() >= ref.getTime()) return StatusNota.A_VENCER;
-  return StatusNota.VENCIDA;
+  if (venc.getTime() >= ref.getTime()) return STATUS_NOTA.A_VENCER;
+  return STATUS_NOTA.VENCIDA;
 }
 
 export function diasEmAtraso(
@@ -185,37 +204,42 @@ export const TIPO_HONORARIO_LABELS = {
   OUTROS: "Outros",
 } as const;
 
-export const STATUS_NOTA_LABELS = {
+export const STATUS_NOTA_LABELS: Record<StatusNotaT, string> = {
   A_VENCER: "A Vencer",
   PAGA: "Paga",
   VENCIDA: "Vencida",
   EM_ATRASO: "Em Atraso",
-} as const;
+};
 
-// Classes Tailwind por status (cores das caixinhas mensais)
-export function statusBgClass(status: StatusNota | "SEM_NOTA"): string {
-  switch (status) {
-    case StatusNota.PAGA:
-      return "bg-emerald-500 text-white hover:bg-emerald-600";
-    case StatusNota.A_VENCER:
-      return "bg-amber-400 text-amber-950 hover:bg-amber-500";
-    case StatusNota.VENCIDA:
-    case StatusNota.EM_ATRASO:
-      return "bg-red-500 text-white hover:bg-red-600";
-    case "SEM_NOTA":
-    default:
-      return "bg-slate-200 text-slate-500 hover:bg-slate-300";
-  }
+// Classes Tailwind por status (cores das caixinhas mensais).
+// Usa fallback "SEM_NOTA" quando status for null/undefined ou desconhecido.
+const BG_CLASS_BY_STATUS: Record<StatusNotaT | "SEM_NOTA", string> = {
+  PAGA: "bg-emerald-500 text-white hover:bg-emerald-600",
+  A_VENCER: "bg-amber-400 text-amber-950 hover:bg-amber-500",
+  VENCIDA: "bg-red-500 text-white hover:bg-red-600",
+  EM_ATRASO: "bg-red-500 text-white hover:bg-red-600",
+  SEM_NOTA: "bg-slate-200 text-slate-500 hover:bg-slate-300",
+};
+
+export function statusBgClass(
+  status: StatusNotaT | "SEM_NOTA" | null | undefined,
+): string {
+  if (!status) return BG_CLASS_BY_STATUS.SEM_NOTA;
+  return BG_CLASS_BY_STATUS[status] ?? BG_CLASS_BY_STATUS.SEM_NOTA;
 }
 
-export function statusBadgeClass(status: StatusNota): string {
-  switch (status) {
-    case StatusNota.PAGA:
-      return "bg-emerald-100 text-emerald-800 ring-emerald-200";
-    case StatusNota.A_VENCER:
-      return "bg-amber-100 text-amber-900 ring-amber-200";
-    case StatusNota.VENCIDA:
-    case StatusNota.EM_ATRASO:
-      return "bg-red-100 text-red-800 ring-red-200";
-  }
+const BADGE_CLASS_BY_STATUS: Record<StatusNotaT, string> = {
+  PAGA: "bg-emerald-100 text-emerald-800 ring-emerald-200",
+  A_VENCER: "bg-amber-100 text-amber-900 ring-amber-200",
+  VENCIDA: "bg-red-100 text-red-800 ring-red-200",
+  EM_ATRASO: "bg-red-100 text-red-800 ring-red-200",
+};
+
+export function statusBadgeClass(
+  status: StatusNotaT | null | undefined,
+): string {
+  if (!status) return "bg-slate-100 text-slate-700 ring-slate-200";
+  return (
+    BADGE_CLASS_BY_STATUS[status] ?? "bg-slate-100 text-slate-700 ring-slate-200"
+  );
 }

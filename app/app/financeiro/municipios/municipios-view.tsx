@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { StatusNota } from "@prisma/client";
 import { Plus, Receipt } from "lucide-react";
 
 import { BancaBadgeList } from "@/components/bancas/banca-badge";
@@ -21,7 +20,9 @@ import {
   diasEmAtraso,
   formatBRL,
   NOMES_MESES,
+  STATUS_NOTA,
   statusBgClass,
+  type StatusNotaT,
 } from "@/lib/financeiro";
 import { cn } from "@/lib/utils";
 
@@ -216,9 +217,9 @@ function ContratoCardView({ ano, card, hoje, onClickMes }: ContratoCardProps) {
       { pago: n.pago, dataVencimento: new Date(n.dataVencimento) },
       hoje,
     );
-    if (status === StatusNota.PAGA) {
+    if (status === STATUS_NOTA.PAGA) {
       recebido += n.valorPago ?? n.valorNota;
-    } else if (status === StatusNota.A_VENCER) {
+    } else if (status === STATUS_NOTA.A_VENCER) {
       aberto += n.valorNota;
     } else {
       atraso += n.valorNota;
@@ -244,7 +245,7 @@ function ContratoCardView({ ano, card, hoje, onClickMes }: ContratoCardProps) {
         {NOMES_MESES.map((label, idx) => {
           const mes = idx + 1;
           const nota = notaPorMes.get(mes) ?? null;
-          let status: StatusNota | "SEM_NOTA" = "SEM_NOTA";
+          let status: StatusNotaT | "SEM_NOTA" = "SEM_NOTA";
           if (nota) {
             status = computeStatusNota(
               { pago: nota.pago, dataVencimento: new Date(nota.dataVencimento) },
@@ -256,9 +257,9 @@ function ContratoCardView({ ano, card, hoje, onClickMes }: ContratoCardProps) {
             : 0;
           const title = nota
             ? `${label}/${ano} — ${formatBRL(nota.valorNota)}${
-                status === StatusNota.PAGA
+                status === STATUS_NOTA.PAGA
                   ? " (PAGA)"
-                  : status === StatusNota.A_VENCER
+                  : status === STATUS_NOTA.A_VENCER
                     ? " (a vencer)"
                     : ` (vencida ${dias}d)`
               }`
@@ -275,7 +276,7 @@ function ContratoCardView({ ano, card, hoje, onClickMes }: ContratoCardProps) {
               )}
             >
               <span>{label}</span>
-              {nota && status !== StatusNota.PAGA && (
+              {nota && status !== STATUS_NOTA.PAGA && (
                 <span className="text-[8px] opacity-90">
                   {nota.dataVencimento.slice(8, 10)}/{nota.dataVencimento.slice(5, 7)}
                 </span>

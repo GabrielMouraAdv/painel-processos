@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { StatusNota } from "@prisma/client";
 import {
   ArrowLeft,
   ArrowRight,
@@ -25,6 +24,7 @@ import {
   computeStatusNota,
   formatBRL,
   podeAcessarFinanceiro,
+  STATUS_NOTA,
 } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 import { TCE_CAMARA_LABELS, TCE_TIPO_LABELS, faseTceLabel } from "@/lib/tce-config";
@@ -326,9 +326,9 @@ async function StatusFinanceiroCard({
       { pago: n.pago, dataVencimento: n.dataVencimento },
       hoje,
     );
-    if (status === StatusNota.PAGA) {
+    if (status === STATUS_NOTA.PAGA) {
       recebido += n.valorPago ? Number(n.valorPago) : v;
-    } else if (status === StatusNota.A_VENCER) {
+    } else if (status === STATUS_NOTA.A_VENCER) {
       aberto += v;
     } else {
       atraso += v;

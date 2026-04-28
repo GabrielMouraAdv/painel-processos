@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { StatusNota } from "@prisma/client";
 import { AlertCircle, Building2, FileText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 import { BANCAS, parseBancasParam } from "@/lib/bancas";
@@ -10,6 +9,7 @@ import {
   computeStatusNota,
   diasEmAtraso,
   formatBRL,
+  STATUS_NOTA,
 } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 
@@ -94,7 +94,7 @@ export default async function FinanceiroDashboardPage({
     );
     const slugs = n.contrato.bancasSlug;
 
-    if (status === StatusNota.PAGA) {
+    if (status === STATUS_NOTA.PAGA) {
       totalRecebido += valorPago > 0 ? valorPago : valor;
       for (const s of slugs) {
         const cur = bancaStats.get(s) ?? {
@@ -106,7 +106,7 @@ export default async function FinanceiroDashboardPage({
         cur.recebido += valorPago > 0 ? valorPago : valor;
         bancaStats.set(s, cur);
       }
-    } else if (status === StatusNota.A_VENCER) {
+    } else if (status === STATUS_NOTA.A_VENCER) {
       totalAReceber += valor;
       for (const s of slugs) {
         const cur = bancaStats.get(s) ?? {
@@ -156,7 +156,7 @@ export default async function FinanceiroDashboardPage({
         computeStatusNota(
           { pago: n.pago, dataVencimento: n.dataVencimento },
           hoje,
-        ) === StatusNota.VENCIDA,
+        ) === STATUS_NOTA.VENCIDA,
     )
     .sort(
       (a, b) =>
