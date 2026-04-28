@@ -6,14 +6,17 @@ import {
   CalendarClock,
   CalendarRange,
   ClipboardCheck,
+  DollarSign,
   Gavel,
   Home,
   Landmark,
   LayoutDashboard,
+  Receipt,
   Scale,
   Search,
   UserCheck,
   Users,
+  Wallet,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -39,6 +42,7 @@ type Props = {
   pautasJudiciaisTotal?: number;
   alertasMonitoramento?: number;
   despachosTcePendentes?: number;
+  podeFinanceiro?: boolean;
   onOpenSearch?: () => void;
 };
 
@@ -49,9 +53,22 @@ export function Sidebar({
   pautasJudiciaisTotal = 0,
   alertasMonitoramento = 0,
   despachosTcePendentes = 0,
+  podeFinanceiro = false,
   onOpenSearch,
 }: Props) {
   const groups: NavGroup[] = [
+    ...(podeFinanceiro
+      ? [
+          {
+            title: "Financeiro",
+            items: [
+              { label: "Dashboard Financeiro", href: "/app/financeiro", icon: DollarSign },
+              { label: "Honorarios Municipais", href: "/app/financeiro/municipios", icon: Receipt },
+              { label: "Honorarios Pessoais", href: "/app/financeiro/pessoas-fisicas", icon: Wallet },
+            ],
+          } as NavGroup,
+        ]
+      : []),
     {
       title: "Tribunal de Contas",
       items: [

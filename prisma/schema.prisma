@@ -68,6 +68,25 @@ enum TipoInteressado {
   PESSOA_JURIDICA
 }
 
+enum TipoCliente {
+  MUNICIPIO
+  PESSOA_FISICA
+}
+
+enum StatusNota {
+  A_VENCER
+  PAGA
+  VENCIDA
+  EM_ATRASO
+}
+
+enum TipoHonorario {
+  CONTRATUAL_MENSAL
+  POR_CAUSA
+  SUCUMBENCIA
+  OUTROS
+}
+
 model Escritorio {
   id        String   @id @default(cuid())
   nome      String
@@ -318,8 +337,74 @@ model Municipio {
   processosTce       ProcessoTce[]     @relation("MunicipioProcessos")
   gestoes            HistoricoGestao[]
   gestoresVinculados GestorMunicipio[]
+  contratos          ContratoMunicipal[]
 
   @@index([escritorioId])
+}
+
+model ContratoMunicipal {
+  id           String    @id @default(cuid())
+  municipioId  String
+  bancasSlug   String[]  @default([])
+  valorMensal  Decimal   @db.Decimal(15, 2)
+  dataInicio   DateTime
+  dataFim      DateTime?
+  ativo        Boolean   @default(true)
+  observacoes  String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  municipio Municipio    @relation(fields: [municipioId], references: [id], onDelete: Cascade)
+  notas     NotaFiscal[]
+
+  @@index([municipioId])
+  @@index([ativo])
+}
+
+model NotaFiscal {
+  id              String    @id @default(cuid())
+  contratoId      String
+  numeroNota      String?
+  dataEmissao     DateTime?
+  mesReferencia   Int
+  anoReferencia   Int
+  valorNota       Decimal   @db.Decimal(15, 2)
+  dataVencimento  DateTime
+  pago            Boolean   @default(false)
+  dataPagamento   DateTime?
+  valorPago       Decimal?  @db.Decimal(15, 2)
+  observacoes     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  contrato ContratoMunicipal @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+
+  @@index([contratoId])
+  @@index([anoReferencia, mesReferencia])
+  @@index([dataVencimento])
+  @@index([pago])
+}
+
+model HonorarioPessoal {
+  id              String        @id @default(cuid())
+  clienteNome     String
+  clienteCpf      String?
+  bancasSlug      String[]      @default([])
+  tipoHonorario   TipoHonorario
+  descricaoCausa  String        @db.Text
+  valorTotal      Decimal       @db.Decimal(15, 2)
+  dataContrato    DateTime
+  dataVencimento  DateTime?
+  pago            Boolean       @default(false)
+  dataPagamento   DateTime?
+  valorPago       Decimal?      @db.Decimal(15, 2)
+  observacoes     String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([tipoHonorario])
+  @@index([pago])
+  @@index([dataContrato])
 }
 
 model HistoricoGestao {

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { AppShell } from "@/components/app-shell";
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
+import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 import { endOfWeekUTC, startOfWeekUTC } from "@/lib/semana";
 
@@ -95,6 +96,10 @@ export default async function AppLayout({
       pautasJudiciaisTotal={pautasJudiciaisTotal}
       alertasMonitoramento={movsNaoLidas + pubsNaoLidas}
       despachosTcePendentes={despachosTcePendentes}
+      podeFinanceiro={podeAcessarFinanceiro(
+        session.user.role,
+        session.user.bancaSlug ?? null,
+      )}
     >
       {children}
     </AppShell>

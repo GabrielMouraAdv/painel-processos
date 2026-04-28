@@ -1,8 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { ArrowLeft, Building2, MapPin, UserCheck } from "lucide-react";
+import { StatusNota } from "@prisma/client";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  DollarSign,
+  MapPin,
+  UserCheck,
+} from "lucide-react";
 
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,6 +21,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { authOptions } from "@/lib/auth";
+import {
+  computeStatusNota,
+  formatBRL,
+  podeAcessarFinanceiro,
+} from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 import { TCE_CAMARA_LABELS, TCE_TIPO_LABELS, faseTceLabel } from "@/lib/tce-config";
 
@@ -115,6 +129,13 @@ export default async function MunicipioDetailPage({
             {municipio.observacoes}
           </CardContent>
         </Card>
+      )}
+
+      {podeAcessarFinanceiro(
+        session!.user.role,
+        session!.user.bancaSlug ?? null,
+      ) && (
+        <StatusFinanceiroCard municipioId={municipio.id} />
       )}
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.3fr]">
@@ -259,5 +280,128 @@ function ProcessoList({
         </li>
       ))}
     </ul>
+  );
+}
+
+async function StatusFinanceiroCard({
+  municipioId,
+}: {
+  municipioId: string;
+}) {
+  const anoAtual = new Date().getFullYear();
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const contratoAtivo = await prisma.contratoMunicipal.findFirst({
+    where: { municipioId, ativo: true },
+    select: {
+      id: true,
+      bancasSlug: true,
+      valorMensal: true,
+      dataInicio: true,
+      dataFim: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const notas = await prisma.notaFiscal.findMany({
+    where: {
+      contrato: { municipioId },
+      anoReferencia: anoAtual,
+    },
+    select: {
+      valorNota: true,
+      valorPago: true,
+      pago: true,
+      dataVencimento: true,
+    },
+  });
+
+  let recebido = 0;
+  let aberto = 0;
+  let atraso = 0;
+  for (const n of notas) {
+    const v = Number(n.valorNota);
+    const status = computeStatusNota(
+      { pago: n.pago, dataVencimento: n.dataVencimento },
+      hoje,
+    );
+    if (status === StatusNota.PAGA) {
+      recebido += n.valorPago ? Number(n.valorPago) : v;
+    } else if (status === StatusNota.A_VENCER) {
+      aberto += v;
+    } else {
+      atraso += v;
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-emerald-700" />
+          <CardTitle className="text-base">
+            Status Financeiro ({anoAtual})
+          </CardTitle>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link
+            href={`/app/financeiro/municipios?municipioId=${municipioId}`}
+          >
+            Ver no Financeiro
+            <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {contratoAtivo ? (
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+              Contrato ativo
+            </span>
+            <span className="text-slate-700">
+              {formatBRL(Number(contratoAtivo.valorMensal))}/mes
+            </span>
+            <BancaBadgeList slugs={contratoAtivo.bancasSlug} size="sm" />
+            <span className="text-[11px] text-muted-foreground">
+              Inicio:{" "}
+              {contratoAtivo.dataInicio.toLocaleDateString("pt-BR")}
+              {contratoAtivo.dataFim &&
+                ` • Fim: ${contratoAtivo.dataFim.toLocaleDateString("pt-BR")}`}
+            </span>
+          </div>
+        ) : (
+          <div className="text-sm italic text-muted-foreground">
+            Sem contrato ativo. Use o botao acima para criar.
+          </div>
+        )}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+              Recebido
+            </p>
+            <p className="font-mono text-sm font-bold text-emerald-900">
+              {formatBRL(recebido)}
+            </p>
+          </div>
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-900">
+              Em aberto
+            </p>
+            <p className="font-mono text-sm font-bold text-amber-900">
+              {formatBRL(aberto)}
+            </p>
+          </div>
+          <div className="rounded-md border border-red-200 bg-red-50 p-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-red-800">
+              Em atraso
+            </p>
+            <p className="font-mono text-sm font-bold text-red-900">
+              {formatBRL(atraso)}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

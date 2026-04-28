@@ -2,6 +2,7 @@ import {
   CamaraTce,
   Grau,
   Risco,
+  TipoHonorario,
   TipoInteressado,
   TipoProcesso,
   TipoProcessoTce,
@@ -451,3 +452,105 @@ export const itemPautaJudicialUpdateSchema = z.object({
   ordem: z.coerce.number().int().optional(),
 });
 
+
+// ========== FINANCEIRO ==========
+
+const decimalPositivo = z.coerce
+  .number()
+  .nonnegative("Valor deve ser positivo")
+  .transform((v) => Number(v.toFixed(2)));
+
+const decimalPositivoOptional = z
+  .union([z.string(), z.number(), z.null(), z.undefined()])
+  .transform((v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = typeof v === "string" ? Number(v) : v;
+    if (!Number.isFinite(n) || n < 0) return null;
+    return Number(n.toFixed(2));
+  });
+
+export const contratoMunicipalInputSchema = z.object({
+  municipioId: z.string().min(1, "Selecione o municipio"),
+  bancasSlug: bancasSlugSchema,
+  valorMensal: decimalPositivo,
+  dataInicio: dateInput,
+  dataFim: optionalDate,
+  observacoes: z.string().optional().nullable(),
+  ativo: z.boolean().optional().default(true),
+  // Se true (default), gera notas automaticamente apos criar
+  gerarNotasAutomaticas: z.boolean().optional().default(true),
+});
+export type ContratoMunicipalInput = z.infer<
+  typeof contratoMunicipalInputSchema
+>;
+
+export const contratoMunicipalUpdateSchema = z.object({
+  municipioId: z.string().min(1).optional(),
+  bancasSlug: bancasSlugOptional,
+  valorMensal: decimalPositivo.optional(),
+  dataInicio: dateInput.optional(),
+  dataFim: optionalDate,
+  observacoes: z.string().optional().nullable(),
+  ativo: z.boolean().optional(),
+});
+
+export const notaFiscalInputSchema = z.object({
+  contratoId: z.string().min(1, "Selecione o contrato"),
+  numeroNota: z.string().optional().nullable(),
+  dataEmissao: optionalDate,
+  mesReferencia: z.coerce.number().int().min(1).max(12),
+  anoReferencia: z.coerce.number().int().min(2023).max(2030),
+  valorNota: decimalPositivo,
+  dataVencimento: dateInput,
+  pago: z.boolean().optional().default(false),
+  dataPagamento: optionalDate,
+  valorPago: decimalPositivoOptional,
+  observacoes: z.string().optional().nullable(),
+});
+export type NotaFiscalInput = z.infer<typeof notaFiscalInputSchema>;
+
+export const notaFiscalUpdateSchema = z.object({
+  numeroNota: z.string().optional().nullable(),
+  dataEmissao: optionalDate,
+  mesReferencia: z.coerce.number().int().min(1).max(12).optional(),
+  anoReferencia: z.coerce.number().int().min(2023).max(2030).optional(),
+  valorNota: decimalPositivo.optional(),
+  dataVencimento: dateInput.optional(),
+  pago: z.boolean().optional(),
+  dataPagamento: optionalDate,
+  valorPago: decimalPositivoOptional,
+  observacoes: z.string().optional().nullable(),
+});
+
+export const honorarioPessoalInputSchema = z.object({
+  clienteNome: z.string().min(1, "Nome do cliente obrigatorio"),
+  clienteCpf: z.string().optional().nullable(),
+  bancasSlug: bancasSlugSchema,
+  tipoHonorario: z.nativeEnum(TipoHonorario),
+  descricaoCausa: z.string().min(1, "Descreva a causa"),
+  valorTotal: decimalPositivo,
+  dataContrato: dateInput,
+  dataVencimento: optionalDate,
+  pago: z.boolean().optional().default(false),
+  dataPagamento: optionalDate,
+  valorPago: decimalPositivoOptional,
+  observacoes: z.string().optional().nullable(),
+});
+export type HonorarioPessoalInput = z.infer<
+  typeof honorarioPessoalInputSchema
+>;
+
+export const honorarioPessoalUpdateSchema = z.object({
+  clienteNome: z.string().min(1).optional(),
+  clienteCpf: z.string().optional().nullable(),
+  bancasSlug: bancasSlugOptional,
+  tipoHonorario: z.nativeEnum(TipoHonorario).optional(),
+  descricaoCausa: z.string().min(1).optional(),
+  valorTotal: decimalPositivo.optional(),
+  dataContrato: dateInput.optional(),
+  dataVencimento: optionalDate,
+  pago: z.boolean().optional(),
+  dataPagamento: optionalDate,
+  valorPago: decimalPositivoOptional,
+  observacoes: z.string().optional().nullable(),
+});

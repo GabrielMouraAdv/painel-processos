@@ -17,6 +17,7 @@ type Props = {
   pautasJudiciaisTotal: number;
   alertasMonitoramento: number;
   despachosTcePendentes: number;
+  podeFinanceiro: boolean;
 };
 
 export function AppShell({
@@ -27,6 +28,7 @@ export function AppShell({
   pautasJudiciaisTotal,
   alertasMonitoramento,
   despachosTcePendentes,
+  podeFinanceiro,
 }: Props) {
   const [open, setOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -86,6 +88,7 @@ export function AppShell({
           pautasJudiciaisTotal={pautasJudiciaisTotal}
           alertasMonitoramento={alertasMonitoramento}
           despachosTcePendentes={despachosTcePendentes}
+          podeFinanceiro={podeFinanceiro}
           onOpenSearch={() => setSearchOpen(true)}
         />
       </aside>
