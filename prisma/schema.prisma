@@ -387,6 +387,7 @@ model ProcessoTce {
   objeto                String          @db.Text
   dataAutuacao          DateTime?
   dataIntimacao         DateTime?
+  bancasSlug            String[]        @default([])
   escritorioId          String
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
@@ -646,6 +647,7 @@ model SubprocessoTce {
   despachoDispensadoPor      String?
   despachoDispensadoEm       DateTime?
   despachoDispensadoMotivo   String?        @db.Text
+  bancasSlug                 String[]       @default([])
   prazos                     PrazoSubprocessoTce[]
   andamentos           AndamentoSubprocessoTce[]
   documentos           DocumentoSubprocessoTce[]
