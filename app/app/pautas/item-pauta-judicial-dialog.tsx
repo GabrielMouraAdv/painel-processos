@@ -45,7 +45,11 @@ export type ItemPautaJudicialInitial = {
   pedidoVistas: boolean;
   desPedidoVistas: string | null;
   parecerMpf: boolean;
-  processo: { id: string; numero: string } | null;
+  processo: {
+    id: string;
+    numero: string;
+    bancasSlug?: string[];
+  } | null;
 };
 
 export type ProcessoJudicialOption = {

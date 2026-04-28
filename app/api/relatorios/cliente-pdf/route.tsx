@@ -4,6 +4,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { Risco, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import {
   classificarResultadoJud,
   classificarResultadoTce,
@@ -73,6 +74,7 @@ export async function GET(req: Request) {
   const id = url.searchParams.get("id") ?? "";
   const incluiJudicial = url.searchParams.get("judicial") !== "false";
   const incluiTce = url.searchParams.get("tce") !== "false";
+  const bancasFiltro = parseBancasParam(url.searchParams.get("banca"));
   const statusParam = url.searchParams.get("status");
   const status: RelatorioStatusFiltro =
     statusParam === "todos" ? "todos" : "ativos";
@@ -159,12 +161,18 @@ export async function GET(req: Request) {
   if (status === "ativos") {
     judicialWhere.fase = { not: "transitado" };
   }
+  if (bancasFiltro.length > 0) {
+    judicialWhere.bancasSlug = { hasSome: bancasFiltro };
+  }
 
   const tceWhere: Prisma.ProcessoTceWhereInput = { escritorioId };
   if (tipo === "gestor") {
     tceWhere.interessados = { some: { gestorId: id } };
   } else {
     tceWhere.municipioId = id;
+  }
+  if (bancasFiltro.length > 0) {
+    tceWhere.bancasSlug = { hasSome: bancasFiltro };
   }
 
   // Carrega processos judiciais

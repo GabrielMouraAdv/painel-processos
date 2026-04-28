@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -202,6 +203,8 @@ export function ProcessosFilters() {
           </Button>
         )}
       </div>
+
+      <BancaFilter />
     </div>
   );
 }

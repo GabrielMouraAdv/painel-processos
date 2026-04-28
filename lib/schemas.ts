@@ -9,6 +9,35 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
+import { isBancaSlug } from "./bancas";
+
+const bancasSlugSchema = z
+  .array(z.string())
+  .nonempty({ message: "Selecione pelo menos uma banca" })
+  .transform((arr) =>
+    Array.from(
+      new Set(arr.map((s) => s.trim().toLowerCase()).filter((s) => s.length > 0)),
+    ),
+  )
+  .refine((arr) => arr.length > 0 && arr.every(isBancaSlug), {
+    message: "Banca invalida",
+  });
+
+const bancasSlugOptional = z
+  .array(z.string())
+  .optional()
+  .transform((arr) => {
+    if (!arr) return undefined;
+    return Array.from(
+      new Set(
+        arr.map((s) => s.trim().toLowerCase()).filter((s) => s.length > 0),
+      ),
+    );
+  })
+  .refine((arr) => arr === undefined || arr.every(isBancaSlug), {
+    message: "Banca invalida",
+  });
+
 export const processoInputSchema = z
   .object({
     numero: z
@@ -220,10 +249,13 @@ export const processoTceInputSchema = z.object({
   objeto: z.string().min(1, "Informe o objeto"),
   dataAutuacao: optionalDate,
   dataIntimacao: optionalDate,
+  bancasSlug: bancasSlugSchema,
   interessados: z.array(interessadoItemSchema).optional().default([]),
 });
 
 export type ProcessoTceInput = z.infer<typeof processoTceInputSchema>;
+
+export { bancasSlugSchema, bancasSlugOptional };
 
 export const processoTceUpdateSchema = z.object({
   numero: z.string().min(1).optional(),

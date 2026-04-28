@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BANCAS, bancaBadgeClasses } from "@/lib/bancas";
 import {
   Select,
   SelectContent,
@@ -54,8 +55,18 @@ export function ClienteForm({ gestores, municipios }: Props) {
   const [status, setStatus] = React.useState<Status>("ativos");
   const [emissorSlug, setEmissorSlug] = React.useState<string>("");
   const [advogadoIdx, setAdvogadoIdx] = React.useState<number>(0);
+  const [bancas, setBancas] = React.useState<Set<string>>(new Set());
   const [erro, setErro] = React.useState<string | null>(null);
   const [gerando, setGerando] = React.useState(false);
+
+  function toggleBanca(slug: string) {
+    setBancas((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
 
   const emissorAtual = React.useMemo(
     () => ESCRITORIOS_EMISSORES.find((e) => e.slug === emissorSlug) ?? null,
@@ -138,6 +149,9 @@ export function ClienteForm({ gestores, municipios }: Props) {
       emissor: emissorAtual.slug,
       advogado: String(advogadoIdx),
     });
+    if (bancas.size > 0) {
+      params.set("banca", Array.from(bancas).join(","));
+    }
 
     setGerando(true);
     try {
@@ -353,6 +367,38 @@ export function ClienteForm({ gestores, municipios }: Props) {
             Todos (incluindo encerrados)
           </button>
         </div>
+      </div>
+
+      {/* Filtro de banca (opcional) */}
+      <div className="flex flex-col gap-2">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+          Filtrar por banca (opcional)
+        </Label>
+        <div className="flex flex-wrap gap-1.5">
+          {BANCAS.map((b) => {
+            const ativo = bancas.has(b.slug);
+            return (
+              <button
+                key={b.slug}
+                type="button"
+                onClick={() => toggleBanca(b.slug)}
+                aria-pressed={ativo}
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 transition-colors",
+                  ativo
+                    ? bancaBadgeClasses(b.cor)
+                    : "bg-white text-slate-500 ring-slate-200 hover:bg-slate-50",
+                )}
+              >
+                {b.nome}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Sem selecao = todas as bancas. Util quando o cliente tem processos
+          patrocinados por mais de uma banca.
+        </p>
       </div>
 
       {/* Escritorio responsavel */}

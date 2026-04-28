@@ -16,6 +16,7 @@ import {
 import { getServerSession } from "next-auth";
 import { Risco, Role } from "@prisma/client";
 
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { prisma } from "@/lib/prisma";
 import { diasAte, urgenciaDe } from "@/lib/prazos";
 import { faseLabel, fasesEmPauta } from "@/lib/processo-labels";
@@ -177,7 +179,13 @@ export default async function AppHome({
   sessentaDiasAtras.setDate(sessentaDiasAtras.getDate() - 60);
   sessentaDiasAtras.setHours(0, 0, 0, 0);
 
-  const base = { escritorioId } as const;
+  const bancasFiltro = parseBancasParam(searchParams.banca);
+  const base = {
+    escritorioId,
+    ...(bancasFiltro.length > 0 && {
+      bancasSlug: { hasSome: bancasFiltro },
+    }),
+  };
 
   const em7Pendencias = new Date(hoje);
   em7Pendencias.setDate(em7Pendencias.getDate() + 7);
@@ -540,6 +548,10 @@ export default async function AppHome({
           Visao geral do escritorio — clique nos indicadores para filtrar rapidamente.
         </p>
       </header>
+
+      <div className="rounded-lg border bg-white px-4 py-3 shadow-sm">
+        <BancaFilter />
+      </div>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         {kpis.map((k) => (

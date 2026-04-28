@@ -38,6 +38,7 @@ export const authOptions: NextAuthOptions = {
           name: user.nome,
           role: user.role,
           escritorioId: user.escritorioId,
+          bancaSlug: user.bancaSlug,
         };
       },
     }),
@@ -48,6 +49,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.escritorioId = user.escritorioId;
+        token.bancaSlug = user.bancaSlug;
       }
       return token;
     },
@@ -56,6 +58,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as typeof session.user.role;
         session.user.escritorioId = token.escritorioId as string;
+        session.user.bancaSlug = (token.bancaSlug ?? null) as string | null;
       }
       return session;
     },

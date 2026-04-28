@@ -71,6 +71,7 @@ export async function POST(req: Request) {
         objeto: data.objeto,
         dataAutuacao: data.dataAutuacao ?? null,
         dataIntimacao: data.dataIntimacao ?? null,
+        bancasSlug: data.bancasSlug,
         escritorioId,
         interessados: {
           create: data.interessados.map((i) => ({

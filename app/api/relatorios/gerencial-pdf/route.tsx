@@ -4,6 +4,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { Grau, Risco, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { BANCAS, parseBancasParam } from "@/lib/bancas";
 import { classificarResultadoJud } from "@/lib/julgamento-config";
 import { prisma } from "@/lib/prisma";
 import {
@@ -38,6 +39,7 @@ export async function GET(req: Request) {
   const emissorSlug = (url.searchParams.get("emissor") ?? "").trim().toLowerCase();
   const advogadoRaw = url.searchParams.get("advogado");
   const advogadoIdx = advogadoRaw !== null ? Number(advogadoRaw) : 0;
+  const bancasFiltro = parseBancasParam(url.searchParams.get("banca"));
 
   const emissorResolvido = resolveEmissor(emissorSlug, advogadoIdx);
   if (!emissorResolvido) {
@@ -59,9 +61,12 @@ export async function GET(req: Request) {
         ...(ate && { lte: new Date(`${ate}T23:59:59`) }),
       },
     }),
+    ...(bancasFiltro.length > 0 && {
+      bancasSlug: { hasSome: bancasFiltro },
+    }),
   };
 
-  const [totalFiltrado, porTribunal, porRisco, porFase, julgados] =
+  const [totalFiltrado, porTribunal, porRisco, porFase, julgados, bancasRaw] =
     await Promise.all([
       prisma.processo.count({ where }),
       prisma.processo.groupBy({
@@ -83,7 +88,20 @@ export async function GET(req: Request) {
         where: { ...where, julgado: true },
         select: { tipo: true, resultadoJulgamento: true },
       }),
+      prisma.processo.findMany({
+        where,
+        select: { bancasSlug: true },
+      }),
     ]);
+
+  // Subtotais por banca (um processo pode contar em mais de uma)
+  const contagemPorBanca = new Map<string, number>();
+  for (const p of bancasRaw) {
+    for (const slug of p.bancasSlug) {
+      contagemPorBanca.set(slug, (contagemPorBanca.get(slug) ?? 0) + 1);
+    }
+  }
+  const semBanca = bancasRaw.filter((p) => p.bancasSlug.length === 0).length;
 
   const linhasTribunal = porTribunal
     .map((row) => ({
@@ -153,6 +171,20 @@ export async function GET(req: Request) {
         ["Neutros", String(julgNeutro)],
         ["Não julgados", String(naoJulgados)],
         ["Total julgados", String(totalJulgados)],
+      ],
+    },
+    {
+      titulo: "Por banca",
+      descricao:
+        "Subtotais por banca patrocinadora. Processos compartilhados contam em mais de uma.",
+      cabecalho: ["Banca", "Processos"],
+      linhas: [
+        ...BANCAS.filter((b) => (contagemPorBanca.get(b.slug) ?? 0) > 0).map(
+          (b) => [b.nome, String(contagemPorBanca.get(b.slug) ?? 0)],
+        ),
+        ...(semBanca > 0
+          ? [["Sem banca vinculada", String(semBanca)] as [string, string]]
+          : []),
       ],
     },
   ];

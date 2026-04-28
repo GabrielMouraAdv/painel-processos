@@ -11,6 +11,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { prisma } from "@/lib/prisma";
 import { fasesEmPauta } from "@/lib/processo-labels";
 
@@ -45,6 +46,7 @@ export default async function ProcessosPage({
   const grau = parseEnum(asString(searchParams.grau), Object.values(Grau));
   const status = asString(searchParams.status);
   const julgamentoFiltro = asString(searchParams.julgamento);
+  const bancasFiltro = parseBancasParam(searchParams.banca);
   const page = Math.max(1, Number(asString(searchParams.page) ?? "1") || 1);
 
   const sessentaDiasAtras = new Date();
@@ -56,6 +58,9 @@ export default async function ProcessosPage({
     ...(tipo && { tipo }),
     ...(risco && { risco }),
     ...(grau && { grau }),
+    ...(bancasFiltro.length > 0 && {
+      bancasSlug: { hasSome: bancasFiltro },
+    }),
     ...(status === "parados" && {
       andamentos: { none: { data: { gte: sessentaDiasAtras } } },
     }),
@@ -91,6 +96,7 @@ export default async function ProcessosPage({
         fase: true,
         julgado: true,
         resultadoJulgamento: true,
+        bancasSlug: true,
         gestor: { select: { nome: true, municipio: true } },
       },
     }),

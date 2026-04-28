@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,6 +28,8 @@ import {
   DocumentosSection,
   type DocumentoItem,
 } from "@/components/documentos/documentos-section";
+
+import { BancasSection } from "./bancas-section";
 import {
   GrauBadge,
   RiscoBadge,
@@ -112,6 +115,7 @@ export type ProcessoDetail = {
   valor: number | null;
   dataDistribuicao: string;
   objeto: string;
+  bancasSlug: string[];
   gestorId: string;
   advogadoId: string;
   createdAt: string;
@@ -274,7 +278,12 @@ export function ProcessoView({
     <>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-xs text-muted-foreground">{processo.numero}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-mono text-xs text-muted-foreground">
+              {processo.numero}
+            </p>
+            <BancaBadgeList slugs={processo.bancasSlug} size="sm" />
+          </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-brand-navy md:text-3xl">
             {processo.gestor.observacoes ?? processo.gestor.nome}
           </h1>
@@ -318,6 +327,11 @@ export function ProcessoView({
         processoId={processo.id}
         tipo={processo.tipo}
         julgamento={processo.julgamento}
+      />
+
+      <BancasSection
+        processoId={processo.id}
+        initialBancas={processo.bancasSlug}
       />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">

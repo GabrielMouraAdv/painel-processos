@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tribunal } from "@prisma/client";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
+import { BancaBadgeList } from "@/components/bancas/banca-badge";
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +55,7 @@ export type PrazoItem = {
     numero: string;
     tribunal: Tribunal;
     advogadoId: string;
+    bancasSlug: string[];
     gestor: { nome: string };
   };
 };
@@ -119,6 +122,7 @@ export function PrazosView({
   initialFilters,
 }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [filters, setFilters] = React.useState(initialFilters);
   const [numeroDraft, setNumeroDraft] = React.useState(initialFilters.numero);
@@ -152,15 +156,19 @@ export function PrazosView({
 
   function applyFilters(next: Filters) {
     setFilters(next);
-    const params = new URLSearchParams();
-    if (next.tribunal) params.set("tribunal", next.tribunal);
-    if (next.advogadoId) params.set("advogadoId", next.advogadoId);
-    if (next.advogadoRespId)
-      params.set("advogadoRespId", next.advogadoRespId);
-    if (next.status) params.set("status", next.status);
-    if (next.de) params.set("de", next.de);
-    if (next.ate) params.set("ate", next.ate);
-    if (next.numero) params.set("numero", next.numero);
+    // Preserva params extras (banca etc.)
+    const params = new URLSearchParams(searchParams.toString());
+    const setOrDel = (key: string, value: string) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    };
+    setOrDel("tribunal", next.tribunal);
+    setOrDel("advogadoId", next.advogadoId);
+    setOrDel("advogadoRespId", next.advogadoRespId);
+    setOrDel("status", next.status);
+    setOrDel("de", next.de);
+    setOrDel("ate", next.ate);
+    setOrDel("numero", next.numero);
     const qs = params.toString();
     router.push(qs ? `/app/prazos?${qs}` : "/app/prazos");
   }
@@ -449,6 +457,9 @@ export function PrazosView({
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             Limpar filtros
           </Button>
+          <div className="w-full">
+            <BancaFilter />
+          </div>
         </CardContent>
       </Card>
 
@@ -622,6 +633,9 @@ function PrazoCard({
             {prazo.processo.numero}
           </Link>
         </p>
+        <div className="mt-1">
+          <BancaBadgeList slugs={prazo.processo.bancasSlug} max={3} />
+        </div>
         <p className="text-xs text-muted-foreground capitalize">
           {formatDateFull(data)}
         </p>

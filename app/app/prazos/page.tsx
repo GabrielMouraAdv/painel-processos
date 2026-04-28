@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { Role, Tribunal, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { prisma } from "@/lib/prisma";
 
 import { PrazosView, type PrazoItem } from "./prazos-view";
@@ -31,12 +32,16 @@ export default async function PrazosPage({
   const de = asString(searchParams.de);
   const ate = asString(searchParams.ate);
   const numero = asString(searchParams.numero).trim();
+  const bancasFiltro = parseBancasParam(searchParams.banca);
 
   const processoFilter: Prisma.ProcessoWhereInput = {
     escritorioId,
     ...(tribunal && { tribunal }),
     ...(advogadoId && { advogadoId }),
     ...(numero && { numero: { contains: numero, mode: "insensitive" } }),
+    ...(bancasFiltro.length > 0 && {
+      bancasSlug: { hasSome: bancasFiltro },
+    }),
     prazos: { some: { cumprido: false } },
   };
 
@@ -65,6 +70,7 @@ export default async function PrazosPage({
             numero: true,
             tribunal: true,
             advogadoId: true,
+            bancasSlug: true,
             gestor: { select: { nome: true } },
           },
         },
@@ -112,6 +118,7 @@ export default async function PrazosPage({
       numero: p.processo.numero,
       tribunal: p.processo.tribunal,
       advogadoId: p.processo.advogadoId,
+      bancasSlug: p.processo.bancasSlug,
       gestor: { nome: p.processo.gestor.nome },
     },
   }));

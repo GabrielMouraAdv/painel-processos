@@ -35,6 +35,7 @@ export default async function TceProcessosPage({
 }) {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
+  const userBancaSlug = session!.user.bancaSlug ?? null;
 
   const q = asString(searchParams.q).trim();
   const tipo = parseEnum(Object.values(TipoProcessoTce), asString(searchParams.tipo));
@@ -249,6 +250,7 @@ export default async function TceProcessosPage({
           <NovoProcessoTceButton
             municipios={municipiosTodos}
             gestores={todosGestores}
+            defaultBancaSlug={userBancaSlug}
           />
         </div>
       </header>

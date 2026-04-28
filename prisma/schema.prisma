@@ -89,6 +89,7 @@ model User {
   nome         String
   senha        String
   role         Role     @default(LEITURA)
+  bancaSlug    String?
   escritorioId String
   createdAt    DateTime @default(now())
 
@@ -157,6 +158,7 @@ model Processo {
   valor                Decimal?     @db.Decimal(15, 2)
   dataDistribuicao     DateTime
   objeto               String       @db.Text
+  bancasSlug           String[]     @default([])
   memorialPronto             Boolean      @default(false)
   despachadoComRelator       Boolean      @default(false)
   dataDespacho               DateTime?

@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { Role, type Prisma } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { parseBancasParam } from "@/lib/bancas";
 import { podeEditarPauta } from "@/lib/pauta-permissions";
 import { prisma } from "@/lib/prisma";
 import {
@@ -118,6 +119,7 @@ export default async function PautasJudiciaisPage({
   const relator = asString(searchParams.relator).trim();
   const advogadoResp = asString(searchParams.advogadoResp).trim();
   const q = asString(searchParams.q).trim();
+  const bancasFiltro = parseBancasParam(searchParams.banca);
 
   const itemFilter: Prisma.ItemPautaJudicialWhereInput = {
     ...(relator && {
@@ -133,9 +135,17 @@ export default async function PautasJudiciaisPage({
         { partes: { contains: q, mode: "insensitive" } },
       ],
     }),
+    ...(bancasFiltro.length > 0 && {
+      processo: { bancasSlug: { hasSome: bancasFiltro } },
+    }),
   };
 
-  const temFiltroItem = !!(relator || advogadoResp || q);
+  const temFiltroItem = !!(
+    relator ||
+    advogadoResp ||
+    q ||
+    bancasFiltro.length > 0
+  );
 
   const where: Prisma.SessaoJudicialWhereInput = {
     escritorioId,
@@ -157,7 +167,7 @@ export default async function PautasJudiciaisPage({
             orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
             include: {
               processo: {
-                select: { id: true, numero: true },
+                select: { id: true, numero: true, bancasSlug: true },
               },
             },
           },
@@ -216,7 +226,11 @@ export default async function PautasJudiciaisPage({
       desPedidoVistas: i.desPedidoVistas,
       parecerMpf: i.parecerMpf,
       processo: i.processo
-        ? { id: i.processo.id, numero: i.processo.numero }
+        ? {
+            id: i.processo.id,
+            numero: i.processo.numero,
+            bancasSlug: i.processo.bancasSlug,
+          }
         : null,
       ordem: i.ordem,
     })),

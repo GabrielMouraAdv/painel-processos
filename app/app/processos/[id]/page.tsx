@@ -98,6 +98,7 @@ export default async function ProcessoDetailPage({
     valor: processo.valor ? Number(processo.valor) : null,
     dataDistribuicao: processo.dataDistribuicao.toISOString(),
     objeto: processo.objeto,
+    bancasSlug: processo.bancasSlug,
     gestorId: processo.gestorId,
     advogadoId: processo.advogadoId,
     createdAt: processo.createdAt.toISOString(),

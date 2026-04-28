@@ -8,6 +8,8 @@ import { Plus, Trash2, Plus as PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { BANCAS, bancaBadgeClasses } from "@/lib/bancas";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -48,16 +50,26 @@ type InteressadoRow = { gestorId: string; cargo: string };
 type Props = {
   municipios: MunicipioOption[];
   gestores: GestorOption[];
+  defaultBancaSlug?: string | null;
 };
 
 const NEW_MUNICIPIO = "__new__";
 
-export function NovoProcessoTceButton({ municipios: initialMun, gestores }: Props) {
+export function NovoProcessoTceButton({
+  municipios: initialMun,
+  gestores,
+  defaultBancaSlug,
+}: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   const [municipios, setMunicipios] = React.useState<MunicipioOption[]>(initialMun);
+
+  const initialBancas = React.useMemo(
+    () => (defaultBancaSlug ? new Set([defaultBancaSlug]) : new Set<string>()),
+    [defaultBancaSlug],
+  );
 
   const [numero, setNumero] = React.useState("");
   const [tipo, setTipo] = React.useState<TipoProcessoTce>("PRESTACAO_CONTAS_GOVERNO");
@@ -73,7 +85,17 @@ export function NovoProcessoTceButton({ municipios: initialMun, gestores }: Prop
   const [faseAtual, setFaseAtual] = React.useState("");
   const [notaTecnica, setNotaTecnica] = React.useState(false);
   const [parecerMpco, setParecerMpco] = React.useState(false);
+  const [bancas, setBancas] = React.useState<Set<string>>(initialBancas);
   const [interessados, setInteressados] = React.useState<InteressadoRow[]>([]);
+
+  function toggleBanca(slug: string) {
+    setBancas((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
 
   const fases = React.useMemo(() => fasesDoTipo(tipo), [tipo]);
 
@@ -98,6 +120,7 @@ export function NovoProcessoTceButton({ municipios: initialMun, gestores }: Prop
     setFaseAtual("");
     setNotaTecnica(false);
     setParecerMpco(false);
+    setBancas(initialBancas);
     setInteressados([]);
   }
 
@@ -170,6 +193,7 @@ export function NovoProcessoTceButton({ municipios: initialMun, gestores }: Prop
       objeto: objeto.trim(),
       dataAutuacao: dataAutuacao || null,
       dataIntimacao: dataIntimacao || null,
+      bancasSlug: Array.from(bancas),
       interessados: interessadosValidos,
     };
 
@@ -178,6 +202,13 @@ export function NovoProcessoTceButton({ municipios: initialMun, gestores }: Prop
         variant: "destructive",
         title: "Preencha os campos obrigatorios",
         description: "Numero, objeto e fase sao obrigatorios.",
+      });
+      return;
+    }
+    if (payload.bancasSlug.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Selecione pelo menos uma banca",
       });
       return;
     }
@@ -396,6 +427,45 @@ export function NovoProcessoTceButton({ municipios: initialMun, gestores }: Prop
               <span>Parecer MPCO</span>
             </label>
           </div>
+
+          <Card>
+            <CardContent className="space-y-2 p-4">
+              <div>
+                <h3 className="text-sm font-semibold text-brand-navy">
+                  Bancas <span className="text-red-600">*</span>
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Selecione pelo menos uma banca. Compartilhados podem ter mais de uma.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {BANCAS.map((b) => {
+                  const ativo = bancas.has(b.slug);
+                  return (
+                    <button
+                      key={b.slug}
+                      type="button"
+                      onClick={() => toggleBanca(b.slug)}
+                      aria-pressed={ativo}
+                      className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 transition-colors",
+                        ativo
+                          ? bancaBadgeClasses(b.cor)
+                          : "bg-white text-slate-500 ring-slate-200 hover:bg-slate-50 hover:text-slate-700",
+                      )}
+                      title={
+                        b.advogado
+                          ? `${b.nome} — ${b.advogado}${b.oab ? ` (${b.oab})` : ""}`
+                          : b.nome
+                      }
+                    >
+                      {b.nome}
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardContent className="space-y-3 p-4">

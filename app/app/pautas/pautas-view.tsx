@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 
+import { BancaFilter } from "@/components/bancas/banca-filter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -334,6 +335,9 @@ export function PautasJudiciaisView({
   const [itemPending, setItemPending] = React.useState(false);
 
   function pushWithFilters(next: Filters, week?: string, tribunalOverride?: TribunalKey) {
+    const current = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : "",
+    );
     const params = new URLSearchParams();
     params.set("tribunal", tribunalOverride ?? tribunal);
     params.set("semana", week ?? weekStart);
@@ -342,6 +346,8 @@ export function PautasJudiciaisView({
     if (next.relator) params.set("relator", next.relator);
     if (next.advogadoResp) params.set("advogadoResp", next.advogadoResp);
     if (next.q) params.set("q", next.q);
+    const banca = current.get("banca");
+    if (banca) params.set("banca", banca);
     router.push(`/app/pautas?${params.toString()}`);
   }
 
@@ -723,6 +729,9 @@ export function PautasJudiciaisView({
               Limpar filtros
             </Button>
           )}
+          <div className="w-full">
+            <BancaFilter />
+          </div>
         </CardContent>
       </Card>
 
