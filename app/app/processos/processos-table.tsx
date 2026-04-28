@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import type { Grau, Risco, TipoProcesso, Tribunal } from "@prisma/client";
 
-import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import {
   Table,
   TableBody,
@@ -64,9 +63,6 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
               <TableHead className={cn(headBase, "md:w-[140px]")}>
                 Numero
               </TableHead>
-              <TableHead className={cn(headBase, "md:w-[80px]")}>
-                Banca
-              </TableHead>
               <TableHead className={cn(headBase, "md:w-[200px]")}>
                 Gestor
               </TableHead>
@@ -107,9 +103,6 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                   )}
                 >
                   {p.numero}
-                </TableCell>
-                <TableCell className={cellBase}>
-                  <BancaBadgeList slugs={p.bancasSlug} max={2} />
                 </TableCell>
                 <TableCell className={cellBase}>
                   <div className="break-words font-medium">
