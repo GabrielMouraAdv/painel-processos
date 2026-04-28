@@ -75,6 +75,7 @@ export function CadastrarContratoDialog({
   }, [busca, municipios]);
 
   async function salvar() {
+    // Validacoes locais
     if (!municipioId) {
       toast({ variant: "destructive", title: "Selecione o municipio" });
       return;
@@ -86,48 +87,113 @@ export function CadastrarContratoDialog({
       });
       return;
     }
-    const valor = Number(valorMensal.replace(/\./g, "").replace(",", "."));
+    const valorTrim = valorMensal.trim();
+    if (!valorTrim) {
+      toast({ variant: "destructive", title: "Valor mensal obrigatorio" });
+      return;
+    }
+    // Aceita "1500", "1500,50", "1.500,50", "1500.50"
+    const limpo = valorTrim
+      .replace(/\s+/g, "")
+      .replace(/[R$]/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
+    const valor = Number(limpo);
     if (!Number.isFinite(valor) || valor <= 0) {
-      toast({ variant: "destructive", title: "Valor mensal invalido" });
+      toast({
+        variant: "destructive",
+        title: "Valor mensal invalido",
+        description: `Nao foi possivel interpretar "${valorMensal}". Use formato como 1500 ou 1.500,50.`,
+      });
       return;
     }
     if (!dataInicio) {
       toast({ variant: "destructive", title: "Data de inicio obrigatoria" });
       return;
     }
+    if (dataFim && dataFim < dataInicio) {
+      toast({
+        variant: "destructive",
+        title: "Data fim nao pode ser anterior a data de inicio",
+      });
+      return;
+    }
+
     setPending(true);
     try {
-      const res = await fetch("/api/financeiro/contratos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          municipioId,
-          bancasSlug: Array.from(bancas),
-          valorMensal: valor,
-          dataInicio,
-          dataFim: dataFim || null,
-          observacoes: observacoes.trim() || null,
-          gerarNotasAutomaticas: gerarNotas,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
+      let res: Response;
+      try {
+        res = await fetch("/api/financeiro/contratos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            municipioId,
+            bancasSlug: Array.from(bancas),
+            valorMensal: valor,
+            dataInicio,
+            dataFim: dataFim || null,
+            observacoes: observacoes.trim() || null,
+            gerarNotasAutomaticas: gerarNotas,
+          }),
+        });
+      } catch (errFetch) {
+        console.error("[CadastrarContrato] erro de rede:", errFetch);
+        toast({
+          variant: "destructive",
+          title: "Erro de conexao",
+          description:
+            "Nao foi possivel conectar ao servidor. Verifique sua internet e tente novamente.",
+        });
+        return;
+      }
+
+      // Tenta parsear JSON, mas trata caso o servidor tenha retornado HTML
+      let json: { error?: string; id?: string; notasGeradas?: number } = {};
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json")) {
+        try {
+          json = await res.json();
+        } catch (errJson) {
+          console.error("[CadastrarContrato] erro ao parsear JSON:", errJson);
+        }
+      } else {
+        const txt = await res.text().catch(() => "");
+        console.error(
+          "[CadastrarContrato] resposta nao-JSON:",
+          res.status,
+          txt.slice(0, 500),
+        );
+      }
+
       if (!res.ok) {
         toast({
           variant: "destructive",
           title: "Erro ao cadastrar contrato",
-          description: json.error ?? "Tente novamente.",
+          description:
+            json.error ??
+            `Status ${res.status}: tente novamente ou abra o console (F12) para detalhes.`,
         });
         return;
       }
       toast({
         title: "Contrato cadastrado",
         description:
-          json.notasGeradas > 0
+          json.notasGeradas && json.notasGeradas > 0
             ? `${json.notasGeradas} nota(s) geradas automaticamente.`
             : undefined,
       });
       onOpenChange(false);
       onSuccess();
+    } catch (errOuter) {
+      console.error("[CadastrarContrato] erro inesperado:", errOuter);
+      toast({
+        variant: "destructive",
+        title: "Erro inesperado",
+        description:
+          errOuter instanceof Error
+            ? errOuter.message
+            : "Veja o console (F12) para mais detalhes.",
+      });
     } finally {
       setPending(false);
     }

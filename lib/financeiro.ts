@@ -61,13 +61,27 @@ export type NotaParaGerar = {
 
 // Gera notas mensais desde o mes de dataInicio ate o menor entre dataFim
 // (se houver) e dezembro do ano corrente. Vencimento dia 10 do mes seguinte.
-// Valor = valorMensal.
+// Valor = valorMensal. Inclui guardas contra Date invalido e loop infinito.
 export function gerarNotasDoContrato(
   dataInicio: Date,
   dataFim: Date | null,
   valorMensal: number,
   hoje: Date = new Date(),
 ): NotaParaGerar[] {
+  // Guarda 1: data invalida
+  if (!(dataInicio instanceof Date) || isNaN(dataInicio.getTime())) {
+    console.warn("[gerarNotasDoContrato] dataInicio invalida:", dataInicio);
+    return [];
+  }
+  if (dataFim && (!(dataFim instanceof Date) || isNaN(dataFim.getTime()))) {
+    console.warn("[gerarNotasDoContrato] dataFim invalida:", dataFim);
+    dataFim = null;
+  }
+  if (!Number.isFinite(valorMensal) || valorMensal < 0) {
+    console.warn("[gerarNotasDoContrato] valorMensal invalido:", valorMensal);
+    return [];
+  }
+
   const notas: NotaParaGerar[] = [];
 
   // Mes inicial: mes/ano de dataInicio (UTC)
@@ -82,8 +96,16 @@ export function gerarNotasDoContrato(
   const fimEfetivo =
     fim.getTime() < fimAnoCorrente.getTime() ? fim : fimAnoCorrente;
 
+  // Guarda 2: cursor antes do fim (evita iteracao reversa)
+  if (inicio.getTime() > fimEfetivo.getTime()) {
+    return [];
+  }
+
+  // Guarda 3: limite maximo de 200 iteracoes (~16 anos) para evitar runaway
+  const MAX_ITER = 200;
   let cursor = new Date(inicio);
-  while (cursor.getTime() <= fimEfetivo.getTime()) {
+  let i = 0;
+  while (cursor.getTime() <= fimEfetivo.getTime() && i < MAX_ITER) {
     const mes = cursor.getUTCMonth() + 1; // 1-12
     const ano = cursor.getUTCFullYear();
     // Vencimento: dia 10 do mes seguinte
@@ -99,6 +121,14 @@ export function gerarNotasDoContrato(
     });
 
     cursor = new Date(Date.UTC(ano, mes, 1)); // proximo mes
+    i++;
+  }
+  if (i >= MAX_ITER) {
+    console.warn(
+      "[gerarNotasDoContrato] limite de iteracoes atingido (",
+      MAX_ITER,
+      ") — pode haver problema com as datas",
+    );
   }
   return notas;
 }
