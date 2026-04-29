@@ -343,22 +343,26 @@ model Municipio {
 }
 
 model ContratoMunicipal {
-  id           String    @id @default(cuid())
-  municipioId  String
-  bancasSlug   String[]  @default([])
-  valorMensal  Decimal   @db.Decimal(15, 2)
-  dataInicio   DateTime
-  dataFim      DateTime?
-  ativo        Boolean   @default(true)
-  observacoes  String?   @db.Text
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  municipioId           String
+  bancasSlug            String[]  @default([])
+  valorMensal           Decimal   @db.Decimal(15, 2)
+  dataInicio            DateTime
+  dataFim               DateTime?
+  ativo                 Boolean   @default(true)
+  observacoes           String?   @db.Text
+  dataRenovacao         DateTime?
+  diasAvisoRenovacao    Int       @default(60)
+  observacoesRenovacao  String?   @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   municipio Municipio    @relation(fields: [municipioId], references: [id], onDelete: Cascade)
   notas     NotaFiscal[]
 
   @@index([municipioId])
   @@index([ativo])
+  @@index([dataRenovacao])
 }
 
 model NotaFiscal {
@@ -374,6 +378,9 @@ model NotaFiscal {
   dataPagamento   DateTime?
   valorPago       Decimal?  @db.Decimal(15, 2)
   observacoes     String?
+  arquivoUrl      String?
+  arquivoNome     String?
+  arquivoTipo     String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

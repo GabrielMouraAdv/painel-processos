@@ -477,6 +477,9 @@ export const contratoMunicipalInputSchema = z.object({
   dataFim: optionalDate,
   observacoes: z.string().optional().nullable(),
   ativo: z.boolean().optional().default(true),
+  dataRenovacao: optionalDate,
+  diasAvisoRenovacao: z.coerce.number().int().min(0).max(365).optional().default(60),
+  observacoesRenovacao: z.string().optional().nullable(),
   // Se true (default), gera notas automaticamente apos criar
   gerarNotasAutomaticas: z.boolean().optional().default(true),
 });
@@ -492,6 +495,15 @@ export const contratoMunicipalUpdateSchema = z.object({
   dataFim: optionalDate,
   observacoes: z.string().optional().nullable(),
   ativo: z.boolean().optional(),
+  dataRenovacao: optionalDate,
+  diasAvisoRenovacao: z.coerce.number().int().min(0).max(365).optional(),
+  observacoesRenovacao: z.string().optional().nullable(),
+});
+
+export const renovarContratoSchema = z.object({
+  novaDataFim: dateInput,
+  novoValorMensal: decimalPositivo.optional(),
+  novaDataRenovacao: optionalDate,
 });
 
 export const notaFiscalInputSchema = z.object({

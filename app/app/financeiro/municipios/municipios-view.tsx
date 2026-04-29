@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Receipt } from "lucide-react";
+import { Paperclip, Plus, Receipt, RefreshCw } from "lucide-react";
 
 import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import { BancaFilter } from "@/components/bancas/banca-filter";
@@ -22,12 +22,14 @@ import {
   NOMES_MESES,
   STATUS_NOTA,
   statusBgClass,
+  statusRenovacao,
   type StatusNotaT,
 } from "@/lib/financeiro";
 import { cn } from "@/lib/utils";
 
 import { CadastrarContratoDialog } from "./cadastrar-contrato-dialog";
 import { EditarNotaDialog, type NotaParaEditar } from "./editar-nota-dialog";
+import { RenovarContratoDialog } from "./renovar-contrato-dialog";
 
 export type NotaCard = {
   id: string;
@@ -41,6 +43,9 @@ export type NotaCard = {
   numeroNota: string | null;
   pago: boolean;
   observacoes: string | null;
+  arquivoUrl: string | null;
+  arquivoNome: string | null;
+  arquivoTipo: string | null;
 };
 
 export type ContratoCard = {
@@ -51,6 +56,8 @@ export type ContratoCard = {
   dataInicio: string;
   dataFim: string | null;
   ativo: boolean;
+  dataRenovacao: string | null;
+  diasAvisoRenovacao: number;
   notas: NotaCard[];
 };
 
@@ -72,6 +79,12 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
     mes: number;
     ano: number;
     valorMensal: number;
+  } | null>(null);
+  const [renovando, setRenovando] = React.useState<{
+    contratoId: string;
+    municipioNome: string;
+    valorMensal: number;
+    dataFim: string | null;
   } | null>(null);
 
   function setAno(v: string) {
@@ -157,12 +170,23 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
                         dataPagamento: nota.dataPagamento,
                         valorPago: nota.valorPago,
                         observacoes: nota.observacoes,
+                        arquivoUrl: nota.arquivoUrl,
+                        arquivoNome: nota.arquivoNome,
+                        arquivoTipo: nota.arquivoTipo,
                       }
                     : null,
                   contratoId: c.id,
                   mes,
                   ano,
                   valorMensal: c.valorMensal,
+                })
+              }
+              onRenovar={() =>
+                setRenovando({
+                  contratoId: c.id,
+                  municipioNome: c.municipio?.nome ?? "",
+                  valorMensal: c.valorMensal,
+                  dataFim: c.dataFim,
                 })
               }
             />
@@ -192,6 +216,21 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
           router.refresh();
         }}
       />
+
+      <RenovarContratoDialog
+        open={!!renovando}
+        onOpenChange={(o) => {
+          if (!o) setRenovando(null);
+        }}
+        contratoId={renovando?.contratoId ?? ""}
+        municipioNome={renovando?.municipioNome ?? ""}
+        valorMensalAtual={renovando?.valorMensal ?? 0}
+        dataFimAtual={renovando?.dataFim ?? null}
+        onSuccess={() => {
+          setRenovando(null);
+          router.refresh();
+        }}
+      />
     </>
   );
 }
@@ -201,9 +240,22 @@ type ContratoCardProps = {
   card: ContratoCard;
   hoje: Date;
   onClickMes: (mes: number, nota: NotaCard | null) => void;
+  onRenovar: () => void;
 };
 
-function ContratoCardView({ ano, card, hoje, onClickMes }: ContratoCardProps) {
+function ContratoCardView({
+  ano,
+  card,
+  hoje,
+  onClickMes,
+  onRenovar,
+}: ContratoCardProps) {
+  const renov = statusRenovacao(
+    card.dataRenovacao ? new Date(card.dataRenovacao) : null,
+    card.diasAvisoRenovacao,
+    card.ativo,
+    hoje,
+  );
   const notaPorMes = new Map<number, NotaCard>();
   for (const n of card.notas) notaPorMes.set(n.mesReferencia, n);
 
@@ -241,6 +293,53 @@ function ContratoCardView({ ano, card, hoje, onClickMes }: ContratoCardProps) {
         <BancaBadgeList slugs={card.bancasSlug} size="sm" />
       </div>
 
+      {/* Badges de renovacao */}
+      {renov.tipo === "PROXIMA" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-800 ring-1 ring-orange-200">
+            Renovacao proxima — {renov.diasAteRenovacao}d
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px]"
+            onClick={onRenovar}
+          >
+            <RefreshCw className="mr-1 h-3 w-3" />
+            Renovar Contrato
+          </Button>
+        </div>
+      )}
+      {renov.tipo === "VENCIDA" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex animate-pulse items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+            Renovacao vencida — {renov.diasDesdeVencimento}d
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px]"
+            onClick={onRenovar}
+          >
+            <RefreshCw className="mr-1 h-3 w-3" />
+            Renovar Contrato
+          </Button>
+        </div>
+      )}
+      {renov.tipo === "OK" && (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] text-muted-foreground"
+            onClick={onRenovar}
+          >
+            <RefreshCw className="mr-1 h-3 w-3" />
+            Renovar
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-6 gap-1.5">
         {NOMES_MESES.map((label, idx) => {
           const mes = idx + 1;
@@ -271,10 +370,16 @@ function ContratoCardView({ ano, card, hoje, onClickMes }: ContratoCardProps) {
               onClick={() => onClickMes(mes, nota)}
               title={title}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 rounded-md py-2 text-[10px] font-semibold transition-colors",
+                "relative flex flex-col items-center justify-center gap-0.5 rounded-md py-2 text-[10px] font-semibold transition-colors",
                 statusBgClass(status),
               )}
             >
+              {nota?.arquivoUrl && (
+                <Paperclip
+                  className="absolute right-0.5 top-0.5 h-2.5 w-2.5 opacity-80"
+                  aria-label="Tem arquivo anexado"
+                />
+              )}
               <span>{label}</span>
               {nota && status !== STATUS_NOTA.PAGA && (
                 <span className="text-[8px] opacity-90">

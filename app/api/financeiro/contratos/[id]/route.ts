@@ -93,6 +93,15 @@ export async function PATCH(
         ...(data.dataFim !== undefined && { dataFim: data.dataFim }),
         ...(data.ativo !== undefined && { ativo: data.ativo }),
         ...(data.observacoes !== undefined && { observacoes: data.observacoes }),
+        ...(data.dataRenovacao !== undefined && {
+          dataRenovacao: data.dataRenovacao,
+        }),
+        ...(data.diasAvisoRenovacao !== undefined && {
+          diasAvisoRenovacao: data.diasAvisoRenovacao,
+        }),
+        ...(data.observacoesRenovacao !== undefined && {
+          observacoesRenovacao: data.observacoesRenovacao,
+        }),
       },
     });
     return NextResponse.json({ ok: true });

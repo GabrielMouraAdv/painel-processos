@@ -152,6 +152,87 @@ export function gerarNotasDoContrato(
   return notas;
 }
 
+// ---------- Renovacao ----------
+
+// Gera notas mensais NOVAS desde "ultimoMes/Ano com nota" + 1 ate novaDataFim.
+// Util para renovacao do contrato. Se ja existirem notas para todos os meses
+// ate novaDataFim, retorna [].
+export function gerarNotasIncrementais(
+  ultimoMesGerado: { mes: number; ano: number } | null,
+  novaDataFim: Date,
+  valorMensal: number,
+): NotaParaGerar[] {
+  if (!Number.isFinite(valorMensal) || valorMensal < 0) return [];
+  if (!(novaDataFim instanceof Date) || isNaN(novaDataFim.getTime())) return [];
+
+  const proximoMes = ultimoMesGerado
+    ? new Date(
+        Date.UTC(
+          ultimoMesGerado.ano + (ultimoMesGerado.mes === 12 ? 1 : 0),
+          ultimoMesGerado.mes === 12 ? 0 : ultimoMesGerado.mes,
+          1,
+        ),
+      )
+    : new Date(Date.UTC(novaDataFim.getUTCFullYear(), 0, 1));
+
+  const fim = new Date(
+    Date.UTC(novaDataFim.getUTCFullYear(), novaDataFim.getUTCMonth(), 1),
+  );
+  if (proximoMes.getTime() > fim.getTime()) return [];
+
+  const notas: NotaParaGerar[] = [];
+  const MAX_ITER = 200;
+  let cursor = new Date(proximoMes);
+  let i = 0;
+  while (cursor.getTime() <= fim.getTime() && i < MAX_ITER) {
+    const mes = cursor.getUTCMonth() + 1;
+    const ano = cursor.getUTCFullYear();
+    const vencMes = mes === 12 ? 1 : mes + 1;
+    const vencAno = mes === 12 ? ano + 1 : ano;
+    notas.push({
+      mesReferencia: mes,
+      anoReferencia: ano,
+      valorNota: valorMensal,
+      dataVencimento: new Date(Date.UTC(vencAno, vencMes - 1, 10)),
+    });
+    cursor = new Date(Date.UTC(ano, mes, 1));
+    i++;
+  }
+  return notas;
+}
+
+// Calcula o status de renovacao de um contrato em relacao a hoje.
+//   - "OK": sem dataRenovacao, ou ainda esta longe
+//   - "PROXIMA": dentro da janela de aviso (diasAvisoRenovacao)
+//   - "VENCIDA": dataRenovacao ja passou e contrato continua ativo
+export type StatusRenovacao =
+  | { tipo: "OK"; diasAteRenovacao: number | null }
+  | { tipo: "PROXIMA"; diasAteRenovacao: number }
+  | { tipo: "VENCIDA"; diasDesdeVencimento: number };
+
+export function statusRenovacao(
+  dataRenovacao: Date | null,
+  diasAvisoRenovacao: number,
+  ativo: boolean,
+  hoje: Date = new Date(),
+): StatusRenovacao {
+  if (!dataRenovacao) return { tipo: "OK", diasAteRenovacao: null };
+  const ref = stripTime(hoje);
+  const ren = stripTime(dataRenovacao);
+  const diffDias = Math.floor(
+    (ren.getTime() - ref.getTime()) / 86_400_000,
+  );
+  if (diffDias < 0) {
+    return ativo
+      ? { tipo: "VENCIDA", diasDesdeVencimento: -diffDias }
+      : { tipo: "OK", diasAteRenovacao: diffDias };
+  }
+  if (diffDias <= diasAvisoRenovacao) {
+    return { tipo: "PROXIMA", diasAteRenovacao: diffDias };
+  }
+  return { tipo: "OK", diasAteRenovacao: diffDias };
+}
+
 // ---------- Formatadores ----------
 export function formatBRL(valor: number | string | null | undefined): string {
   if (valor === null || valor === undefined) return "—";

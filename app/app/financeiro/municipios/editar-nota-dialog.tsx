@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Trash2 } from "lucide-react";
+import { ExternalLink, Paperclip, Trash2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,9 @@ export type NotaParaEditar = {
   dataPagamento: string | null;
   valorPago: number | null;
   observacoes: string | null;
+  arquivoUrl: string | null;
+  arquivoNome: string | null;
+  arquivoTipo: string | null;
 };
 
 type Props = {
@@ -65,6 +68,13 @@ export function EditarNotaDialog({
   const [dataPag, setDataPag] = React.useState("");
   const [valorPago, setValorPago] = React.useState("");
   const [observacoes, setObservacoes] = React.useState("");
+  const [arquivo, setArquivo] = React.useState<{
+    url: string | null;
+    nome: string | null;
+    tipo: string | null;
+  }>({ url: null, nome: null, tipo: null });
+  const [uploading, setUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     if (open) {
@@ -77,6 +87,11 @@ export function EditarNotaDialog({
         setDataPag(isoDate(nota.dataPagamento));
         setValorPago(nota.valorPago !== null ? String(nota.valorPago) : "");
         setObservacoes(nota.observacoes ?? "");
+        setArquivo({
+          url: nota.arquivoUrl,
+          nome: nota.arquivoNome,
+          tipo: nota.arquivoTipo,
+        });
       } else {
         // Default: vencimento dia 10 do mes seguinte
         const vencMes = mes === 12 ? 1 : mes + 1;
@@ -90,9 +105,79 @@ export function EditarNotaDialog({
         setDataPag("");
         setValorPago("");
         setObservacoes("");
+        setArquivo({ url: null, nome: null, tipo: null });
       }
     }
   }, [open, nota, mes, ano, valorPadrao]);
+
+  async function fazerUpload(file: File) {
+    if (!nota) {
+      toast({
+        variant: "destructive",
+        title: "Salve a nota antes de anexar arquivo",
+        description: "Salve os dados, reabra a nota e tente o upload novamente.",
+      });
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/financeiro/notas/${nota.id}/upload`, {
+        method: "POST",
+        body: fd,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Falha no upload",
+          description: json.error ?? "Tente novamente.",
+        });
+        return;
+      }
+      setArquivo({
+        url: json.arquivoUrl ?? null,
+        nome: json.arquivoNome ?? null,
+        tipo: json.arquivoTipo ?? null,
+      });
+      toast({ title: "Arquivo anexado" });
+    } catch (e) {
+      console.error("[upload nota] erro:", e);
+      toast({
+        variant: "destructive",
+        title: "Erro de conexao no upload",
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function removerArquivo() {
+    if (!nota?.id || !arquivo.url) return;
+    if (!window.confirm("Remover o arquivo anexado?")) return;
+    setUploading(true);
+    try {
+      const res = await fetch(
+        `/api/financeiro/notas/${nota.id}/arquivo`,
+        { method: "DELETE" },
+      );
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Falha ao remover",
+          description: json.error,
+        });
+        return;
+      }
+      setArquivo({ url: null, nome: null, tipo: null });
+      toast({ title: "Arquivo removido" });
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function salvar() {
     const valorNum = Number(String(valor).replace(/\./g, "").replace(",", "."));
@@ -272,6 +357,67 @@ export function EditarNotaDialog({
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
             />
+          </div>
+
+          {/* Anexo de arquivo */}
+          <div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
+            <Label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-700">
+              Anexar nota fiscal (PDF, JPG, PNG, XML — ate 10 MB)
+            </Label>
+            {arquivo.url ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Paperclip className="h-4 w-4 text-slate-600" />
+                <span className="flex-1 truncate text-sm font-medium">
+                  {arquivo.nome ?? "arquivo anexado"}
+                </span>
+                <a
+                  href={arquivo.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-700 hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Visualizar / Baixar
+                </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 border-red-200 text-red-700 hover:bg-red-50"
+                  onClick={removerArquivo}
+                  disabled={uploading}
+                >
+                  <X className="mr-1 h-3 w-3" />
+                  Remover
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,application/xml,text/xml"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void fazerUpload(f);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || !nota}
+                >
+                  <Upload className="mr-1.5 h-4 w-4" />
+                  {uploading ? "Enviando..." : "Escolher arquivo"}
+                </Button>
+                {!nota && (
+                  <span className="text-[11px] italic text-muted-foreground">
+                    Salve a nota primeiro para poder anexar.
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

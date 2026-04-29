@@ -58,6 +58,8 @@ export default async function FinanceiroMunicipiosPage({
     dataInicio: c.dataInicio.toISOString(),
     dataFim: c.dataFim ? c.dataFim.toISOString() : null,
     ativo: c.ativo,
+    dataRenovacao: c.dataRenovacao ? c.dataRenovacao.toISOString() : null,
+    diasAvisoRenovacao: c.diasAvisoRenovacao,
     notas: c.notas.map((n) => ({
       id: n.id,
       mesReferencia: n.mesReferencia,
@@ -70,6 +72,9 @@ export default async function FinanceiroMunicipiosPage({
       numeroNota: n.numeroNota,
       pago: n.pago,
       observacoes: n.observacoes,
+      arquivoUrl: n.arquivoUrl,
+      arquivoNome: n.arquivoNome,
+      arquivoTipo: n.arquivoTipo,
     })),
   }));
 

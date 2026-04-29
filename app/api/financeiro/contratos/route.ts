@@ -119,6 +119,9 @@ export async function POST(req: Request) {
         dataFim: data.dataFim ?? null,
         ativo: data.ativo ?? true,
         observacoes: data.observacoes ?? null,
+        dataRenovacao: data.dataRenovacao ?? null,
+        diasAvisoRenovacao: data.diasAvisoRenovacao ?? 60,
+        observacoesRenovacao: data.observacoesRenovacao ?? null,
       },
       select: { id: true },
     });

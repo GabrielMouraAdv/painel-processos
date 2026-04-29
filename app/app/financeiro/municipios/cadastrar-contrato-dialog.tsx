@@ -43,6 +43,9 @@ export function CadastrarContratoDialog({
   const [dataFim, setDataFim] = React.useState("");
   const [observacoes, setObservacoes] = React.useState("");
   const [gerarNotas, setGerarNotas] = React.useState(true);
+  const [dataRenovacao, setDataRenovacao] = React.useState("");
+  const [diasAviso, setDiasAviso] = React.useState("60");
+  const [obsRenovacao, setObsRenovacao] = React.useState("");
 
   React.useEffect(() => {
     if (open) {
@@ -54,6 +57,9 @@ export function CadastrarContratoDialog({
       setDataFim("");
       setObservacoes("");
       setGerarNotas(true);
+      setDataRenovacao("");
+      setDiasAviso("60");
+      setObsRenovacao("");
     }
   }, [open]);
 
@@ -134,6 +140,9 @@ export function CadastrarContratoDialog({
             dataFim: dataFim || null,
             observacoes: observacoes.trim() || null,
             gerarNotasAutomaticas: gerarNotas,
+            dataRenovacao: dataRenovacao || null,
+            diasAvisoRenovacao: parseInt(diasAviso, 10) || 60,
+            observacoesRenovacao: obsRenovacao.trim() || null,
           }),
         });
       } catch (errFetch) {
@@ -320,6 +329,40 @@ export function CadastrarContratoDialog({
               do ano corrente
             </span>
           </label>
+
+          <div className="rounded-md border border-amber-200 bg-amber-50/40 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-900">
+              Renovacao (opcional)
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Data de renovacao</Label>
+                <Input
+                  type="date"
+                  value={dataRenovacao}
+                  onChange={(e) => setDataRenovacao(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Avisar com (dias de antecedencia)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="365"
+                  value={diasAviso}
+                  onChange={(e) => setDiasAviso(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="mt-2 space-y-1.5">
+              <Label className="text-xs">Observacoes de renovacao</Label>
+              <Textarea
+                rows={2}
+                value={obsRenovacao}
+                onChange={(e) => setObsRenovacao(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
 
         <DialogFooter>

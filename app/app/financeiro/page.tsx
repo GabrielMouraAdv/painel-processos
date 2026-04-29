@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { AlertCircle, Building2, FileText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { AlertCircle, Building2, FileText, RefreshCw, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 import { BANCAS, parseBancasParam } from "@/lib/bancas";
 import { authOptions } from "@/lib/auth";
@@ -10,6 +10,7 @@ import {
   diasEmAtraso,
   formatBRL,
   STATUS_NOTA,
+  statusRenovacao,
 } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 
@@ -68,6 +69,60 @@ export default async function FinanceiroDashboardPage({
       }),
     },
   });
+
+  // Contratos com renovacao definida (para calcular "a renovar" e listar proximos)
+  const contratosComRenovacao = await prisma.contratoMunicipal.findMany({
+    where: {
+      ativo: true,
+      dataRenovacao: { not: null },
+      municipio: { escritorioId },
+      ...(bancasFiltro.length > 0 && {
+        bancasSlug: { hasSome: bancasFiltro },
+      }),
+    },
+    select: {
+      id: true,
+      dataRenovacao: true,
+      diasAvisoRenovacao: true,
+      valorMensal: true,
+      bancasSlug: true,
+      municipio: { select: { nome: true, uf: true } },
+    },
+  });
+
+  type RenovacaoItem = {
+    id: string;
+    municipio: string;
+    uf: string;
+    dataRenovacao: Date;
+    diasAteRenovacao: number;
+    tipo: "PROXIMA" | "VENCIDA";
+    diasDesdeVencimento?: number;
+    valorMensal: number;
+    bancasSlug: string[];
+  };
+  const renovacoesAtivas: RenovacaoItem[] = [];
+  for (const c of contratosComRenovacao) {
+    if (!c.dataRenovacao) continue;
+    const r = statusRenovacao(c.dataRenovacao, c.diasAvisoRenovacao, true, hoje);
+    if (r.tipo === "PROXIMA" || r.tipo === "VENCIDA") {
+      renovacoesAtivas.push({
+        id: c.id,
+        municipio: c.municipio?.nome ?? "—",
+        uf: c.municipio?.uf ?? "",
+        dataRenovacao: c.dataRenovacao,
+        diasAteRenovacao:
+          r.tipo === "PROXIMA" ? r.diasAteRenovacao : -r.diasDesdeVencimento,
+        tipo: r.tipo,
+        diasDesdeVencimento:
+          r.tipo === "VENCIDA" ? r.diasDesdeVencimento : undefined,
+        valorMensal: Number(c.valorMensal),
+        bancasSlug: c.bancasSlug,
+      });
+    }
+  }
+  renovacoesAtivas.sort((a, b) => a.diasAteRenovacao - b.diasAteRenovacao);
+  const contratosARenovar = renovacoesAtivas.length;
 
   // KPIs
   let totalRecebido = 0;
@@ -190,6 +245,16 @@ export default async function FinanceiroDashboardPage({
       tone: "navy" as const,
     },
     {
+      label: "Contratos a Renovar",
+      value: String(contratosARenovar),
+      sub:
+        contratosARenovar > 0
+          ? `proxima em ${renovacoesAtivas[0].diasAteRenovacao}d`
+          : undefined,
+      icon: RefreshCw,
+      tone: "amber" as const,
+    },
+    {
       label: "Maior Devedor",
       value: maiorDevedor ? maiorDevedor[1].nome : "—",
       sub: maiorDevedor ? formatBRL(maiorDevedor[1].atraso) : undefined,
@@ -222,7 +287,7 @@ export default async function FinanceiroDashboardPage({
 
       <FinanceiroFiltros anoSelecionado={ano} />
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {kpis.map((k) => {
           const Icon = k.icon;
           return (
@@ -292,6 +357,66 @@ export default async function FinanceiroDashboardPage({
           </table>
         </div>
       </section>
+
+      {/* Renovacoes proximas */}
+      {renovacoesAtivas.length > 0 && (
+        <section className="rounded-lg border border-orange-200 bg-orange-50/40 p-4 shadow-sm">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-orange-900">
+            <RefreshCw className="h-4 w-4" />
+            Renovacoes proximas ({renovacoesAtivas.length})
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-orange-200 text-left text-xs uppercase tracking-wide text-orange-900">
+                  <th className="py-2">Municipio</th>
+                  <th className="py-2">Banca(s)</th>
+                  <th className="py-2 text-right">Valor mensal</th>
+                  <th className="py-2 text-right">Renovacao</th>
+                  <th className="py-2 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {renovacoesAtivas.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="border-b border-orange-100 last:border-b-0"
+                  >
+                    <td className="py-2 font-medium">
+                      {r.municipio}/{r.uf}
+                    </td>
+                    <td className="py-2 text-xs">
+                      {r.bancasSlug
+                        .map(
+                          (s) =>
+                            BANCAS.find((b) => b.slug === s)?.nome ?? s,
+                        )
+                        .join(", ")}
+                    </td>
+                    <td className="py-2 text-right font-mono">
+                      {formatBRL(r.valorMensal)}
+                    </td>
+                    <td className="py-2 text-right">
+                      {r.dataRenovacao.toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="py-2 text-right">
+                      {r.tipo === "VENCIDA" ? (
+                        <span className="inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                          Vencida {r.diasDesdeVencimento}d
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-800 ring-1 ring-orange-200">
+                          {r.diasAteRenovacao}d restantes
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* Notas vencidas */}
       <section className="rounded-lg border-2 border-red-200 bg-red-50 p-4 shadow-sm">
