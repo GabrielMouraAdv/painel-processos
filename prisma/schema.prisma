@@ -343,26 +343,59 @@ model Municipio {
 }
 
 model ContratoMunicipal {
-  id                    String    @id @default(cuid())
-  municipioId           String
-  bancasSlug            String[]  @default([])
-  valorMensal           Decimal   @db.Decimal(15, 2)
-  dataInicio            DateTime
-  dataFim               DateTime?
-  ativo                 Boolean   @default(true)
-  observacoes           String?   @db.Text
-  dataRenovacao         DateTime?
-  diasAvisoRenovacao    Int       @default(60)
-  observacoesRenovacao  String?   @db.Text
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                       String    @id @default(cuid())
+  municipioId              String
+  bancasSlug               String[]  @default([])
+  valorMensal              Decimal   @db.Decimal(15, 2)
+  dataInicio               DateTime
+  dataFim                  DateTime?
+  ativo                    Boolean   @default(true)
+  observacoes              String?   @db.Text
+  dataRenovacao            DateTime?
+  diasAvisoRenovacao       Int       @default(60)
+  observacoesRenovacao     String?   @db.Text
+  numeroContrato           String?
+  cnpjContratante          String?
+  orgaoContratante         String?
+  representanteContratante String?
+  cargoRepresentante       String?
+  objetoDoContrato         String?   @db.Text
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   municipio Municipio    @relation(fields: [municipioId], references: [id], onDelete: Cascade)
   notas     NotaFiscal[]
+  aditivos  AditivoContrato[]
 
   @@index([municipioId])
   @@index([ativo])
   @@index([dataRenovacao])
+}
+
+enum TipoAditivo {
+  PRORROGACAO
+  REAJUSTE
+  ALTERACAO_OBJETO
+  ALTERACAO_VALOR
+  OUTRO
+}
+
+model AditivoContrato {
+  id                 String      @id @default(cuid())
+  contratoId         String
+  tipo               TipoAditivo
+  justificativa      String      @db.Text
+  fundamento         String      @db.Text
+  escritorioSlug     String
+  advogadoIdx        Int         @default(0)
+  arquivoUrl         String?
+  arquivoNome        String?
+  createdAt          DateTime    @default(now())
+
+  contrato ContratoMunicipal @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+
+  @@index([contratoId])
+  @@index([createdAt])
 }
 
 model NotaFiscal {

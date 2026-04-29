@@ -122,6 +122,12 @@ export async function POST(req: Request) {
         dataRenovacao: data.dataRenovacao ?? null,
         diasAvisoRenovacao: data.diasAvisoRenovacao ?? 60,
         observacoesRenovacao: data.observacoesRenovacao ?? null,
+        numeroContrato: data.numeroContrato ?? null,
+        cnpjContratante: data.cnpjContratante ?? null,
+        orgaoContratante: data.orgaoContratante ?? null,
+        representanteContratante: data.representanteContratante ?? null,
+        cargoRepresentante: data.cargoRepresentante ?? null,
+        objetoDoContrato: data.objetoDoContrato,
       },
       select: { id: true },
     });

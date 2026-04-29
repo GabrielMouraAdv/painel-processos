@@ -285,6 +285,17 @@ export const TIPO_HONORARIO_LABELS = {
   OUTROS: "Outros",
 } as const;
 
+export const OBJETO_CONTRATO_PADRAO =
+  "Prestacao de servicos juridicos especializados em direito administrativo, com enfase em assessoria e consultoria em licitacoes, contratos administrativos, controle externo, contas publicas e representacao perante o Tribunal de Contas do Estado de Pernambuco - TCE/PE, abrangendo a defesa em medidas cautelares, auditorias especiais, prestacoes de contas, autos de infracao e demais procedimentos no ambito do TCE/PE, bem como em acoes correlatas no Poder Judiciario.";
+
+export const TIPO_ADITIVO_LABELS = {
+  PRORROGACAO: "Prorrogacao de prazo",
+  REAJUSTE: "Reajuste de valor",
+  ALTERACAO_OBJETO: "Alteracao de objeto",
+  ALTERACAO_VALOR: "Alteracao de valor",
+  OUTRO: "Outro",
+} as const;
+
 export const STATUS_NOTA_LABELS: Record<StatusNotaT, string> = {
   A_VENCER: "A Vencer",
   PAGA: "Paga",

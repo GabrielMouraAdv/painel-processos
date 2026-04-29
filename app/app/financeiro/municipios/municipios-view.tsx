@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Paperclip, Plus, Receipt, RefreshCw } from "lucide-react";
+import { FileText, Paperclip, Plus, Receipt, RefreshCw } from "lucide-react";
 
 import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import { BancaFilter } from "@/components/bancas/banca-filter";
@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 import { CadastrarContratoDialog } from "./cadastrar-contrato-dialog";
 import { EditarNotaDialog, type NotaParaEditar } from "./editar-nota-dialog";
+import { EmitirAditivoDialog } from "./emitir-aditivo-dialog";
 import { RenovarContratoDialog } from "./renovar-contrato-dialog";
 
 export type NotaCard = {
@@ -58,6 +59,8 @@ export type ContratoCard = {
   ativo: boolean;
   dataRenovacao: string | null;
   diasAvisoRenovacao: number;
+  numeroContrato: string | null;
+  objetoDoContrato: string | null;
   notas: NotaCard[];
 };
 
@@ -85,6 +88,11 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
     municipioNome: string;
     valorMensal: number;
     dataFim: string | null;
+  } | null>(null);
+  const [aditivando, setAditivando] = React.useState<{
+    contratoId: string;
+    municipioNome: string;
+    bancasSlug: string[];
   } | null>(null);
 
   function setAno(v: string) {
@@ -189,6 +197,13 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
                   dataFim: c.dataFim,
                 })
               }
+              onAditivar={() =>
+                setAditivando({
+                  contratoId: c.id,
+                  municipioNome: c.municipio?.nome ?? "",
+                  bancasSlug: c.bancasSlug,
+                })
+              }
             />
           ))}
         </div>
@@ -231,6 +246,16 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
           router.refresh();
         }}
       />
+
+      <EmitirAditivoDialog
+        open={!!aditivando}
+        onOpenChange={(o) => {
+          if (!o) setAditivando(null);
+        }}
+        contratoId={aditivando?.contratoId ?? ""}
+        municipioNome={aditivando?.municipioNome ?? ""}
+        bancasContrato={aditivando?.bancasSlug ?? []}
+      />
     </>
   );
 }
@@ -241,6 +266,7 @@ type ContratoCardProps = {
   hoje: Date;
   onClickMes: (mes: number, nota: NotaCard | null) => void;
   onRenovar: () => void;
+  onAditivar: () => void;
 };
 
 function ContratoCardView({
@@ -249,6 +275,7 @@ function ContratoCardView({
   hoje,
   onClickMes,
   onRenovar,
+  onAditivar,
 }: ContratoCardProps) {
   const renov = statusRenovacao(
     card.dataRenovacao ? new Date(card.dataRenovacao) : null,
@@ -288,7 +315,17 @@ function ContratoCardView({
           <p className="text-[11px] text-muted-foreground">
             {card.municipio ? `${card.municipio.uf} • ` : ""}
             {formatBRL(card.valorMensal)}/mes
+            {card.numeroContrato ? ` • Contrato ${card.numeroContrato}` : ""}
           </p>
+          {card.objetoDoContrato && (
+            <p
+              className="mt-1 line-clamp-2 text-[11px] text-slate-600"
+              title={card.objetoDoContrato}
+            >
+              <span className="font-medium text-slate-700">Objeto:</span>{" "}
+              {card.objetoDoContrato}
+            </p>
+          )}
         </div>
         <BancaBadgeList slugs={card.bancasSlug} size="sm" />
       </div>
@@ -303,10 +340,19 @@ function ContratoCardView({
             variant="outline"
             size="sm"
             className="h-7 text-[11px]"
+            onClick={onAditivar}
+          >
+            <FileText className="mr-1 h-3 w-3" />
+            Emitir Solicitacao de Aditivo
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px]"
             onClick={onRenovar}
           >
             <RefreshCw className="mr-1 h-3 w-3" />
-            Renovar Contrato
+            Renovar
           </Button>
         </div>
       )}
@@ -319,15 +365,33 @@ function ContratoCardView({
             variant="outline"
             size="sm"
             className="h-7 text-[11px]"
+            onClick={onAditivar}
+          >
+            <FileText className="mr-1 h-3 w-3" />
+            Emitir Solicitacao de Aditivo
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px]"
             onClick={onRenovar}
           >
             <RefreshCw className="mr-1 h-3 w-3" />
-            Renovar Contrato
+            Renovar
           </Button>
         </div>
       )}
       {renov.tipo === "OK" && (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] text-muted-foreground"
+            onClick={onAditivar}
+          >
+            <FileText className="mr-1 h-3 w-3" />
+            Aditivo
+          </Button>
           <Button
             variant="ghost"
             size="sm"

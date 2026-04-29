@@ -60,6 +60,8 @@ export default async function FinanceiroMunicipiosPage({
     ativo: c.ativo,
     dataRenovacao: c.dataRenovacao ? c.dataRenovacao.toISOString() : null,
     diasAvisoRenovacao: c.diasAvisoRenovacao,
+    numeroContrato: c.numeroContrato,
+    objetoDoContrato: c.objetoDoContrato,
     notas: c.notas.map((n) => ({
       id: n.id,
       mesReferencia: n.mesReferencia,

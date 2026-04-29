@@ -102,6 +102,24 @@ export async function PATCH(
         ...(data.observacoesRenovacao !== undefined && {
           observacoesRenovacao: data.observacoesRenovacao,
         }),
+        ...(data.numeroContrato !== undefined && {
+          numeroContrato: data.numeroContrato,
+        }),
+        ...(data.cnpjContratante !== undefined && {
+          cnpjContratante: data.cnpjContratante,
+        }),
+        ...(data.orgaoContratante !== undefined && {
+          orgaoContratante: data.orgaoContratante,
+        }),
+        ...(data.representanteContratante !== undefined && {
+          representanteContratante: data.representanteContratante,
+        }),
+        ...(data.cargoRepresentante !== undefined && {
+          cargoRepresentante: data.cargoRepresentante,
+        }),
+        ...(data.objetoDoContrato !== undefined && {
+          objetoDoContrato: data.objetoDoContrato,
+        }),
       },
     });
     return NextResponse.json({ ok: true });

@@ -7,6 +7,12 @@ export type EscritorioEmissor = {
   slug: string;
   nome: string;
   advogados: AdvogadoEmissor[];
+  endereco?: string;
+  telefone?: string;
+  email?: string;
+  // Estilo aplicado ao .docx de aditivo de contrato
+  fonteDocx: string;
+  espacamentoDocx: number; // 1.15 ou 1.5
 };
 
 export const ESCRITORIOS_EMISSORES: EscritorioEmissor[] = [
@@ -16,6 +22,11 @@ export const ESCRITORIOS_EMISSORES: EscritorioEmissor[] = [
     advogados: [
       { nome: "Gabriel Vidal de Moura", oab: "OAB/PE 58.958" },
     ],
+    endereco: "Recife/PE",
+    telefone: "",
+    email: "gabrielvidal97@gmail.com",
+    fonteDocx: "Montserrat",
+    espacamentoDocx: 1.5,
   },
   {
     slug: "filipe-campos",
@@ -23,6 +34,11 @@ export const ESCRITORIOS_EMISSORES: EscritorioEmissor[] = [
     advogados: [
       { nome: "Filipe Fernandes Campos", oab: "OAB/PE 31.509" },
     ],
+    endereco: "Recife/PE",
+    telefone: "",
+    email: "",
+    fonteDocx: "Book Antiqua",
+    espacamentoDocx: 1.15,
   },
   {
     slug: "porto-rodrigues",
@@ -31,6 +47,11 @@ export const ESCRITORIOS_EMISSORES: EscritorioEmissor[] = [
       { nome: "Julio Tiago de C. Rodrigues", oab: "OAB/PE 23.610" },
       { nome: "Carlos Porto de Barros", oab: "OAB/PE 4.581" },
     ],
+    endereco: "Recife/PE",
+    telefone: "",
+    email: "",
+    fonteDocx: "Garamond",
+    espacamentoDocx: 1.5,
   },
 ];
 

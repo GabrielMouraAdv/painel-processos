@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { BANCAS, bancaBadgeClasses } from "@/lib/bancas";
+import { OBJETO_CONTRATO_PADRAO } from "@/lib/financeiro";
 import { cn } from "@/lib/utils";
 
 type MunicipioOpt = { id: string; nome: string; uf: string };
@@ -46,6 +48,13 @@ export function CadastrarContratoDialog({
   const [dataRenovacao, setDataRenovacao] = React.useState("");
   const [diasAviso, setDiasAviso] = React.useState("60");
   const [obsRenovacao, setObsRenovacao] = React.useState("");
+  // Dados do contrato (formalizacao)
+  const [numeroContrato, setNumeroContrato] = React.useState("");
+  const [cnpjContratante, setCnpjContratante] = React.useState("");
+  const [orgaoContratante, setOrgaoContratante] = React.useState("");
+  const [representante, setRepresentante] = React.useState("");
+  const [cargoRepresentante, setCargoRepresentante] = React.useState("");
+  const [objetoDoContrato, setObjetoDoContrato] = React.useState("");
 
   React.useEffect(() => {
     if (open) {
@@ -60,6 +69,12 @@ export function CadastrarContratoDialog({
       setDataRenovacao("");
       setDiasAviso("60");
       setObsRenovacao("");
+      setNumeroContrato("");
+      setCnpjContratante("");
+      setOrgaoContratante("");
+      setRepresentante("");
+      setCargoRepresentante("");
+      setObjetoDoContrato("");
     }
   }, [open]);
 
@@ -81,7 +96,6 @@ export function CadastrarContratoDialog({
   }, [busca, municipios]);
 
   async function salvar() {
-    // Validacoes locais
     if (!municipioId) {
       toast({ variant: "destructive", title: "Selecione o municipio" });
       return;
@@ -98,7 +112,6 @@ export function CadastrarContratoDialog({
       toast({ variant: "destructive", title: "Valor mensal obrigatorio" });
       return;
     }
-    // Aceita "1500", "1500,50", "1.500,50", "1500.50"
     const limpo = valorTrim
       .replace(/\s+/g, "")
       .replace(/[R$]/g, "")
@@ -124,6 +137,16 @@ export function CadastrarContratoDialog({
       });
       return;
     }
+    const objeto = objetoDoContrato.trim();
+    if (objeto.length < 20) {
+      toast({
+        variant: "destructive",
+        title: "Objeto do contrato obrigatorio",
+        description:
+          "Descreva com pelo menos 20 caracteres. Use 'Sugerir Texto Padrao' para preencher.",
+      });
+      return;
+    }
 
     setPending(true);
     try {
@@ -143,6 +166,12 @@ export function CadastrarContratoDialog({
             dataRenovacao: dataRenovacao || null,
             diasAvisoRenovacao: parseInt(diasAviso, 10) || 60,
             observacoesRenovacao: obsRenovacao.trim() || null,
+            numeroContrato: numeroContrato.trim() || null,
+            cnpjContratante: cnpjContratante.trim() || null,
+            orgaoContratante: orgaoContratante.trim() || null,
+            representanteContratante: representante.trim() || null,
+            cargoRepresentante: cargoRepresentante.trim() || null,
+            objetoDoContrato: objeto,
           }),
         });
       } catch (errFetch) {
@@ -156,7 +185,6 @@ export function CadastrarContratoDialog({
         return;
       }
 
-      // Tenta parsear JSON, mas trata caso o servidor tenha retornado HTML
       let json: { error?: string; id?: string; notasGeradas?: number } = {};
       const contentType = res.headers.get("content-type") ?? "";
       if (contentType.includes("application/json")) {
@@ -210,7 +238,7 @@ export function CadastrarContratoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Cadastrar contrato municipal</DialogTitle>
           <DialogDescription>
@@ -307,6 +335,85 @@ export function CadastrarContratoDialog({
                 onChange={(e) => setDataFim(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="rounded-md border border-slate-200 bg-slate-50/40 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-700">
+              Dados do contrato (formalizacao)
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Numero do contrato</Label>
+                <Input
+                  placeholder="Ex.: 015/2025"
+                  value={numeroContrato}
+                  onChange={(e) => setNumeroContrato(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">CNPJ do contratante</Label>
+                <Input
+                  placeholder="00.000.000/0000-00"
+                  value={cnpjContratante}
+                  onChange={(e) => setCnpjContratante(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="mt-2 space-y-1.5">
+              <Label className="text-xs">Orgao contratante</Label>
+              <Input
+                placeholder="Ex.: Prefeitura Municipal de Recife"
+                value={orgaoContratante}
+                onChange={(e) => setOrgaoContratante(e.target.value)}
+              />
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Representante</Label>
+                <Input
+                  placeholder="Nome do representante legal"
+                  value={representante}
+                  onChange={(e) => setRepresentante(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Cargo do representante</Label>
+                <Input
+                  placeholder="Ex.: Prefeito"
+                  value={cargoRepresentante}
+                  onChange={(e) => setCargoRepresentante(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border-2 border-brand-navy/40 bg-brand-navy/5 p-3 ring-1 ring-brand-navy/10">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <Label className="text-sm font-semibold text-brand-navy">
+                Objeto do contrato <span className="text-red-600">*</span>
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 text-[11px]"
+                onClick={() => setObjetoDoContrato(OBJETO_CONTRATO_PADRAO)}
+              >
+                <Sparkles className="h-3 w-3" />
+                Sugerir Texto Padrao
+              </Button>
+            </div>
+            <Textarea
+              rows={6}
+              value={objetoDoContrato}
+              onChange={(e) => setObjetoDoContrato(e.target.value)}
+              placeholder="Descreva o objeto do contrato (servicos prestados, escopo de atuacao). Clique em 'Sugerir Texto Padrao' para preencher com o texto padrao do escritorio."
+              className="min-h-[120px] border-brand-navy/20 bg-white"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Aparece no resumo do contrato e na secao &quot;I - DO CONTRATO
+              ORIGINAL&quot; do .docx de aditivo.
+            </p>
           </div>
 
           <div className="space-y-1.5">

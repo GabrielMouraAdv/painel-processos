@@ -2,6 +2,7 @@ import {
   CamaraTce,
   Grau,
   Risco,
+  TipoAditivo,
   TipoHonorario,
   TipoInteressado,
   TipoProcesso,
@@ -480,6 +481,14 @@ export const contratoMunicipalInputSchema = z.object({
   dataRenovacao: optionalDate,
   diasAvisoRenovacao: z.coerce.number().int().min(0).max(365).optional().default(60),
   observacoesRenovacao: z.string().optional().nullable(),
+  numeroContrato: optionalString(60),
+  cnpjContratante: optionalString(20),
+  orgaoContratante: optionalString(160),
+  representanteContratante: optionalString(160),
+  cargoRepresentante: optionalString(120),
+  objetoDoContrato: z
+    .string({ message: "Informe o objeto do contrato" })
+    .min(20, "O objeto do contrato deve ter pelo menos 20 caracteres"),
   // Se true (default), gera notas automaticamente apos criar
   gerarNotasAutomaticas: z.boolean().optional().default(true),
 });
@@ -498,7 +507,22 @@ export const contratoMunicipalUpdateSchema = z.object({
   dataRenovacao: optionalDate,
   diasAvisoRenovacao: z.coerce.number().int().min(0).max(365).optional(),
   observacoesRenovacao: z.string().optional().nullable(),
+  numeroContrato: optionalString(60),
+  cnpjContratante: optionalString(20),
+  orgaoContratante: optionalString(160),
+  representanteContratante: optionalString(160),
+  cargoRepresentante: optionalString(120),
+  objetoDoContrato: z.string().min(20).optional(),
 });
+
+export const aditivoInputSchema = z.object({
+  tipo: z.nativeEnum(TipoAditivo),
+  justificativa: z.string().min(10, "Descreva a justificativa"),
+  fundamento: z.string().min(10, "Informe o fundamento legal"),
+  escritorioSlug: z.string().min(1, "Selecione o escritorio emissor"),
+  advogadoIdx: z.coerce.number().int().min(0).optional().default(0),
+});
+export type AditivoInput = z.infer<typeof aditivoInputSchema>;
 
 export const renovarContratoSchema = z.object({
   novaDataFim: dateInput,
