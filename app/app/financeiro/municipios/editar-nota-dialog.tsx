@@ -281,6 +281,16 @@ export function EditarNotaDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <a
+          href="https://nfse.recife.pe.gov.br/senhaweb/login.aspx"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          <ExternalLink className="h-4 w-4" />
+          Emitir Nota no Site do Recife
+        </a>
+
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
