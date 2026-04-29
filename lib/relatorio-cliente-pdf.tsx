@@ -46,6 +46,11 @@ export type ProcessoTceItem = {
   camara: string;
   relator: string | null;
   faseAtual: string;
+  // Quando o processo eh recurso, marca tipo (RO/ED/AGR/...) e numero da
+  // origem para o relatorio renderizar agrupado/indentado abaixo da origem.
+  ehRecurso: boolean;
+  tipoRecursoCode: string | null;
+  origemNumero: string | null;
   status: {
     notaTecnica: boolean;
     parecerMpco: boolean;
@@ -541,13 +546,32 @@ function ProcessoJudicialCard({ p }: { p: ProcessoJudicialItem }) {
 }
 
 function ProcessoTceCard({ p }: { p: ProcessoTceItem }) {
+  // Recursos sao indentados a esquerda para evidenciar a arvore
+  // (Processo origem > Recurso > Recurso do recurso).
+  const indent = p.ehRecurso ? 18 : 0;
+  const headerColor = p.ehRecurso ? "#5b21b6" : COLOR_NAVY;
   return (
-    <View style={styles.processoCard} wrap={false}>
-      <View style={[styles.processoHeader, { backgroundColor: COLOR_NAVY }]}>
-        <Text style={styles.processoNumero}>{p.numero}</Text>
+    <View style={[styles.processoCard, { marginLeft: indent }]} wrap={false}>
+      <View style={[styles.processoHeader, { backgroundColor: headerColor }]}>
+        <Text style={styles.processoNumero}>
+          {p.ehRecurso && p.tipoRecursoCode ? `[${p.tipoRecursoCode}] ` : ""}
+          {p.numero}
+        </Text>
         <Text style={styles.processoRiscoBadge}>{p.tipo}</Text>
       </View>
       <View style={styles.processoBody}>
+        {p.ehRecurso && p.origemNumero ? (
+          <Text
+            style={{
+              fontSize: 8,
+              color: "#7c3aed",
+              fontFamily: "Helvetica-Bold",
+              marginBottom: 4,
+            }}
+          >
+            ↳ Recurso vinculado a {p.origemNumero}
+          </Text>
+        ) : null}
         <View style={styles.metaLinha}>
           {p.exercicio ? (
             <Text style={styles.metaItem}>

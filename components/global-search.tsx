@@ -4,7 +4,6 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
-  FileText,
   Gavel,
   Loader2,
   Scale,
@@ -19,7 +18,6 @@ type ResultadoBusca = {
   tipo:
     | "processo_tce"
     | "processo_judicial"
-    | "subprocesso_tce"
     | "gestor"
     | "municipio";
   id: string;
@@ -38,7 +36,6 @@ type Grupo = {
 const ORDEM: ResultadoBusca["tipo"][] = [
   "processo_tce",
   "processo_judicial",
-  "subprocesso_tce",
   "gestor",
   "municipio",
 ];
@@ -46,7 +43,6 @@ const ORDEM: ResultadoBusca["tipo"][] = [
 const TITULOS: Record<ResultadoBusca["tipo"], string> = {
   processo_tce: "Processos TCE",
   processo_judicial: "Processos Judiciais",
-  subprocesso_tce: "Subprocessos TCE",
   gestor: "Gestores",
   municipio: "Municipios",
 };
@@ -58,8 +54,6 @@ function IconePorTipo({ tipo }: { tipo: ResultadoBusca["tipo"] }) {
       return <Gavel className={cn(cls, "text-brand-navy")} />;
     case "processo_judicial":
       return <Scale className={cn(cls, "text-brand-navy")} />;
-    case "subprocesso_tce":
-      return <FileText className={cn(cls, "text-purple-700")} />;
     case "gestor":
       return <UserCheck className={cn(cls, "text-emerald-700")} />;
     case "municipio":

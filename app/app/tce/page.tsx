@@ -136,7 +136,6 @@ export default async function TceDashboardPage({
     contrarrazoesMpcoPend,
     despachosPend,
     prazosVencendoCandidatos,
-    prazosSubVencendoCandidatos,
     proximosPrazos,
     ultimosAndamentos,
     meusPrazos,
@@ -212,15 +211,6 @@ export default async function TceDashboardPage({
         cumprido: false,
         dispensado: false,
         processo: base,
-        dataVencimento: { lte: em15Corridos },
-      },
-      select: { dataVencimento: true },
-    }),
-    prisma.prazoSubprocessoTce.findMany({
-      where: {
-        cumprido: false,
-        dispensado: false,
-        subprocesso: { processoPai: base },
         dataVencimento: { lte: em15Corridos },
       },
       select: { dataVencimento: true },
@@ -303,13 +293,9 @@ export default async function TceDashboardPage({
     }),
   ]);
 
-  const prazosVencendoCount =
-    prazosVencendoCandidatos.filter(
-      (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
-    ).length +
-    prazosSubVencendoCandidatos.filter(
-      (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
-    ).length;
+  const prazosVencendoCount = prazosVencendoCandidatos.filter(
+    (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
+  ).length;
   const totalPendencias =
     contrarrazoesNtPend +
     contrarrazoesMpcoPend +

@@ -7,6 +7,7 @@ import {
   TipoInteressado,
   TipoProcesso,
   TipoProcessoTce,
+  TipoRecursoTce,
   Tribunal,
 } from "@prisma/client";
 import { z } from "zod";
@@ -253,6 +254,11 @@ export const processoTceInputSchema = z.object({
   dataIntimacao: optionalDate,
   bancasSlug: bancasSlugSchema,
   interessados: z.array(interessadoItemSchema).optional().default([]),
+  // Campos de recurso (opcionais; quando preenchidos, marcam o processo como
+  // recurso autonomo vinculado a outro ProcessoTce de origem).
+  ehRecurso: z.boolean().optional().default(false),
+  tipoRecurso: z.nativeEnum(TipoRecursoTce).optional().nullable(),
+  processoOrigemId: z.string().optional().nullable(),
 });
 
 export type ProcessoTceInput = z.infer<typeof processoTceInputSchema>;

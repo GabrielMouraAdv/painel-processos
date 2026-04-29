@@ -5,7 +5,10 @@ import { authOptions } from "@/lib/auth";
 import { calcularDataVencimento } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 import { processoTceInputSchema } from "@/lib/schemas";
-import { prazoAutomaticoDaFase } from "@/lib/tce-config";
+import {
+  getPrazoRecursoPorTipo,
+  prazoAutomaticoDaFase,
+} from "@/lib/tce-config";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -52,6 +55,20 @@ export async function POST(req: Request) {
     }
   }
 
+  // Validacao do processoOrigemId quando for recurso
+  if (data.ehRecurso && data.processoOrigemId) {
+    const origem = await prisma.processoTce.findFirst({
+      where: { id: data.processoOrigemId, escritorioId },
+      select: { id: true },
+    });
+    if (!origem) {
+      return NextResponse.json(
+        { error: "Processo de origem nao encontrado" },
+        { status: 400 },
+      );
+    }
+  }
+
   try {
     const processo = await prisma.processoTce.create({
       data: {
@@ -72,6 +89,9 @@ export async function POST(req: Request) {
         dataAutuacao: data.dataAutuacao ?? null,
         dataIntimacao: data.dataIntimacao ?? null,
         bancasSlug: data.bancasSlug,
+        ehRecurso: data.ehRecurso ?? false,
+        tipoRecurso: data.tipoRecurso ?? null,
+        processoOrigemId: data.processoOrigemId ?? null,
         escritorioId,
         interessados: {
           create: data.interessados.map((i) => ({
@@ -83,21 +103,45 @@ export async function POST(req: Request) {
       select: { id: true },
     });
 
-    const prazoConfig = prazoAutomaticoDaFase(data.tipo, data.faseAtual);
-    if (prazoConfig && data.dataIntimacao) {
-      await prisma.prazoTce.create({
+    // Para recursos, prefere a configuracao por tipoRecurso (contrarrazoes)
+    // quando ha dataIntimacao; caso contrario cai no prazoAutomaticoDaFase.
+    if (data.dataIntimacao) {
+      const prazoCfgRecurso =
+        data.ehRecurso && data.tipoRecurso
+          ? getPrazoRecursoPorTipo(data.tipoRecurso)
+          : null;
+      const prazoConfig =
+        prazoCfgRecurso ?? prazoAutomaticoDaFase(data.tipo, data.faseAtual);
+      if (prazoConfig) {
+        await prisma.prazoTce.create({
+          data: {
+            processoId: processo.id,
+            tipo: prazoConfig.tipo,
+            dataIntimacao: data.dataIntimacao,
+            dataVencimento: calcularDataVencimento(
+              data.dataIntimacao,
+              prazoConfig.diasUteis,
+            ),
+            diasUteis: prazoConfig.diasUteis,
+            prorrogavel: prazoConfig.prorrogavel,
+            advogadoRespId: userId,
+            observacoes: data.ehRecurso
+              ? `Prazo gerado automaticamente do recurso.`
+              : `Prazo gerado automaticamente da fase ${data.faseAtual}.`,
+          },
+        });
+      }
+    }
+
+    // Se for recurso, registra um andamento no processo de origem
+    if (data.ehRecurso && data.processoOrigemId && data.tipoRecurso) {
+      await prisma.andamentoTce.create({
         data: {
-          processoId: processo.id,
-          tipo: prazoConfig.tipo,
-          dataIntimacao: data.dataIntimacao,
-          dataVencimento: calcularDataVencimento(
-            data.dataIntimacao,
-            prazoConfig.diasUteis,
-          ),
-          diasUteis: prazoConfig.diasUteis,
-          prorrogavel: prazoConfig.prorrogavel,
-          advogadoRespId: userId,
-          observacoes: `Prazo gerado automaticamente da fase ${data.faseAtual}.`,
+          processoId: data.processoOrigemId,
+          data: data.dataAutuacao ?? new Date(),
+          fase: "recurso_interposto",
+          descricao: `Recurso ${data.tipoRecurso} interposto — processo ${data.numero}.`,
+          autorId: userId,
         },
       });
     }

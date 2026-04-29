@@ -73,10 +73,11 @@ export type PrazoTceRow = {
     municipio: { id: string; nome: string; uf: string } | null;
     interessados: { nome: string }[];
   };
-  subprocesso?: {
-    id: string;
-    numero: string;
+  // Quando o ProcessoTce do prazo eh um recurso, mostra badge do tipo de
+  // recurso e link para o processo de origem.
+  recurso?: {
     tipoRecursoCode: string; // RO, ED, AG, AGR, PR, PSC
+    origem: { id: string; numero: string };
   } | null;
 };
 
@@ -749,25 +750,16 @@ function PrazoTceCard({
             prazo.cumprido && "line-through",
           )}
         >
-          {prazo.subprocesso ? (
-            <>
-              <Link
-                href={`/app/tce/processos/${prazo.processo.id}/recursos/${prazo.subprocesso.id}`}
-                className="font-mono font-bold text-brand-navy hover:underline"
-              >
-                {prazo.subprocesso.numero}
-              </Link>
-              <span className="ml-1.5 inline-block rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-purple-800">
-                {prazo.subprocesso.tipoRecursoCode}
-              </span>
-            </>
-          ) : (
-            <Link
-              href={`/app/tce/processos/${prazo.processo.id}`}
-              className="font-mono text-brand-navy hover:underline"
-            >
-              {prazo.processo.numero}
-            </Link>
+          <Link
+            href={`/app/tce/processos/${prazo.processo.id}`}
+            className="font-mono font-bold text-brand-navy hover:underline"
+          >
+            {prazo.processo.numero}
+          </Link>
+          {prazo.recurso && (
+            <span className="ml-1.5 inline-block rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-purple-800">
+              {prazo.recurso.tipoRecursoCode}
+            </span>
           )}
           {prazo.processo.municipio && (
             <>
@@ -783,14 +775,14 @@ function PrazoTceCard({
         <div className="mt-1">
           <BancaBadgeList slugs={prazo.processo.bancasSlug} max={3} />
         </div>
-        {prazo.subprocesso && (
+        {prazo.recurso && (
           <p className="text-[11px] italic text-muted-foreground">
             Recurso vinculado ao processo{" "}
             <Link
-              href={`/app/tce/processos/${prazo.processo.id}`}
+              href={`/app/tce/processos/${prazo.recurso.origem.id}`}
               className="font-mono not-italic hover:underline"
             >
-              {prazo.processo.numero}
+              {prazo.recurso.origem.numero}
             </Link>
           </p>
         )}

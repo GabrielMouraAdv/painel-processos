@@ -14,7 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TCE_CAMARA_LABELS, TCE_TIPO_LABELS, todasFasesTce } from "@/lib/tce-config";
+import {
+  TCE_CAMARA_LABELS,
+  TCE_RECURSO_LABELS,
+  TCE_TIPO_LABELS,
+  todasFasesTce,
+} from "@/lib/tce-config";
+import { TipoRecursoTce } from "@prisma/client";
 
 const ALL = "__all__";
 
@@ -195,6 +201,37 @@ export function ProcessosTceFilters({
             <SelectItem value={ALL}>Todos</SelectItem>
             <SelectItem value="julgados">Julgados</SelectItem>
             <SelectItem value="nao_julgados">Nao Julgados</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={searchParams.get("origem") ?? ALL}
+          onValueChange={(v) => pushWith("origem", v)}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Originais / Recursos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todos</SelectItem>
+            <SelectItem value="originais">Apenas originais</SelectItem>
+            <SelectItem value="recursos">Apenas recursos</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={searchParams.get("tipoRecurso") ?? ALL}
+          onValueChange={(v) => pushWith("tipoRecurso", v)}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Tipo de recurso" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todos os tipos de recurso</SelectItem>
+            {Object.values(TipoRecursoTce).map((t) => (
+              <SelectItem key={t} value={t}>
+                {TCE_RECURSO_LABELS[t]}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

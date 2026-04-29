@@ -26,14 +26,6 @@ export type ResultadoBusca =
       href: string;
     }
   | {
-      tipo: "subprocesso_tce";
-      id: string;
-      numero: string;
-      label: string; // tipo de recurso
-      contexto: string | null; // numero do processo pai
-      href: string;
-    }
-  | {
       tipo: "gestor";
       id: string;
       numero: string; // aqui vai o nome
@@ -63,7 +55,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ resultados: [] });
   }
 
-  const [processosTce, processosJud, subprocessosTce, gestores, municipios] =
+  const [processosTce, processosJud, gestores, municipios] =
     await Promise.all([
       prisma.processoTce.findMany({
         where: {
@@ -71,12 +63,15 @@ export async function GET(req: Request) {
           numero: { contains: q, mode: "insensitive" },
         },
         orderBy: { updatedAt: "desc" },
-        take: LIMITE_POR_CATEGORIA,
+        take: LIMITE_POR_CATEGORIA * 2,
         select: {
           id: true,
           numero: true,
           tipo: true,
           exercicio: true,
+          ehRecurso: true,
+          tipoRecurso: true,
+          processoOrigem: { select: { id: true, numero: true } },
           municipio: { select: { nome: true, uf: true } },
         },
       }),
@@ -93,20 +88,6 @@ export async function GET(req: Request) {
           tipo: true,
           tipoLivre: true,
           gestor: { select: { nome: true } },
-        },
-      }),
-      prisma.subprocessoTce.findMany({
-        where: {
-          processoPai: { escritorioId },
-          numero: { contains: q, mode: "insensitive" },
-        },
-        orderBy: { updatedAt: "desc" },
-        take: LIMITE_POR_CATEGORIA,
-        select: {
-          id: true,
-          numero: true,
-          tipoRecurso: true,
-          processoPai: { select: { id: true, numero: true } },
         },
       }),
       prisma.gestor.findMany({
@@ -135,16 +116,26 @@ export async function GET(req: Request) {
     ]);
 
   const resultados: ResultadoBusca[] = [
-    ...processosTce.map<ResultadoBusca>((p) => ({
-      tipo: "processo_tce",
-      id: p.id,
-      numero: p.numero,
-      label: TCE_TIPO_LABELS[p.tipo],
-      contexto: p.municipio
+    ...processosTce.map<ResultadoBusca>((p) => {
+      const codeRecurso = p.ehRecurso && p.tipoRecurso ? TCE_RECURSO_CODE[p.tipoRecurso] : null;
+      const numeroComBadge = codeRecurso
+        ? `${p.numero}  [${codeRecurso}]`
+        : p.numero;
+      const ctxBase = p.municipio
         ? `${p.municipio.nome}/${p.municipio.uf}${p.exercicio ? ` • ${p.exercicio}` : ""}`
-        : p.exercicio,
-      href: `/app/tce/processos/${p.id}`,
-    })),
+        : p.exercicio;
+      const contexto = p.ehRecurso && p.processoOrigem
+        ? `recurso vinculado a ${p.processoOrigem.numero}${ctxBase ? ` • ${ctxBase}` : ""}`
+        : ctxBase;
+      return {
+        tipo: "processo_tce",
+        id: p.id,
+        numero: numeroComBadge,
+        label: TCE_TIPO_LABELS[p.tipo],
+        contexto,
+        href: `/app/tce/processos/${p.id}`,
+      };
+    }),
     ...processosJud.map<ResultadoBusca>((p) => ({
       tipo: "processo_judicial",
       id: p.id,
@@ -152,14 +143,6 @@ export async function GET(req: Request) {
       label: tipoProcessoLabel(p.tipo, p.tipoLivre),
       contexto: p.gestor?.nome ?? null,
       href: `/app/processos/${p.id}`,
-    })),
-    ...subprocessosTce.map<ResultadoBusca>((sp) => ({
-      tipo: "subprocesso_tce",
-      id: sp.id,
-      numero: sp.numero,
-      label: TCE_RECURSO_CODE[sp.tipoRecurso],
-      contexto: `vinculado ao processo ${sp.processoPai.numero}`,
-      href: `/app/tce/processos/${sp.processoPai.id}/recursos/${sp.id}`,
     })),
     ...gestores.map<ResultadoBusca>((g) => ({
       tipo: "gestor",

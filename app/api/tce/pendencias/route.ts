@@ -111,25 +111,15 @@ export async function POST(req: Request) {
   }
   const data = parsed.data;
 
-  // Validacao de pertencimento ao escritorio.
-  // dispensar/reverter de memorial/despacho aceitam subprocesso, entao a
-  // validacao acontece dentro dos respectivos handlers. Acoes sobre prazos
-  // tambem fazem sua propria validacao.
+  // Validacao de pertencimento ao escritorio. Recursos agora sao ProcessoTce
+  // normais, entao todas as acoes que recebem processoId aceitam tanto o
+  // processo original quanto o recurso.
   const acoesPrazo = new Set([
     "prazo_cumprido",
     "dispensar_prazo",
     "reverter_dispensa_prazo",
   ]);
-  const acoesAceitamSubprocesso = new Set([
-    "dispensar_memorial",
-    "dispensar_despacho",
-    "reverter_dispensa_memorial",
-    "reverter_dispensa_despacho",
-  ]);
-  if (
-    !acoesPrazo.has(data.acao) &&
-    !acoesAceitamSubprocesso.has(data.acao)
-  ) {
+  if (!acoesPrazo.has(data.acao)) {
     const processoId = (data as { processoId: string }).processoId;
     const proc = await prisma.processoTce.findFirst({
       where: { id: processoId, escritorioId },
@@ -415,98 +405,43 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    // Tenta como ProcessoTce, depois SubprocessoTce
-    const processo = await prisma.processoTce.findFirst({
-      where: { id: data.processoId, escritorioId },
-      select: { id: true },
-    });
-    let subprocessoId: string | null = null;
-    let processoPaiId: string | null = null;
-    if (!processo) {
-      const sub = await prisma.subprocessoTce.findFirst({
-        where: { id: data.processoId, processoPai: { escritorioId } },
-        select: { id: true, processoPaiId: true },
-      });
-      if (!sub) {
-        return NextResponse.json(
-          { error: "Processo nao encontrado" },
-          { status: 404 },
-        );
-      }
-      subprocessoId = sub.id;
-      processoPaiId = sub.processoPaiId;
-    }
     const motivo = data.motivo?.trim() || null;
     const agora = new Date();
     const descricaoAndamento = ehMemorial
       ? `Memorial dispensado por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`
       : `Despacho dispensado por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`;
 
-    if (processo) {
-      await prisma.$transaction([
-        prisma.processoTce.update({
-          where: { id: processo.id },
-          data: ehMemorial
-            ? {
-                memorialDispensado: true,
-                memorialDispensadoPor: adv.nome,
-                memorialDispensadoEm: agora,
-                memorialDispensadoMotivo: motivo,
-                memorialAgendadoData: null,
-                memorialAgendadoAdvogadoId: null,
-              }
-            : {
-                despachoDispensado: true,
-                despachoDispensadoPor: adv.nome,
-                despachoDispensadoEm: agora,
-                despachoDispensadoMotivo: motivo,
-                despachoAgendadoData: null,
-                despachoAgendadoAdvogadoId: null,
-              },
-        }),
-        prisma.andamentoTce.create({
-          data: {
-            processoId: processo.id,
-            data: agora,
-            fase: ehMemorial ? "memorial_dispensado" : "despacho_dispensado",
-            descricao: descricaoAndamento,
-            autorId: userId,
-          },
-        }),
-      ]);
-    } else if (subprocessoId && processoPaiId) {
-      await prisma.$transaction([
-        prisma.subprocessoTce.update({
-          where: { id: subprocessoId },
-          data: ehMemorial
-            ? {
-                memorialDispensado: true,
-                memorialDispensadoPor: adv.nome,
-                memorialDispensadoEm: agora,
-                memorialDispensadoMotivo: motivo,
-                memorialAgendadoData: null,
-                memorialAgendadoAdvogadoId: null,
-              }
-            : {
-                despachoDispensado: true,
-                despachoDispensadoPor: adv.nome,
-                despachoDispensadoEm: agora,
-                despachoDispensadoMotivo: motivo,
-                despachoAgendadoData: null,
-                despachoAgendadoAdvogadoId: null,
-              },
-        }),
-        prisma.andamentoTce.create({
-          data: {
-            processoId: processoPaiId,
-            data: agora,
-            fase: ehMemorial ? "memorial_dispensado" : "despacho_dispensado",
-            descricao: `${descricaoAndamento} (recurso vinculado)`,
-            autorId: userId,
-          },
-        }),
-      ]);
-    }
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: ehMemorial
+          ? {
+              memorialDispensado: true,
+              memorialDispensadoPor: adv.nome,
+              memorialDispensadoEm: agora,
+              memorialDispensadoMotivo: motivo,
+              memorialAgendadoData: null,
+              memorialAgendadoAdvogadoId: null,
+            }
+          : {
+              despachoDispensado: true,
+              despachoDispensadoPor: adv.nome,
+              despachoDispensadoEm: agora,
+              despachoDispensadoMotivo: motivo,
+              despachoAgendadoData: null,
+              despachoAgendadoAdvogadoId: null,
+            },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: agora,
+          fase: ehMemorial ? "memorial_dispensado" : "despacho_dispensado",
+          descricao: descricaoAndamento,
+          autorId: userId,
+        },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 
@@ -515,26 +450,6 @@ export async function POST(req: Request) {
     data.acao === "reverter_dispensa_despacho"
   ) {
     const ehMemorial = data.acao === "reverter_dispensa_memorial";
-    const processo = await prisma.processoTce.findFirst({
-      where: { id: data.processoId, escritorioId },
-      select: { id: true },
-    });
-    let subprocessoId: string | null = null;
-    let processoPaiId: string | null = null;
-    if (!processo) {
-      const sub = await prisma.subprocessoTce.findFirst({
-        where: { id: data.processoId, processoPai: { escritorioId } },
-        select: { id: true, processoPaiId: true },
-      });
-      if (!sub) {
-        return NextResponse.json(
-          { error: "Processo nao encontrado" },
-          { status: 404 },
-        );
-      }
-      subprocessoId = sub.id;
-      processoPaiId = sub.processoPaiId;
-    }
     const agora = new Date();
     const updateData = ehMemorial
       ? {
@@ -552,43 +467,23 @@ export async function POST(req: Request) {
     const descricao = ehMemorial
       ? "Dispensa do memorial revertida. Pendencia reaberta."
       : "Dispensa do despacho revertida. Pendencia reaberta.";
-    if (processo) {
-      await prisma.$transaction([
-        prisma.processoTce.update({
-          where: { id: processo.id },
-          data: updateData,
-        }),
-        prisma.andamentoTce.create({
-          data: {
-            processoId: processo.id,
-            data: agora,
-            fase: ehMemorial
-              ? "memorial_dispensa_revertida"
-              : "despacho_dispensa_revertido",
-            descricao,
-            autorId: userId,
-          },
-        }),
-      ]);
-    } else if (subprocessoId && processoPaiId) {
-      await prisma.$transaction([
-        prisma.subprocessoTce.update({
-          where: { id: subprocessoId },
-          data: updateData,
-        }),
-        prisma.andamentoTce.create({
-          data: {
-            processoId: processoPaiId,
-            data: agora,
-            fase: ehMemorial
-              ? "memorial_dispensa_revertida"
-              : "despacho_dispensa_revertido",
-            descricao: `${descricao} (recurso vinculado)`,
-            autorId: userId,
-          },
-        }),
-      ]);
-    }
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: updateData,
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: agora,
+          fase: ehMemorial
+            ? "memorial_dispensa_revertida"
+            : "despacho_dispensa_revertido",
+          descricao,
+          autorId: userId,
+        },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 
@@ -609,47 +504,12 @@ export async function POST(req: Request) {
       where: { id: data.prazoId, processo: { escritorioId } },
       select: { id: true, tipo: true, processoId: true },
     });
-    if (prazoTce) {
-      await prisma.$transaction([
-        prisma.prazoTce.update({
-          where: { id: prazoTce.id },
-          data: {
-            dispensado: true,
-            dispensadoPor: adv.nome,
-            dispensadoEm: agora,
-            dispensadoMotivo: motivo,
-          },
-        }),
-        prisma.andamentoTce.create({
-          data: {
-            processoId: prazoTce.processoId,
-            data: agora,
-            fase: "prazo_dispensado",
-            descricao: `Prazo "${prazoTce.tipo}" dispensado por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`,
-            autorId: userId,
-          },
-        }),
-      ]);
-      return NextResponse.json({ ok: true });
-    }
-    const prazoSub = await prisma.prazoSubprocessoTce.findFirst({
-      where: {
-        id: data.prazoId,
-        subprocesso: { processoPai: { escritorioId } },
-      },
-      select: {
-        id: true,
-        tipo: true,
-        subprocessoId: true,
-        subprocesso: { select: { processoPaiId: true } },
-      },
-    });
-    if (!prazoSub) {
+    if (!prazoTce) {
       return NextResponse.json({ error: "Prazo nao encontrado" }, { status: 404 });
     }
     await prisma.$transaction([
-      prisma.prazoSubprocessoTce.update({
-        where: { id: prazoSub.id },
+      prisma.prazoTce.update({
+        where: { id: prazoTce.id },
         data: {
           dispensado: true,
           dispensadoPor: adv.nome,
@@ -659,10 +519,10 @@ export async function POST(req: Request) {
       }),
       prisma.andamentoTce.create({
         data: {
-          processoId: prazoSub.subprocesso.processoPaiId,
+          processoId: prazoTce.processoId,
           data: agora,
           fase: "prazo_dispensado",
-          descricao: `Prazo "${prazoSub.tipo}" (recurso vinculado) dispensado por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`,
+          descricao: `Prazo "${prazoTce.tipo}" dispensado por ${adv.nome} em ${agora.toLocaleDateString("pt-BR")}.${motivo ? ` Motivo: ${motivo}` : ""}`,
           autorId: userId,
         },
       }),
@@ -676,47 +536,12 @@ export async function POST(req: Request) {
       where: { id: data.prazoId, processo: { escritorioId } },
       select: { id: true, tipo: true, processoId: true },
     });
-    if (prazoTce) {
-      await prisma.$transaction([
-        prisma.prazoTce.update({
-          where: { id: prazoTce.id },
-          data: {
-            dispensado: false,
-            dispensadoPor: null,
-            dispensadoEm: null,
-            dispensadoMotivo: null,
-          },
-        }),
-        prisma.andamentoTce.create({
-          data: {
-            processoId: prazoTce.processoId,
-            data: agora,
-            fase: "prazo_dispensa_revertida",
-            descricao: `Dispensa do prazo "${prazoTce.tipo}" revertida.`,
-            autorId: userId,
-          },
-        }),
-      ]);
-      return NextResponse.json({ ok: true });
-    }
-    const prazoSub = await prisma.prazoSubprocessoTce.findFirst({
-      where: {
-        id: data.prazoId,
-        subprocesso: { processoPai: { escritorioId } },
-      },
-      select: {
-        id: true,
-        tipo: true,
-        subprocessoId: true,
-        subprocesso: { select: { processoPaiId: true } },
-      },
-    });
-    if (!prazoSub) {
+    if (!prazoTce) {
       return NextResponse.json({ error: "Prazo nao encontrado" }, { status: 404 });
     }
     await prisma.$transaction([
-      prisma.prazoSubprocessoTce.update({
-        where: { id: prazoSub.id },
+      prisma.prazoTce.update({
+        where: { id: prazoTce.id },
         data: {
           dispensado: false,
           dispensadoPor: null,
@@ -726,10 +551,10 @@ export async function POST(req: Request) {
       }),
       prisma.andamentoTce.create({
         data: {
-          processoId: prazoSub.subprocesso.processoPaiId,
+          processoId: prazoTce.processoId,
           data: agora,
           fase: "prazo_dispensa_revertida",
-          descricao: `Dispensa do prazo "${prazoSub.tipo}" (recurso vinculado) revertida.`,
+          descricao: `Dispensa do prazo "${prazoTce.tipo}" revertida.`,
           autorId: userId,
         },
       }),

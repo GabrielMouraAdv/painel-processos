@@ -23,22 +23,12 @@ export async function PATCH(
   }
   const escritorioId = session.user.escritorioId;
 
-  // Tenta ProcessoTce primeiro
   const processo = await prisma.processoTce.findFirst({
     where: { id: params.id, escritorioId },
-    select: { id: true, despachadoComRelator: true },
+    select: { id: true, despachadoComRelator: true, ehRecurso: true },
   });
 
-  // Se nao for processo, tenta SubprocessoTce
-  let subprocesso: { id: string; despachadoComRelator: boolean } | null = null;
   if (!processo) {
-    subprocesso = await prisma.subprocessoTce.findFirst({
-      where: { id: params.id, processoPai: { escritorioId } },
-      select: { id: true, despachadoComRelator: true },
-    });
-  }
-
-  if (!processo && !subprocesso) {
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
   }
 
@@ -62,21 +52,16 @@ export async function PATCH(
     despachoAgendadoAdvogadoId?: string | null;
   } = {};
 
-  const ehProcesso = !!processo;
-  const atual = (processo ?? subprocesso)!;
-
   if (data.prognosticoDespacho !== undefined) {
     update.prognosticoDespacho = data.prognosticoDespacho?.trim() || null;
   }
   if (data.retornoDespacho !== undefined) {
     update.retornoDespacho = data.retornoDespacho?.trim() || null;
   }
-  // Detecta transicao para criar andamento + limpar agendamento (mesma logica
-  // da acao despacho_feito em /api/tce/pendencias).
   const marcouDespachado =
-    data.despachadoComRelator === true && !atual.despachadoComRelator;
+    data.despachadoComRelator === true && !processo.despachadoComRelator;
   const desmarcouDespachado =
-    data.despachadoComRelator === false && atual.despachadoComRelator;
+    data.despachadoComRelator === false && processo.despachadoComRelator;
   const dataDesp = new Date();
 
   if (data.despachadoComRelator !== undefined) {
@@ -90,64 +75,37 @@ export async function PATCH(
       update.dataDespacho = null;
     }
   }
-  // Subprocessos nao tem incluidoNoDespacho — ignoramos silenciosamente
-  if (ehProcesso && data.incluidoNoDespacho !== undefined) {
+  if (data.incluidoNoDespacho !== undefined) {
     update.incluidoNoDespacho = data.incluidoNoDespacho;
   }
 
-  // ID do processo pai (para registrar andamento quando for subprocesso)
-  let processoPaiId: string | null = null;
-  if (!ehProcesso) {
-    const sub = await prisma.subprocessoTce.findFirst({
+  const ops: Prisma.PrismaPromise<unknown>[] = [
+    prisma.processoTce.update({
       where: { id: params.id },
-      select: { processoPaiId: true },
-    });
-    processoPaiId = sub?.processoPaiId ?? null;
-  }
+      data: update,
+    }),
+  ];
 
-  const ops: Prisma.PrismaPromise<unknown>[] = [];
-  if (ehProcesso) {
-    ops.push(
-      prisma.processoTce.update({
-        where: { id: params.id },
-        data: update,
-      }),
-    );
-  } else {
-    const subUpdate = { ...update };
-    delete subUpdate.incluidoNoDespacho;
-    ops.push(
-      prisma.subprocessoTce.update({
-        where: { id: params.id },
-        data: subUpdate,
-      }),
-    );
-  }
-
-  // Cria andamento na transicao do flag despachado.
   if (marcouDespachado || desmarcouDespachado) {
-    const targetProcessoId = ehProcesso ? params.id : processoPaiId;
-    if (targetProcessoId) {
-      const retorno = update.retornoDespacho ?? null;
-      const sufixoSub = ehProcesso ? "" : " (recurso vinculado)";
-      const descricao = marcouDespachado
-        ? "Despacho realizado com o relator." +
-          (retorno ? ` Retorno: ${retorno}` : "") +
-          sufixoSub
-        : "Despacho com o relator desmarcado." + sufixoSub;
-      const fase = marcouDespachado ? "despacho_realizado" : "despacho_desfeito";
-      ops.push(
-        prisma.andamentoTce.create({
-          data: {
-            processoId: targetProcessoId,
-            data: dataDesp,
-            fase,
-            descricao,
-            autorId: session.user.id,
-          },
-        }),
-      );
-    }
+    const retorno = update.retornoDespacho ?? null;
+    const sufixoRecurso = processo.ehRecurso ? " (recurso)" : "";
+    const descricao = marcouDespachado
+      ? "Despacho realizado com o relator." +
+        (retorno ? ` Retorno: ${retorno}` : "") +
+        sufixoRecurso
+      : "Despacho com o relator desmarcado." + sufixoRecurso;
+    const fase = marcouDespachado ? "despacho_realizado" : "despacho_desfeito";
+    ops.push(
+      prisma.andamentoTce.create({
+        data: {
+          processoId: params.id,
+          data: dataDesp,
+          fase,
+          descricao,
+          autorId: session.user.id,
+        },
+      }),
+    );
   }
 
   await prisma.$transaction(ops);

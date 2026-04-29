@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { CamaraTce, TipoProcessoTce } from "@prisma/client";
+import type { CamaraTce, TipoProcessoTce, TipoRecursoTce } from "@prisma/client";
 import { Ban, Check, X } from "lucide-react";
 
 import {
@@ -19,6 +20,7 @@ import {
 } from "@/lib/julgamento-config";
 import {
   TCE_CAMARA_LABELS,
+  TCE_RECURSO_CODE,
   TCE_TIPO_LABELS,
   faseTceLabel,
 } from "@/lib/tce-config";
@@ -39,6 +41,9 @@ export type ProcessoTceRow = {
   relator: string | null;
   faseAtual: string;
   bancasSlug: string[];
+  ehRecurso: boolean;
+  tipoRecurso: TipoRecursoTce | null;
+  processoOrigem: { id: string; numero: string } | null;
   notaTecnica: boolean;
   parecerMpco: boolean;
   despachadoComRelator: boolean;
@@ -143,6 +148,20 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
               <TableHead className={cn(headBase, "md:w-[110px]")}>
                 Numero
               </TableHead>
+              <TableHead
+                className={cn(headBase, "hidden md:table-cell md:w-[110px]")}
+              >
+                Origem
+              </TableHead>
+              <TableHead
+                className={cn(
+                  headBase,
+                  "hidden text-center md:table-cell md:w-[60px]",
+                )}
+                title="Tipo de recurso"
+              >
+                Recurso
+              </TableHead>
               <TableHead className={cn(headBase, "md:w-[130px]")}>
                 Municipio
               </TableHead>
@@ -225,6 +244,30 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                   )}
                 >
                   {p.numero}
+                </TableCell>
+                <TableCell className={cn(cellBase, "hidden md:table-cell")}>
+                  {p.processoOrigem ? (
+                    <Link
+                      href={`/app/tce/processos/${p.processoOrigem.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-mono text-[11px] text-brand-navy hover:underline"
+                    >
+                      {p.processoOrigem.numero}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell
+                  className={cn(cellBase, "hidden text-center md:table-cell")}
+                >
+                  {p.ehRecurso && p.tipoRecurso ? (
+                    <span className="inline-flex items-center rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-purple-800">
+                      {TCE_RECURSO_CODE[p.tipoRecurso]}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className={cellBase}>
                   {p.municipio?.nome ?? (

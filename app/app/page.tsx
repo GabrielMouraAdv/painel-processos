@@ -123,23 +123,9 @@ export default async function ModuloHomePage({
     }),
   ]);
 
-  const prazosSubTceCandidatos = await prisma.prazoSubprocessoTce.findMany({
-    where: {
-      cumprido: false,
-      dispensado: false,
-      subprocesso: { processoPai: tceBase },
-      dataVencimento: { lte: em15 },
-    },
-    select: { dataVencimento: true },
-  });
-
-  const prazosTceVencendo =
-    prazosTceCandidatos.filter(
-      (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
-    ).length +
-    prazosSubTceCandidatos.filter(
-      (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
-    ).length;
+  const prazosTceVencendo = prazosTceCandidatos.filter(
+    (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
+  ).length;
   const totalPendenciasTce =
     contrarrazoesNtPend +
     contrarrazoesMpcoPend +

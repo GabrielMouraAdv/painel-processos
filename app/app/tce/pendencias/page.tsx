@@ -60,30 +60,6 @@ export default async function PendenciasTcePage({
             advogadoResp: { select: { nome: true } },
           },
         },
-        subprocessos: {
-          include: {
-            prazos: {
-              where: {
-                dispensado: false,
-                OR: [
-                  {
-                    cumprido: false,
-                    dataVencimento: { lte: em15Corridos },
-                  },
-                  { cumprido: true },
-                ],
-              },
-              orderBy: { dataVencimento: "asc" },
-              select: {
-                id: true,
-                tipo: true,
-                dataVencimento: true,
-                cumprido: true,
-                advogadoRespId: true,
-              },
-            },
-          },
-        },
       },
     }),
     prisma.user.findMany({
@@ -92,27 +68,6 @@ export default async function PendenciasTcePage({
       select: { id: true, nome: true },
     }),
   ]);
-
-  // Advogados responsaveis dos prazos de subprocesso (sem relation no schema)
-  const advRespIdsSub = Array.from(
-    new Set(
-      processos
-        .flatMap((p) => p.subprocessos)
-        .flatMap((sp) => sp.prazos)
-        .map((pr) => pr.advogadoRespId)
-        .filter((id): id is string => !!id),
-    ),
-  );
-  const advsSubMap = advRespIdsSub.length
-    ? new Map(
-        (
-          await prisma.user.findMany({
-            where: { id: { in: advRespIdsSub } },
-            select: { id: true, nome: true },
-          })
-        ).map((u) => [u.id, u.nome]),
-      )
-    : new Map<string, string>();
 
   const advAgendamentoIds = Array.from(
     new Set(
@@ -137,27 +92,13 @@ export default async function PendenciasTcePage({
 
   const cards: ProcessoComPendencias[] = processos
     .map((p) => {
-      // Inclui prazos do processo + prazos de todos os subprocessos
-      const todosPrazos = [
-        ...p.prazos.map((pr) => ({
-          id: pr.id,
-          tipo: pr.tipo,
-          dataVencimento: pr.dataVencimento,
-          cumprido: pr.cumprido,
-          advogadoResp: pr.advogadoResp?.nome ?? null,
-        })),
-        ...p.subprocessos.flatMap((sp) =>
-          sp.prazos.map((pr) => ({
-            id: `sub-${pr.id}`,
-            tipo: `${pr.tipo} (${sp.numero})`,
-            dataVencimento: pr.dataVencimento,
-            cumprido: pr.cumprido,
-            advogadoResp: pr.advogadoRespId
-              ? advsSubMap.get(pr.advogadoRespId) ?? null
-              : null,
-          })),
-        ),
-      ];
+      const todosPrazos = p.prazos.map((pr) => ({
+        id: pr.id,
+        tipo: pr.tipo,
+        dataVencimento: pr.dataVencimento,
+        cumprido: pr.cumprido,
+        advogadoResp: pr.advogadoResp?.nome ?? null,
+      }));
 
       // Filtra prazos vencendo em 7 dias uteis ou que ja foram cumpridos
       const prazosFiltrados = todosPrazos

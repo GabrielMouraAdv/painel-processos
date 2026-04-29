@@ -515,23 +515,32 @@ model ProcessoTce {
   dataAutuacao          DateTime?
   dataIntimacao         DateTime?
   bancasSlug            String[]        @default([])
+  // Vinculacao de recurso: quando um ProcessoTce e um recurso (RO/ED/AGR/...),
+  // ehRecurso=true e processoOrigemId aponta para o ProcessoTce de origem.
+  ehRecurso             Boolean         @default(false)
+  tipoRecurso           TipoRecursoTce?
+  processoOrigemId      String?
   escritorioId          String
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
-  municipio    Municipio?               @relation("MunicipioProcessos", fields: [municipioId], references: [id])
-  escritorio   Escritorio               @relation(fields: [escritorioId], references: [id])
-  interessados InteressadoProcessoTce[]
-  andamentos   AndamentoTce[]
-  prazos       PrazoTce[]
-  itensPauta   ItemPauta[]
-  documentos   DocumentoTce[]
-  subprocessos SubprocessoTce[]
+  municipio      Municipio?               @relation("MunicipioProcessos", fields: [municipioId], references: [id])
+  escritorio     Escritorio               @relation(fields: [escritorioId], references: [id])
+  interessados   InteressadoProcessoTce[]
+  andamentos     AndamentoTce[]
+  prazos         PrazoTce[]
+  itensPauta     ItemPauta[]
+  documentos     DocumentoTce[]
+  subprocessos   SubprocessoTce[]
+  processoOrigem ProcessoTce?             @relation("RecursosVinculados", fields: [processoOrigemId], references: [id])
+  recursos       ProcessoTce[]            @relation("RecursosVinculados")
 
   @@index([escritorioId])
   @@index([municipioId])
   @@index([tipo])
   @@index([camara])
+  @@index([processoOrigemId])
+  @@index([ehRecurso])
 }
 
 model InteressadoProcessoTce {
@@ -741,6 +750,10 @@ enum TipoRecursoTce {
   PEDIDO_SUSPENSAO_CAUTELAR
 }
 
+// @deprecated - Substituido pelo proprio ProcessoTce com ehRecurso=true e
+// processoOrigemId apontando para o processo de origem. Mantido aqui apenas
+// como backup historico apos a migracao 20260429_recursos_processos_autonomos
+// que copiou todos os dados para ProcessoTce. Nao usar em codigo novo.
 model SubprocessoTce {
   id                String         @id @default(cuid())
   processoPaiId     String

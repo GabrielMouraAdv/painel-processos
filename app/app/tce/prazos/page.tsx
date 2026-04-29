@@ -63,20 +63,7 @@ export default async function TcePrazosPage({
     }),
   };
 
-  // Filtro espelhado para prazos de subprocesso (subprocesso.processoPai herda os filtros do processo)
-  const subprocessoPrazoWhere: Prisma.PrazoSubprocessoTceWhereInput = {
-    subprocesso: { processoPai: processoFilter },
-    ...(advogadoRespId && { advogadoRespId }),
-    ...(tipo && { tipo: { contains: tipo, mode: "insensitive" } }),
-    ...(status === "cumprido" && { cumprido: true }),
-    ...(status === "aberto" && { cumprido: false, dataVencimento: { gte: hoje } }),
-    ...(status === "vencido" && {
-      cumprido: false,
-      dataVencimento: { lt: hoje },
-    }),
-  };
-
-  const [prazos, prazosSub, processos, advogados, municipios, tiposDistintos] =
+  const [prazos, processos, advogados, municipios, tiposDistintos] =
     await Promise.all([
       prisma.prazoTce.findMany({
         where,
@@ -90,38 +77,13 @@ export default async function TcePrazosPage({
               tipo: true,
               camara: true,
               bancasSlug: true,
+              ehRecurso: true,
+              tipoRecurso: true,
+              processoOrigem: { select: { id: true, numero: true } },
               municipio: { select: { id: true, nome: true, uf: true } },
               interessados: {
                 include: { gestor: { select: { nome: true } } },
                 orderBy: { createdAt: "asc" },
-              },
-            },
-          },
-        },
-      }),
-      prisma.prazoSubprocessoTce.findMany({
-        where: subprocessoPrazoWhere,
-        orderBy: { dataVencimento: "asc" },
-        include: {
-          subprocesso: {
-            select: {
-              id: true,
-              numero: true,
-              tipoRecurso: true,
-              bancasSlug: true,
-              processoPai: {
-                select: {
-                  id: true,
-                  numero: true,
-                  tipo: true,
-                  camara: true,
-                  bancasSlug: true,
-                  municipio: { select: { id: true, nome: true, uf: true } },
-                  interessados: {
-                    include: { gestor: { select: { nome: true } } },
-                    orderBy: { createdAt: "asc" },
-                  },
-                },
               },
             },
           },
@@ -154,105 +116,48 @@ export default async function TcePrazosPage({
       }),
     ]);
 
-  // Carrega advogados responsaveis dos prazos de subprocesso (sem relation no schema)
-  const advRespIds = Array.from(
-    new Set(
-      prazosSub
-        .map((p) => p.advogadoRespId)
-        .filter((id): id is string => !!id),
-    ),
-  );
-  const advsMap = advRespIds.length
-    ? new Map(
-        (
-          await prisma.user.findMany({
-            where: { id: { in: advRespIds } },
-            select: { id: true, nome: true },
-          })
-        ).map((u) => [u.id, u]),
-      )
-    : new Map<string, { id: string; nome: string }>();
-
-  const rows: PrazoTceRow[] = [
-    ...prazos.map<PrazoTceRow>((p) => ({
-      id: p.id,
-      tipo: p.tipo,
-      dataIntimacao: p.dataIntimacao.toISOString(),
-      dataVencimento: p.dataVencimento.toISOString(),
-      diasUteis: p.diasUteis,
-      prorrogavel: p.prorrogavel,
-      prorrogacaoPedida: p.prorrogacaoPedida,
-      dataProrrogacao: p.dataProrrogacao
-        ? p.dataProrrogacao.toISOString()
+  const rows: PrazoTceRow[] = prazos.map<PrazoTceRow>((p) => ({
+    id: p.id,
+    tipo: p.tipo,
+    dataIntimacao: p.dataIntimacao.toISOString(),
+    dataVencimento: p.dataVencimento.toISOString(),
+    diasUteis: p.diasUteis,
+    prorrogavel: p.prorrogavel,
+    prorrogacaoPedida: p.prorrogacaoPedida,
+    dataProrrogacao: p.dataProrrogacao
+      ? p.dataProrrogacao.toISOString()
+      : null,
+    cumprido: p.cumprido,
+    observacoes: p.observacoes,
+    advogadoResp: p.advogadoResp
+      ? { id: p.advogadoResp.id, nome: p.advogadoResp.nome }
+      : null,
+    dispensado: p.dispensado,
+    dispensadoPor: p.dispensadoPor,
+    dispensadoEm: p.dispensadoEm ? p.dispensadoEm.toISOString() : null,
+    dispensadoMotivo: p.dispensadoMotivo,
+    processo: {
+      id: p.processo.id,
+      numero: p.processo.numero,
+      tipo: p.processo.tipo,
+      camara: p.processo.camara,
+      bancasSlug: p.processo.bancasSlug,
+      municipio: p.processo.municipio,
+      interessados: p.processo.interessados.map((i) => ({
+        nome: i.gestor.nome,
+      })),
+    },
+    recurso:
+      p.processo.ehRecurso && p.processo.tipoRecurso && p.processo.processoOrigem
+        ? {
+            tipoRecursoCode: TCE_RECURSO_CODE[p.processo.tipoRecurso],
+            origem: {
+              id: p.processo.processoOrigem.id,
+              numero: p.processo.processoOrigem.numero,
+            },
+          }
         : null,
-      cumprido: p.cumprido,
-      observacoes: p.observacoes,
-      advogadoResp: p.advogadoResp
-        ? { id: p.advogadoResp.id, nome: p.advogadoResp.nome }
-        : null,
-      dispensado: p.dispensado,
-      dispensadoPor: p.dispensadoPor,
-      dispensadoEm: p.dispensadoEm ? p.dispensadoEm.toISOString() : null,
-      dispensadoMotivo: p.dispensadoMotivo,
-      processo: {
-        id: p.processo.id,
-        numero: p.processo.numero,
-        tipo: p.processo.tipo,
-        camara: p.processo.camara,
-        bancasSlug: p.processo.bancasSlug,
-        municipio: p.processo.municipio,
-        interessados: p.processo.interessados.map((i) => ({
-          nome: i.gestor.nome,
-        })),
-      },
-      subprocesso: null,
-    })),
-    ...prazosSub.map<PrazoTceRow>((p) => {
-      const adv = p.advogadoRespId
-        ? advsMap.get(p.advogadoRespId) ?? null
-        : null;
-      return {
-        id: `sub-${p.id}`,
-        tipo: p.tipo,
-        dataIntimacao: p.dataIntimacao.toISOString(),
-        dataVencimento: p.dataVencimento.toISOString(),
-        diasUteis: p.diasUteis,
-        prorrogavel: p.prorrogavel,
-        prorrogacaoPedida: p.prorrogacaoPedida,
-        dataProrrogacao: null,
-        cumprido: p.cumprido,
-        observacoes: p.observacoes,
-        advogadoResp: adv ? { id: adv.id, nome: adv.nome } : null,
-        dispensado: p.dispensado,
-        dispensadoPor: p.dispensadoPor,
-        dispensadoEm: p.dispensadoEm ? p.dispensadoEm.toISOString() : null,
-        dispensadoMotivo: p.dispensadoMotivo,
-        processo: {
-          id: p.subprocesso.processoPai.id,
-          numero: p.subprocesso.processoPai.numero,
-          tipo: p.subprocesso.processoPai.tipo,
-          camara: p.subprocesso.processoPai.camara,
-          bancasSlug:
-            p.subprocesso.bancasSlug.length > 0
-              ? p.subprocesso.bancasSlug
-              : p.subprocesso.processoPai.bancasSlug,
-          municipio: p.subprocesso.processoPai.municipio,
-          interessados: p.subprocesso.processoPai.interessados.map((i) => ({
-            nome: i.gestor.nome,
-          })),
-        },
-        subprocesso: {
-          id: p.subprocesso.id,
-          numero: p.subprocesso.numero,
-          tipoRecursoCode: TCE_RECURSO_CODE[p.subprocesso.tipoRecurso],
-        },
-      };
-    }),
-  ].sort(
-    (a, b) =>
-      new Date(a.dataVencimento).getTime() -
-      new Date(b.dataVencimento).getTime(),
-  );
+  }));
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">

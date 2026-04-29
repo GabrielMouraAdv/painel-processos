@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { CamaraTce, TipoProcessoTce, type Prisma } from "@prisma/client";
+import {
+  CamaraTce,
+  TipoProcessoTce,
+  TipoRecursoTce,
+  type Prisma,
+} from "@prisma/client";
 import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -51,6 +56,11 @@ export default async function TceProcessosPage({
   const pautaFiltro = asString(searchParams.pauta) === "1";
   const julgamentoFiltro = asString(searchParams.julgamento);
   const bancasFiltro = parseBancasParam(searchParams.banca);
+  const filtroOrigemRecurso = asString(searchParams.origem); // "originais" | "recursos" | "" (todos)
+  const filtroTipoRecurso = parseEnum(
+    Object.values(TipoRecursoTce),
+    asString(searchParams.tipoRecurso),
+  );
 
   const where: Prisma.ProcessoTceWhereInput = {
     escritorioId,
@@ -85,6 +95,9 @@ export default async function TceProcessosPage({
     }),
     ...(julgamentoFiltro === "julgados" && { julgado: true }),
     ...(julgamentoFiltro === "nao_julgados" && { julgado: false }),
+    ...(filtroOrigemRecurso === "originais" && { ehRecurso: false }),
+    ...(filtroOrigemRecurso === "recursos" && { ehRecurso: true }),
+    ...(filtroTipoRecurso && { tipoRecurso: filtroTipoRecurso, ehRecurso: true }),
   };
 
   const [
@@ -115,6 +128,7 @@ export default async function TceProcessosPage({
           take: 1,
           select: { tipo: true, dataVencimento: true },
         },
+        processoOrigem: { select: { id: true, numero: true } },
       },
     }),
     prisma.municipio.findMany({
@@ -189,6 +203,9 @@ export default async function TceProcessosPage({
       relator: p.relator,
       faseAtual: p.faseAtual,
       bancasSlug: p.bancasSlug,
+      ehRecurso: p.ehRecurso,
+      tipoRecurso: p.tipoRecurso,
+      processoOrigem: p.processoOrigem,
       notaTecnica: p.notaTecnica,
       parecerMpco: p.parecerMpco,
       despachadoComRelator: p.despachadoComRelator,

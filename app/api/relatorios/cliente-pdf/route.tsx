@@ -295,53 +295,111 @@ export async function GET(req: Request) {
             advogadoResp: { select: { nome: true } },
           },
         },
+        processoOrigem: { select: { id: true, numero: true } },
       },
     });
 
     totalTce = processosTce.length;
 
-    for (const p of processosTce) {
+    const RECURSO_CODE: Record<string, string> = {
+      RECURSO_ORDINARIO: "RO",
+      EMBARGOS_DECLARACAO: "ED",
+      AGRAVO: "AG",
+      AGRAVO_REGIMENTAL: "AGR",
+      PEDIDO_RESCISAO_RECURSO: "PR",
+      PEDIDO_SUSPENSAO_CAUTELAR: "PSC",
+    };
+
+    const itensBruto = processosTce.map((p) => {
       ativosTce++;
       if (p.prazos.length > 0) prazoAbertoTce++;
+      return {
+        proc: p,
+        item: {
+          numero: p.numero,
+          tipo: TIPO_TCE_LABEL[p.tipo] ?? p.tipo,
+          exercicio: p.exercicio,
+          camara: CAMARA_LABEL[p.camara] ?? p.camara,
+          relator: p.relator,
+          faseAtual: faseTceLabelPt(p.faseAtual),
+          ehRecurso: p.ehRecurso,
+          tipoRecursoCode: p.tipoRecurso ? RECURSO_CODE[p.tipoRecurso] ?? null : null,
+          origemNumero: p.processoOrigem?.numero ?? null,
+          status: {
+            notaTecnica: p.notaTecnica,
+            parecerMpco: p.parecerMpco,
+            despachado: p.despachadoComRelator,
+            memorialPronto: p.memorialPronto,
+          },
+          ultimosAndamentos: p.andamentos.map((a) => ({
+            data: a.data,
+            descricao: a.descricao,
+            fase: faseTceLabelPt(a.fase),
+          })),
+          prazos: p.prazos.map((pr) => ({
+            tipo: pr.tipo,
+            dataVencimento: pr.dataVencimento,
+            advogado: pr.advogadoResp?.nome ?? null,
+            diasRestantes: diasAte(pr.dataVencimento, hoje),
+          })),
+          julgamento: {
+            julgado: p.julgado,
+            dataJulgamento: p.dataJulgamento,
+            resultadoJulgamento: p.resultadoJulgamento,
+            classificacao: p.julgado
+              ? classificarResultadoTce(p.tipo, p.resultadoJulgamento)
+              : null,
+            penalidade: p.penalidade,
+            valorMulta: p.valorMulta ? Number(p.valorMulta) : null,
+            valorDevolucao: p.valorDevolucao
+              ? Number(p.valorDevolucao)
+              : null,
+            valorCondenacao: null,
+          },
+        } satisfies ProcessoTceItem,
+      };
+    });
 
-      tceItems.push({
-        numero: p.numero,
-        tipo: TIPO_TCE_LABEL[p.tipo] ?? p.tipo,
-        exercicio: p.exercicio,
-        camara: CAMARA_LABEL[p.camara] ?? p.camara,
-        relator: p.relator,
-        faseAtual: faseTceLabelPt(p.faseAtual),
-        status: {
-          notaTecnica: p.notaTecnica,
-          parecerMpco: p.parecerMpco,
-          despachado: p.despachadoComRelator,
-          memorialPronto: p.memorialPronto,
-        },
-        ultimosAndamentos: p.andamentos.map((a) => ({
-          data: a.data,
-          descricao: a.descricao,
-          fase: faseTceLabelPt(a.fase),
-        })),
-        prazos: p.prazos.map((pr) => ({
-          tipo: pr.tipo,
-          dataVencimento: pr.dataVencimento,
-          advogado: pr.advogadoResp?.nome ?? null,
-          diasRestantes: diasAte(pr.dataVencimento, hoje),
-        })),
-        julgamento: {
-          julgado: p.julgado,
-          dataJulgamento: p.dataJulgamento,
-          resultadoJulgamento: p.resultadoJulgamento,
-          classificacao: p.julgado
-            ? classificarResultadoTce(p.tipo, p.resultadoJulgamento)
-            : null,
-          penalidade: p.penalidade,
-          valorMulta: p.valorMulta ? Number(p.valorMulta) : null,
-          valorDevolucao: p.valorDevolucao ? Number(p.valorDevolucao) : null,
-          valorCondenacao: null,
-        },
-      });
+    // Ordena: processo de origem primeiro, depois recursos descendentes,
+    // mantendo arvore (DFS) — para que recursos apareçam logo abaixo da
+    // origem no relatório.
+    type Bruto = (typeof itensBruto)[number];
+    const porId = new Map<string, Bruto>(
+      itensBruto.map((b) => [b.proc.id, b]),
+    );
+    const filhosDe = new Map<string | null, Bruto[]>();
+    for (const b of itensBruto) {
+      const k = b.proc.processoOrigemId ?? null;
+      const arr = filhosDe.get(k) ?? [];
+      arr.push(b);
+      filhosDe.set(k, arr);
     }
+    const emitArvore = (paiId: string | null): Bruto[] => {
+      const filhos = filhosDe.get(paiId) ?? [];
+      const out: Bruto[] = [];
+      for (const f of filhos) {
+        out.push(f);
+        out.push(...emitArvore(f.proc.id));
+      }
+      return out;
+    };
+    // Raizes: processos cujo processoOrigemId nao esta no conjunto carregado
+    const raizesIds = new Set(
+      itensBruto
+        .filter(
+          (b) =>
+            !b.proc.processoOrigemId ||
+            !porId.has(b.proc.processoOrigemId),
+        )
+        .map((b) => b.proc.id),
+    );
+    const ordenados: Bruto[] = [];
+    for (const b of itensBruto) {
+      if (!raizesIds.has(b.proc.id)) continue;
+      ordenados.push(b);
+      ordenados.push(...emitArvore(b.proc.id));
+    }
+    for (const b of ordenados) tceItems.push(b.item);
   }
 
   const data: RelatorioClienteData = {

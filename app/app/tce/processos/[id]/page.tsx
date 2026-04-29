@@ -9,6 +9,7 @@ import {
   Check,
   FileText,
   Gavel,
+  Link2,
   X,
 } from "lucide-react";
 
@@ -32,6 +33,7 @@ import { computeTceAlertas } from "@/lib/tce-alertas";
 import {
   TCE_CAMARAS,
   TCE_CAMARA_LABELS,
+  TCE_RECURSO_LABELS,
   TCE_TIPO_LABELS,
   faseTceLabel,
 } from "@/lib/tce-config";
@@ -97,66 +99,91 @@ export default async function ProcessoTceDetailPage({
         orderBy: { createdAt: "desc" },
         include: { uploadedByUser: { select: { nome: true } } },
       },
+      processoOrigem: {
+        select: { id: true, numero: true, tipo: true },
+      },
     },
   });
 
   if (!processo) notFound();
 
-  const subprocessosRaw = await prisma.subprocessoTce.findMany({
-    where: { processoPaiId: processo.id },
-    orderBy: [{ dataInterposicao: "asc" }, { numeroSequencial: "asc" }],
-    include: {
-      prazos: {
-        where: { cumprido: false },
-        orderBy: { dataVencimento: "asc" },
-        select: { id: true, tipo: true, dataVencimento: true },
-      },
-    },
-  });
-
-  type SubLite = (typeof subprocessosRaw)[number];
-  const byId = new Map<string, SubLite>(subprocessosRaw.map((s) => [s.id, s]));
-  type SubNode = {
+  // Recursos vinculados (ProcessoTce com processoOrigemId = processo.id),
+  // recursivos para mostrar arvore.
+  type RecursoLite = {
     id: string;
     numero: string;
-    tipoRecurso: SubLite["tipoRecurso"];
-    numeroSequencial: number;
-    dataInterposicao: string;
-    fase: string;
+    tipoRecurso: NonNullable<typeof processo.tipoRecurso> | null;
     relator: string | null;
+    faseAtual: string;
+    notaTecnica: boolean;
+    parecerMpco: boolean;
+    memorialPronto: boolean;
+    despachadoComRelator: boolean;
+    dataAutuacao: string | null;
+    processoOrigemId: string | null;
     prazosAbertos: number;
     prazoMaisProximo: { tipo: string; data: string } | null;
-    filhos: SubNode[];
   };
-  const childrenOf = new Map<string | null, SubLite[]>();
-  for (const s of subprocessosRaw) {
-    const k = s.subprocessoPaiId ?? null;
-    const list = childrenOf.get(k) ?? [];
-    list.push(s);
-    childrenOf.set(k, list);
+
+  // Pega TODOS os recursos descendentes (recursivo) via uma busca por toda a
+  // arvore: comeca pelos filhos diretos, depois filhos dos filhos.
+  async function carregarRecursosDescendentes(
+    raizId: string,
+  ): Promise<RecursoLite[]> {
+    const todos: RecursoLite[] = [];
+    const fila: string[] = [raizId];
+    const visitados = new Set<string>();
+    while (fila.length > 0) {
+      const lote = fila.splice(0, fila.length);
+      const filhos = await prisma.processoTce.findMany({
+        where: {
+          escritorioId,
+          ehRecurso: true,
+          processoOrigemId: { in: lote },
+        },
+        orderBy: [{ dataAutuacao: "asc" }, { createdAt: "asc" }],
+        include: {
+          prazos: {
+            where: { cumprido: false },
+            orderBy: { dataVencimento: "asc" },
+            take: 1,
+            select: { tipo: true, dataVencimento: true },
+          },
+          _count: {
+            select: { prazos: { where: { cumprido: false } } },
+          },
+        },
+      });
+      for (const f of filhos) {
+        if (visitados.has(f.id)) continue;
+        visitados.add(f.id);
+        const primeiro = f.prazos[0];
+        todos.push({
+          id: f.id,
+          numero: f.numero,
+          tipoRecurso: f.tipoRecurso,
+          relator: f.relator,
+          faseAtual: f.faseAtual,
+          notaTecnica: f.notaTecnica,
+          parecerMpco: f.parecerMpco,
+          memorialPronto: f.memorialPronto,
+          despachadoComRelator: f.despachadoComRelator,
+          dataAutuacao: f.dataAutuacao ? f.dataAutuacao.toISOString() : null,
+          processoOrigemId: f.processoOrigemId,
+          prazosAbertos: f._count.prazos,
+          prazoMaisProximo: primeiro
+            ? {
+                tipo: primeiro.tipo,
+                data: primeiro.dataVencimento.toISOString(),
+              }
+            : null,
+        });
+        fila.push(f.id);
+      }
+    }
+    return todos;
   }
-  function buildTree(paiId: string | null): SubNode[] {
-    const arr = childrenOf.get(paiId) ?? [];
-    return arr.map((s) => ({
-      id: s.id,
-      numero: s.numero,
-      tipoRecurso: s.tipoRecurso,
-      numeroSequencial: s.numeroSequencial,
-      dataInterposicao: s.dataInterposicao.toISOString(),
-      fase: s.fase,
-      relator: s.relator,
-      prazosAbertos: s.prazos.length,
-      prazoMaisProximo: s.prazos[0]
-        ? {
-            tipo: s.prazos[0].tipo,
-            data: s.prazos[0].dataVencimento.toISOString(),
-          }
-        : null,
-      filhos: buildTree(s.id),
-    }));
-  }
-  void byId;
-  const subprocessosArvore = buildTree(null);
+  const recursosLista = await carregarRecursosDescendentes(processo.id);
 
   const [gestores, advogados] = await Promise.all([
     prisma.gestor.findMany({
@@ -259,11 +286,28 @@ export default async function ProcessoTceDetailPage({
             <p className="font-mono text-xs text-muted-foreground">
               {processo.numero}
             </p>
+            {processo.ehRecurso && processo.tipoRecurso && (
+              <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-purple-800">
+                {TCE_RECURSO_LABELS[processo.tipoRecurso]}
+              </span>
+            )}
             <BancaBadgeList slugs={processo.bancasSlug} size="sm" />
           </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-brand-navy md:text-3xl">
             {TCE_TIPO_LABELS[processo.tipo]}
           </h1>
+          {processo.ehRecurso && processo.processoOrigem && (
+            <p className="mt-1 inline-flex items-center gap-1.5 text-sm">
+              <Link2 className="h-3.5 w-3.5 text-purple-700" />
+              <span className="text-muted-foreground">Processo de origem:</span>
+              <Link
+                href={`/app/tce/processos/${processo.processoOrigem.id}`}
+                className="font-mono font-semibold text-brand-navy hover:underline"
+              >
+                {processo.processoOrigem.numero}
+              </Link>
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">
             {processo.municipio ? (
               <>
@@ -595,7 +639,8 @@ export default async function ProcessoTceDetailPage({
       <RecursosSection
         processoId={processo.id}
         baseNumero={processo.numero}
-        subprocessos={subprocessosArvore}
+        bancasOrigem={processo.bancasSlug}
+        recursos={recursosLista}
       />
 
       <DocumentosSection
