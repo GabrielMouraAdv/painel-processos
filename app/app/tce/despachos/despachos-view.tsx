@@ -71,11 +71,11 @@ export type DespachoCard = {
   memoriais: { id: string; nome: string; url: string; createdAt: Date }[];
   memorialDispensado: DispensaInfo | null;
   despachoDispensado: DispensaInfo | null;
-  // Quando o card representa um SubprocessoTce em vez de ProcessoTce
-  subprocesso?: {
-    isSubprocesso: true;
+  // Quando o card representa um recurso (ProcessoTce com ehRecurso=true),
+  // traz o tipo do recurso e a referencia ao processo de origem.
+  recurso?: {
     tipoRecursoCode: string;
-    processoPai: { id: string; numero: string };
+    processoOrigem: { id: string; numero: string };
   } | null;
 };
 
@@ -571,9 +571,9 @@ function DespachoCardComponent({
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-2 font-mono text-sm font-bold tracking-wide">
             {card.numero}
-            {card.subprocesso && (
+            {card.recurso && (
               <span className="rounded bg-white/25 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                {card.subprocesso.tipoRecursoCode}
+                {card.recurso.tipoRecursoCode}
               </span>
             )}
             <BancaBadgeList slugs={card.bancasSlug} max={3} />
@@ -585,9 +585,9 @@ function DespachoCardComponent({
               : ""}
             {card.exercicio ? ` • exercicio ${card.exercicio}` : ""}
           </p>
-          {card.subprocesso && (
+          {card.recurso && (
             <p className="text-[11px] italic opacity-80">
-              Recurso vinculado ao processo {card.subprocesso.processoPai.numero}
+              Recurso vinculado ao processo {card.recurso.processoOrigem.numero}
             </p>
           )}
         </div>
@@ -817,60 +817,47 @@ function DespachoCardComponent({
               </span>
             )}
           </div>
-          {!card.subprocesso && (
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf,.pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) uploadMemorial(f);
-                }}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-3.5 w-3.5" />
-                    Anexar Memorial
-                  </>
-                )}
-              </Button>
-              {!card.memorialPronto && !memorialDispensado && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
-                  onClick={() => setDispensarMemorialOpen(true)}
-                >
-                  <Ban className="mr-1 h-3.5 w-3.5" />
-                  Dispensar Memorial
-                </Button>
-              )}
-            </div>
-          )}
-          {card.subprocesso && !card.memorialPronto && !memorialDispensado && (
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadMemorial(f);
+              }}
+            />
             <Button
               variant="outline"
               size="sm"
-              className="border-slate-300 text-slate-700 hover:bg-slate-100"
-              onClick={() => setDispensarMemorialOpen(true)}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
             >
-              <Ban className="mr-1 h-3.5 w-3.5" />
-              Dispensar Memorial
+              {uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-3.5 w-3.5" />
+                  Anexar Memorial
+                </>
+              )}
             </Button>
-          )}
+            {!card.memorialPronto && !memorialDispensado && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                onClick={() => setDispensarMemorialOpen(true)}
+              >
+                <Ban className="mr-1 h-3.5 w-3.5" />
+                Dispensar Memorial
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

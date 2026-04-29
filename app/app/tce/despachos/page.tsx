@@ -118,12 +118,11 @@ export default async function DespachosTcePage({
               motivo: p.despachoDispensadoMotivo,
             }
           : null,
-      subprocesso:
+      recurso:
         p.ehRecurso && p.tipoRecurso && p.processoOrigem
           ? {
-              isSubprocesso: true,
               tipoRecursoCode: TCE_RECURSO_CODE[p.tipoRecurso],
-              processoPai: {
+              processoOrigem: {
                 id: p.processoOrigem.id,
                 numero: p.processoOrigem.numero,
               },

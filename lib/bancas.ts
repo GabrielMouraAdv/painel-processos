@@ -1,6 +1,7 @@
 // Cadastro central das bancas que patrocinam processos no painel.
-// Cada `ProcessoTce` e `SubprocessoTce` carrega `bancasSlug: string[]`,
-// onde cada slug aponta para um item desta lista.
+// Cada `ProcessoTce` (incluindo recursos, que tambem sao ProcessoTce com
+// ehRecurso=true) carrega `bancasSlug: string[]`, onde cada slug aponta
+// para um item desta lista.
 //
 // Util tanto para filtros de UI (badge colorido + multi-select) quanto para
 // validacao server-side. Nao confunda com `lib/escritorios-emissores.ts`,
