@@ -11,12 +11,10 @@ import {
   Home,
   Landmark,
   LayoutDashboard,
-  Receipt,
   Scale,
   Search,
   UserCheck,
   Users,
-  Wallet,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -57,18 +55,6 @@ export function Sidebar({
   onOpenSearch,
 }: Props) {
   const groups: NavGroup[] = [
-    ...(podeFinanceiro
-      ? [
-          {
-            title: "Financeiro",
-            items: [
-              { label: "Dashboard Financeiro", href: "/app/financeiro", icon: DollarSign },
-              { label: "Honorarios Municipais", href: "/app/financeiro/municipios", icon: Receipt },
-              { label: "Honorarios Pessoais", href: "/app/financeiro/pessoas-fisicas", icon: Wallet },
-            ],
-          } as NavGroup,
-        ]
-      : []),
     {
       title: "Tribunal de Contas",
       items: [
@@ -181,6 +167,18 @@ export function Sidebar({
             <BarChart3 className="h-4 w-4" aria-hidden="true" />
             <span>Relatorios</span>
           </Link>
+          {podeFinanceiro && (
+            <Link
+              href="/app/financeiro"
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+                "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
+              )}
+            >
+              <DollarSign className="h-4 w-4" aria-hidden="true" />
+              <span>Financeiro</span>
+            </Link>
+          )}
         </div>
         {groups.map((group, index) => (
           <div

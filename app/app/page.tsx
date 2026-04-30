@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { ArrowRight, BarChart3, Landmark, Scale } from "lucide-react";
+import { ArrowRight, BarChart3, DollarSign, Landmark, Scale } from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
 import { parseBancasParam } from "@/lib/bancas";
 import { diasUteisEntre } from "@/lib/dias-uteis";
+import {
+  computeStatusNota,
+  formatBRL,
+  podeAcessarFinanceiro,
+  STATUS_NOTA,
+} from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 import { fasesEmPauta } from "@/lib/processo-labels";
 
@@ -16,6 +22,10 @@ export default async function ModuloHomePage({
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
   const bancasFiltro = parseBancasParam(searchParams.banca);
+  const podeFinanceiro = podeAcessarFinanceiro(
+    session!.user.role,
+    session!.user.bancaSlug ?? null,
+  );
   const tceBase: { escritorioId: string; bancasSlug?: { hasSome: string[] } } = {
     escritorioId,
     ...(bancasFiltro.length > 0 && {
@@ -135,6 +145,44 @@ export default async function ModuloHomePage({
   const totalPendenciasJud =
     memoriaisPendJud + despachosPendJud + prazosVencendoJud;
 
+  // KPIs do card Financeiro (apenas se o usuario tem permissao)
+  let financeiroKpis: {
+    contratosAtivos: number;
+    valorEmAberto: number;
+    valorEmAtraso: number;
+  } | null = null;
+  if (podeFinanceiro) {
+    const hojeFin = new Date();
+    hojeFin.setHours(0, 0, 0, 0);
+    const [contratosAtivos, notasAbertas] = await Promise.all([
+      prisma.contratoMunicipal.count({
+        where: {
+          ativo: true,
+          municipio: { escritorioId },
+        },
+      }),
+      prisma.notaFiscal.findMany({
+        where: {
+          pago: false,
+          contrato: { municipio: { escritorioId } },
+        },
+        select: { valorNota: true, dataVencimento: true, pago: true },
+      }),
+    ]);
+    let valorEmAberto = 0;
+    let valorEmAtraso = 0;
+    for (const n of notasAbertas) {
+      const valor = Number(n.valorNota);
+      const status = computeStatusNota(
+        { pago: n.pago, dataVencimento: n.dataVencimento },
+        hojeFin,
+      );
+      if (status === STATUS_NOTA.A_VENCER) valorEmAberto += valor;
+      else if (status === STATUS_NOTA.VENCIDA) valorEmAtraso += valor;
+    }
+    financeiroKpis = { contratosAtivos, valorEmAberto, valorEmAtraso };
+  }
+
   const nome = session?.user?.name ?? "usuario";
 
   return (
@@ -209,7 +257,7 @@ export default async function ModuloHomePage({
 
           <Link
             href="/app/relatorios"
-            className="group col-span-1 flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8 md:col-span-2"
+            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8"
           >
             <div className="flex items-start justify-between">
               <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
@@ -217,22 +265,58 @@ export default async function ModuloHomePage({
               </div>
               <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
             </div>
-            <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
+                Relatorios
+              </h2>
+              <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                Gerencial e por cliente
+              </p>
+            </div>
+            <dl className="grid grid-cols-3 gap-2 border-t pt-4">
+              <Stat label="Processos TCE" value={totalTce} />
+              <Stat label="Processos Judiciais" value={totalJud} />
+              <Stat label="Total geral" value={totalTce + totalJud} />
+            </dl>
+          </Link>
+
+          {podeFinanceiro && financeiroKpis && (
+            <Link
+              href="/app/financeiro"
+              className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
+                  <DollarSign className="h-7 w-7" />
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
+              </div>
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
-                  Relatorios
+                  Financeiro
                 </h2>
                 <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                  Gerencial e por cliente
+                  Contratos, notas fiscais e honorarios
                 </p>
               </div>
-              <dl className="flex flex-wrap gap-x-6 gap-y-2 border-t pt-4 md:border-t-0 md:pt-0">
-                <Stat label="Processos TCE" value={totalTce} />
-                <Stat label="Processos Judiciais" value={totalJud} />
-                <Stat label="Total geral" value={totalTce + totalJud} />
+              <dl className="grid grid-cols-3 gap-2 border-t pt-4">
+                <Stat
+                  label="Contratos ativos"
+                  value={financeiroKpis.contratosAtivos}
+                />
+                <StatBRL
+                  label="Em aberto"
+                  value={financeiroKpis.valorEmAberto}
+                  tone="rose"
+                />
+                <StatBRL
+                  label="Em atraso"
+                  value={financeiroKpis.valorEmAtraso}
+                  tone="red"
+                />
               </dl>
-            </div>
-          </Link>
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -260,6 +344,34 @@ function Stat({
       </dt>
       <dd className={`mt-0.5 text-lg font-semibold sm:text-xl ${valueClass}`}>
         {value}
+      </dd>
+    </div>
+  );
+}
+
+function StatBRL({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: number;
+  tone?: "default" | "red" | "rose";
+}) {
+  const valueClass = {
+    default: "text-brand-navy",
+    red: "text-red-700",
+    rose: "text-rose-700",
+  }[tone];
+  return (
+    <div>
+      <dt className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[10px]">
+        {label}
+      </dt>
+      <dd
+        className={`mt-0.5 text-sm font-semibold leading-tight sm:text-base ${valueClass}`}
+      >
+        {formatBRL(value)}
       </dd>
     </div>
   );
