@@ -26,9 +26,6 @@ export async function GET() {
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  const em15 = new Date(hoje);
-  em15.setDate(em15.getDate() + 15);
-  em15.setHours(23, 59, 59, 999);
 
   const processos = await prisma.processoTce.findMany({
     where: { escritorioId, julgado: false },
@@ -37,12 +34,7 @@ export async function GET() {
       municipio: { select: { nome: true, uf: true } },
       andamentos: { select: { data: true, descricao: true } },
       prazos: {
-        where: {
-          OR: [
-            { cumprido: false, dataVencimento: { lte: em15 } },
-            { cumprido: true },
-          ],
-        },
+        where: { dispensado: false },
         orderBy: { dataVencimento: "asc" },
         select: {
           id: true,
@@ -61,6 +53,13 @@ export async function GET() {
   let despCount = 0;
 
   for (const p of processos) {
+    const temPrazoMemorialAberto = p.prazos.some(
+      (pr) => !pr.cumprido && /memorial/i.test(pr.tipo),
+    );
+    const temPrazoDespachoAberto = p.prazos.some(
+      (pr) => !pr.cumprido && /despacho/i.test(pr.tipo),
+    );
+
     const prazosFiltrados = p.prazos
       .map((pr) => ({
         id: pr.id,
@@ -86,6 +85,14 @@ export async function GET() {
         contrarrazoesNtApresentadas: p.contrarrazoesNtApresentadas,
         contrarrazoesMpcoApresentadas: p.contrarrazoesMpcoApresentadas,
         faseAtual: p.faseAtual,
+        memorialAgendadoData: p.memorialAgendadoData,
+        despachoAgendadoData: p.despachoAgendadoData,
+        memorialDispensado: p.memorialDispensado,
+        despachoDispensado: p.despachoDispensado,
+        contrarrazoesNtDispensadas: p.contrarrazoesNtDispensadas,
+        contrarrazoesMpcoDispensadas: p.contrarrazoesMpcoDispensadas,
+        temPrazoMemorialAberto,
+        temPrazoDespachoAberto,
       },
       p.andamentos,
       prazosFiltrados,

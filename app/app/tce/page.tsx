@@ -164,23 +164,18 @@ export default async function TceDashboardPage({
         tipo: {
           notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
         },
-      },
-    }),
-    prisma.processoTce.count({
-      where: { ...base, julgado: false, notaTecnica: true },
-    }),
-    prisma.processoTce.count({
-      where: { ...base, julgado: false, parecerMpco: true },
-    }),
-    prisma.processoTce.count({
-      where: {
-        ...base,
-        julgado: false,
-        despachadoComRelator: false,
-        despachoDispensado: false,
-        tipo: {
-          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
-        },
+        OR: [
+          { memorialAgendadoData: { not: null } },
+          {
+            prazos: {
+              some: {
+                cumprido: false,
+                dispensado: false,
+                tipo: { contains: "memorial", mode: "insensitive" },
+              },
+            },
+          },
+        ],
       },
     }),
     prisma.processoTce.count({
@@ -203,12 +198,64 @@ export default async function TceDashboardPage({
       where: {
         ...base,
         julgado: false,
-        memorialPronto: true,
         despachadoComRelator: false,
         despachoDispensado: false,
         tipo: {
           notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
         },
+        OR: [
+          { despachoAgendadoData: { not: null } },
+          { memorialPronto: true },
+          {
+            prazos: {
+              some: {
+                cumprido: false,
+                dispensado: false,
+                tipo: { contains: "despacho", mode: "insensitive" },
+              },
+            },
+          },
+        ],
+      },
+    }),
+    prisma.processoTce.count({
+      where: {
+        ...base,
+        julgado: false,
+        notaTecnica: true,
+        contrarrazoesNtApresentadas: false,
+      },
+    }),
+    prisma.processoTce.count({
+      where: {
+        ...base,
+        julgado: false,
+        parecerMpco: true,
+        contrarrazoesMpcoApresentadas: false,
+      },
+    }),
+    prisma.processoTce.count({
+      where: {
+        ...base,
+        julgado: false,
+        despachadoComRelator: false,
+        despachoDispensado: false,
+        tipo: {
+          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
+        },
+        OR: [
+          { despachoAgendadoData: { not: null } },
+          { memorialPronto: true },
+          {
+            prazos: {
+              some: {
+                cumprido: false,
+                dispensado: false,
+                tipo: { contains: "despacho", mode: "insensitive" },
+              },
+            },
+          },
+        ],
       },
     }),
     prisma.prazoTce.findMany({

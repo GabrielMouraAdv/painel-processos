@@ -24,9 +24,6 @@ export default async function PendenciasTcePage({
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  const em15Corridos = new Date(hoje);
-  em15Corridos.setDate(em15Corridos.getDate() + 15);
-  em15Corridos.setHours(23, 59, 59, 999);
 
   const [processos, advogados] = await Promise.all([
     prisma.processoTce.findMany({
@@ -42,16 +39,7 @@ export default async function PendenciasTcePage({
         municipio: { select: { nome: true, uf: true } },
         andamentos: { select: { data: true, descricao: true } },
         prazos: {
-          where: {
-            dispensado: false,
-            OR: [
-              {
-                cumprido: false,
-                dataVencimento: { lte: em15Corridos },
-              },
-              { cumprido: true },
-            ],
-          },
+          where: { dispensado: false },
           orderBy: { dataVencimento: "asc" },
           select: {
             id: true,
@@ -100,6 +88,14 @@ export default async function PendenciasTcePage({
         cumprido: pr.cumprido,
         advogadoResp: pr.advogadoResp?.nome ?? null,
       }));
+
+      // Sinais explicitos de prazo em aberto (qualquer data) por categoria.
+      const temPrazoMemorialAberto = todosPrazos.some(
+        (pr) => !pr.cumprido && /memorial/i.test(pr.tipo),
+      );
+      const temPrazoDespachoAberto = todosPrazos.some(
+        (pr) => !pr.cumprido && /despacho/i.test(pr.tipo),
+      );
 
       // Filtra prazos vencendo em 7 dias uteis ou que ja foram cumpridos
       const prazosFiltrados = todosPrazos
@@ -153,6 +149,8 @@ export default async function PendenciasTcePage({
           contrarrazoesMpcoDispensadoEm: p.contrarrazoesMpcoDispensadoEm,
           contrarrazoesMpcoDispensadoMotivo:
             p.contrarrazoesMpcoDispensadoMotivo,
+          temPrazoMemorialAberto,
+          temPrazoDespachoAberto,
         },
         p.andamentos,
         prazosFiltrados,

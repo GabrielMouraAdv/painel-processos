@@ -115,15 +115,45 @@ export default async function ModuloHomePage({
         memorialPronto: false,
         memorialDispensado: false,
         faseAtual: { notIn: ["transitado", "transitado_cautelar"] },
+        tipo: {
+          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
+        },
+        OR: [
+          { memorialAgendadoData: { not: null } },
+          {
+            prazos: {
+              some: {
+                cumprido: false,
+                dispensado: false,
+                tipo: { contains: "memorial", mode: "insensitive" },
+              },
+            },
+          },
+        ],
       },
     }),
     prisma.processoTce.count({
       where: {
         ...tceBase,
         julgado: false,
-        memorialPronto: true,
         despachadoComRelator: false,
         despachoDispensado: false,
+        tipo: {
+          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
+        },
+        OR: [
+          { despachoAgendadoData: { not: null } },
+          { memorialPronto: true },
+          {
+            prazos: {
+              some: {
+                cumprido: false,
+                dispensado: false,
+                tipo: { contains: "despacho", mode: "insensitive" },
+              },
+            },
+          },
+        ],
       },
     }),
     prisma.prazoTce.findMany({

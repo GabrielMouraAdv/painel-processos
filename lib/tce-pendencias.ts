@@ -106,6 +106,11 @@ export function detectarPendencias(
     contrarrazoesMpcoDispensadoPor?: string | null;
     contrarrazoesMpcoDispensadoEm?: Date | null;
     contrarrazoesMpcoDispensadoMotivo?: string | null;
+    // Sinais explicitos baseados em prazos (calculados pelo caller a partir
+    // da lista bruta de prazos do processo). Servem para diferenciar processo
+    // "em branco" de processo com acao pendente sem agendamento.
+    temPrazoMemorialAberto?: boolean;
+    temPrazoDespachoAberto?: boolean;
   },
   andamentos: AndamentoMin[],
   prazos: {
@@ -199,7 +204,20 @@ export function detectarPendencias(
         }
       : null;
 
-  if (!semFluxoRelator && !FASES_ENCERRADAS.has(processo.faseAtual)) {
+  // Memorial: so empurra pendencia quando ha sinal explicito de acao.
+  // Processo "em branco" (memorialPronto=false, memorialDispensado=false,
+  // memorialAgendadoData=null, sem prazo de memorial) NAO gera pendencia.
+  const memSinalExplicito =
+    processo.memorialPronto ||
+    !!memDispensado ||
+    processo.memorialAgendadoData != null ||
+    !!processo.temPrazoMemorialAberto;
+
+  if (
+    !semFluxoRelator &&
+    !FASES_ENCERRADAS.has(processo.faseAtual) &&
+    memSinalExplicito
+  ) {
     const memAgendado =
       !processo.memorialPronto &&
       !memDispensado &&
@@ -228,7 +246,17 @@ export function detectarPendencias(
     });
   }
 
-  if (!semFluxoRelator && (processo.memorialPronto || memDispensado)) {
+  // Despacho: pendente apenas quando ha sinal explicito (agendado,
+  // memorial pronto, ou prazo de despacho aberto). Tambem ja consideramos
+  // concluido/dispensado como sinais (para exibir o registro historico).
+  const despSinalExplicito =
+    processo.despachadoComRelator ||
+    !!despDispensado ||
+    processo.despachoAgendadoData != null ||
+    processo.memorialPronto ||
+    !!processo.temPrazoDespachoAberto;
+
+  if (!semFluxoRelator && despSinalExplicito) {
     const despAgendado =
       !processo.despachadoComRelator &&
       !despDispensado &&

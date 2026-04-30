@@ -27,10 +27,23 @@ export default async function DespachosTcePage({
       where: {
         escritorioId,
         julgado: false,
+        tipo: {
+          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
+        },
         OR: [
           { memorialPronto: true },
           { despachadoComRelator: true },
           { incluidoNoDespacho: true },
+          { despachoAgendadoData: { not: null } },
+          {
+            prazos: {
+              some: {
+                cumprido: false,
+                dispensado: false,
+                tipo: { contains: "despacho", mode: "insensitive" },
+              },
+            },
+          },
         ],
         ...(bancasFiltro.length > 0 && {
           bancasSlug: { hasSome: bancasFiltro },

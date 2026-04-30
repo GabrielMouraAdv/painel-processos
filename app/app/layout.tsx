@@ -78,9 +78,24 @@ export default async function AppLayout({
       where: {
         escritorioId,
         julgado: false,
-        memorialPronto: true,
         despachadoComRelator: false,
         despachoDispensado: false,
+        tipo: {
+          notIn: ["TERMO_AJUSTE_GESTAO", "PEDIDO_RESCISAO", "CONSULTA"],
+        },
+        OR: [
+          { despachoAgendadoData: { not: null } },
+          { memorialPronto: true },
+          {
+            prazos: {
+              some: {
+                cumprido: false,
+                dispensado: false,
+                tipo: { contains: "despacho", mode: "insensitive" },
+              },
+            },
+          },
+        ],
       },
     }),
   ]);
