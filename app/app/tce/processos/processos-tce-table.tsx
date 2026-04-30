@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  classeBadgeJulgadoSemDetalhe,
   classeBadgeNaoJulgado,
   classeBadgeResultado,
   classificarResultadoTce,
@@ -286,7 +287,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                     <span
                       className={cn(
                         "inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
-                        classeBadgeNaoJulgado(),
+                        classeBadgeJulgadoSemDetalhe(),
                       )}
                       title="Processo julgado - resultado pendente de cadastro"
                     >

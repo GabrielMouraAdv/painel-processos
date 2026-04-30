@@ -18,6 +18,7 @@ import {
   TribunalBadge,
 } from "@/components/processo-badges";
 import {
+  classeBadgeJulgadoSemDetalhe,
   classeBadgeNaoJulgado,
   classeBadgeResultado,
   classificarResultadoJud,
@@ -149,7 +150,7 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                     <span
                       className={cn(
                         "inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
-                        classeBadgeNaoJulgado(),
+                        classeBadgeJulgadoSemDetalhe(),
                       )}
                       title="Processo julgado - resultado pendente de cadastro"
                     >
