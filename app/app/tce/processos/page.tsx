@@ -85,9 +85,16 @@ export default async function TceProcessosPage({
     ...(prazoFiltro === "aberto" && {
       prazos: { some: { cumprido: false } },
     }),
-    ...(semDespacho && { despachadoComRelator: false }),
-    ...(memorialFiltro === "pendente" && { memorialPronto: false }),
+    ...(semDespacho && {
+      despachadoComRelator: false,
+      julgado: false,
+    }),
+    ...(memorialFiltro === "pendente" && {
+      memorialPronto: false,
+      julgado: false,
+    }),
     ...(contrarrazoesFiltro === "pendentes" && {
+      julgado: false,
       OR: [{ notaTecnica: true }, { parecerMpco: true }],
     }),
     ...(pautaFiltro && {
@@ -172,14 +179,15 @@ export default async function TceProcessosPage({
       },
     }),
     prisma.processoTce.count({
-      where: { escritorioId, despachadoComRelator: false },
+      where: { escritorioId, julgado: false, despachadoComRelator: false },
     }),
     prisma.processoTce.count({
-      where: { escritorioId, memorialPronto: false },
+      where: { escritorioId, julgado: false, memorialPronto: false },
     }),
     prisma.processoTce.count({
       where: {
         escritorioId,
+        julgado: false,
         OR: [{ notaTecnica: true }, { parecerMpco: true }],
       },
     }),

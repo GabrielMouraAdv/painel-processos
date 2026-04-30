@@ -31,7 +31,7 @@ export async function GET() {
   em15.setHours(23, 59, 59, 999);
 
   const processos = await prisma.processoTce.findMany({
-    where: { escritorioId },
+    where: { escritorioId, julgado: false },
     orderBy: [{ dataAutuacao: "desc" }],
     include: {
       municipio: { select: { nome: true, uf: true } },

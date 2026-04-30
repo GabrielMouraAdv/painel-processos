@@ -67,6 +67,7 @@ export async function GET(req: Request) {
 
   const where: Prisma.ProcessoTceWhereInput = {
     escritorioId,
+    julgado: false,
     OR: baseInclude,
   };
 

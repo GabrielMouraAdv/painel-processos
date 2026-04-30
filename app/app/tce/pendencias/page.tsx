@@ -32,6 +32,7 @@ export default async function PendenciasTcePage({
     prisma.processoTce.findMany({
       where: {
         escritorioId,
+        julgado: false,
         ...(bancasFiltro.length > 0 && {
           bancasSlug: { hasSome: bancasFiltro },
         }),

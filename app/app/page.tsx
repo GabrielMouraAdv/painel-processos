@@ -95,6 +95,7 @@ export default async function ModuloHomePage({
     prisma.processoTce.count({
       where: {
         ...tceBase,
+        julgado: false,
         notaTecnica: true,
         contrarrazoesNtApresentadas: false,
       },
@@ -102,6 +103,7 @@ export default async function ModuloHomePage({
     prisma.processoTce.count({
       where: {
         ...tceBase,
+        julgado: false,
         parecerMpco: true,
         contrarrazoesMpcoApresentadas: false,
       },
@@ -109,6 +111,7 @@ export default async function ModuloHomePage({
     prisma.processoTce.count({
       where: {
         ...tceBase,
+        julgado: false,
         memorialPronto: false,
         memorialDispensado: false,
         faseAtual: { notIn: ["transitado", "transitado_cautelar"] },
@@ -117,6 +120,7 @@ export default async function ModuloHomePage({
     prisma.processoTce.count({
       where: {
         ...tceBase,
+        julgado: false,
         memorialPronto: true,
         despachadoComRelator: false,
         despachoDispensado: false,

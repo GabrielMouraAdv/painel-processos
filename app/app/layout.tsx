@@ -77,6 +77,7 @@ export default async function AppLayout({
     prisma.processoTce.count({
       where: {
         escritorioId,
+        julgado: false,
         memorialPronto: true,
         despachadoComRelator: false,
         despachoDispensado: false,

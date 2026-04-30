@@ -157,6 +157,7 @@ export default async function TceDashboardPage({
     prisma.processoTce.count({
       where: {
         ...base,
+        julgado: false,
         memorialPronto: false,
         memorialDispensado: false,
         faseAtual: { notIn: ["transitado", "transitado_cautelar"] },
@@ -166,14 +167,15 @@ export default async function TceDashboardPage({
       },
     }),
     prisma.processoTce.count({
-      where: { ...base, notaTecnica: true },
+      where: { ...base, julgado: false, notaTecnica: true },
     }),
     prisma.processoTce.count({
-      where: { ...base, parecerMpco: true },
+      where: { ...base, julgado: false, parecerMpco: true },
     }),
     prisma.processoTce.count({
       where: {
         ...base,
+        julgado: false,
         despachadoComRelator: false,
         despachoDispensado: false,
         tipo: {
@@ -184,6 +186,7 @@ export default async function TceDashboardPage({
     prisma.processoTce.count({
       where: {
         ...base,
+        julgado: false,
         notaTecnica: true,
         contrarrazoesNtApresentadas: false,
       },
@@ -191,6 +194,7 @@ export default async function TceDashboardPage({
     prisma.processoTce.count({
       where: {
         ...base,
+        julgado: false,
         parecerMpco: true,
         contrarrazoesMpcoApresentadas: false,
       },
@@ -198,6 +202,7 @@ export default async function TceDashboardPage({
     prisma.processoTce.count({
       where: {
         ...base,
+        julgado: false,
         memorialPronto: true,
         despachadoComRelator: false,
         despachoDispensado: false,

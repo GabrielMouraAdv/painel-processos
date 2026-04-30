@@ -26,6 +26,7 @@ export default async function DespachosTcePage({
     prisma.processoTce.findMany({
       where: {
         escritorioId,
+        julgado: false,
         OR: [
           { memorialPronto: true },
           { despachadoComRelator: true },
