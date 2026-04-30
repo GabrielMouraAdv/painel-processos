@@ -282,6 +282,16 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                     >
                       {p.resultadoJulgamento}
                     </span>
+                  ) : p.julgado ? (
+                    <span
+                      className={cn(
+                        "inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+                        classeBadgeNaoJulgado(),
+                      )}
+                      title="Processo julgado - resultado pendente de cadastro"
+                    >
+                      Julgado (sem detalhe)
+                    </span>
                   ) : (
                     <span
                       className={cn(

@@ -127,15 +127,16 @@ function CardResultadoJulgamento(props: Props) {
     j.resultadoJulgamento,
   );
 
-  const corCard = !j.julgado
-    ? "border-slate-200 bg-slate-50"
-    : classificacao === "favoravel"
-      ? "border-emerald-300 bg-emerald-50"
-      : classificacao === "desfavoravel"
-        ? "border-red-300 bg-red-50"
-        : classificacao === "parcial"
-          ? "border-yellow-300 bg-yellow-50"
-          : "border-slate-300 bg-slate-100";
+  const corCard =
+    !j.julgado || !j.resultadoJulgamento
+      ? "border-slate-200 bg-slate-50"
+      : classificacao === "favoravel"
+        ? "border-emerald-300 bg-emerald-50"
+        : classificacao === "desfavoravel"
+          ? "border-red-300 bg-red-50"
+          : classificacao === "parcial"
+            ? "border-yellow-300 bg-yellow-50"
+            : "border-slate-300 bg-slate-100";
 
   return (
     <Card id="card-julgamento" className={cn("scroll-mt-24 border", corCard)}>
@@ -161,7 +162,24 @@ function CardResultadoJulgamento(props: Props) {
           </>
         )}
 
-        {j.julgado && (
+        {j.julgado && !j.resultadoJulgamento && (
+          <>
+            <p className="text-sm text-slate-700">
+              Processo julgado - resultado pendente de cadastro
+            </p>
+            <Button
+              size="sm"
+              className="bg-brand-navy hover:bg-brand-navy/90"
+              onClick={() => setOpen(true)}
+              disabled={busy}
+            >
+              <Gavel className="mr-1 h-3.5 w-3.5" />
+              Registrar Resultado
+            </Button>
+          </>
+        )}
+
+        {j.julgado && j.resultadoJulgamento && (
           <>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-2">
