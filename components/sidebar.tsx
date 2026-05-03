@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   DollarSign,
   Gavel,
+  History,
   Home,
   Landmark,
   LayoutDashboard,
@@ -41,6 +42,7 @@ type Props = {
   alertasMonitoramento?: number;
   despachosTcePendentes?: number;
   podeFinanceiro?: boolean;
+  isAdmin?: boolean;
   onOpenSearch?: () => void;
 };
 
@@ -52,6 +54,7 @@ export function Sidebar({
   alertasMonitoramento = 0,
   despachosTcePendentes = 0,
   podeFinanceiro = false,
+  isAdmin = false,
   onOpenSearch,
 }: Props) {
   const groups: NavGroup[] = [
@@ -225,6 +228,18 @@ export function Sidebar({
       </nav>
 
       <div className="space-y-3 border-t border-white/10 px-6 py-4 text-xs text-slate-300">
+        {isAdmin && (
+          <Link
+            href="/app/admin/logs"
+            className={cn(
+              "-mx-3 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+              "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
+            )}
+          >
+            <History className="h-4 w-4" aria-hidden="true" />
+            <span>Logs</span>
+          </Link>
+        )}
         <LogoutButton />
         <div>
           <p className="font-semibold text-slate-100">Painel Juridico</p>

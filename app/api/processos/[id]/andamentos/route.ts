@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { andamentoInputSchema } from "@/lib/schemas";
@@ -17,7 +18,7 @@ export async function POST(
 
   const processo = await prisma.processo.findFirst({
     where: { id: params.id, escritorioId },
-    select: { id: true },
+    select: { id: true, numero: true },
   });
   if (!processo) return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
@@ -66,6 +67,16 @@ export async function POST(
         })),
       });
     }
+  });
+
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.CRIAR_ANDAMENTO,
+    entidade: "Andamento",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} registrou andamento no processo ${processo.numero} - fase ${data.fase}`,
+    detalhes: { fase: data.fase, grau: data.grau, resultado: data.resultado, prazosGerados: data.acoes.length },
+    ip: extrairIp(req),
   });
 
   return NextResponse.json({ ok: true }, { status: 201 });

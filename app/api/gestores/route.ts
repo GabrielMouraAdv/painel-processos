@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { TipoInteressado } from "@prisma/client";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gestorInputSchema } from "@/lib/schemas";
@@ -70,6 +71,15 @@ export async function POST(req: Request) {
           }),
       },
       select: { id: true, nome: true, tipoInteressado: true },
+    });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.CRIAR_GESTOR,
+      entidade: "Gestor",
+      entidadeId: gestor.id,
+      descricao: `${session.user.name ?? "Usuario"} cadastrou interessado ${gestor.nome} (${isPj ? "PJ" : "PF"})`,
+      detalhes: { tipoInteressado: data.tipoInteressado, cpf: data.cpf, cnpj: data.cnpj },
+      ip: extrairIp(req),
     });
     return NextResponse.json(gestor, { status: 201 });
   } catch (err) {

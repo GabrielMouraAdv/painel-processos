@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { processoInputSchema } from "@/lib/schemas";
@@ -55,6 +56,15 @@ export async function POST(req: Request) {
         escritorioId,
       },
       select: { id: true },
+    });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.CRIAR_PROCESSO,
+      entidade: "Processo",
+      entidadeId: processo.id,
+      descricao: `${session.user.name ?? "Usuario"} criou processo ${data.numero} (${data.tribunal} - ${data.tipo})`,
+      detalhes: { numero: data.numero, tipo: data.tipo, tribunal: data.tribunal, gestorId: data.gestorId, advogadoId: data.advogadoId },
+      ip: extrairIp(req),
     });
     return NextResponse.json({ id: processo.id }, { status: 201 });
   } catch (err) {

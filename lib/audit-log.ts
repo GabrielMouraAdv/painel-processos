@@ -1,0 +1,107 @@
+import { prisma } from "@/lib/prisma";
+
+type Params = {
+  userId: string;
+  acao: string;
+  entidade: string;
+  entidadeId?: string;
+  descricao: string;
+  detalhes?: unknown;
+  ip?: string | null;
+};
+
+export async function registrarLog(params: Params): Promise<void> {
+  try {
+    await prisma.logAuditoria.create({
+      data: {
+        userId: params.userId,
+        acao: params.acao,
+        entidade: params.entidade,
+        entidadeId: params.entidadeId ?? null,
+        descricao: params.descricao,
+        detalhes:
+          params.detalhes === undefined
+            ? null
+            : typeof params.detalhes === "string"
+              ? params.detalhes
+              : JSON.stringify(params.detalhes),
+        ip: params.ip ?? null,
+      },
+    });
+  } catch {
+    // log de auditoria nao deve quebrar a operacao principal
+  }
+}
+
+export function extrairIp(req: Request): string | null {
+  const xf = req.headers.get("x-forwarded-for");
+  if (xf) return xf.split(",")[0]?.trim() || null;
+  const real = req.headers.get("x-real-ip");
+  if (real) return real;
+  return null;
+}
+
+export const ACOES = {
+  CRIAR_PROCESSO: "CRIAR_PROCESSO",
+  EDITAR_PROCESSO: "EDITAR_PROCESSO",
+  EXCLUIR_PROCESSO: "EXCLUIR_PROCESSO",
+  CRIAR_PROCESSO_TCE: "CRIAR_PROCESSO_TCE",
+  EDITAR_PROCESSO_TCE: "EDITAR_PROCESSO_TCE",
+  EXCLUIR_PROCESSO_TCE: "EXCLUIR_PROCESSO_TCE",
+  MARCAR_NT: "MARCAR_NT",
+  MARCAR_PARECER_MPCO: "MARCAR_PARECER_MPCO",
+  CRIAR_PRAZO: "CRIAR_PRAZO",
+  EDITAR_PRAZO: "EDITAR_PRAZO",
+  EXCLUIR_PRAZO: "EXCLUIR_PRAZO",
+  CUMPRIR_PRAZO: "CUMPRIR_PRAZO",
+  DISPENSAR_PRAZO: "DISPENSAR_PRAZO",
+  PRORROGAR_PRAZO: "PRORROGAR_PRAZO",
+  CRIAR_PRAZO_TCE: "CRIAR_PRAZO_TCE",
+  EDITAR_PRAZO_TCE: "EDITAR_PRAZO_TCE",
+  EXCLUIR_PRAZO_TCE: "EXCLUIR_PRAZO_TCE",
+  CUMPRIR_PRAZO_TCE: "CUMPRIR_PRAZO_TCE",
+  DISPENSAR_PRAZO_TCE: "DISPENSAR_PRAZO_TCE",
+  PRORROGAR_PRAZO_TCE: "PRORROGAR_PRAZO_TCE",
+  MARCAR_MEMORIAL_PRONTO: "MARCAR_MEMORIAL_PRONTO",
+  DISPENSAR_MEMORIAL: "DISPENSAR_MEMORIAL",
+  MARCAR_DESPACHADO: "MARCAR_DESPACHADO",
+  DISPENSAR_DESPACHO: "DISPENSAR_DESPACHO",
+  REGISTRAR_JULGAMENTO: "REGISTRAR_JULGAMENTO",
+  CRIAR_ANDAMENTO: "CRIAR_ANDAMENTO",
+  EDITAR_ANDAMENTO: "EDITAR_ANDAMENTO",
+  EXCLUIR_ANDAMENTO: "EXCLUIR_ANDAMENTO",
+  CRIAR_ANDAMENTO_TCE: "CRIAR_ANDAMENTO_TCE",
+  EDITAR_ANDAMENTO_TCE: "EDITAR_ANDAMENTO_TCE",
+  EXCLUIR_ANDAMENTO_TCE: "EXCLUIR_ANDAMENTO_TCE",
+  UPLOAD_DOCUMENTO: "UPLOAD_DOCUMENTO",
+  EXCLUIR_DOCUMENTO: "EXCLUIR_DOCUMENTO",
+  CRIAR_GESTOR: "CRIAR_GESTOR",
+  EDITAR_GESTOR: "EDITAR_GESTOR",
+  EXCLUIR_GESTOR: "EXCLUIR_GESTOR",
+  CRIAR_MUNICIPIO: "CRIAR_MUNICIPIO",
+  EDITAR_MUNICIPIO: "EDITAR_MUNICIPIO",
+  EXCLUIR_MUNICIPIO: "EXCLUIR_MUNICIPIO",
+  CADASTRAR_CONTRATO: "CADASTRAR_CONTRATO",
+  EDITAR_CONTRATO: "EDITAR_CONTRATO",
+  EXCLUIR_CONTRATO: "EXCLUIR_CONTRATO",
+  RENOVAR_CONTRATO: "RENOVAR_CONTRATO",
+  GERAR_ADITIVO: "GERAR_ADITIVO",
+  CRIAR_NOTA_FISCAL: "CRIAR_NOTA_FISCAL",
+  EDITAR_NOTA_FISCAL: "EDITAR_NOTA_FISCAL",
+  EXCLUIR_NOTA_FISCAL: "EXCLUIR_NOTA_FISCAL",
+  MARCAR_NOTA_PAGA: "MARCAR_NOTA_PAGA",
+  UPLOAD_NOTA_FISCAL: "UPLOAD_NOTA_FISCAL",
+  CRIAR_HONORARIO: "CRIAR_HONORARIO",
+  EDITAR_HONORARIO: "EDITAR_HONORARIO",
+  EXCLUIR_HONORARIO: "EXCLUIR_HONORARIO",
+  LOGIN: "LOGIN",
+  LOGIN_FALHA: "LOGIN_FALHA",
+  ALTERAR_SENHA: "ALTERAR_SENHA",
+  CRIAR_SESSAO_PAUTA: "CRIAR_SESSAO_PAUTA",
+  EDITAR_SESSAO_PAUTA: "EDITAR_SESSAO_PAUTA",
+  EXCLUIR_SESSAO_PAUTA: "EXCLUIR_SESSAO_PAUTA",
+  DUPLICAR_SESSAO_PAUTA: "DUPLICAR_SESSAO_PAUTA",
+  CRIAR_ITEM_PAUTA: "CRIAR_ITEM_PAUTA",
+  EDITAR_ITEM_PAUTA: "EDITAR_ITEM_PAUTA",
+  EXCLUIR_ITEM_PAUTA: "EXCLUIR_ITEM_PAUTA",
+} as const;

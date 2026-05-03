@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { TipoInteressado } from "@prisma/client";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gestorInputSchema } from "@/lib/schemas";
@@ -9,7 +10,7 @@ import { gestorInputSchema } from "@/lib/schemas";
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.gestor.findFirst({
     where: { id, escritorioId },
-    select: { id: true },
+    select: { id: true, nome: true },
   });
 }
 
@@ -96,6 +97,15 @@ export async function PATCH(
         });
       }
     });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.EDITAR_GESTOR,
+      entidade: "Gestor",
+      entidadeId: params.id,
+      descricao: `${session.user.name ?? "Usuario"} editou interessado ${nomePrincipal} (${isPj ? "PJ" : "PF"})`,
+      detalhes: { tipoInteressado: data.tipoInteressado },
+      ip: extrairIp(req),
+    });
     return NextResponse.json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "erro";
@@ -113,7 +123,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -141,5 +151,13 @@ export async function DELETE(
   }
 
   await prisma.gestor.delete({ where: { id: params.id } });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EXCLUIR_GESTOR,
+    entidade: "Gestor",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} excluiu interessado ${existing.nome}`,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

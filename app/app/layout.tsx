@@ -116,6 +116,7 @@ export default async function AppLayout({
         session.user.role,
         session.user.bancaSlug ?? null,
       )}
+      isAdmin={session.user.role === "ADMIN"}
     >
       {children}
     </AppShell>

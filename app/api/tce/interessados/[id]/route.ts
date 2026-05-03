@@ -2,13 +2,19 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 
+import { extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.interessadoProcessoTce.findFirst({
     where: { id, processo: { escritorioId } },
-    select: { id: true },
+    select: {
+      id: true,
+      cargo: true,
+      gestor: { select: { nome: true } },
+      processo: { select: { numero: true } },
+    },
   });
 }
 
@@ -42,11 +48,20 @@ export async function PATCH(
       ...(parsed.data.cargo !== undefined && { cargo: parsed.data.cargo }),
     },
   });
+  await registrarLog({
+    userId: session.user.id,
+    acao: "EDITAR_INTERESSADO",
+    entidade: "InteressadoProcessoTce",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} editou cargo do interessado ${existing.gestor.nome} no processo ${existing.processo.numero}`,
+    detalhes: parsed.data,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -58,5 +73,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
   await prisma.interessadoProcessoTce.delete({ where: { id: params.id } });
+  await registrarLog({
+    userId: session.user.id,
+    acao: "DESVINCULAR_INTERESSADO",
+    entidade: "InteressadoProcessoTce",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} desvinculou interessado ${existing.gestor.nome} do processo ${existing.processo.numero}`,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

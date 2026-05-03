@@ -18,6 +18,7 @@ type Props = {
   alertasMonitoramento: number;
   despachosTcePendentes: number;
   podeFinanceiro: boolean;
+  isAdmin?: boolean;
 };
 
 export function AppShell({
@@ -29,6 +30,7 @@ export function AppShell({
   alertasMonitoramento,
   despachosTcePendentes,
   podeFinanceiro,
+  isAdmin = false,
 }: Props) {
   const [open, setOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -89,6 +91,7 @@ export function AppShell({
           alertasMonitoramento={alertasMonitoramento}
           despachosTcePendentes={despachosTcePendentes}
           podeFinanceiro={podeFinanceiro}
+          isAdmin={isAdmin}
           onOpenSearch={() => setSearchOpen(true)}
         />
       </aside>

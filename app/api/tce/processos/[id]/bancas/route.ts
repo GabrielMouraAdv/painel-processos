@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 
+import { extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { BANCA_SLUGS_VALIDOS, isBancaSlug } from "@/lib/bancas";
 import { prisma } from "@/lib/prisma";
@@ -54,6 +55,16 @@ export async function PUT(
   await prisma.processoTce.update({
     where: { id: params.id },
     data: { bancasSlug: parsed.data.bancasSlug },
+  });
+
+  await registrarLog({
+    userId: session.user.id,
+    acao: "ALTERAR_BANCAS_PROCESSO_TCE",
+    entidade: "ProcessoTce",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} alterou bancas do processo TCE`,
+    detalhes: { bancasSlug: parsed.data.bancasSlug },
+    ip: extrairIp(req),
   });
 
   return NextResponse.json({ ok: true, bancasSlug: parsed.data.bancasSlug });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { podeEditarPauta } from "@/lib/pauta-permissions";
 import { prisma } from "@/lib/prisma";
@@ -9,7 +10,7 @@ import { itemPautaJudicialUpdateSchema } from "@/lib/schemas";
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.itemPautaJudicial.findFirst({
     where: { id, sessao: { escritorioId } },
-    select: { id: true },
+    select: { id: true, numeroProcesso: true },
   });
 }
 
@@ -116,11 +117,20 @@ export async function PATCH(
       ...(data.ordem !== undefined && { ordem: data.ordem }),
     },
   });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EDITAR_ITEM_PAUTA,
+    entidade: "ItemPautaJudicial",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} editou item ${existing.numeroProcesso} da pauta judicial`,
+    detalhes: data,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -138,5 +148,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
   await prisma.itemPautaJudicial.delete({ where: { id: params.id } });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EXCLUIR_ITEM_PAUTA,
+    entidade: "ItemPautaJudicial",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} excluiu item ${existing.numeroProcesso} da pauta judicial`,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

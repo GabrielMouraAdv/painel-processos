@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { prazoTceUpdateSchema } from "@/lib/schemas";
@@ -8,7 +9,7 @@ import { prazoTceUpdateSchema } from "@/lib/schemas";
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.prazoTce.findFirst({
     where: { id, processo: { escritorioId } },
-    select: { id: true },
+    select: { id: true, tipo: true, processo: { select: { numero: true } } },
   });
 }
 
@@ -77,11 +78,22 @@ export async function PATCH(
       }),
     },
   });
+  const acaoLog = data.cumprido === true ? ACOES.CUMPRIR_PRAZO_TCE : ACOES.EDITAR_PRAZO_TCE;
+  const verbo = data.cumprido === true ? "cumpriu" : "editou";
+  await registrarLog({
+    userId: session.user.id,
+    acao: acaoLog,
+    entidade: "PrazoTce",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} ${verbo} prazo TCE "${existing.tipo}" do processo ${existing.processo.numero}`,
+    detalhes: data,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -93,5 +105,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
   await prisma.prazoTce.delete({ where: { id: params.id } });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EXCLUIR_PRAZO_TCE,
+    entidade: "PrazoTce",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} excluiu prazo TCE "${existing.tipo}" do processo ${existing.processo.numero}`,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

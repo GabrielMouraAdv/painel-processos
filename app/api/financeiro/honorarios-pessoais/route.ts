@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { TipoHonorario } from "@prisma/client";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
@@ -115,6 +116,15 @@ export async function POST(req: Request) {
         observacoes: data.observacoes ?? null,
       },
       select: { id: true },
+    });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.CRIAR_HONORARIO,
+      entidade: "HonorarioPessoal",
+      entidadeId: created.id,
+      descricao: `${session.user.name ?? "Usuario"} cadastrou honorario pessoal de ${data.clienteNome} - R$ ${data.valorTotal.toFixed(2)} (${data.tipoHonorario})`,
+      detalhes: { clienteNome: data.clienteNome, tipoHonorario: data.tipoHonorario, valorTotal: data.valorTotal },
+      ip: extrairIp(req),
     });
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {

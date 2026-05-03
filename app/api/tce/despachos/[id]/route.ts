@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -25,7 +26,7 @@ export async function PATCH(
 
   const processo = await prisma.processoTce.findFirst({
     where: { id: params.id, escritorioId },
-    select: { id: true, despachadoComRelator: true, ehRecurso: true },
+    select: { id: true, despachadoComRelator: true, ehRecurso: true, numero: true },
   });
 
   if (!processo) {
@@ -109,6 +110,18 @@ export async function PATCH(
   }
 
   await prisma.$transaction(ops);
+
+  if (marcouDespachado) {
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.MARCAR_DESPACHADO,
+      entidade: "ProcessoTce",
+      entidadeId: params.id,
+      descricao: `${session.user.name ?? "Usuario"} marcou despachado com relator no processo ${processo.numero}`,
+      detalhes: { retorno: update.retornoDespacho ?? null },
+      ip: extrairIp(req),
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

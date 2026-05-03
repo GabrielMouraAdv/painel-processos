@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { podeEditarPauta } from "@/lib/pauta-permissions";
 import { prisma } from "@/lib/prisma";
@@ -39,6 +40,14 @@ export async function POST(req: Request) {
       escritorioId,
     },
     select: { id: true },
+  });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.CRIAR_SESSAO_PAUTA,
+    entidade: "SessaoJudicial",
+    entidadeId: sessao.id,
+    descricao: `${session.user.name ?? "Usuario"} criou sessao de pauta judicial ${data.tribunal} - ${data.orgaoJulgador} em ${new Date(data.data).toLocaleDateString("pt-BR")}`,
+    ip: extrairIp(req),
   });
   return NextResponse.json(sessao, { status: 201 });
 }

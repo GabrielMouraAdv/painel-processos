@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { interessadoTceInputSchema } from "@/lib/schemas";
@@ -25,11 +26,11 @@ export async function POST(req: Request) {
   const [processo, gestor] = await Promise.all([
     prisma.processoTce.findFirst({
       where: { id: data.processoId, escritorioId },
-      select: { id: true },
+      select: { id: true, numero: true },
     }),
     prisma.gestor.findFirst({
       where: { id: data.gestorId, escritorioId },
-      select: { id: true },
+      select: { id: true, nome: true },
     }),
   ]);
   if (!processo || !gestor) {
@@ -43,6 +44,14 @@ export async function POST(req: Request) {
       cargo: data.cargo,
     },
     select: { id: true },
+  });
+  await registrarLog({
+    userId: session.user.id,
+    acao: "VINCULAR_INTERESSADO",
+    entidade: "InteressadoProcessoTce",
+    entidadeId: item.id,
+    descricao: `${session.user.name ?? "Usuario"} vinculou interessado ${gestor.nome} ao processo ${processo.numero} (${data.cargo})`,
+    ip: extrairIp(req),
   });
   return NextResponse.json(item, { status: 201 });
 }

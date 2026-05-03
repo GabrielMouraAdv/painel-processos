@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { calcularDataVencimento } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
 
   const processo = await prisma.processoTce.findFirst({
     where: { id: data.processoId, escritorioId },
-    select: { id: true, tipo: true },
+    select: { id: true, tipo: true, numero: true },
   });
   if (!processo) {
     return NextResponse.json(
@@ -103,6 +104,16 @@ export async function POST(req: Request) {
     });
     prazoId = criado.id;
   }
+
+  await registrarLog({
+    userId,
+    acao: ACOES.CRIAR_ANDAMENTO_TCE,
+    entidade: "AndamentoTce",
+    entidadeId: andamento.id,
+    descricao: `${session.user.name ?? "Usuario"} registrou andamento TCE no processo ${processo.numero} - fase ${data.fase}`,
+    detalhes: { fase: data.fase, prazoGerado: !!prazoId },
+    ip: extrairIp(req),
+  });
 
   return NextResponse.json({ id: andamento.id, prazoId }, { status: 201 });
 }

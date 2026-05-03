@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
@@ -22,7 +23,7 @@ export async function PATCH(
     }
     const exists = await prisma.honorarioPessoal.findFirst({
       where: { id: params.id },
-      select: { id: true },
+      select: { id: true, clienteNome: true },
     });
     if (!exists) {
       return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
@@ -80,6 +81,15 @@ export async function PATCH(
         ...(data.observacoes !== undefined && { observacoes: data.observacoes }),
       },
     });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.EDITAR_HONORARIO,
+      entidade: "HonorarioPessoal",
+      entidadeId: params.id,
+      descricao: `${session.user.name ?? "Usuario"} editou honorario pessoal de ${data.clienteNome ?? exists.clienteNome}`,
+      detalhes: data,
+      ip: extrairIp(req),
+    });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(
@@ -94,7 +104,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   try {
@@ -109,12 +119,20 @@ export async function DELETE(
     }
     const exists = await prisma.honorarioPessoal.findFirst({
       where: { id: params.id },
-      select: { id: true },
+      select: { id: true, clienteNome: true },
     });
     if (!exists) {
       return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
     }
     await prisma.honorarioPessoal.delete({ where: { id: params.id } });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.EXCLUIR_HONORARIO,
+      entidade: "HonorarioPessoal",
+      entidadeId: params.id,
+      descricao: `${session.user.name ?? "Usuario"} excluiu honorario pessoal de ${exists.clienteNome}`,
+      ip: extrairIp(req),
+    });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(

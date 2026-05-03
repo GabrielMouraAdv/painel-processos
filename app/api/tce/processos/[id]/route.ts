@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { processoTceUpdateSchema } from "@/lib/schemas";
@@ -8,7 +9,17 @@ import { processoTceUpdateSchema } from "@/lib/schemas";
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.processoTce.findFirst({
     where: { id, escritorioId },
-    select: { id: true },
+    select: {
+      id: true,
+      numero: true,
+      notaTecnica: true,
+      parecerMpco: true,
+      memorialPronto: true,
+      memorialDispensado: true,
+      despachadoComRelator: true,
+      despachoDispensado: true,
+      julgado: true,
+    },
   });
 }
 
@@ -71,11 +82,35 @@ export async function PATCH(
       }),
     },
   });
+
+  const nome = session.user.name ?? "Usuario";
+  const num = existing.numero;
+  if (data.notaTecnica === true && !existing.notaTecnica) {
+    await registrarLog({ userId: session.user.id, acao: ACOES.MARCAR_NT, entidade: "ProcessoTce", entidadeId: params.id, descricao: `${nome} marcou Nota Tecnica no processo ${num}`, ip: extrairIp(req) });
+  }
+  if (data.parecerMpco === true && !existing.parecerMpco) {
+    await registrarLog({ userId: session.user.id, acao: ACOES.MARCAR_PARECER_MPCO, entidade: "ProcessoTce", entidadeId: params.id, descricao: `${nome} marcou Parecer MPCO no processo ${num}`, ip: extrairIp(req) });
+  }
+  if (data.memorialPronto === true && !existing.memorialPronto) {
+    await registrarLog({ userId: session.user.id, acao: ACOES.MARCAR_MEMORIAL_PRONTO, entidade: "ProcessoTce", entidadeId: params.id, descricao: `${nome} marcou memorial pronto no processo ${num}`, ip: extrairIp(req) });
+  }
+  if (data.despachadoComRelator === true && !existing.despachadoComRelator) {
+    await registrarLog({ userId: session.user.id, acao: ACOES.MARCAR_DESPACHADO, entidade: "ProcessoTce", entidadeId: params.id, descricao: `${nome} marcou despachado com relator no processo ${num}`, ip: extrairIp(req) });
+  }
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EDITAR_PROCESSO_TCE,
+    entidade: "ProcessoTce",
+    entidadeId: params.id,
+    descricao: `${nome} editou processo TCE ${num}`,
+    detalhes: data,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -87,5 +122,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
   await prisma.processoTce.delete({ where: { id: params.id } });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EXCLUIR_PROCESSO_TCE,
+    entidade: "ProcessoTce",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} excluiu processo TCE ${existing.numero}`,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

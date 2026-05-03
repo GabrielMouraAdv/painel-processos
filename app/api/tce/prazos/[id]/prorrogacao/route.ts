@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { calcularDataVencimento } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
@@ -8,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 const PRORROGACAO_DIAS_UTEIS = 15;
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -22,7 +23,7 @@ export async function POST(
       processo: { escritorioId: session.user.escritorioId },
     },
     include: {
-      processo: { select: { tipo: true } },
+      processo: { select: { tipo: true, numero: true } },
     },
   });
   if (!prazo) {
@@ -60,6 +61,16 @@ export async function POST(
       dataVencimento: novoVencimento,
       diasUteis: prazo.diasUteis + PRORROGACAO_DIAS_UTEIS,
     },
+  });
+
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.PRORROGAR_PRAZO_TCE,
+    entidade: "PrazoTce",
+    entidadeId: prazo.id,
+    descricao: `${session.user.name ?? "Usuario"} pediu prorrogacao de +${PRORROGACAO_DIAS_UTEIS} dias uteis no prazo "${prazo.tipo}" do processo ${prazo.processo.numero}`,
+    detalhes: { novoVencimento, totalDiasUteis: prazo.diasUteis + PRORROGACAO_DIAS_UTEIS },
+    ip: extrairIp(req),
   });
 
   return NextResponse.json({ ok: true });

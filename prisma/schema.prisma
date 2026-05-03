@@ -120,8 +120,27 @@ model User {
   documentosTce         DocumentoTce[]
   andamentosTce         AndamentoTce[] @relation("AutorAndamentoTce")
   prazosTceResp         PrazoTce[]     @relation("AdvogadoRespPrazoTce")
+  logsAuditoria         LogAuditoria[]
 
   @@index([escritorioId])
+}
+
+model LogAuditoria {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acao        String
+  entidade    String
+  entidadeId  String?
+  descricao   String   @db.Text
+  detalhes    String?  @db.Text
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([acao])
+  @@index([entidade])
 }
 
 model Gestor {

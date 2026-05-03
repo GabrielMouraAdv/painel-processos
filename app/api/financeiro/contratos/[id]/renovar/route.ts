@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import {
   gerarNotasIncrementais,
@@ -118,6 +119,16 @@ export async function POST(
     } catch (e) {
       console.error("[renovar contrato] erro ao gerar notas incrementais:", e);
     }
+
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.RENOVAR_CONTRATO,
+      entidade: "ContratoMunicipal",
+      entidadeId: contrato.id,
+      descricao: `${session.user.name ?? "Usuario"} renovou contrato municipal ate ${novaDataFim.toISOString().slice(0, 10)} - R$ ${valorAplicado.toFixed(2)}/mes`,
+      detalhes: { novaDataFim, novoValorMensal: valorAplicado, novaDataRenovacao, notasGeradas },
+      ip: extrairIp(req),
+    });
 
     return NextResponse.json({ ok: true, notasGeradas });
   } catch (err) {

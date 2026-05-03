@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
@@ -9,7 +10,7 @@ import { contratoMunicipalUpdateSchema } from "@/lib/schemas";
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.contratoMunicipal.findFirst({
     where: { id, municipio: { escritorioId } },
-    select: { id: true },
+    select: { id: true, municipio: { select: { nome: true } } },
   });
 }
 
@@ -122,6 +123,15 @@ export async function PATCH(
         }),
       },
     });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.EDITAR_CONTRATO,
+      entidade: "ContratoMunicipal",
+      entidadeId: params.id,
+      descricao: `${session.user.name ?? "Usuario"} editou contrato municipal com ${exists.municipio.nome}`,
+      detalhes: data,
+      ip: extrairIp(req),
+    });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[PATCH /api/financeiro/contratos/[id]] erro:", err);
@@ -133,7 +143,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   try {
@@ -151,6 +161,14 @@ export async function DELETE(
       return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
     }
     await prisma.contratoMunicipal.delete({ where: { id: params.id } });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.EXCLUIR_CONTRATO,
+      entidade: "ContratoMunicipal",
+      entidadeId: params.id,
+      descricao: `${session.user.name ?? "Usuario"} excluiu contrato municipal com ${exists.municipio.nome}`,
+      ip: extrairIp(req),
+    });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[DELETE /api/financeiro/contratos/[id]] erro:", err);

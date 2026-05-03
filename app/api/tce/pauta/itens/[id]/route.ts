@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { itemPautaUpdateSchema } from "@/lib/schemas";
@@ -8,7 +9,7 @@ import { itemPautaUpdateSchema } from "@/lib/schemas";
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.itemPauta.findFirst({
     where: { id, sessao: { escritorioId } },
-    select: { id: true },
+    select: { id: true, numeroProcesso: true },
   });
 }
 
@@ -89,11 +90,20 @@ export async function PATCH(
       ...(data.ordem !== undefined && { ordem: data.ordem }),
     },
   });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EDITAR_ITEM_PAUTA,
+    entidade: "ItemPauta",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} editou item ${existing.numeroProcesso} da pauta TCE`,
+    detalhes: data,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -105,5 +115,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
 
   await prisma.itemPauta.delete({ where: { id: params.id } });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EXCLUIR_ITEM_PAUTA,
+    entidade: "ItemPauta",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} excluiu item ${existing.numeroProcesso} da pauta TCE`,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

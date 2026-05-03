@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { municipioInputSchema } from "@/lib/schemas";
@@ -31,6 +32,14 @@ export async function POST(req: Request) {
       escritorioId,
     },
     select: { id: true, nome: true, uf: true },
+  });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.CRIAR_MUNICIPIO,
+    entidade: "Municipio",
+    entidadeId: municipio.id,
+    descricao: `${session.user.name ?? "Usuario"} cadastrou municipio ${municipio.nome} - ${municipio.uf}`,
+    ip: extrairIp(req),
   });
   return NextResponse.json(municipio, { status: 201 });
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -52,6 +53,15 @@ export async function POST(req: Request) {
   await prisma.user.update({
     where: { id: user.id },
     data: { senha: novoHash },
+  });
+
+  await registrarLog({
+    userId: user.id,
+    acao: ACOES.ALTERAR_SENHA,
+    entidade: "User",
+    entidadeId: user.id,
+    descricao: `${session.user.name ?? "Usuario"} alterou a propria senha`,
+    ip: extrairIp(req),
   });
 
   return NextResponse.json({ ok: true });

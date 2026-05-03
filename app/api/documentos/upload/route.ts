@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -190,6 +191,19 @@ export async function POST(req: Request) {
       );
     }
     const [doc] = (await prisma.$transaction(opsJud)) as Array<{ id: string }>;
+    const procInfo = await prisma.processo.findUnique({
+      where: { id: processoId },
+      select: { numero: true },
+    });
+    await registrarLog({
+      userId,
+      acao: ACOES.UPLOAD_DOCUMENTO,
+      entidade: "Documento",
+      entidadeId: doc.id,
+      descricao: `${session.user.name ?? "Usuario"} fez upload do documento "${nomeFinal}" (${tipo}) no processo ${procInfo?.numero ?? processoId}`,
+      detalhes: { tipo, tamanho: file.size, escopo: "judicial" },
+      ip: extrairIp(req),
+    });
     return NextResponse.json({ id: doc.id, url, path }, { status: 201 });
   }
 
@@ -233,5 +247,18 @@ export async function POST(req: Request) {
     );
   }
   const [doc] = (await prisma.$transaction(opsTce)) as Array<{ id: string }>;
+  const procTceInfo = await prisma.processoTce.findUnique({
+    where: { id: processoId },
+    select: { numero: true },
+  });
+  await registrarLog({
+    userId,
+    acao: ACOES.UPLOAD_DOCUMENTO,
+    entidade: "DocumentoTce",
+    entidadeId: doc.id,
+    descricao: `${session.user.name ?? "Usuario"} fez upload do documento "${nomeFinal}" (${tipo}) no processo TCE ${procTceInfo?.numero ?? processoId}`,
+    detalhes: { tipo, tamanho: file.size, escopo: "tce" },
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ id: doc.id, url, path }, { status: 201 });
 }

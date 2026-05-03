@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { prazoTceCreateSchema } from "@/lib/schemas";
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
 
   const processo = await prisma.processoTce.findFirst({
     where: { id: data.processoId, escritorioId },
-    select: { id: true },
+    select: { id: true, numero: true },
   });
   if (!processo) {
     return NextResponse.json(
@@ -59,6 +60,15 @@ export async function POST(req: Request) {
       observacoes: data.observacoes || null,
     },
     select: { id: true },
+  });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.CRIAR_PRAZO_TCE,
+    entidade: "PrazoTce",
+    entidadeId: prazo.id,
+    descricao: `${session.user.name ?? "Usuario"} criou prazo TCE "${data.tipo}" no processo ${processo.numero}`,
+    detalhes: { tipo: data.tipo, dataVencimento: data.dataVencimento, diasUteis: data.diasUteis, advogadoRespId: data.advogadoRespId },
+    ip: extrairIp(req),
   });
   return NextResponse.json(prazo, { status: 201 });
 }

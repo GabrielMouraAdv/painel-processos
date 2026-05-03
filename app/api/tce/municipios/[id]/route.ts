@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { municipioInputSchema } from "@/lib/schemas";
@@ -8,7 +9,7 @@ import { municipioInputSchema } from "@/lib/schemas";
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.municipio.findFirst({
     where: { id, escritorioId },
-    select: { id: true },
+    select: { id: true, nome: true, uf: true },
   });
 }
 
@@ -47,11 +48,20 @@ export async function PATCH(
       }),
     },
   });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EDITAR_MUNICIPIO,
+    entidade: "Municipio",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} editou municipio ${existing.nome} - ${existing.uf}`,
+    detalhes: data,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -85,5 +95,13 @@ export async function DELETE(
   }
 
   await prisma.municipio.delete({ where: { id: params.id } });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EXCLUIR_MUNICIPIO,
+    entidade: "Municipio",
+    entidadeId: params.id,
+    descricao: `${session.user.name ?? "Usuario"} excluiu municipio ${existing.nome} - ${existing.uf}`,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

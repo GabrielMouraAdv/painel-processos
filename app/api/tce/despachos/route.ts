@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { CamaraTce, type Prisma } from "@prisma/client";
 import { z } from "zod";
 
+import { extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
 
   const processo = await prisma.processoTce.findFirst({
     where: { id: parsed.data.processoId, escritorioId },
-    select: { id: true },
+    select: { id: true, numero: true },
   });
   if (!processo) {
     return NextResponse.json(
@@ -41,6 +42,14 @@ export async function POST(req: Request) {
   await prisma.processoTce.update({
     where: { id: processo.id },
     data: { incluidoNoDespacho: true },
+  });
+  await registrarLog({
+    userId: session.user.id,
+    acao: "INCLUIR_NO_DESPACHO",
+    entidade: "ProcessoTce",
+    entidadeId: processo.id,
+    descricao: `${session.user.name ?? "Usuario"} incluiu manualmente o processo ${processo.numero} na tela de despachos`,
+    ip: extrairIp(req),
   });
   return NextResponse.json({ ok: true });
 }

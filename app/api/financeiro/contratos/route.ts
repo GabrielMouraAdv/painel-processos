@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { gerarNotasDoContrato, podeAcessarFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
@@ -98,7 +99,7 @@ export async function POST(req: Request) {
         id: data.municipioId,
         escritorioId: session.user.escritorioId,
       },
-      select: { id: true },
+      select: { id: true, nome: true },
     });
     if (!m) {
       return NextResponse.json(
@@ -160,6 +161,16 @@ export async function POST(req: Request) {
         );
       }
     }
+
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.CADASTRAR_CONTRATO,
+      entidade: "ContratoMunicipal",
+      entidadeId: contrato.id,
+      descricao: `${session.user.name ?? "Usuario"} cadastrou contrato municipal com ${m?.nome ?? data.municipioId} - R$ ${data.valorMensal.toFixed(2)}/mes`,
+      detalhes: { municipioId: data.municipioId, valorMensal: data.valorMensal, dataInicio: data.dataInicio, dataFim: data.dataFim, notasGeradas },
+      ip: extrairIp(req),
+    });
 
     return NextResponse.json(
       { id: contrato.id, notasGeradas },

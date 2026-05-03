@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { gerarAditivoDocx } from "@/lib/aditivo-docx";
 import { findEscritorio } from "@/lib/escritorios-emissores";
@@ -135,6 +136,16 @@ export async function POST(
         arquivoNome: docx.nomeArquivo,
       },
       select: { id: true, arquivoUrl: true, arquivoNome: true },
+    });
+
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.GERAR_ADITIVO,
+      entidade: "AditivoContrato",
+      entidadeId: aditivo.id,
+      descricao: `${session.user.name ?? "Usuario"} gerou aditivo (${data.tipo}) do contrato com ${contrato.municipio.nome}`,
+      detalhes: { tipo: data.tipo, escritorioSlug: data.escritorioSlug },
+      ip: extrairIp(req),
     });
 
     return NextResponse.json({

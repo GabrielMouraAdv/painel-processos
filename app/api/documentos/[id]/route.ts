@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { BUCKET_DOCUMENTOS, deleteFile } from "@/lib/storage";
@@ -38,7 +39,7 @@ export async function DELETE(
         id: params.id,
         processo: { escritorioId },
       },
-      select: { id: true, url: true },
+      select: { id: true, url: true, nome: true, processo: { select: { numero: true } } },
     });
     if (!doc) {
       return NextResponse.json(
@@ -55,6 +56,14 @@ export async function DELETE(
       }
     }
     await prisma.documentoTce.delete({ where: { id: doc.id } });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.EXCLUIR_DOCUMENTO,
+      entidade: "DocumentoTce",
+      entidadeId: doc.id,
+      descricao: `${session.user.name ?? "Usuario"} excluiu documento "${doc.nome}" do processo TCE ${doc.processo.numero}`,
+      ip: extrairIp(req),
+    });
     return NextResponse.json({ ok: true });
   }
 
@@ -64,7 +73,7 @@ export async function DELETE(
       id: params.id,
       processo: { escritorioId },
     },
-    select: { id: true, url: true },
+    select: { id: true, url: true, nome: true, processo: { select: { numero: true } } },
   });
   if (!doc) {
     return NextResponse.json(
@@ -81,5 +90,13 @@ export async function DELETE(
     }
   }
   await prisma.documento.delete({ where: { id: doc.id } });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.EXCLUIR_DOCUMENTO,
+    entidade: "Documento",
+    entidadeId: doc.id,
+    descricao: `${session.user.name ?? "Usuario"} excluiu documento "${doc.nome}" do processo ${doc.processo.numero}`,
+    ip: extrairIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

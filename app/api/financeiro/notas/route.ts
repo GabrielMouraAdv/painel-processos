@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
@@ -95,6 +96,15 @@ export async function POST(req: Request) {
         observacoes: data.observacoes ?? null,
       },
       select: { id: true },
+    });
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.CRIAR_NOTA_FISCAL,
+      entidade: "NotaFiscal",
+      entidadeId: nota.id,
+      descricao: `${session.user.name ?? "Usuario"} criou nota fiscal${data.numeroNota ? ` ${data.numeroNota}` : ""} ref ${String(data.mesReferencia).padStart(2, "0")}/${data.anoReferencia} - R$ ${data.valorNota.toFixed(2)}`,
+      detalhes: { contratoId: data.contratoId, mesReferencia: data.mesReferencia, anoReferencia: data.anoReferencia },
+      ip: extrairIp(req),
     });
     return NextResponse.json({ id: nota.id }, { status: 201 });
   } catch (err) {

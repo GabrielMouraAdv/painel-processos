@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { podeEditarPauta } from "@/lib/pauta-permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
@@ -72,6 +73,16 @@ export async function POST(
       },
     },
     select: { id: true },
+  });
+
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.DUPLICAR_SESSAO_PAUTA,
+    entidade: "SessaoJudicial",
+    entidadeId: nova.id,
+    descricao: `${session.user.name ?? "Usuario"} duplicou sessao de pauta judicial para ${novaData.toISOString().slice(0, 10)}`,
+    detalhes: { sessaoOrigemId: params.id },
+    ip: extrairIp(req),
   });
 
   return NextResponse.json(nova, { status: 201 });

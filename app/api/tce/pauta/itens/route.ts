@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { itemPautaInputSchema } from "@/lib/schemas";
@@ -70,6 +71,14 @@ export async function POST(req: Request) {
       ordem,
     },
     select: { id: true },
+  });
+  await registrarLog({
+    userId: session.user.id,
+    acao: ACOES.CRIAR_ITEM_PAUTA,
+    entidade: "ItemPauta",
+    entidadeId: item.id,
+    descricao: `${session.user.name ?? "Usuario"} adicionou item ${data.numeroProcesso} a pauta TCE`,
+    ip: extrairIp(req),
   });
   return NextResponse.json(item, { status: 201 });
 }

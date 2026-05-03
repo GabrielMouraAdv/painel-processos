@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
+import { ACOES, registrarLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
@@ -23,14 +24,34 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        const emailNormalizado = credentials.email.toLowerCase().trim();
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase().trim() },
+          where: { email: emailNormalizado },
         });
 
-        if (!user) return null;
+        if (!user) {
+          return null;
+        }
 
         const senhaValida = await bcrypt.compare(credentials.senha, user.senha);
-        if (!senhaValida) return null;
+        if (!senhaValida) {
+          await registrarLog({
+            userId: user.id,
+            acao: ACOES.LOGIN_FALHA,
+            entidade: "User",
+            entidadeId: user.id,
+            descricao: `Tentativa de login com senha invalida para ${emailNormalizado}`,
+          });
+          return null;
+        }
+
+        await registrarLog({
+          userId: user.id,
+          acao: ACOES.LOGIN,
+          entidade: "User",
+          entidadeId: user.id,
+          descricao: `${user.nome} fez login no sistema`,
+        });
 
         return {
           id: user.id,

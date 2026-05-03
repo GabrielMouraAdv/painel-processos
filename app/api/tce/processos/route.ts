@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { calcularDataVencimento } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
@@ -145,6 +146,24 @@ export async function POST(req: Request) {
         },
       });
     }
+
+    let municipioNome = "";
+    if (data.municipioId) {
+      const m = await prisma.municipio.findUnique({
+        where: { id: data.municipioId },
+        select: { nome: true },
+      });
+      municipioNome = m?.nome ?? "";
+    }
+    await registrarLog({
+      userId,
+      acao: ACOES.CRIAR_PROCESSO_TCE,
+      entidade: "ProcessoTce",
+      entidadeId: processo.id,
+      descricao: `${session.user.name ?? "Usuario"} criou processo TCE ${data.numero}${municipioNome ? ` (${municipioNome} - ${data.tipo})` : ` (${data.tipo})`}`,
+      detalhes: { numero: data.numero, tipo: data.tipo, camara: data.camara, municipioId: data.municipioId, ehRecurso: data.ehRecurso },
+      ip: extrairIp(req),
+    });
 
     return NextResponse.json({ id: processo.id }, { status: 201 });
   } catch (err) {

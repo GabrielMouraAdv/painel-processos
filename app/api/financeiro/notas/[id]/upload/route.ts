@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { randomUUID } from "node:crypto";
 
+import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
@@ -114,6 +115,16 @@ export async function POST(
         arquivoNome: file.name,
         arquivoTipo: file.type,
       },
+    });
+
+    await registrarLog({
+      userId: session.user.id,
+      acao: ACOES.UPLOAD_NOTA_FISCAL,
+      entidade: "NotaFiscal",
+      entidadeId: nota.id,
+      descricao: `${session.user.name ?? "Usuario"} fez upload do arquivo "${file.name}" da nota fiscal`,
+      detalhes: { tamanho: file.size, tipo: file.type },
+      ip: extrairIp(req),
     });
 
     return NextResponse.json(
