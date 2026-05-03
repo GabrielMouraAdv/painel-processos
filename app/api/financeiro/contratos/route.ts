@@ -3,7 +3,11 @@ import { getServerSession } from "next-auth";
 
 import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
-import { gerarNotasDoContrato, podeAcessarFinanceiro } from "@/lib/financeiro";
+import {
+  bancasVisiveisFinanceiro,
+  gerarNotasDoContrato,
+  podeAcessarFinanceiro,
+} from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 import { contratoMunicipalInputSchema } from "@/lib/schemas";
 
@@ -30,13 +34,31 @@ export async function GET(req: Request) {
           .filter(Boolean)
       : [];
 
+    // Recorte por banca do usuario logado (ADMIN ve tudo)
+    const bancasUsuario = bancasVisiveisFinanceiro(
+      session.user.role,
+      session.user.bancaSlug ?? null,
+    );
+    if (bancasUsuario !== null && bancasUsuario.length === 0) {
+      return NextResponse.json({ contratos: [] });
+    }
+    // Combina filtro de UI (bancas) com recorte do usuario (bancasUsuario)
+    const bancasEfetivas =
+      bancasUsuario === null
+        ? bancas
+        : bancas.length > 0
+          ? bancas.filter((b) => bancasUsuario.includes(b))
+          : bancasUsuario;
+
     const contratos = await prisma.contratoMunicipal.findMany({
       where: {
         municipio: { escritorioId: session.user.escritorioId },
         ...(municipioId && { municipioId }),
         ...(ativo === "true" && { ativo: true }),
         ...(ativo === "false" && { ativo: false }),
-        ...(bancas.length > 0 && { bancasSlug: { hasSome: bancas } }),
+        ...(bancasEfetivas.length > 0 && {
+          bancasSlug: { hasSome: bancasEfetivas },
+        }),
       },
       orderBy: [{ ativo: "desc" }, { createdAt: "desc" }],
       include: {

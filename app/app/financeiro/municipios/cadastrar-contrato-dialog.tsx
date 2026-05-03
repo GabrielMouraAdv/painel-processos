@@ -22,18 +22,51 @@ import { cn } from "@/lib/utils";
 
 type MunicipioOpt = { id: string; nome: string; uf: string };
 
+export type ContratoParaEditar = {
+  id: string;
+  municipioId: string | null;
+  bancasSlug: string[];
+  valorMensal: number;
+  dataInicio: string;
+  dataFim: string | null;
+  observacoes: string | null;
+  dataRenovacao: string | null;
+  diasAvisoRenovacao: number;
+  observacoesRenovacao: string | null;
+  numeroContrato: string | null;
+  cnpjContratante: string | null;
+  orgaoContratante: string | null;
+  representanteContratante: string | null;
+  cargoRepresentante: string | null;
+  objetoDoContrato: string | null;
+};
+
 type Props = {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   municipios: MunicipioOpt[];
   onSuccess: () => void;
+  editing?: ContratoParaEditar | null;
+  bancaFixa?: string | null;
 };
+
+function isoDate(s: string | null): string {
+  if (!s) return "";
+  return s.slice(0, 10);
+}
+
+function formatValorMensal(n: number): string {
+  if (!Number.isFinite(n)) return "";
+  return n.toFixed(2).replace(".", ",");
+}
 
 export function CadastrarContratoDialog({
   open,
   onOpenChange,
   municipios,
   onSuccess,
+  editing = null,
+  bancaFixa = null,
 }: Props) {
   const { toast } = useToast();
   const [pending, setPending] = React.useState(false);
@@ -59,24 +92,43 @@ export function CadastrarContratoDialog({
   React.useEffect(() => {
     if (open) {
       setBusca("");
-      setMunicipioId("");
-      setBancas(new Set());
-      setValorMensal("");
-      setDataInicio("");
-      setDataFim("");
-      setObservacoes("");
-      setGerarNotas(true);
-      setDataRenovacao("");
-      setDiasAviso("60");
-      setObsRenovacao("");
-      setNumeroContrato("");
-      setCnpjContratante("");
-      setOrgaoContratante("");
-      setRepresentante("");
-      setCargoRepresentante("");
-      setObjetoDoContrato("");
+      if (editing) {
+        setMunicipioId(editing.municipioId ?? "");
+        setBancas(new Set(editing.bancasSlug));
+        setValorMensal(formatValorMensal(editing.valorMensal));
+        setDataInicio(isoDate(editing.dataInicio));
+        setDataFim(isoDate(editing.dataFim));
+        setObservacoes(editing.observacoes ?? "");
+        setGerarNotas(false);
+        setDataRenovacao(isoDate(editing.dataRenovacao));
+        setDiasAviso(String(editing.diasAvisoRenovacao ?? 60));
+        setObsRenovacao(editing.observacoesRenovacao ?? "");
+        setNumeroContrato(editing.numeroContrato ?? "");
+        setCnpjContratante(editing.cnpjContratante ?? "");
+        setOrgaoContratante(editing.orgaoContratante ?? "");
+        setRepresentante(editing.representanteContratante ?? "");
+        setCargoRepresentante(editing.cargoRepresentante ?? "");
+        setObjetoDoContrato(editing.objetoDoContrato ?? "");
+      } else {
+        setMunicipioId("");
+        setBancas(new Set(bancaFixa ? [bancaFixa] : []));
+        setValorMensal("");
+        setDataInicio("");
+        setDataFim("");
+        setObservacoes("");
+        setGerarNotas(true);
+        setDataRenovacao("");
+        setDiasAviso("60");
+        setObsRenovacao("");
+        setNumeroContrato("");
+        setCnpjContratante("");
+        setOrgaoContratante("");
+        setRepresentante("");
+        setCargoRepresentante("");
+        setObjetoDoContrato("");
+      }
     }
-  }, [open]);
+  }, [open, editing, bancaFixa]);
 
   function toggleBanca(slug: string) {
     setBancas((prev) => {
@@ -150,29 +202,34 @@ export function CadastrarContratoDialog({
 
     setPending(true);
     try {
+      const body: Record<string, unknown> = {
+        municipioId,
+        bancasSlug: Array.from(bancas),
+        valorMensal: valor,
+        dataInicio,
+        dataFim: dataFim || null,
+        observacoes: observacoes.trim() || null,
+        dataRenovacao: dataRenovacao || null,
+        diasAvisoRenovacao: parseInt(diasAviso, 10) || 60,
+        observacoesRenovacao: obsRenovacao.trim() || null,
+        numeroContrato: numeroContrato.trim() || null,
+        cnpjContratante: cnpjContratante.trim() || null,
+        orgaoContratante: orgaoContratante.trim() || null,
+        representanteContratante: representante.trim() || null,
+        cargoRepresentante: cargoRepresentante.trim() || null,
+        objetoDoContrato: objeto,
+      };
+      if (!editing) body.gerarNotasAutomaticas = gerarNotas;
+      const url = editing
+        ? `/api/financeiro/contratos/${editing.id}`
+        : "/api/financeiro/contratos";
+      const method = editing ? "PATCH" : "POST";
       let res: Response;
       try {
-        res = await fetch("/api/financeiro/contratos", {
-          method: "POST",
+        res = await fetch(url, {
+          method,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            municipioId,
-            bancasSlug: Array.from(bancas),
-            valorMensal: valor,
-            dataInicio,
-            dataFim: dataFim || null,
-            observacoes: observacoes.trim() || null,
-            gerarNotasAutomaticas: gerarNotas,
-            dataRenovacao: dataRenovacao || null,
-            diasAvisoRenovacao: parseInt(diasAviso, 10) || 60,
-            observacoesRenovacao: obsRenovacao.trim() || null,
-            numeroContrato: numeroContrato.trim() || null,
-            cnpjContratante: cnpjContratante.trim() || null,
-            orgaoContratante: orgaoContratante.trim() || null,
-            representanteContratante: representante.trim() || null,
-            cargoRepresentante: cargoRepresentante.trim() || null,
-            objetoDoContrato: objeto,
-          }),
+          body: JSON.stringify(body),
         });
       } catch (errFetch) {
         console.error("[CadastrarContrato] erro de rede:", errFetch);
@@ -205,7 +262,7 @@ export function CadastrarContratoDialog({
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao cadastrar contrato",
+          title: editing ? "Erro ao atualizar contrato" : "Erro ao cadastrar contrato",
           description:
             json.error ??
             `Status ${res.status}: tente novamente ou abra o console (F12) para detalhes.`,
@@ -213,9 +270,9 @@ export function CadastrarContratoDialog({
         return;
       }
       toast({
-        title: "Contrato cadastrado",
+        title: editing ? "Contrato atualizado" : "Contrato cadastrado",
         description:
-          json.notasGeradas && json.notasGeradas > 0
+          !editing && json.notasGeradas && json.notasGeradas > 0
             ? `${json.notasGeradas} nota(s) geradas automaticamente.`
             : undefined,
       });
@@ -240,10 +297,13 @@ export function CadastrarContratoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cadastrar contrato municipal</DialogTitle>
+          <DialogTitle>
+            {editing ? "Editar contrato municipal" : "Cadastrar contrato municipal"}
+          </DialogTitle>
           <DialogDescription>
-            Honorario contratual mensal. As notas serao geradas
-            automaticamente desde a data de inicio ate dezembro do ano corrente.
+            {editing
+              ? "Atualize os dados do contrato. Para gerar notas adicionais, use 'Renovar'."
+              : "Honorario contratual mensal. As notas serao geradas automaticamente desde a data de inicio ate dezembro do ano corrente."}
           </DialogDescription>
         </DialogHeader>
 
@@ -425,17 +485,19 @@ export function CadastrarContratoDialog({
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={gerarNotas}
-              onChange={(e) => setGerarNotas(e.target.checked)}
-            />
-            <span>
-              Gerar notas automaticamente desde a data de inicio ate dezembro
-              do ano corrente
-            </span>
-          </label>
+          {!editing && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={gerarNotas}
+                onChange={(e) => setGerarNotas(e.target.checked)}
+              />
+              <span>
+                Gerar notas automaticamente desde a data de inicio ate dezembro
+                do ano corrente
+              </span>
+            </label>
+          )}
 
           <div className="rounded-md border border-amber-200 bg-amber-50/40 p-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-900">

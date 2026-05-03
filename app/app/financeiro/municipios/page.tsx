@@ -1,8 +1,9 @@
 import { getServerSession } from "next-auth";
+import { Role } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { parseBancasParam } from "@/lib/bancas";
-import { ANOS_DISPONIVEIS } from "@/lib/financeiro";
+import { ANOS_DISPONIVEIS, bancasVisiveisFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 
 import { MunicipiosFinanceiroView, type ContratoCard } from "./municipios-view";
@@ -18,11 +19,22 @@ export default async function FinanceiroMunicipiosPage({
 }) {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
+  const isAdmin = session!.user.role === Role.ADMIN;
+  const bancasUsuario = bancasVisiveisFinanceiro(
+    session!.user.role,
+    session!.user.bancaSlug ?? null,
+  );
 
   const anoAtual = new Date().getFullYear();
   const anoParam = parseInt(asString(searchParams.ano), 10);
   const ano = ANOS_DISPONIVEIS.includes(anoParam) ? anoParam : anoAtual;
-  const bancasFiltro = parseBancasParam(searchParams.banca);
+  const bancasFiltroUi = isAdmin ? parseBancasParam(searchParams.banca) : [];
+  const bancasFiltro =
+    bancasUsuario === null
+      ? bancasFiltroUi
+      : bancasFiltroUi.length > 0
+        ? bancasFiltroUi.filter((b) => bancasUsuario.includes(b))
+        : bancasUsuario;
   const municipioFocus = asString(searchParams.municipioId);
 
   const inicioAno = new Date(Date.UTC(ano, 0, 1));
@@ -58,9 +70,15 @@ export default async function FinanceiroMunicipiosPage({
     dataInicio: c.dataInicio.toISOString(),
     dataFim: c.dataFim ? c.dataFim.toISOString() : null,
     ativo: c.ativo,
+    observacoes: c.observacoes,
     dataRenovacao: c.dataRenovacao ? c.dataRenovacao.toISOString() : null,
     diasAvisoRenovacao: c.diasAvisoRenovacao,
+    observacoesRenovacao: c.observacoesRenovacao,
     numeroContrato: c.numeroContrato,
+    cnpjContratante: c.cnpjContratante,
+    orgaoContratante: c.orgaoContratante,
+    representanteContratante: c.representanteContratante,
+    cargoRepresentante: c.cargoRepresentante,
     objetoDoContrato: c.objetoDoContrato,
     notas: c.notas.map((n) => ({
       id: n.id,
@@ -93,6 +111,10 @@ export default async function FinanceiroMunicipiosPage({
         ano={ano}
         cards={cards}
         municipios={municipios}
+        isAdmin={isAdmin}
+        bancaUsuario={
+          bancasUsuario && bancasUsuario.length === 1 ? bancasUsuario[0] : null
+        }
       />
     </div>
   );

@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth";
-import { TipoHonorario } from "@prisma/client";
+import { Role, TipoHonorario } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { parseBancasParam } from "@/lib/bancas";
-import { ANOS_DISPONIVEIS } from "@/lib/financeiro";
+import { ANOS_DISPONIVEIS, bancasVisiveisFinanceiro } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 
 import { PessoasFisicasView, type HonorarioRow } from "./pessoas-fisicas-view";
@@ -18,11 +18,21 @@ export default async function PessoasFisicasPage({
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const session = await getServerSession(authOptions);
-  void session;
+  const isAdmin = session!.user.role === Role.ADMIN;
+  const bancasUsuario = bancasVisiveisFinanceiro(
+    session!.user.role,
+    session!.user.bancaSlug ?? null,
+  );
 
   const anoParam = parseInt(asString(searchParams.ano), 10);
   const ano = ANOS_DISPONIVEIS.includes(anoParam) ? anoParam : 0;
-  const bancasFiltro = parseBancasParam(searchParams.banca);
+  const bancasFiltroUi = isAdmin ? parseBancasParam(searchParams.banca) : [];
+  const bancasFiltro =
+    bancasUsuario === null
+      ? bancasFiltroUi
+      : bancasFiltroUi.length > 0
+        ? bancasFiltroUi.filter((b) => bancasUsuario.includes(b))
+        : bancasUsuario;
   const tipoParam = asString(searchParams.tipo) as TipoHonorario | "";
   const status = asString(searchParams.status);
 
@@ -80,6 +90,10 @@ export default async function PessoasFisicasPage({
           tipo: tipoVal ?? "",
           status,
         }}
+        isAdmin={isAdmin}
+        bancaUsuario={
+          bancasUsuario && bancasUsuario.length === 1 ? bancasUsuario[0] : null
+        }
       />
     </div>
   );

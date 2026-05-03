@@ -10,6 +10,7 @@ import {
 
 import { authOptions } from "@/lib/auth";
 import {
+  bancasVisiveisFinanceiro,
   computeStatusNota,
   formatBRL,
   STATUS_NOTA,
@@ -19,6 +20,19 @@ import { prisma } from "@/lib/prisma";
 export default async function FinanceiroEscolhaPage() {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
+  const bancasUsuario = bancasVisiveisFinanceiro(
+    session!.user.role,
+    session!.user.bancaSlug ?? null,
+  );
+  // Filtros base por banca do usuario logado
+  const contratoBancaWhere =
+    bancasUsuario === null
+      ? {}
+      : { bancasSlug: { hasSome: bancasUsuario } };
+  const honorarioBancaWhere =
+    bancasUsuario === null
+      ? {}
+      : { bancasSlug: { hasSome: bancasUsuario } };
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -32,23 +46,31 @@ export default async function FinanceiroEscolhaPage() {
     honorariosPf,
   ] = await Promise.all([
     prisma.contratoMunicipal.count({
-      where: { ativo: true, municipio: { escritorioId } },
+      where: {
+        ativo: true,
+        municipio: { escritorioId },
+        ...contratoBancaWhere,
+      },
     }),
     prisma.notaFiscal.findMany({
-      where: { pago: false, contrato: { municipio: { escritorioId } } },
+      where: {
+        pago: false,
+        contrato: { municipio: { escritorioId }, ...contratoBancaWhere },
+      },
       select: { valorNota: true, dataVencimento: true, pago: true },
     }),
     prisma.contratoMunicipal.count({
-      where: { municipio: { escritorioId } },
+      where: { municipio: { escritorioId }, ...contratoBancaWhere },
     }),
     prisma.notaFiscal.findMany({
       where: {
         anoReferencia: anoAtual,
-        contrato: { municipio: { escritorioId } },
+        contrato: { municipio: { escritorioId }, ...contratoBancaWhere },
       },
       select: { valorNota: true, dataVencimento: true, pago: true },
     }),
     prisma.honorarioPessoal.findMany({
+      where: { ...honorarioBancaWhere },
       select: {
         clienteNome: true,
         valorTotal: true,

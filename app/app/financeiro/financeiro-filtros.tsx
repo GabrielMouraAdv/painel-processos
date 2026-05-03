@@ -14,9 +14,13 @@ import {
 
 type Props = {
   anoSelecionado: number;
+  mostrarFiltroBanca?: boolean;
 };
 
-export function FinanceiroFiltros({ anoSelecionado }: Props) {
+export function FinanceiroFiltros({
+  anoSelecionado,
+  mostrarFiltroBanca = true,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -45,7 +49,7 @@ export function FinanceiroFiltros({ anoSelecionado }: Props) {
           </Select>
         </div>
       </div>
-      <BancaFilter />
+      {mostrarFiltroBanca && <BancaFilter />}
     </div>
   );
 }

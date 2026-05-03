@@ -48,6 +48,7 @@ type Props = {
   onOpenChange: (o: boolean) => void;
   editing: HonorarioParaEditar | null;
   onSuccess: () => void;
+  bancaFixa?: string | null;
 };
 
 function isoDate(s: string | null): string {
@@ -60,6 +61,7 @@ export function HonorarioPessoalDialog({
   onOpenChange,
   editing,
   onSuccess,
+  bancaFixa = null,
 }: Props) {
   const { toast } = useToast();
   const [pending, setPending] = React.useState(false);
@@ -96,7 +98,7 @@ export function HonorarioPessoalDialog({
       } else {
         setClienteNome("");
         setClienteCpf("");
-        setBancas(new Set());
+        setBancas(new Set(bancaFixa ? [bancaFixa] : []));
         setTipo(TipoHonorario.POR_CAUSA);
         setDescricao("");
         setValor("");
@@ -108,7 +110,7 @@ export function HonorarioPessoalDialog({
         setObservacoes("");
       }
     }
-  }, [open, editing]);
+  }, [open, editing, bancaFixa]);
 
   function toggleBanca(slug: string) {
     setBancas((prev) => {

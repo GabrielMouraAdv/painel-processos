@@ -8,6 +8,8 @@
 
 import { Role } from "@prisma/client";
 
+import { isBancaSlug } from "@/lib/bancas";
+
 // ---------- Constantes de status (substitui o enum StatusNota do Prisma) ----------
 export const STATUS_NOTA = {
   A_VENCER: "A_VENCER",
@@ -22,18 +24,26 @@ export type StatusNotaT =
   | "VENCIDA"
   | "EM_ATRASO";
 
-const FINANCEIRO_BANCAS_AUTORIZADAS = new Set([
-  "filipe-campos",
-  "porto-rodrigues",
-]);
-
 export function podeAcessarFinanceiro(
   role: Role,
   bancaSlug: string | null,
 ): boolean {
   if (role === Role.ADMIN) return true;
-  if (bancaSlug && FINANCEIRO_BANCAS_AUTORIZADAS.has(bancaSlug)) return true;
+  if (bancaSlug && isBancaSlug(bancaSlug)) return true;
   return false;
+}
+
+// Retorna o recorte de bancas que o usuario logado pode ver no financeiro.
+// - ADMIN: null (significa "sem filtro" — ve tudo)
+// - Demais com bancaSlug valido: [bancaSlug] (so ve dessa banca)
+// - Sem bancaSlug e nao ADMIN: array vazio (nao ve nada)
+export function bancasVisiveisFinanceiro(
+  role: Role,
+  bancaSlug: string | null,
+): string[] | null {
+  if (role === Role.ADMIN) return null;
+  if (bancaSlug && isBancaSlug(bancaSlug)) return [bancaSlug];
+  return [];
 }
 
 // ---------- Status de nota ----------

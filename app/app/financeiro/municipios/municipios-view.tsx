@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FileText, Paperclip, Plus, Receipt, RefreshCw } from "lucide-react";
+import {
+  FileText,
+  Paperclip,
+  Pencil,
+  Plus,
+  Receipt,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 
 import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import { BancaFilter } from "@/components/bancas/banca-filter";
@@ -14,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import {
   ANOS_DISPONIVEIS,
   computeStatusNota,
@@ -27,7 +36,10 @@ import {
 } from "@/lib/financeiro";
 import { cn } from "@/lib/utils";
 
-import { CadastrarContratoDialog } from "./cadastrar-contrato-dialog";
+import {
+  CadastrarContratoDialog,
+  type ContratoParaEditar,
+} from "./cadastrar-contrato-dialog";
 import { EditarNotaDialog, type NotaParaEditar } from "./editar-nota-dialog";
 import { EmitirAditivoDialog } from "./emitir-aditivo-dialog";
 import { RenovarContratoDialog } from "./renovar-contrato-dialog";
@@ -57,9 +69,15 @@ export type ContratoCard = {
   dataInicio: string;
   dataFim: string | null;
   ativo: boolean;
+  observacoes: string | null;
   dataRenovacao: string | null;
   diasAvisoRenovacao: number;
+  observacoesRenovacao: string | null;
   numeroContrato: string | null;
+  cnpjContratante: string | null;
+  orgaoContratante: string | null;
+  representanteContratante: string | null;
+  cargoRepresentante: string | null;
   objetoDoContrato: string | null;
   notas: NotaCard[];
 };
@@ -70,12 +88,24 @@ type Props = {
   ano: number;
   cards: ContratoCard[];
   municipios: MunicipioOpt[];
+  isAdmin?: boolean;
+  bancaUsuario?: string | null;
 };
 
-export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
+export function MunicipiosFinanceiroView({
+  ano,
+  cards,
+  municipios,
+  isAdmin = false,
+  bancaUsuario = null,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [novoContratoOpen, setNovoContratoOpen] = React.useState(false);
+  const [editingContrato, setEditingContrato] =
+    React.useState<ContratoParaEditar | null>(null);
+  const [excluindo, setExcluindo] = React.useState(false);
   const [editingNota, setEditingNota] = React.useState<{
     nota: NotaParaEditar | null;
     contratoId: string;
@@ -99,6 +129,54 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("ano", v);
     router.push(`?${params.toString()}`, { scroll: false });
+  }
+
+  function handleEditarContrato(c: ContratoCard) {
+    setEditingContrato({
+      id: c.id,
+      municipioId: c.municipio?.id ?? null,
+      bancasSlug: c.bancasSlug,
+      valorMensal: c.valorMensal,
+      dataInicio: c.dataInicio,
+      dataFim: c.dataFim,
+      observacoes: c.observacoes,
+      dataRenovacao: c.dataRenovacao,
+      diasAvisoRenovacao: c.diasAvisoRenovacao,
+      observacoesRenovacao: c.observacoesRenovacao,
+      numeroContrato: c.numeroContrato,
+      cnpjContratante: c.cnpjContratante,
+      orgaoContratante: c.orgaoContratante,
+      representanteContratante: c.representanteContratante,
+      cargoRepresentante: c.cargoRepresentante,
+      objetoDoContrato: c.objetoDoContrato,
+    });
+  }
+
+  async function handleExcluirContrato(c: ContratoCard) {
+    const nome = c.municipio?.nome ?? "este municipio";
+    const ok = window.confirm(
+      `Tem certeza que deseja excluir o contrato com ${nome}? Todas as notas fiscais vinculadas tambem serao excluidas. Esta acao nao pode ser desfeita.`,
+    );
+    if (!ok) return;
+    setExcluindo(true);
+    try {
+      const res = await fetch(`/api/financeiro/contratos/${c.id}`, {
+        method: "DELETE",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir contrato",
+          description: json.error,
+        });
+        return;
+      }
+      toast({ title: "Contrato excluido" });
+      router.refresh();
+    } finally {
+      setExcluindo(false);
+    }
   }
 
   const hoje = new Date();
@@ -147,7 +225,7 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
             </Select>
           </div>
         </div>
-        <BancaFilter />
+        {isAdmin && <BancaFilter />}
       </div>
 
       {cards.length === 0 ? (
@@ -204,16 +282,30 @@ export function MunicipiosFinanceiroView({ ano, cards, municipios }: Props) {
                   bancasSlug: c.bancasSlug,
                 })
               }
+              onEditar={() => handleEditarContrato(c)}
+              onExcluir={() => handleExcluirContrato(c)}
+              excluindoEmCurso={excluindo}
             />
           ))}
         </div>
       )}
 
       <CadastrarContratoDialog
-        open={novoContratoOpen}
-        onOpenChange={setNovoContratoOpen}
+        open={novoContratoOpen || !!editingContrato}
+        onOpenChange={(o) => {
+          if (!o) {
+            setNovoContratoOpen(false);
+            setEditingContrato(null);
+          }
+        }}
         municipios={municipios}
-        onSuccess={() => router.refresh()}
+        editing={editingContrato}
+        bancaFixa={isAdmin ? null : bancaUsuario}
+        onSuccess={() => {
+          setNovoContratoOpen(false);
+          setEditingContrato(null);
+          router.refresh();
+        }}
       />
 
       <EditarNotaDialog
@@ -267,6 +359,9 @@ type ContratoCardProps = {
   onClickMes: (mes: number, nota: NotaCard | null) => void;
   onRenovar: () => void;
   onAditivar: () => void;
+  onEditar: () => void;
+  onExcluir: () => void;
+  excluindoEmCurso: boolean;
 };
 
 function ContratoCardView({
@@ -276,6 +371,9 @@ function ContratoCardView({
   onClickMes,
   onRenovar,
   onAditivar,
+  onEditar,
+  onExcluir,
+  excluindoEmCurso,
 }: ContratoCardProps) {
   const renov = statusRenovacao(
     card.dataRenovacao ? new Date(card.dataRenovacao) : null,
@@ -327,7 +425,28 @@ function ContratoCardView({
             </p>
           )}
         </div>
-        <BancaBadgeList slugs={card.bancasSlug} size="sm" />
+        <div className="flex items-start gap-1">
+          <BancaBadgeList slugs={card.bancasSlug} size="sm" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-slate-600 hover:bg-slate-100"
+            title="Editar contrato"
+            onClick={onEditar}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-red-700 hover:bg-red-50"
+            title="Excluir contrato"
+            onClick={onExcluir}
+            disabled={excluindoEmCurso}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Badges de renovacao */}

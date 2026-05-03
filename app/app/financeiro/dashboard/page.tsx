@@ -2,10 +2,13 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { AlertCircle, Building2, FileText, RefreshCw, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
+import { Role } from "@prisma/client";
+
 import { BANCAS, parseBancasParam } from "@/lib/bancas";
 import { authOptions } from "@/lib/auth";
 import {
   ANOS_DISPONIVEIS,
+  bancasVisiveisFinanceiro,
   computeStatusNota,
   diasEmAtraso,
   formatBRL,
@@ -27,11 +30,23 @@ export default async function FinanceiroDashboardPage({
 }) {
   const session = await getServerSession(authOptions);
   const escritorioId = session!.user.escritorioId;
+  const isAdmin = session!.user.role === Role.ADMIN;
+  const bancasUsuario = bancasVisiveisFinanceiro(
+    session!.user.role,
+    session!.user.bancaSlug ?? null,
+  );
 
   const anoAtual = new Date().getFullYear();
   const anoParam = parseInt(asString(searchParams.ano), 10);
   const ano = ANOS_DISPONIVEIS.includes(anoParam) ? anoParam : anoAtual;
-  const bancasFiltro = parseBancasParam(searchParams.banca);
+  // Filtro de banca da UI so vale para ADMIN; demais ja vem fixo na propria banca
+  const bancasFiltroUi = isAdmin ? parseBancasParam(searchParams.banca) : [];
+  const bancasFiltro =
+    bancasUsuario === null
+      ? bancasFiltroUi
+      : bancasFiltroUi.length > 0
+        ? bancasFiltroUi.filter((b) => bancasUsuario.includes(b))
+        : bancasUsuario;
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -285,7 +300,7 @@ export default async function FinanceiroDashboardPage({
         </p>
       </header>
 
-      <FinanceiroFiltros anoSelecionado={ano} />
+      <FinanceiroFiltros anoSelecionado={ano} mostrarFiltroBanca={isAdmin} />
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {kpis.map((k) => {

@@ -47,11 +47,18 @@ type Filters = { ano: string; tipo: TipoHonorario | ""; status: string };
 type Props = {
   honorarios: HonorarioRow[];
   initialFilters: Filters;
+  isAdmin?: boolean;
+  bancaUsuario?: string | null;
 };
 
 const ALL = "__all__";
 
-export function PessoasFisicasView({ honorarios, initialFilters }: Props) {
+export function PessoasFisicasView({
+  honorarios,
+  initialFilters,
+  isAdmin = false,
+  bancaUsuario = null,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -209,7 +216,7 @@ export function PessoasFisicasView({ honorarios, initialFilters }: Props) {
             </Select>
           </div>
         </div>
-        <BancaFilter />
+        {isAdmin && <BancaFilter />}
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
@@ -344,6 +351,7 @@ export function PessoasFisicasView({ honorarios, initialFilters }: Props) {
           }
         }}
         editing={editing}
+        bancaFixa={isAdmin ? null : bancaUsuario}
         onSuccess={() => {
           setNovoOpen(false);
           setEditing(null);

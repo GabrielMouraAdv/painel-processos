@@ -4,7 +4,10 @@ import { TipoHonorario } from "@prisma/client";
 
 import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
-import { podeAcessarFinanceiro } from "@/lib/financeiro";
+import {
+  bancasVisiveisFinanceiro,
+  podeAcessarFinanceiro,
+} from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
 import { honorarioPessoalInputSchema } from "@/lib/schemas";
 
@@ -37,12 +40,29 @@ export async function GET(req: Request) {
       ? (tipoParam as TipoHonorario)
       : undefined;
 
+    // Recorte por banca do usuario logado (ADMIN ve tudo)
+    const bancasUsuario = bancasVisiveisFinanceiro(
+      session.user.role,
+      session.user.bancaSlug ?? null,
+    );
+    if (bancasUsuario !== null && bancasUsuario.length === 0) {
+      return NextResponse.json({ honorarios: [] });
+    }
+    const bancasEfetivas =
+      bancasUsuario === null
+        ? bancas
+        : bancas.length > 0
+          ? bancas.filter((b) => bancasUsuario.includes(b))
+          : bancasUsuario;
+
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
     const honorarios = await prisma.honorarioPessoal.findMany({
       where: {
-        ...(bancas.length > 0 && { bancasSlug: { hasSome: bancas } }),
+        ...(bancasEfetivas.length > 0 && {
+          bancasSlug: { hasSome: bancasEfetivas },
+        }),
         ...(tipoVal && { tipoHonorario: tipoVal }),
         ...(ano && {
           dataContrato: {
