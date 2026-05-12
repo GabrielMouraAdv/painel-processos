@@ -42,10 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 import { CompromissoForm } from "./compromisso-form";
-import {
-  type CalendarEvento,
-  type EventoOrigem,
-} from "./types";
+import { type CalendarEvento } from "./types";
 
 export type AdvogadoOption = { id: string; nome: string };
 export type ProcessoTceOption = {
@@ -121,13 +118,6 @@ function startOfMonth(d: Date): Date {
   const r = new Date(d);
   r.setDate(1);
   r.setHours(0, 0, 0, 0);
-  return r;
-}
-
-function endOfMonth(d: Date): Date {
-  const r = new Date(d);
-  r.setMonth(r.getMonth() + 1, 0);
-  r.setHours(23, 59, 59, 999);
   return r;
 }
 
