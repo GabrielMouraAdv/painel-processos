@@ -197,6 +197,59 @@ export const prazoUpdateSchema = z.object({
   advogadoRespId: z.string().min(1, "Selecione o advogado responsavel").optional(),
 });
 
+export const COMPROMISSO_TIPOS = [
+  "REUNIAO",
+  "AUDIENCIA",
+  "SUSTENTACAO",
+  "DESPACHO_PRESENCIAL",
+  "VIAGEM",
+  "PESSOAL",
+  "OUTRO",
+] as const;
+export type CompromissoTipo = (typeof COMPROMISSO_TIPOS)[number];
+
+const compromissoDateTime = z
+  .union([z.string(), z.date()])
+  .transform((v) => (v instanceof Date ? v : new Date(v)))
+  .refine((d) => !Number.isNaN(d.getTime()), { message: "Data invalida" });
+
+export const compromissoCreateSchema = z.object({
+  titulo: z.string().min(1, "Informe o titulo").max(200),
+  descricao: z.string().max(2000).optional().nullable(),
+  dataInicio: compromissoDateTime,
+  dataFim: z
+    .union([z.string(), z.date(), z.null()])
+    .nullish()
+    .transform((v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const d = v instanceof Date ? v : new Date(v);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }),
+  diaInteiro: z.boolean().default(false),
+  cor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Cor invalida")
+    .optional()
+    .nullable(),
+  tipo: z.enum(COMPROMISSO_TIPOS),
+  local: z.string().max(200).optional().nullable(),
+  advogadoId: z.string().min(1, "Selecione o advogado responsavel"),
+  processoTceId: z.string().optional().nullable(),
+  processoId: z.string().optional().nullable(),
+});
+
+export type CompromissoCreateInput = z.infer<typeof compromissoCreateSchema>;
+
+export const compromissoUpdateSchema = compromissoCreateSchema.partial().extend({
+  cumprido: z.boolean().optional(),
+});
+
+export const compromissoMoverSchema = z.object({
+  id: z.string().min(1),
+  origem: z.enum(["compromisso", "prazoTce", "prazoJudicial"]),
+  novaData: compromissoDateTime,
+});
+
 const dateInput = z
   .union([z.string(), z.date()])
   .transform((v) => (v instanceof Date ? v : new Date(v)));

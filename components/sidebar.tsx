@@ -3,6 +3,7 @@ import {
   Activity,
   BarChart3,
   Building2,
+  CalendarCheck,
   CalendarClock,
   CalendarRange,
   ClipboardCheck,
@@ -41,6 +42,7 @@ type Props = {
   pautasJudiciaisTotal?: number;
   alertasMonitoramento?: number;
   despachosTcePendentes?: number;
+  compromissosHoje?: number;
   podeFinanceiro?: boolean;
   isAdmin?: boolean;
   onOpenSearch?: () => void;
@@ -53,6 +55,7 @@ export function Sidebar({
   pautasJudiciaisTotal = 0,
   alertasMonitoramento = 0,
   despachosTcePendentes = 0,
+  compromissosHoje = 0,
   podeFinanceiro = false,
   isAdmin = false,
   onOpenSearch,
@@ -159,6 +162,23 @@ export function Sidebar({
           >
             <Home className="h-4 w-4" aria-hidden="true" />
             <span>Inicio</span>
+          </Link>
+          <Link
+            href="/app/compromissos"
+            className={cn(
+              "flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium",
+              "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
+            )}
+          >
+            <span className="flex items-center gap-3">
+              <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+              <span>Compromissos</span>
+            </span>
+            {compromissosHoje > 0 && (
+              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold leading-none text-white">
+                {compromissosHoje}
+              </span>
+            )}
           </Link>
           <Link
             href="/app/relatorios"

@@ -100,6 +100,7 @@ model Escritorio {
   processosTce     ProcessoTce[]
   sessoesPauta     SessaoPauta[]
   sessoesJudiciais SessaoJudicial[]
+  compromissos     Compromisso[]
 }
 
 model User {
@@ -121,6 +122,7 @@ model User {
   andamentosTce         AndamentoTce[] @relation("AutorAndamentoTce")
   prazosTceResp         PrazoTce[]     @relation("AdvogadoRespPrazoTce")
   logsAuditoria         LogAuditoria[]
+  compromissos          Compromisso[]  @relation("CompromissoAdvogado")
 
   @@index([escritorioId])
 }
@@ -236,6 +238,7 @@ model Processo {
   movimentacoesAuto  MovimentacaoAutomatica[]
   publicacoesDjen    PublicacaoDJEN[]
   monitoramento      MonitoramentoConfig?
+  compromissos       Compromisso[]
 
   @@index([escritorioId])
   @@index([gestorId])
@@ -553,6 +556,7 @@ model ProcessoTce {
   subprocessos   SubprocessoTce[]
   processoOrigem ProcessoTce?             @relation("RecursosVinculados", fields: [processoOrigemId], references: [id])
   recursos       ProcessoTce[]            @relation("RecursosVinculados")
+  compromissos   Compromisso[]
 
   @@index([escritorioId])
   @@index([municipioId])
@@ -866,4 +870,34 @@ model DocumentoSubprocessoTce {
   createdAt     DateTime       @default(now())
 
   @@index([subprocessoId])
+}
+
+model Compromisso {
+  id            String    @id @default(cuid())
+  titulo        String
+  descricao     String?   @db.Text
+  dataInicio    DateTime
+  dataFim       DateTime?
+  diaInteiro    Boolean   @default(false)
+  cor           String?
+  tipo          String
+  local         String?
+  cumprido      Boolean   @default(false)
+  advogadoId    String
+  processoTceId String?
+  processoId    String?
+  escritorioId  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  advogado    User         @relation("CompromissoAdvogado", fields: [advogadoId], references: [id])
+  processoTce ProcessoTce? @relation(fields: [processoTceId], references: [id])
+  processo    Processo?    @relation(fields: [processoId], references: [id])
+  escritorio  Escritorio   @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+
+  @@index([escritorioId])
+  @@index([advogadoId])
+  @@index([dataInicio])
+  @@index([processoTceId])
+  @@index([processoId])
 }

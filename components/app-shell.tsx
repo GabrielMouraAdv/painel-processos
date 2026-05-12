@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { LogOut, Menu, Search, X } from "lucide-react";
 
+import Link from "next/link";
+import { CalendarCheck } from "lucide-react";
+
 import { GlobalSearch } from "./global-search";
 import { Sidebar } from "./sidebar";
 import { cn } from "@/lib/utils";
@@ -17,6 +20,7 @@ type Props = {
   pautasJudiciaisTotal: number;
   alertasMonitoramento: number;
   despachosTcePendentes: number;
+  compromissosHoje: number;
   podeFinanceiro: boolean;
   isAdmin?: boolean;
 };
@@ -29,6 +33,7 @@ export function AppShell({
   pautasJudiciaisTotal,
   alertasMonitoramento,
   despachosTcePendentes,
+  compromissosHoje,
   podeFinanceiro,
   isAdmin = false,
 }: Props) {
@@ -90,6 +95,7 @@ export function AppShell({
           pautasJudiciaisTotal={pautasJudiciaisTotal}
           alertasMonitoramento={alertasMonitoramento}
           despachosTcePendentes={despachosTcePendentes}
+          compromissosHoje={compromissosHoje}
           podeFinanceiro={podeFinanceiro}
           isAdmin={isAdmin}
           onOpenSearch={() => setSearchOpen(true)}
@@ -111,6 +117,18 @@ export function AppShell({
             Gestao Processual
           </p>
           <div className="flex items-center gap-1">
+            <Link
+              href="/app/compromissos"
+              aria-label="Compromissos de hoje"
+              className="relative rounded-md p-2 text-slate-600 hover:bg-slate-100"
+            >
+              <CalendarCheck className="h-5 w-5" />
+              {compromissosHoje > 0 && (
+                <span className="absolute right-0.5 top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold leading-none text-white">
+                  {compromissosHoje}
+                </span>
+              )}
+            </Link>
             <button
               type="button"
               aria-label="Buscar"

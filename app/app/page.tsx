@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { ArrowRight, BarChart3, DollarSign, Landmark, Scale } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  CalendarCheck,
+  DollarSign,
+  Landmark,
+  Scale,
+} from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
 import { parseBancasParam } from "@/lib/bancas";
@@ -35,12 +42,17 @@ export default async function ModuloHomePage({
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
+  const fimHoje = new Date(hoje);
+  fimHoje.setHours(23, 59, 59, 999);
   const em7 = new Date(hoje);
   em7.setDate(em7.getDate() + 7);
   em7.setHours(23, 59, 59, 999);
   const em15 = new Date(hoje);
   em15.setDate(em15.getDate() + 15);
   em15.setHours(23, 59, 59, 999);
+  const fimSemana = new Date(hoje);
+  fimSemana.setDate(fimSemana.getDate() + (6 - hoje.getDay()));
+  fimSemana.setHours(23, 59, 59, 999);
 
   const [
     totalJud,
@@ -55,6 +67,12 @@ export default async function ModuloHomePage({
     memoriaisPend,
     despachosPend,
     prazosTceCandidatos,
+    compromissosHojeCount,
+    prazosHojeJudCount,
+    prazosHojeTceCount,
+    eventosSemanaCount,
+    prazosVencendo7DiasJud,
+    prazosVencendo7DiasTce,
   ] = await Promise.all([
     prisma.processo.count({ where: { escritorioId } }),
     prisma.prazo.count({
@@ -165,7 +183,65 @@ export default async function ModuloHomePage({
       },
       select: { dataVencimento: true },
     }),
+    prisma.compromisso.count({
+      where: {
+        escritorioId,
+        advogadoId: session!.user.id,
+        cumprido: false,
+        dataInicio: { gte: hoje, lte: fimHoje },
+      },
+    }),
+    prisma.prazo.count({
+      where: {
+        cumprido: false,
+        dispensado: false,
+        data: { gte: hoje, lte: fimHoje },
+        advogadoRespId: session!.user.id,
+        processo: { escritorioId },
+      },
+    }),
+    prisma.prazoTce.count({
+      where: {
+        cumprido: false,
+        dispensado: false,
+        dataVencimento: { gte: hoje, lte: fimHoje },
+        advogadoRespId: session!.user.id,
+        processo: { escritorioId },
+      },
+    }),
+    prisma.compromisso.count({
+      where: {
+        escritorioId,
+        advogadoId: session!.user.id,
+        cumprido: false,
+        dataInicio: { gte: hoje, lte: fimSemana },
+      },
+    }),
+    prisma.prazo.count({
+      where: {
+        cumprido: false,
+        dispensado: false,
+        data: { gte: hoje, lte: em7 },
+        advogadoRespId: session!.user.id,
+        processo: { escritorioId },
+      },
+    }),
+    prisma.prazoTce.count({
+      where: {
+        cumprido: false,
+        dispensado: false,
+        dataVencimento: { gte: hoje, lte: em7 },
+        advogadoRespId: session!.user.id,
+        processo: { escritorioId },
+      },
+    }),
   ]);
+
+  const compromissosHojeTotal =
+    compromissosHojeCount + prazosHojeJudCount + prazosHojeTceCount;
+  const prazosVencendo7Total =
+    prazosVencendo7DiasJud + prazosVencendo7DiasTce;
+  const eventosSemanaTotal = eventosSemanaCount;
 
   const prazosTceVencendo = prazosTceCandidatos.filter(
     (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
@@ -311,6 +387,35 @@ export default async function ModuloHomePage({
               <Stat label="Processos TCE" value={totalTce} />
               <Stat label="Processos Judiciais" value={totalJud} />
               <Stat label="Total geral" value={totalTce + totalJud} />
+            </dl>
+          </Link>
+
+          <Link
+            href="/app/compromissos"
+            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8 md:col-span-2"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                <CalendarCheck className="h-7 w-7" />
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
+                Compromissos
+              </h2>
+              <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                Sua agenda unificada
+              </p>
+            </div>
+            <dl className="grid grid-cols-3 gap-2 border-t pt-4">
+              <Stat label="Compromissos hoje" value={compromissosHojeTotal} />
+              <Stat
+                label="Prazos em 7 dias"
+                value={prazosVencendo7Total}
+                tone="rose"
+              />
+              <Stat label="Eventos esta semana" value={eventosSemanaTotal} />
             </dl>
           </Link>
 

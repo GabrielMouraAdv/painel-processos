@@ -32,6 +32,9 @@ export default async function AppLayout({
   const semanaStart = startOfWeekUTC(new Date());
   const semanaEnd = endOfWeekUTC(semanaStart);
 
+  const fimHoje = new Date(hoje);
+  fimHoje.setHours(23, 59, 59, 999);
+
   const [
     prazosUrgentes,
     prazosTceCandidatos,
@@ -40,6 +43,9 @@ export default async function AppLayout({
     movsNaoLidas,
     pubsNaoLidas,
     despachosTcePendentes,
+    compromissosHojeCount,
+    prazosJudHojeCount,
+    prazosTceHojeCount,
   ] = await Promise.all([
     prisma.prazo.count({
       where: {
@@ -98,7 +104,36 @@ export default async function AppLayout({
         ],
       },
     }),
+    prisma.compromisso.count({
+      where: {
+        escritorioId,
+        advogadoId: session.user.id,
+        cumprido: false,
+        dataInicio: { gte: hoje, lte: fimHoje },
+      },
+    }),
+    prisma.prazo.count({
+      where: {
+        cumprido: false,
+        dispensado: false,
+        data: { gte: hoje, lte: fimHoje },
+        advogadoRespId: session.user.id,
+        processo: { escritorioId },
+      },
+    }),
+    prisma.prazoTce.count({
+      where: {
+        cumprido: false,
+        dispensado: false,
+        dataVencimento: { gte: hoje, lte: fimHoje },
+        advogadoRespId: session.user.id,
+        processo: { escritorioId },
+      },
+    }),
   ]);
+
+  const compromissosHoje =
+    compromissosHojeCount + prazosJudHojeCount + prazosTceHojeCount;
 
   const prazosTceUrgentes = prazosTceCandidatos.filter(
     (p) => diasUteisEntre(hoje, p.dataVencimento) <= 7,
@@ -112,6 +147,7 @@ export default async function AppLayout({
       pautasJudiciaisTotal={pautasJudiciaisTotal}
       alertasMonitoramento={movsNaoLidas + pubsNaoLidas}
       despachosTcePendentes={despachosTcePendentes}
+      compromissosHoje={compromissosHoje}
       podeFinanceiro={podeAcessarFinanceiro(
         session.user.role,
         session.user.bancaSlug ?? null,
