@@ -99,7 +99,7 @@ export default async function TcePrazosPage({
         },
       }),
       prisma.user.findMany({
-        where: { escritorioId, role: Role.ADVOGADO },
+        where: { escritorioId, role: { in: [Role.ADMIN, Role.ADVOGADO] } },
         orderBy: { nome: "asc" },
         select: { id: true, nome: true },
       }),

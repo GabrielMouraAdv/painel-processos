@@ -174,7 +174,7 @@ export default async function PautasJudiciaisPage({
         },
       }),
       prisma.user.findMany({
-        where: { escritorioId, role: Role.ADVOGADO },
+        where: { escritorioId, role: { in: [Role.ADMIN, Role.ADVOGADO] } },
         orderBy: { nome: "asc" },
         select: { id: true, nome: true },
       }),

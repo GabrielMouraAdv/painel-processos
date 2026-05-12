@@ -91,7 +91,7 @@ export default async function PrazosPage({
       select: { id: true, nome: true },
     }),
     prisma.user.findMany({
-      where: { escritorioId, role: Role.ADVOGADO },
+      where: { escritorioId, role: { in: [Role.ADMIN, Role.ADVOGADO] } },
       orderBy: { nome: "asc" },
       select: { id: true, nome: true },
     }),
