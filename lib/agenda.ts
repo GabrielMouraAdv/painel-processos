@@ -419,7 +419,17 @@ export function mensagemAjuda(): string {
     "/vencendo — prazos vencendo nos proximos 7 dias",
     "/processos — seus ultimos 10 processos em cada modulo",
     "/status — resumo geral",
+    "/cadastrar &lt;descricao&gt; — forca cadastro por texto",
+    "/cancelar — cancela uma intencao pendente de cadastro",
     "/ajuda — esta mensagem",
+    "",
+    "📝 <b>Cadastro por texto livre</b>",
+    "Tambem da pra me mandar mensagens em linguagem natural, por exemplo:",
+    "• <i>reuniao amanha 14h</i>",
+    "• <i>defesa do processo 25100291 pra sexta</i>",
+    "• <i>consulta dentista terca 16h</i>",
+    "",
+    "Eu monto um resumo e voce confirma antes de cadastrar.",
   ].join("\n");
 }
 

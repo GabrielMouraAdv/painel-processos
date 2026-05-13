@@ -131,9 +131,28 @@ model User {
   prazosTceResp         PrazoTce[]     @relation("AdvogadoRespPrazoTce")
   logsAuditoria         LogAuditoria[]
   compromissos          Compromisso[]  @relation("CompromissoAdvogado")
+  intencoesTelegram     IntencaoTelegram[]
 
   @@index([escritorioId])
   @@index([telegramAtivo])
+}
+
+model IntencaoTelegram {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estado           String   // AGUARDANDO_CONFIRMACAO | AGUARDANDO_DUVIDA | CONFIRMADO | CANCELADO | EXPIRADO
+  acao             String   // cadastrar_compromisso | cadastrar_prazo | etc
+  dadosBrutos      String   @db.Text
+  mensagemOriginal String   @db.Text
+  duvidaAtual      String?  @db.Text
+  expirado         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  atualizadaEm     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([estado])
+  @@index([createdAt])
 }
 
 model LogAuditoria {
