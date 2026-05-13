@@ -296,40 +296,40 @@ export default async function ModuloHomePage({
   const nome = session?.user?.name ?? "usuario";
 
   return (
-    <div className="flex min-h-[calc(100vh-0px)] flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-6 sm:px-6 sm:py-10">
+    <div className="flex min-h-[calc(100vh-0px)] flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-3 sm:px-6 sm:py-5">
       <div className="w-full max-w-5xl">
-        <header className="mb-6 text-center sm:mb-10">
+        <header className="mb-3 text-center sm:mb-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Bem-vindo, {nome}
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-brand-navy sm:text-5xl">
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-brand-navy sm:text-3xl">
             Gestao Processual
           </h1>
-          <p className="mt-2 text-base text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Selecione o modulo
           </p>
         </header>
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
           <Link
             href="/app/tce"
-            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8"
+            className="group flex flex-col gap-3 rounded-xl border-2 border-brand-navy/10 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-5"
           >
             <div className="flex items-start justify-between">
-              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
-                <Landmark className="h-7 w-7" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
+                <Landmark className="h-5 w-5" />
               </div>
               <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
+              <h2 className="text-xl font-semibold tracking-tight text-brand-navy">
                 Tribunal de Contas
               </h2>
               <p className="text-sm uppercase tracking-wide text-muted-foreground">
                 TCE-PE
               </p>
             </div>
-            <dl className="grid grid-cols-3 gap-2 border-t pt-4">
+            <dl className="grid grid-cols-3 gap-2 border-t pt-3">
               <Stat label="Processos TCE" value={totalTce} />
               <Stat label="Pendencias" value={totalPendenciasTce} tone="rose" />
               <Stat label="Prazos abertos" value={prazosTceAbertos} tone="red" />
@@ -338,23 +338,23 @@ export default async function ModuloHomePage({
 
           <Link
             href="/app/judicial"
-            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8"
+            className="group flex flex-col gap-3 rounded-xl border-2 border-brand-navy/10 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-5"
           >
             <div className="flex items-start justify-between">
-              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
-                <Scale className="h-7 w-7" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
+                <Scale className="h-5 w-5" />
               </div>
               <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
+              <h2 className="text-xl font-semibold tracking-tight text-brand-navy">
                 Judicial
               </h2>
               <p className="text-sm uppercase tracking-wide text-muted-foreground">
                 TJPE • TRF5 • TRF1 • STJ
               </p>
             </div>
-            <dl className="grid grid-cols-3 gap-2 border-t pt-4">
+            <dl className="grid grid-cols-3 gap-2 border-t pt-3">
               <Stat label="Processos" value={totalJud} />
               <Stat
                 label="Pendencias"
@@ -367,78 +367,49 @@ export default async function ModuloHomePage({
 
           <Link
             href="/app/relatorios"
-            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8"
+            className="group flex flex-col gap-3 rounded-xl border-2 border-brand-navy/10 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-5"
           >
             <div className="flex items-start justify-between">
-              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
-                <BarChart3 className="h-7 w-7" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
+                <BarChart3 className="h-5 w-5" />
               </div>
               <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
+              <h2 className="text-xl font-semibold tracking-tight text-brand-navy">
                 Relatorios
               </h2>
               <p className="text-sm uppercase tracking-wide text-muted-foreground">
                 Gerencial e por cliente
               </p>
             </div>
-            <dl className="grid grid-cols-3 gap-2 border-t pt-4">
+            <dl className="grid grid-cols-3 gap-2 border-t pt-3">
               <Stat label="Processos TCE" value={totalTce} />
               <Stat label="Processos Judiciais" value={totalJud} />
               <Stat label="Total geral" value={totalTce + totalJud} />
             </dl>
           </Link>
 
-          <Link
-            href="/app/compromissos"
-            className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8 md:col-span-2"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                <CalendarCheck className="h-7 w-7" />
-              </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
-                Compromissos
-              </h2>
-              <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                Sua agenda unificada
-              </p>
-            </div>
-            <dl className="grid grid-cols-3 gap-2 border-t pt-4">
-              <Stat label="Compromissos hoje" value={compromissosHojeTotal} />
-              <Stat
-                label="Prazos em 7 dias"
-                value={prazosVencendo7Total}
-                tone="rose"
-              />
-              <Stat label="Eventos esta semana" value={eventosSemanaTotal} />
-            </dl>
-          </Link>
-
           {podeFinanceiro && financeiroKpis && (
             <Link
               href="/app/financeiro"
-              className="group flex flex-col gap-4 rounded-xl border-2 border-brand-navy/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-8"
+              className="group flex flex-col gap-3 rounded-xl border-2 border-brand-navy/10 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-5"
             >
               <div className="flex items-start justify-between">
-                <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
-                  <DollarSign className="h-7 w-7" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
+                  <DollarSign className="h-5 w-5" />
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
               </div>
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
+                <h2 className="text-xl font-semibold tracking-tight text-brand-navy">
                   Financeiro
                 </h2>
                 <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   Contratos, notas fiscais e honorarios
                 </p>
               </div>
-              <dl className="grid grid-cols-3 gap-2 border-t pt-4">
+              <dl className="grid grid-cols-3 gap-2 border-t pt-3">
                 <Stat
                   label="Contratos ativos"
                   value={financeiroKpis.contratosAtivos}
@@ -456,6 +427,35 @@ export default async function ModuloHomePage({
               </dl>
             </Link>
           )}
+
+          <Link
+            href="/app/compromissos"
+            className="group flex flex-col gap-3 rounded-xl border-2 border-brand-navy/10 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lg sm:p-5 md:col-span-2"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                <CalendarCheck className="h-5 w-5" />
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-brand-navy" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight text-brand-navy">
+                Compromissos
+              </h2>
+              <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                Sua agenda unificada
+              </p>
+            </div>
+            <dl className="grid grid-cols-3 gap-2 border-t pt-3">
+              <Stat label="Compromissos hoje" value={compromissosHojeTotal} />
+              <Stat
+                label="Prazos em 7 dias"
+                value={prazosVencendo7Total}
+                tone="rose"
+              />
+              <Stat label="Eventos esta semana" value={eventosSemanaTotal} />
+            </dl>
+          </Link>
         </div>
       </div>
     </div>
