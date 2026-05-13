@@ -12,6 +12,7 @@ import {
 } from "@/lib/agenda";
 import {
   interpretarMensagem,
+  mensagemTelegramParaErroIA,
   type IntencaoIA,
 } from "@/lib/anthropic-client";
 import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
@@ -118,8 +119,8 @@ async function tratarTextoLivre(
   try {
     intencao = await interpretarMensagem(texto, ctx);
   } catch (err) {
-    console.error("[telegram] erro IA", err);
-    return "Nao consegui interpretar agora (problema com a IA). Tente reformular ou use os comandos /agenda, /vencendo etc.";
+    console.error("[telegram] erro IA ao interpretar", err);
+    return mensagemTelegramParaErroIA(err);
   }
 
   if (intencao.acao === "consultar") {
@@ -277,7 +278,7 @@ async function tratarRespostaConfirmacao(
       return gerarResumoConfirmacao(novaAjustada);
     } catch (err) {
       console.error("[telegram] erro refinar", err);
-      return "Tive um problema ao aplicar o ajuste. Responda SIM para usar a versao anterior ou NAO para cancelar.";
+      return `Tive um problema ao aplicar o ajuste: ${mensagemTelegramParaErroIA(err)}\nResponda SIM para usar a versao anterior ou NAO para cancelar.`;
     }
   }
   return "Nao entendi. Responda <b>SIM</b>, <b>NAO</b> ou descreva o que mudar (ex.: <i>edita: as 16h</i>).";

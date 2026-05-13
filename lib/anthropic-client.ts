@@ -1,13 +1,54 @@
+import Anthropic, { APIError } from "@anthropic-ai/sdk";
+
 import { BANCAS } from "@/lib/bancas";
 
-// Cliente minimal da Anthropic Messages API via fetch. Nao usa SDK
-// (mantemos o bundle do server pequeno e evitamos dependencia extra).
-// Modelo: Claude Haiku 4.5 — barato, rapido e suficiente para
-// interpretar comandos curtos em portugues.
+// Cliente Claude para interpretar mensagens em linguagem natural enviadas
+// ao bot pessoal do Telegram. Modelo: Claude Haiku 4.5 (versao com data,
+// alinhado com a base de conhecimento do agente).
 
-const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-haiku-4-5";
-const ANTHROPIC_VERSION = "2023-06-01";
+const MODEL = "claude-haiku-4-5-20251001";
+
+let cachedClient: Anthropic | null = null;
+function getClient(): Anthropic {
+  if (cachedClient) return cachedClient;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new InterpretacaoIAError(
+      "MISSING_API_KEY",
+      "ANTHROPIC_API_KEY nao configurada no servidor",
+    );
+  }
+  cachedClient = new Anthropic({ apiKey });
+  return cachedClient;
+}
+
+export type InterpretacaoErrorCode =
+  | "MISSING_API_KEY"
+  | "AUTH_ERROR"
+  | "RATE_LIMIT"
+  | "OVERLOADED"
+  | "INVALID_REQUEST"
+  | "INVALID_JSON"
+  | "EMPTY_RESPONSE"
+  | "NETWORK_ERROR"
+  | "UNKNOWN";
+
+export class InterpretacaoIAError extends Error {
+  code: InterpretacaoErrorCode;
+  detalhes?: string;
+  status?: number;
+  constructor(
+    code: InterpretacaoErrorCode,
+    message: string,
+    extra?: { detalhes?: string; status?: number },
+  ) {
+    super(message);
+    this.name = "InterpretacaoIAError";
+    this.code = code;
+    this.detalhes = extra?.detalhes;
+    this.status = extra?.status;
+  }
+}
 
 export type IntencaoAcao =
   | "cadastrar_compromisso"
@@ -31,7 +72,7 @@ export type ProcessoVinculadoIA = {
 export type DadosIntencao = {
   titulo: string;
   descricao?: string | null;
-  dataInicio: string | null; // ISO string
+  dataInicio: string | null;
   dataFim: string | null;
   diaInteiro: boolean;
   local: string | null;
@@ -59,7 +100,7 @@ export type ContextoUsuario = {
     tipo: "tce" | "judicial";
     descricao: string;
   }[];
-  bancasUsuarioSlug: string[] | null; // null = todas
+  bancasUsuarioSlug: string[] | null;
 };
 
 function bancasContextoTexto(): string {
@@ -83,8 +124,10 @@ function montarSystemPrompt(ctx: ContextoUsuario): string {
 
 Sua unica tarefa: interpretar a mensagem do usuario e devolver um JSON estruturado no formato definido abaixo, em PORTUGUES, SEM acentos especiais nas chaves.
 
-Data e hora atuais: ${ctx.agoraIso}
-Fuso horario do usuario: America/Recife
+IMPORTANTE: voce DEVE responder EXCLUSIVAMENTE com um objeto JSON valido, sem texto antes ou depois, sem cercas markdown, sem comentarios. So o JSON.
+
+Data e hora atuais (UTC): ${ctx.agoraIso}
+Fuso horario do usuario: America/Recife (UTC-3)
 Nome do usuario: ${ctx.nomeUsuario}
 Usuario pode usar categorias privadas (PROFISSIONAL_PRIVADO/PESSOAL): ${ctx.podeUsarPrivadas ? "SIM" : "NAO"}
 
@@ -126,7 +169,7 @@ PROCESSO VINCULADO:
 - Se nao houver processo associado (ex.: "reuniao com cliente"), processoVinculado=null.
 
 ESCRITORIO RESPONSAVEL:
-- Se o processo vinculado for de uma banca claramente identificavel (ex.: "processo de Manari da banca Filipe Campos"), preencha com o slug da banca.
+- Se o processo vinculado for de uma banca claramente identificavel, preencha com o slug da banca.
 - Se houver duvida, deixe null.
 
 NIVEL DE CONFIANCA (confidence):
@@ -143,9 +186,7 @@ mensagemConfirmacao:
 - Mostre titulo, data, hora, processo (se houver) e categoria.
 - Termine com "Confirma? Responda SIM, EDITAR ou NAO."
 
-FORMATO DA SAIDA:
-Devolva EXCLUSIVAMENTE um JSON valido, sem texto antes ou depois, sem markdown, com esta forma:
-
+FORMATO DA SAIDA (JSON estrito):
 {
   "acao": "cadastrar_compromisso" | "cadastrar_prazo" | "consultar" | "outro",
   "tipo": "ESCRITORIO" | "PROFISSIONAL_PRIVADO" | "PESSOAL" | "PRAZO_TCE" | "PRAZO_JUDICIAL" | null,
@@ -166,55 +207,94 @@ Devolva EXCLUSIVAMENTE um JSON valido, sem texto antes ou depois, sem markdown, 
 }`;
 }
 
+function extrairTexto(content: Anthropic.ContentBlock[]): string {
+  const partes: string[] = [];
+  for (const c of content) {
+    if (c.type === "text" && typeof c.text === "string") {
+      partes.push(c.text);
+    }
+  }
+  return partes.join("\n").trim();
+}
+
+function logPrefix(): string {
+  return `[anthropic ${new Date().toISOString()}]`;
+}
+
 export async function interpretarMensagem(
   texto: string,
   ctx: ContextoUsuario,
 ): Promise<IntencaoIA> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY nao configurada");
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new InterpretacaoIAError(
+      "MISSING_API_KEY",
+      "ANTHROPIC_API_KEY nao configurada no servidor",
+    );
   }
+  const client = getClient();
   const system = montarSystemPrompt(ctx);
 
-  const res = await fetch(ANTHROPIC_API, {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": ANTHROPIC_VERSION,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
+  console.log(
+    `${logPrefix()} chamando ${MODEL} | texto.length=${texto.length} | processos=${ctx.processos.length} | podePrivadas=${ctx.podeUsarPrivadas}`,
+  );
+  console.log(
+    `${logPrefix()} preview texto:`,
+    texto.slice(0, 200).replace(/\s+/g, " "),
+  );
+
+  let resp: Anthropic.Message;
+  try {
+    resp = await client.messages.create({
       model: MODEL,
       max_tokens: 1024,
       temperature: 0,
       system,
-      messages: [
-        {
-          role: "user",
-          content: texto,
-        },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(
-      `Anthropic API erro ${res.status}: ${t.slice(0, 200)}`,
+      messages: [{ role: "user", content: texto }],
+    });
+  } catch (err) {
+    if (err instanceof APIError) {
+      const code =
+        err.status === 401 || err.status === 403
+          ? "AUTH_ERROR"
+          : err.status === 429
+            ? "RATE_LIMIT"
+            : err.status === 529
+              ? "OVERLOADED"
+              : err.status && err.status >= 400 && err.status < 500
+                ? "INVALID_REQUEST"
+                : err.status && err.status >= 500
+                  ? "OVERLOADED"
+                  : "NETWORK_ERROR";
+      console.error(
+        `${logPrefix()} APIError status=${err.status} type=${err.error?.type} message=${err.message}`,
+      );
+      throw new InterpretacaoIAError(code, err.message, {
+        status: err.status ?? undefined,
+        detalhes: err.error?.type,
+      });
+    }
+    console.error(`${logPrefix()} erro inesperado:`, err);
+    throw new InterpretacaoIAError(
+      "NETWORK_ERROR",
+      err instanceof Error ? err.message : String(err),
     );
   }
 
-  const body = (await res.json()) as {
-    content?: { type: string; text?: string }[];
-  };
-  const textoSaida = (body.content ?? [])
-    .filter((c) => c.type === "text" && typeof c.text === "string")
-    .map((c) => c.text as string)
-    .join("\n")
-    .trim();
+  const textoSaida = extrairTexto(resp.content);
+  console.log(
+    `${logPrefix()} resposta recebida | stop_reason=${resp.stop_reason} | usage=`,
+    resp.usage,
+  );
+  console.log(
+    `${logPrefix()} conteudo bruto:`,
+    textoSaida.slice(0, 1500),
+  );
 
   if (!textoSaida) {
-    throw new Error("Resposta vazia da IA");
+    throw new InterpretacaoIAError(
+      "EMPTY_RESPONSE",
+      "Resposta da IA veio vazia",
+    );
   }
 
   // Remove cerca markdown se a IA escorregar e devolver ```json ... ```.
@@ -226,15 +306,21 @@ export async function interpretarMensagem(
   try {
     parsed = JSON.parse(jsonTxt);
   } catch (err) {
-    throw new Error(
-      `Resposta da IA nao e JSON valido: ${(err as Error).message}. Texto: ${textoSaida.slice(0, 300)}`,
+    console.error(
+      `${logPrefix()} falha ao parsear JSON da IA:`,
+      (err as Error).message,
+      "| texto=",
+      textoSaida.slice(0, 500),
+    );
+    throw new InterpretacaoIAError(
+      "INVALID_JSON",
+      "Resposta da IA nao e JSON valido",
+      { detalhes: textoSaida.slice(0, 200) },
     );
   }
 
-  // Saneamento leve do shape — defaults para garantir tipos.
   const intencao = parsed as Partial<IntencaoIA>;
   const dados = (intencao.dados ?? {}) as Partial<DadosIntencao>;
-
   const out: IntencaoIA = {
     acao: (intencao.acao as IntencaoAcao) ?? "outro",
     tipo: (intencao.tipo as IntencaoTipo | null) ?? null,
@@ -262,5 +348,38 @@ export async function interpretarMensagem(
       ? intencao.duvidas.filter((d): d is string => typeof d === "string")
       : [],
   };
+  console.log(
+    `${logPrefix()} interpretado | acao=${out.acao} tipo=${out.tipo} confidence=${out.confidence} duvidas=${out.duvidas.length}`,
+  );
   return out;
+}
+
+export function mensagemTelegramParaErroIA(
+  err: unknown,
+): string {
+  if (err instanceof InterpretacaoIAError) {
+    switch (err.code) {
+      case "MISSING_API_KEY":
+        return "API de IA nao configurada no servidor. Avise o administrador.";
+      case "AUTH_ERROR":
+        return "Erro de autenticacao com a IA. Verifique a configuracao da chave da Anthropic.";
+      case "RATE_LIMIT":
+        return "Limite de requisicoes da IA atingido. Tente em alguns minutos.";
+      case "OVERLOADED":
+        return "A IA esta sobrecarregada agora. Tente daqui a pouco.";
+      case "INVALID_JSON":
+        return "A IA nao retornou um JSON valido. Reformule a mensagem com mais detalhes.";
+      case "EMPTY_RESPONSE":
+        return "A IA nao retornou conteudo. Tente reformular a mensagem.";
+      case "INVALID_REQUEST":
+        return "Pedido invalido enviado a IA. Reformule a mensagem.";
+      case "NETWORK_ERROR":
+      default:
+        return `Erro de rede ao falar com a IA: ${err.message.split("\n")[0]}`;
+    }
+  }
+  if (err instanceof Error) {
+    return `Erro inesperado: ${err.message.split("\n")[0]}`;
+  }
+  return "Erro inesperado ao chamar a IA.";
 }
