@@ -19,6 +19,7 @@ export type BancaCor =
 export type Banca = {
   slug: string;
   nome: string;
+  sigla: string;
   advogado: string;
   oab: string;
   cor: BancaCor;
@@ -28,6 +29,7 @@ export const BANCAS: Banca[] = [
   {
     slug: "filipe-campos",
     nome: "Filipe Campos Advocacia",
+    sigla: "FC",
     advogado: "Filipe Fernandes Campos",
     oab: "OAB/PE 31.509",
     cor: "blue",
@@ -35,6 +37,7 @@ export const BANCAS: Banca[] = [
   {
     slug: "porto-rodrigues",
     nome: "Porto e Rodrigues Advocacia",
+    sigla: "PR",
     advogado: "Julio Tiago de C. Rodrigues",
     oab: "OAB/PE 23.610",
     cor: "green",
@@ -42,6 +45,7 @@ export const BANCAS: Banca[] = [
   {
     slug: "gabriel-moura",
     nome: "Gabriel Moura Advocacia",
+    sigla: "GM",
     advogado: "Gabriel Vidal de Moura",
     oab: "OAB/PE 58.958",
     cor: "purple",
@@ -49,6 +53,7 @@ export const BANCAS: Banca[] = [
   {
     slug: "paulo-maciel",
     nome: "Paulo Maciel Advocacia",
+    sigla: "PM",
     advogado: "Paulo Maciel",
     oab: "",
     cor: "orange",
@@ -56,6 +61,7 @@ export const BANCAS: Banca[] = [
   {
     slug: "heloisa",
     nome: "Heloisa Cavalcanti Advocacia",
+    sigla: "HC",
     advogado: "Maria Heloisa Leal Cavalcanti",
     oab: "OAB/PE 63.060",
     cor: "pink",
@@ -63,6 +69,7 @@ export const BANCAS: Banca[] = [
   {
     slug: "henrique",
     nome: "Henrique Arruda Advocacia",
+    sigla: "HA",
     advogado: "Henrique Moura de Arruda",
     oab: "OAB/PE 50.695",
     cor: "amber",
@@ -123,4 +130,18 @@ const DOT_CLASSES: Record<BancaCor, string> = {
 
 export function bancaDotClasses(cor: BancaCor): string {
   return DOT_CLASSES[cor];
+}
+
+// Versao solida (texto branco) para badges densas (ex.: sigla na agenda)
+const SOLID_CLASSES: Record<BancaCor, string> = {
+  blue: "bg-blue-600 text-white",
+  green: "bg-emerald-600 text-white",
+  purple: "bg-purple-600 text-white",
+  orange: "bg-orange-600 text-white",
+  pink: "bg-pink-600 text-white",
+  amber: "bg-amber-600 text-white",
+};
+
+export function bancaSolidBadgeClasses(cor: BancaCor): string {
+  return SOLID_CLASSES[cor];
 }

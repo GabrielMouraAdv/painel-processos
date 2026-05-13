@@ -240,6 +240,11 @@ export const compromissoCreateSchema = z.object({
     .nullable(),
   tipo: z.enum(COMPROMISSO_TIPOS),
   categoria: z.enum(COMPROMISSO_CATEGORIAS).default("ESCRITORIO"),
+  escritorioResponsavelSlug: z
+    .string()
+    .max(60)
+    .optional()
+    .nullable(),
   local: z.string().max(200).optional().nullable(),
   advogadoId: z.string().min(1, "Selecione o advogado responsavel"),
   processoTceId: z.string().optional().nullable(),

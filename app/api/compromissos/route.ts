@@ -8,6 +8,7 @@ import {
   type CalendarEvento,
   type EventoOrigem,
 } from "@/lib/compromissos";
+import { isBancaSlug } from "@/lib/bancas";
 import { podeUsarCategoriasPrivadas } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 import { compromissoCreateSchema } from "@/lib/schemas";
@@ -131,6 +132,12 @@ export async function POST(req: Request) {
   // mandado outro advogadoId.
   const advogadoIdFinal = privado ? session.user.id : data.advogadoId;
 
+  const escritorioResponsavelSlug =
+    data.escritorioResponsavelSlug &&
+    isBancaSlug(data.escritorioResponsavelSlug)
+      ? data.escritorioResponsavelSlug
+      : null;
+
   const compromisso = await prisma.compromisso.create({
     data: {
       titulo: data.titulo.trim(),
@@ -142,6 +149,7 @@ export async function POST(req: Request) {
       tipo: data.tipo,
       categoria,
       privado,
+      escritorioResponsavelSlug,
       local: data.local?.trim() || null,
       advogadoId: advogadoIdFinal,
       processoTceId: data.processoTceId || null,

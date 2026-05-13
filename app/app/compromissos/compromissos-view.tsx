@@ -39,6 +39,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import {
+  BANCAS,
+  bancaSolidBadgeClasses,
+  getBanca,
+} from "@/lib/bancas";
 import { cn } from "@/lib/utils";
 
 import { CompromissoForm } from "./compromisso-form";
@@ -52,11 +57,13 @@ export type ProcessoTceOption = {
   id: string;
   numero: string;
   municipio: string | null;
+  bancasSlug: string[];
 };
 export type ProcessoJudOption = {
   id: string;
   numero: string;
   gestor: string;
+  bancasSlug: string[];
 };
 
 type ViewMode = "mes" | "semana" | "dia" | "lista";
@@ -221,6 +228,9 @@ export function CompromissosView({
   const [filtroCategorias, setFiltroCategorias] = React.useState<
     CompromissoCategoriaEvento[]
   >([...CATEGORIAS_TODAS]);
+  const [filtroEscritorios, setFiltroEscritorios] = React.useState<string[]>(
+    BANCAS.map((b) => b.slug),
+  );
   const [filtroAdvogado, setFiltroAdvogado] = React.useState<string>(
     isAdmin ? "__todos__" : usuario.id,
   );
@@ -229,15 +239,25 @@ export function CompromissosView({
   const [loading, setLoading] = React.useState(false);
 
   const eventosFiltrados = React.useMemo(() => {
-    if (filtroCategorias.length === CATEGORIAS_TODAS.length) return eventos;
+    const todasCategorias =
+      filtroCategorias.length === CATEGORIAS_TODAS.length;
+    const todosEscritorios = filtroEscritorios.length === BANCAS.length;
+    if (todasCategorias && todosEscritorios) return eventos;
     return eventos.filter((ev) => {
-      if (ev.origem !== "compromisso") {
-        return filtroCategorias.includes("ESCRITORIO");
+      if (ev.origem === "compromisso") {
+        const cat = ev.categoria ?? "ESCRITORIO";
+        if (!filtroCategorias.includes(cat)) return false;
+        if (!todosEscritorios) {
+          if (!ev.escritorioResponsavelSlug) return false;
+          if (!filtroEscritorios.includes(ev.escritorioResponsavelSlug)) {
+            return false;
+          }
+        }
+        return true;
       }
-      const cat = ev.categoria ?? "ESCRITORIO";
-      return filtroCategorias.includes(cat);
+      return filtroCategorias.includes("ESCRITORIO");
     });
-  }, [eventos, filtroCategorias]);
+  }, [eventos, filtroCategorias, filtroEscritorios]);
 
   function toggleCategoria(cat: CompromissoCategoriaEvento) {
     setFiltroCategorias((prev) => {
@@ -246,6 +266,16 @@ export function CompromissosView({
         return prev.filter((c) => c !== cat);
       }
       return [...prev, cat];
+    });
+  }
+
+  function toggleEscritorio(slug: string) {
+    setFiltroEscritorios((prev) => {
+      if (prev.includes(slug)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((c) => c !== slug);
+      }
+      return [...prev, slug];
     });
   }
 
@@ -459,6 +489,17 @@ export function CompromissosView({
   }
 
   function abrirNovoEm(dataIso: string) {
+    const data = new Date(dataIso);
+    if (!Number.isNaN(data.getTime()) && view === "mes") {
+      // Se o usuario clicou num dia do mes anterior/proximo, navega para o mes
+      // correto antes de abrir o modal.
+      if (
+        data.getMonth() !== referencia.getMonth() ||
+        data.getFullYear() !== referencia.getFullYear()
+      ) {
+        setReferencia(startOfDay(data));
+      }
+    }
     setNovoDataInicial(dataIso);
     setNovoOpen(true);
   }
@@ -572,6 +613,40 @@ export function CompromissosView({
                 </div>
               </div>
             )}
+
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Escritorio</Label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {BANCAS.map((b) => {
+                  const ativa = filtroEscritorios.includes(b.slug);
+                  return (
+                    <button
+                      key={b.slug}
+                      type="button"
+                      onClick={() => toggleEscritorio(b.slug)}
+                      title={b.nome}
+                      className={cn(
+                        "flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
+                        ativa
+                          ? "border-brand-navy bg-brand-navy/5 text-brand-navy"
+                          : "border-slate-200 bg-white text-slate-400 hover:bg-slate-50",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "inline-flex h-4 min-w-[22px] items-center justify-center rounded px-1 text-[9px] font-bold uppercase tracking-wide",
+                          ativa
+                            ? bancaSolidBadgeClasses(b.cor)
+                            : "bg-slate-200 text-slate-500",
+                        )}
+                      >
+                        {b.sigla}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="flex min-w-[220px] flex-col gap-1">
               <Label className="text-xs">Advogado</Label>
@@ -878,11 +953,43 @@ function DropDia({
   const mostrar = expandido ? eventos : eventos.slice(0, 3);
   const restantes = eventos.length - mostrar.length;
 
+  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const longPressFired = React.useRef(false);
+  const abrirNovo = React.useCallback(() => {
+    onClickDia(`${iso}T09:00:00`);
+  }, [iso, onClickDia]);
+
+  const iniciarLongPress = React.useCallback(() => {
+    longPressFired.current = false;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      abrirNovo();
+    }, 500);
+  }, [abrirNovo]);
+  const cancelarLongPress = React.useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+  React.useEffect(() => () => cancelarLongPress(), [cancelarLongPress]);
+
   return (
     <div
       ref={setNodeRef}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        abrirNovo();
+      }}
+      onTouchStart={iniciarLongPress}
+      onTouchEnd={cancelarLongPress}
+      onTouchMove={cancelarLongPress}
+      onTouchCancel={cancelarLongPress}
       className={cn(
-        "min-h-[110px] border-b border-r p-1.5",
+        "group/dia min-h-[110px] cursor-pointer border-b border-r p-1.5 select-none",
         !noMes && "bg-slate-50/40",
         ehHoje && "bg-amber-50",
         isOver && "ring-2 ring-inset ring-brand-navy/40",
@@ -891,7 +998,10 @@ function DropDia({
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={() => onClickDia(`${iso}T09:00:00`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            abrirNovo();
+          }}
           className={cn(
             "text-xs font-semibold",
             ehHoje
@@ -903,11 +1013,24 @@ function DropDia({
         >
           {dia.getDate()}
         </button>
-        {ehHoje && (
-          <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-white">
-            hoje
-          </span>
-        )}
+        <div className="flex items-center gap-1">
+          {ehHoje && (
+            <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-white">
+              hoje
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              abrirNovo();
+            }}
+            aria-label="Novo compromisso"
+            className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-slate-400 opacity-60 ring-1 ring-slate-200 transition-opacity hover:bg-brand-navy hover:text-white hover:opacity-100 group-hover/dia:opacity-100 sm:opacity-0"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
       </div>
       <div className="mt-1 space-y-1">
         {mostrar.map((ev) => (
@@ -1003,6 +1126,23 @@ function EventoBadge({
           {FLAGS_CATEGORIA[ev.categoria].flag}
         </span>
       )}
+      {(() => {
+        const banca = ev.escritorioResponsavelSlug
+          ? getBanca(ev.escritorioResponsavelSlug)
+          : null;
+        if (!banca) return null;
+        return (
+          <span
+            title={banca.nome}
+            className={cn(
+              "mr-1 inline-flex h-3.5 min-w-[16px] items-center justify-center rounded px-0.5 text-[8px] font-bold uppercase tracking-wide",
+              bancaSolidBadgeClasses(banca.cor),
+            )}
+          >
+            {banca.sigla}
+          </span>
+        );
+      })()}
       {!ev.advogado && (
         <span className="mr-1 rounded bg-amber-200 px-0.5 text-[8px] font-bold uppercase text-amber-900">
           SR
@@ -1250,6 +1390,23 @@ function ListaEventos({
                           {FLAGS_CATEGORIA[ev.categoria].flag}
                         </span>
                       )}
+                      {(() => {
+                        const banca = ev.escritorioResponsavelSlug
+                          ? getBanca(ev.escritorioResponsavelSlug)
+                          : null;
+                        if (!banca) return null;
+                        return (
+                          <span
+                            title={banca.nome}
+                            className={cn(
+                              "inline-flex h-4 min-w-[22px] items-center justify-center rounded px-1 text-[9px] font-bold uppercase tracking-wide",
+                              bancaSolidBadgeClasses(banca.cor),
+                            )}
+                          >
+                            {banca.sigla}
+                          </span>
+                        );
+                      })()}
                       <span className={cn(ev.cumprido && "line-through")}>
                         {ev.titulo}
                       </span>
@@ -1304,6 +1461,23 @@ function VisualizarEvento({
               {FLAGS_CATEGORIA[evento.categoria].flag}
             </span>
           )}
+          {(() => {
+            const banca = evento.escritorioResponsavelSlug
+              ? getBanca(evento.escritorioResponsavelSlug)
+              : null;
+            if (!banca) return null;
+            return (
+              <span
+                title={banca.nome}
+                className={cn(
+                  "inline-flex h-5 min-w-[26px] items-center justify-center rounded px-1 text-[10px] font-bold uppercase tracking-wide",
+                  bancaSolidBadgeClasses(banca.cor),
+                )}
+              >
+                {banca.sigla}
+              </span>
+            );
+          })()}
           {evento.titulo}
         </DialogTitle>
         <DialogDescription>
@@ -1343,6 +1517,15 @@ function VisualizarEvento({
           </dt>
           <dd>{evento.advogado?.nome ?? "Sem responsavel"}</dd>
         </div>
+        {evento.escritorioResponsavelSlug &&
+          getBanca(evento.escritorioResponsavelSlug) && (
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Escritorio responsavel
+              </dt>
+              <dd>{getBanca(evento.escritorioResponsavelSlug)!.nome}</dd>
+            </div>
+          )}
         {evento.descricao && (
           <div>
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">

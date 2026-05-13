@@ -15,6 +15,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { BANCAS, bancaDotClasses, getBanca } from "@/lib/bancas";
 
 import type { CalendarEvento, CompromissoCategoriaEvento } from "./types";
 import type {
@@ -65,6 +66,13 @@ function combineDateTime(date: string, time: string): string | null {
   return new Date(`${date}T${t}:00`).toISOString();
 }
 
+function addOneHour(hhmm: string): string {
+  if (!/^\d{2}:\d{2}$/.test(hhmm)) return "10:00";
+  const [h, m] = hhmm.split(":").map(Number);
+  const next = (h + 1) % 24;
+  return `${String(next).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export function CompromissoForm({
   mode,
   evento,
@@ -90,10 +98,18 @@ export function CompromissoForm({
     React.useState<CompromissoCategoriaEvento>(
       evento?.categoria ?? "ESCRITORIO",
     );
+  const horaInicialDefault = inicial.time || "09:00";
   const [dateInicio, setDateInicio] = React.useState(inicial.date);
-  const [horaInicio, setHoraInicio] = React.useState(inicial.time || "09:00");
-  const [dateFim, setDateFim] = React.useState(fim.date);
-  const [horaFim, setHoraFim] = React.useState(fim.time);
+  const [horaInicio, setHoraInicio] = React.useState(horaInicialDefault);
+  const [dateFim, setDateFim] = React.useState(
+    fim.date || (mode === "create" && dataInicialIso ? inicial.date : ""),
+  );
+  const [horaFim, setHoraFim] = React.useState(
+    fim.time ||
+      (mode === "create" && dataInicialIso
+        ? addOneHour(horaInicialDefault)
+        : ""),
+  );
   const [diaInteiro, setDiaInteiro] = React.useState(
     evento?.diaInteiro ?? false,
   );
@@ -103,6 +119,8 @@ export function CompromissoForm({
   const [advogadoId, setAdvogadoId] = React.useState(
     evento?.advogado?.id ?? usuario.id,
   );
+  const [escritorioResponsavelSlug, setEscritorioResponsavelSlug] =
+    React.useState<string>(evento?.escritorioResponsavelSlug ?? "");
   const [vinculo, setVinculo] = React.useState<"nenhum" | "tce" | "judicial">(
     evento?.processoRef
       ? evento.processoRef.tipo === "tce"
@@ -117,6 +135,51 @@ export function CompromissoForm({
     evento?.processoRef?.tipo === "judicial" ? evento.processoRef.id : "",
   );
   const [submitting, setSubmitting] = React.useState(false);
+
+  const processoTceSelecionado = React.useMemo(
+    () => processosTce.find((p) => p.id === processoTceId),
+    [processosTce, processoTceId],
+  );
+  const processoJudSelecionado = React.useMemo(
+    () => processosJud.find((p) => p.id === processoId),
+    [processosJud, processoId],
+  );
+  const bancasDoProcesso: string[] = React.useMemo(() => {
+    if (vinculo === "tce" && processoTceSelecionado) {
+      return processoTceSelecionado.bancasSlug ?? [];
+    }
+    if (vinculo === "judicial" && processoJudSelecionado) {
+      return processoJudSelecionado.bancasSlug ?? [];
+    }
+    return [];
+  }, [vinculo, processoTceSelecionado, processoJudSelecionado]);
+
+  // Auto-preenche o escritorio responsavel quando o processo vinculado tem
+  // uma unica banca; se tiver multiplas, mantem a escolha atual se ainda for
+  // valida, ou limpa.
+  const processoChaveAuto = React.useRef<string>("");
+  React.useEffect(() => {
+    const chave = `${vinculo}:${processoTceId}:${processoId}`;
+    if (processoChaveAuto.current === chave) return;
+    processoChaveAuto.current = chave;
+    if (vinculo === "nenhum") return;
+    if (bancasDoProcesso.length === 1) {
+      setEscritorioResponsavelSlug(bancasDoProcesso[0]);
+    } else if (bancasDoProcesso.length > 1) {
+      if (
+        escritorioResponsavelSlug &&
+        !bancasDoProcesso.includes(escritorioResponsavelSlug)
+      ) {
+        setEscritorioResponsavelSlug("");
+      }
+    }
+  }, [
+    vinculo,
+    processoTceId,
+    processoId,
+    bancasDoProcesso,
+    escritorioResponsavelSlug,
+  ]);
 
   async function salvar() {
     if (!titulo.trim()) {
@@ -149,6 +212,7 @@ export function CompromissoForm({
       cor,
       tipo,
       categoria: categoriaFinal,
+      escritorioResponsavelSlug: escritorioResponsavelSlug || null,
       local: local.trim() || null,
       advogadoId,
       processoTceId: vinculo === "tce" ? processoTceId || null : null,
@@ -264,6 +328,7 @@ export function CompromissoForm({
           value={titulo}
           onChange={(e) => setTitulo(e.target.value)}
           placeholder="Ex.: Reuniao com cliente"
+          autoFocus={mode === "create"}
         />
       </div>
 
@@ -419,6 +484,50 @@ export function CompromissoForm({
           </Select>
         </div>
       )}
+
+      <div className="space-y-1.5">
+        <Label>Escritorio responsavel</Label>
+        <Select
+          value={escritorioResponsavelSlug || "__nenhum__"}
+          onValueChange={(v) =>
+            setEscritorioResponsavelSlug(v === "__nenhum__" ? "" : v)
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sem escritorio responsavel" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__nenhum__">
+              <span className="text-slate-500">Sem escritorio</span>
+            </SelectItem>
+            {(bancasDoProcesso.length > 0
+              ? BANCAS.filter((b) => bancasDoProcesso.includes(b.slug))
+              : BANCAS
+            ).map((b) => (
+              <SelectItem key={b.slug} value={b.slug}>
+                <span className="flex items-center gap-2">
+                  <span
+                    className={
+                      "inline-block h-2.5 w-2.5 rounded-full " +
+                      bancaDotClasses(b.cor)
+                    }
+                  />
+                  <span className="font-mono text-[11px] font-bold">
+                    {b.sigla}
+                  </span>
+                  <span>— {b.nome}</span>
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {escritorioResponsavelSlug &&
+          getBanca(escritorioResponsavelSlug) === null && (
+            <p className="text-[11px] text-amber-700">
+              Escritorio invalido para esse processo. Selecione outro.
+            </p>
+          )}
+      </div>
 
       <div className="space-y-1.5">
         <Label>

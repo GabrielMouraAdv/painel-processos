@@ -32,6 +32,7 @@ export default async function CompromissosPage() {
       select: {
         id: true,
         numero: true,
+        bancasSlug: true,
         municipio: { select: { nome: true } },
       },
     }),
@@ -41,6 +42,7 @@ export default async function CompromissosPage() {
       select: {
         id: true,
         numero: true,
+        bancasSlug: true,
         gestor: { select: { nome: true } },
       },
     }),
@@ -57,11 +59,13 @@ export default async function CompromissosPage() {
           id: p.id,
           numero: p.numero,
           municipio: p.municipio?.nome ?? null,
+          bancasSlug: p.bancasSlug,
         }))}
         processosJud={processosJud.map((p) => ({
           id: p.id,
           numero: p.numero,
           gestor: p.gestor.nome,
+          bancasSlug: p.bancasSlug,
         }))}
       />
     </div>

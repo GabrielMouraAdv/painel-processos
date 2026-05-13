@@ -17,6 +17,7 @@ export type CalendarEvento = {
   tipo: string | null;
   categoria: CompromissoCategoriaEvento | null;
   privado: boolean;
+  escritorioResponsavelSlug: string | null;
   local: string | null;
   cumprido: boolean;
   dispensado: boolean;

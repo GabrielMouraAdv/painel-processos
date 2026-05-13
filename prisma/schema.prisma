@@ -880,17 +880,18 @@ model Compromisso {
   dataFim       DateTime?
   diaInteiro    Boolean   @default(false)
   cor           String?
-  tipo          String
-  categoria     String    @default("ESCRITORIO")
-  privado       Boolean   @default(false)
-  local         String?
-  cumprido      Boolean   @default(false)
-  advogadoId    String
-  processoTceId String?
-  processoId    String?
-  escritorioId  String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  tipo                     String
+  categoria                String    @default("ESCRITORIO")
+  privado                  Boolean   @default(false)
+  escritorioResponsavelSlug String?
+  local                    String?
+  cumprido                 Boolean   @default(false)
+  advogadoId               String
+  processoTceId            String?
+  processoId               String?
+  escritorioId             String
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   advogado    User         @relation("CompromissoAdvogado", fields: [advogadoId], references: [id])
   processoTce ProcessoTce? @relation(fields: [processoTceId], references: [id])
@@ -904,4 +905,5 @@ model Compromisso {
   @@index([processoId])
   @@index([categoria])
   @@index([privado])
+  @@index([escritorioResponsavelSlug])
 }

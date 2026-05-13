@@ -20,6 +20,7 @@ export type CalendarEvento = {
   tipo: string | null;
   categoria: CompromissoCategoriaEvento | null;
   privado: boolean;
+  escritorioResponsavelSlug: string | null;
   local: string | null;
   cumprido: boolean;
   dispensado: boolean;
@@ -115,6 +116,7 @@ export async function carregarEventos(
       tipo: c.tipo,
       categoria: (c.categoria as CompromissoCategoriaEvento) ?? "ESCRITORIO",
       privado: c.privado,
+      escritorioResponsavelSlug: c.escritorioResponsavelSlug,
       local: c.local,
       cumprido: c.cumprido,
       dispensado: false,
@@ -146,6 +148,7 @@ export async function carregarEventos(
       tipo: p.tipo,
       categoria: "ESCRITORIO",
       privado: false,
+      escritorioResponsavelSlug: null,
       local: null,
       cumprido: p.cumprido,
       dispensado: p.dispensado,
@@ -173,6 +176,7 @@ export async function carregarEventos(
       tipo: p.tipo,
       categoria: "ESCRITORIO",
       privado: false,
+      escritorioResponsavelSlug: null,
       local: null,
       cumprido: p.cumprido,
       dispensado: p.dispensado,

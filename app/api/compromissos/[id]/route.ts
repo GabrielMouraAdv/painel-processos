@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
+import { isBancaSlug } from "@/lib/bancas";
 import {
   podeUsarCategoriasPrivadas,
   podeVerCompromisso,
@@ -87,6 +88,13 @@ export async function PATCH(
             id: session.user.id,
             email: session.user.email,
           }),
+      }),
+      ...(data.escritorioResponsavelSlug !== undefined && {
+        escritorioResponsavelSlug:
+          data.escritorioResponsavelSlug &&
+          isBancaSlug(data.escritorioResponsavelSlug)
+            ? data.escritorioResponsavelSlug
+            : null,
       }),
       ...(data.local !== undefined && {
         local: data.local?.trim() || null,
