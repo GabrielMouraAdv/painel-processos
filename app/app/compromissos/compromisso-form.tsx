@@ -3,7 +3,6 @@
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -215,7 +214,8 @@ export function CompromissoForm({
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex-1 space-y-3 overflow-y-auto px-6 py-4">
       {podeUsarPrivadas && (
         <div className="space-y-1.5">
           <Label>Categoria</Label>
@@ -442,7 +442,8 @@ export function CompromissoForm({
         </Select>
       </div>
 
-      <DialogFooter>
+      </div>
+      <div className="flex shrink-0 items-center justify-end gap-2 border-t bg-white px-6 py-3">
         {onCancel && (
           <Button
             type="button"
@@ -465,7 +466,7 @@ export function CompromissoForm({
               ? "Salvar"
               : "Cadastrar"}
         </Button>
-      </DialogFooter>
+      </div>
     </div>
   );
 }

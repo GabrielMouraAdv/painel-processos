@@ -677,8 +677,8 @@ export function CompromissosView({
           if (!o) setNovoDataInicial(null);
         }}
       >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="!flex !max-h-[calc(100vh-2rem)] w-full !max-w-2xl !flex-col !gap-0 !overflow-hidden !p-0">
+          <DialogHeader className="shrink-0 space-y-1 border-b px-6 py-4 text-left">
             <DialogTitle>Novo compromisso</DialogTitle>
             <DialogDescription>
               Crie um compromisso pessoal ou vincule a um processo.
@@ -710,8 +710,8 @@ export function CompromissosView({
         open={!!editando}
         onOpenChange={(o) => !o && setEditando(null)}
       >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="!flex !max-h-[calc(100vh-2rem)] w-full !max-w-2xl !flex-col !gap-0 !overflow-hidden !p-0">
+          <DialogHeader className="shrink-0 space-y-1 border-b px-6 py-4 text-left">
             <DialogTitle>Editar compromisso</DialogTitle>
             <DialogDescription>
               Atualize os dados do compromisso.
@@ -741,7 +741,7 @@ export function CompromissosView({
         open={!!visualizando}
         onOpenChange={(o) => !o && setVisualizando(null)}
       >
-        <DialogContent>
+        <DialogContent className="!max-h-[calc(100vh-2rem)] overflow-y-auto">
           {visualizando && (
             <VisualizarEvento
               evento={visualizando}
