@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 
 export type EventoOrigem = "compromisso" | "prazoTce" | "prazoJudicial";
 
@@ -59,7 +60,7 @@ export async function carregarEventos(
             escritorioId,
             ...(advogadoId && { advogadoId }),
             dataInicio: { gte: inicio, lte: fim },
-            OR: [{ privado: false }, { advogadoId: userId }],
+            ...filtroVisibilidadeCompromissos({ id: userId }),
           },
           include: {
             advogado: { select: { id: true, nome: true } },

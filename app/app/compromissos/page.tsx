@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
+import { podeUsarCategoriasPrivadas } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 
 import { CompromissosView } from "./compromissos-view";
@@ -11,6 +12,10 @@ export default async function CompromissosPage() {
   const escritorioId = session!.user.escritorioId;
   const userId = session!.user.id;
   const isAdmin = session!.user.role === Role.ADMIN;
+  const podePrivado = podeUsarCategoriasPrivadas({
+    id: userId,
+    email: session!.user.email,
+  });
 
   const [advogados, processosTce, processosJud] = await Promise.all([
     prisma.user.findMany({
@@ -46,6 +51,7 @@ export default async function CompromissosPage() {
       <CompromissosView
         usuario={{ id: userId, nome: session!.user.name ?? "Usuario" }}
         isAdmin={isAdmin}
+        podeUsarPrivadas={podePrivado}
         advogados={advogados}
         processosTce={processosTce.map((p) => ({
           id: p.id,

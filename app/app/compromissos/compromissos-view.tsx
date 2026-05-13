@@ -96,6 +96,7 @@ const CATEGORIAS_TODAS: CompromissoCategoriaEvento[] = [
 type Props = {
   usuario: { id: string; nome: string };
   isAdmin: boolean;
+  podeUsarPrivadas: boolean;
   advogados: AdvogadoOption[];
   processosTce: ProcessoTceOption[];
   processosJud: ProcessoJudOption[];
@@ -206,6 +207,7 @@ function eventoLink(ev: CalendarEvento): string | null {
 export function CompromissosView({
   usuario,
   isAdmin,
+  podeUsarPrivadas,
   advogados,
   processosTce,
   processosJud,
@@ -533,39 +535,43 @@ export function CompromissosView({
               </Select>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs">Categoria</Label>
-              <div className="flex items-center gap-1.5">
-                {CATEGORIAS_TODAS.map((cat) => {
-                  const ativa = filtroCategorias.includes(cat);
-                  const f = FLAGS_CATEGORIA[cat];
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => toggleCategoria(cat)}
-                      title={f.label}
-                      className={cn(
-                        "flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
-                        ativa
-                          ? "border-brand-navy bg-brand-navy/5 text-brand-navy"
-                          : "border-slate-200 bg-white text-slate-400 hover:bg-slate-50",
-                      )}
-                    >
-                      <span
+            {podeUsarPrivadas && (
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Categoria</Label>
+                <div className="flex items-center gap-1.5">
+                  {CATEGORIAS_TODAS.map((cat) => {
+                    const ativa = filtroCategorias.includes(cat);
+                    const f = FLAGS_CATEGORIA[cat];
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleCategoria(cat)}
+                        title={f.label}
                         className={cn(
-                          "inline-flex h-4 min-w-[22px] items-center justify-center rounded px-1 text-[9px] font-bold uppercase tracking-wide",
-                          ativa ? f.badgeClass : "bg-slate-200 text-slate-500",
+                          "flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
+                          ativa
+                            ? "border-brand-navy bg-brand-navy/5 text-brand-navy"
+                            : "border-slate-200 bg-white text-slate-400 hover:bg-slate-50",
                         )}
                       >
-                        {f.flag}
-                      </span>
-                      <span className="hidden sm:inline">{f.label}</span>
-                    </button>
-                  );
-                })}
+                        <span
+                          className={cn(
+                            "inline-flex h-4 min-w-[22px] items-center justify-center rounded px-1 text-[9px] font-bold uppercase tracking-wide",
+                            ativa
+                              ? f.badgeClass
+                              : "bg-slate-200 text-slate-500",
+                          )}
+                        >
+                          {f.flag}
+                        </span>
+                        <span className="hidden sm:inline">{f.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex min-w-[220px] flex-col gap-1">
               <Label className="text-xs">Advogado</Label>
@@ -683,6 +689,7 @@ export function CompromissosView({
             dataInicialIso={novoDataInicial}
             usuario={usuario}
             isAdmin={isAdmin}
+            podeUsarPrivadas={podeUsarPrivadas}
             advogados={advogados}
             processosTce={processosTce}
             processosJud={processosJud}
@@ -716,6 +723,7 @@ export function CompromissosView({
               evento={editando}
               usuario={usuario}
               isAdmin={isAdmin}
+              podeUsarPrivadas={podeUsarPrivadas}
               advogados={advogados}
               processosTce={processosTce}
               processosJud={processosJud}

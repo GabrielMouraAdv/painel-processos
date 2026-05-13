@@ -18,6 +18,7 @@ import {
   podeAcessarFinanceiro,
   STATUS_NOTA,
 } from "@/lib/financeiro";
+import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 import { fasesEmPauta } from "@/lib/processo-labels";
 
@@ -188,8 +189,11 @@ export default async function ModuloHomePage({
         escritorioId,
         advogadoId: session!.user.id,
         cumprido: false,
-        privado: false,
         dataInicio: { gte: hoje, lte: fimHoje },
+        ...filtroVisibilidadeCompromissos({
+          id: session!.user.id,
+          email: session!.user.email,
+        }),
       },
     }),
     prisma.prazo.count({
@@ -215,8 +219,11 @@ export default async function ModuloHomePage({
         escritorioId,
         advogadoId: session!.user.id,
         cumprido: false,
-        privado: false,
         dataInicio: { gte: hoje, lte: fimSemana },
+        ...filtroVisibilidadeCompromissos({
+          id: session!.user.id,
+          email: session!.user.email,
+        }),
       },
     }),
     prisma.prazo.count({

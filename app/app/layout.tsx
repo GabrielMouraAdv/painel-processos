@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
+import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 import { endOfWeekUTC, startOfWeekUTC } from "@/lib/semana";
 
@@ -109,8 +110,11 @@ export default async function AppLayout({
         escritorioId,
         advogadoId: session.user.id,
         cumprido: false,
-        privado: false,
         dataInicio: { gte: hoje, lte: fimHoje },
+        ...filtroVisibilidadeCompromissos({
+          id: session.user.id,
+          email: session.user.email,
+        }),
       },
     }),
     prisma.prazo.count({

@@ -8,6 +8,7 @@ import {
   type CalendarEvento,
   type EventoOrigem,
 } from "@/lib/compromissos";
+import { podeUsarCategoriasPrivadas } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 import { compromissoCreateSchema } from "@/lib/schemas";
 
@@ -116,8 +117,19 @@ export async function POST(req: Request) {
     }
   }
 
-  const categoria = data.categoria ?? "ESCRITORIO";
+  const podePrivado = podeUsarCategoriasPrivadas({
+    id: session.user.id,
+    email: session.user.email,
+  });
+  const categoriaSolicitada = data.categoria ?? "ESCRITORIO";
+  const categoria =
+    categoriaSolicitada !== "ESCRITORIO" && !podePrivado
+      ? "ESCRITORIO"
+      : categoriaSolicitada;
   const privado = categoria !== "ESCRITORIO";
+  // Compromissos privados sao sempre do criador, mesmo que o form tenha
+  // mandado outro advogadoId.
+  const advogadoIdFinal = privado ? session.user.id : data.advogadoId;
 
   const compromisso = await prisma.compromisso.create({
     data: {
@@ -131,7 +143,7 @@ export async function POST(req: Request) {
       categoria,
       privado,
       local: data.local?.trim() || null,
-      advogadoId: data.advogadoId,
+      advogadoId: advogadoIdFinal,
       processoTceId: data.processoTceId || null,
       processoId: data.processoId || null,
       escritorioId,
@@ -145,7 +157,7 @@ export async function POST(req: Request) {
     entidade: "Compromisso",
     entidadeId: compromisso.id,
     descricao: `${session.user.name ?? "Usuario"} criou compromisso "${data.titulo}"`,
-    detalhes: { tipo: data.tipo, dataInicio: data.dataInicio },
+    detalhes: { tipo: data.tipo, dataInicio: data.dataInicio, privado },
     ip: extrairIp(req),
   });
 

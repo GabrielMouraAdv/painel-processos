@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 
 import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
+import {
+  podeUsarCategoriasPrivadas,
+  podeVerCompromisso,
+} from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 import { compromissoUpdateSchema } from "@/lib/schemas";
 
@@ -23,10 +27,13 @@ export async function PATCH(
   }
   const escritorioId = session.user.escritorioId;
   const existing = await ensureOwned(params.id, escritorioId);
-  if (!existing) {
-    return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
-  }
-  if (existing.privado && existing.advogadoId !== session.user.id) {
+  if (
+    !existing ||
+    !podeVerCompromisso(
+      { id: session.user.id, email: session.user.email },
+      existing,
+    )
+  ) {
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
   }
 
@@ -66,8 +73,20 @@ export async function PATCH(
       ...(data.cor !== undefined && { cor: data.cor }),
       ...(data.tipo !== undefined && { tipo: data.tipo }),
       ...(data.categoria !== undefined && {
-        categoria: data.categoria,
-        privado: data.categoria !== "ESCRITORIO",
+        categoria:
+          data.categoria !== "ESCRITORIO" &&
+          !podeUsarCategoriasPrivadas({
+            id: session.user.id,
+            email: session.user.email,
+          })
+            ? "ESCRITORIO"
+            : data.categoria,
+        privado:
+          data.categoria !== "ESCRITORIO" &&
+          podeUsarCategoriasPrivadas({
+            id: session.user.id,
+            email: session.user.email,
+          }),
       }),
       ...(data.local !== undefined && {
         local: data.local?.trim() || null,
@@ -88,13 +107,21 @@ export async function PATCH(
       ? ACOES.CUMPRIR_COMPROMISSO
       : ACOES.EDITAR_COMPROMISSO;
   const verbo = data.cumprido === true ? "marcou como cumprido" : "editou";
+  const privadoFinal =
+    data.categoria !== undefined
+      ? data.categoria !== "ESCRITORIO" &&
+        podeUsarCategoriasPrivadas({
+          id: session.user.id,
+          email: session.user.email,
+        })
+      : existing.privado;
   await registrarLog({
     userId: session.user.id,
     acao,
     entidade: "Compromisso",
     entidadeId: params.id,
     descricao: `${session.user.name ?? "Usuario"} ${verbo} o compromisso "${existing.titulo}"`,
-    detalhes: data,
+    detalhes: { ...data, privado: privadoFinal },
     ip: extrairIp(req),
   });
 
@@ -110,10 +137,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
   }
   const existing = await ensureOwned(params.id, session.user.escritorioId);
-  if (!existing) {
-    return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
-  }
-  if (existing.privado && existing.advogadoId !== session.user.id) {
+  if (
+    !existing ||
+    !podeVerCompromisso(
+      { id: session.user.id, email: session.user.email },
+      existing,
+    )
+  ) {
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
   }
 
@@ -124,6 +154,7 @@ export async function DELETE(
     entidade: "Compromisso",
     entidadeId: params.id,
     descricao: `${session.user.name ?? "Usuario"} excluiu o compromisso "${existing.titulo}"`,
+    detalhes: { privado: existing.privado },
     ip: extrairIp(req),
   });
   return NextResponse.json({ ok: true });

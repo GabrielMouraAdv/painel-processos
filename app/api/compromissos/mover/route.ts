@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
+import { podeVerCompromisso } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 import { compromissoMoverSchema } from "@/lib/schemas";
 
@@ -53,10 +54,13 @@ export async function PATCH(req: Request) {
         advogadoId: true,
       },
     });
-    if (!c) {
-      return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
-    }
-    if (c.privado && c.advogadoId !== session.user.id) {
+    if (
+      !c ||
+      !podeVerCompromisso(
+        { id: session.user.id, email: session.user.email },
+        c,
+      )
+    ) {
       return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
     }
     const novaInicio = preservaHora(c.dataInicio, novaData);
@@ -76,6 +80,7 @@ export async function PATCH(req: Request) {
       entidade: "Compromisso",
       entidadeId: id,
       descricao: `${session.user.name ?? "Usuario"} moveu o compromisso "${c.titulo}" de ${ymd(c.dataInicio)} para ${ymd(novaInicio)}`,
+      detalhes: { privado: c.privado },
       ip: extrairIp(req),
     });
     return NextResponse.json({ ok: true });

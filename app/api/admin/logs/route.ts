@@ -64,8 +64,22 @@ export async function GET(req: Request) {
     }),
   ]);
 
+  // Compromissos privados sao visiveis no log apenas para o proprio autor.
+  const userIdLogado = session.user.id;
+  const logsFiltrados = logs.filter((l) => {
+    if (l.entidade !== "Compromisso") return true;
+    if (l.userId === userIdLogado) return true;
+    if (!l.detalhes) return true;
+    try {
+      const parsed = JSON.parse(l.detalhes) as { privado?: boolean };
+      return parsed?.privado !== true;
+    } catch {
+      return true;
+    }
+  });
+
   return NextResponse.json({
-    logs,
+    logs: logsFiltrados,
     total,
     page,
     pageSize: PAGE_SIZE,
