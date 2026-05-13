@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import { AlterarSenhaButton } from "./alterar-senha-button";
+import { TelegramSection } from "./telegram-section";
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Administrador",
@@ -30,6 +31,11 @@ export default async function PerfilPage() {
       role: true,
       createdAt: true,
       escritorio: { select: { nome: true } },
+      telegramAtivo: true,
+      telegramBotUsername: true,
+      telegramReceberLembreteDiario: true,
+      telegramHorarioLembreteManha: true,
+      telegramHorarioLembreteTarde: true,
     },
   });
   if (!user) redirect("/login");
@@ -102,6 +108,16 @@ export default async function PerfilPage() {
           <AlterarSenhaButton />
         </CardContent>
       </Card>
+
+      <TelegramSection
+        initial={{
+          telegramAtivo: user.telegramAtivo,
+          telegramBotUsername: user.telegramBotUsername,
+          telegramReceberLembreteDiario: user.telegramReceberLembreteDiario,
+          telegramHorarioLembreteManha: user.telegramHorarioLembreteManha,
+          telegramHorarioLembreteTarde: user.telegramHorarioLembreteTarde,
+        }}
+      />
     </div>
   );
 }

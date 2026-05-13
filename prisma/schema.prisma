@@ -113,6 +113,14 @@ model User {
   escritorioId String
   createdAt    DateTime @default(now())
 
+  telegramBotToken              String?  @db.Text
+  telegramBotUsername           String?
+  telegramChatId                String?
+  telegramAtivo                 Boolean  @default(false)
+  telegramReceberLembreteDiario Boolean  @default(true)
+  telegramHorarioLembreteManha  String?  @default("07:00")
+  telegramHorarioLembreteTarde  String?  @default("18:00")
+
   escritorio            Escritorio  @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
   processosComoAdvogado Processo[]  @relation("ProcessoAdvogado")
   prazosComoResp        Prazo[]     @relation("PrazoAdvogadoResp")
@@ -125,6 +133,7 @@ model User {
   compromissos          Compromisso[]  @relation("CompromissoAdvogado")
 
   @@index([escritorioId])
+  @@index([telegramAtivo])
 }
 
 model LogAuditoria {
