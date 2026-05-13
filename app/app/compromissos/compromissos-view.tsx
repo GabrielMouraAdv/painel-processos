@@ -42,7 +42,10 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 import { CompromissoForm } from "./compromisso-form";
-import { type CalendarEvento } from "./types";
+import {
+  type CalendarEvento,
+  type CompromissoCategoriaEvento,
+} from "./types";
 
 export type AdvogadoOption = { id: string; nome: string };
 export type ProcessoTceOption = {
@@ -59,6 +62,36 @@ export type ProcessoJudOption = {
 type ViewMode = "mes" | "semana" | "dia" | "lista";
 
 type FiltroTipo = "todos" | "prazoTce" | "prazoJudicial" | "compromisso";
+
+type FlagCategoria = {
+  flag: string;
+  label: string;
+  badgeClass: string;
+};
+
+const FLAGS_CATEGORIA: Record<CompromissoCategoriaEvento, FlagCategoria> = {
+  ESCRITORIO: {
+    flag: "PRC",
+    label: "Escritorio",
+    badgeClass: "bg-blue-600 text-white",
+  },
+  PROFISSIONAL_PRIVADO: {
+    flag: "GM",
+    label: "Profissional Privado",
+    badgeClass: "bg-purple-600 text-white",
+  },
+  PESSOAL: {
+    flag: "P",
+    label: "Pessoal",
+    badgeClass: "bg-emerald-600 text-white",
+  },
+};
+
+const CATEGORIAS_TODAS: CompromissoCategoriaEvento[] = [
+  "ESCRITORIO",
+  "PROFISSIONAL_PRIVADO",
+  "PESSOAL",
+];
 
 type Props = {
   usuario: { id: string; nome: string };
@@ -183,12 +216,36 @@ export function CompromissosView({
   const [view, setView] = React.useState<ViewMode>("mes");
   const [referencia, setReferencia] = React.useState(() => startOfDay(new Date()));
   const [filtroTipo, setFiltroTipo] = React.useState<FiltroTipo>("todos");
+  const [filtroCategorias, setFiltroCategorias] = React.useState<
+    CompromissoCategoriaEvento[]
+  >([...CATEGORIAS_TODAS]);
   const [filtroAdvogado, setFiltroAdvogado] = React.useState<string>(
     isAdmin ? "__todos__" : usuario.id,
   );
 
   const [eventos, setEventos] = React.useState<CalendarEvento[]>([]);
   const [loading, setLoading] = React.useState(false);
+
+  const eventosFiltrados = React.useMemo(() => {
+    if (filtroCategorias.length === CATEGORIAS_TODAS.length) return eventos;
+    return eventos.filter((ev) => {
+      if (ev.origem !== "compromisso") {
+        return filtroCategorias.includes("ESCRITORIO");
+      }
+      const cat = ev.categoria ?? "ESCRITORIO";
+      return filtroCategorias.includes(cat);
+    });
+  }, [eventos, filtroCategorias]);
+
+  function toggleCategoria(cat: CompromissoCategoriaEvento) {
+    setFiltroCategorias((prev) => {
+      if (prev.includes(cat)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((c) => c !== cat);
+      }
+      return [...prev, cat];
+    });
+  }
 
   const [novoOpen, setNovoOpen] = React.useState(false);
   const [novoDataInicial, setNovoDataInicial] = React.useState<string | null>(
@@ -476,6 +533,40 @@ export function CompromissosView({
               </Select>
             </div>
 
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Categoria</Label>
+              <div className="flex items-center gap-1.5">
+                {CATEGORIAS_TODAS.map((cat) => {
+                  const ativa = filtroCategorias.includes(cat);
+                  const f = FLAGS_CATEGORIA[cat];
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => toggleCategoria(cat)}
+                      title={f.label}
+                      className={cn(
+                        "flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
+                        ativa
+                          ? "border-brand-navy bg-brand-navy/5 text-brand-navy"
+                          : "border-slate-200 bg-white text-slate-400 hover:bg-slate-50",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "inline-flex h-4 min-w-[22px] items-center justify-center rounded px-1 text-[9px] font-bold uppercase tracking-wide",
+                          ativa ? f.badgeClass : "bg-slate-200 text-slate-500",
+                        )}
+                      >
+                        {f.flag}
+                      </span>
+                      <span className="hidden sm:inline">{f.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="flex min-w-[220px] flex-col gap-1">
               <Label className="text-xs">Advogado</Label>
               <Select
@@ -542,7 +633,7 @@ export function CompromissosView({
           <CalendarioMensal
             referencia={referencia}
             hoje={hoje}
-            eventos={eventos}
+            eventos={eventosFiltrados}
             onClickDia={(iso) => abrirNovoEm(iso)}
             onClickEvento={setVisualizando}
           />
@@ -551,7 +642,7 @@ export function CompromissosView({
           <CalendarioSemanal
             referencia={referencia}
             hoje={hoje}
-            eventos={eventos}
+            eventos={eventosFiltrados}
             onClickDia={(iso) => abrirNovoEm(iso)}
             onClickEvento={setVisualizando}
           />
@@ -559,14 +650,14 @@ export function CompromissosView({
         {view === "dia" && (
           <CalendarioDia
             referencia={referencia}
-            eventos={eventos}
+            eventos={eventosFiltrados}
             onClickEvento={setVisualizando}
             onClickHora={(iso) => abrirNovoEm(iso)}
           />
         )}
         {view === "lista" && (
           <ListaEventos
-            eventos={eventos}
+            eventos={eventosFiltrados}
             hoje={hoje}
             onClickEvento={setVisualizando}
           />
@@ -894,6 +985,16 @@ function EventoBadge({
         ev.cumprido && "opacity-60 line-through",
       )}
     >
+      {ev.origem === "compromisso" && ev.categoria && (
+        <span
+          className={cn(
+            "mr-1 inline-flex h-3.5 min-w-[16px] items-center justify-center rounded px-0.5 text-[8px] font-bold uppercase tracking-wide",
+            FLAGS_CATEGORIA[ev.categoria].badgeClass,
+          )}
+        >
+          {FLAGS_CATEGORIA[ev.categoria].flag}
+        </span>
+      )}
       {!ev.advogado && (
         <span className="mr-1 rounded bg-amber-200 px-0.5 text-[8px] font-bold uppercase text-amber-900">
           SR
@@ -1131,6 +1232,16 @@ function ListaEventos({
                           {formatHora(ev.dataInicio)}
                         </span>
                       )}
+                      {ev.origem === "compromisso" && ev.categoria && (
+                        <span
+                          className={cn(
+                            "inline-flex h-4 min-w-[22px] items-center justify-center rounded px-1 text-[9px] font-bold uppercase tracking-wide",
+                            FLAGS_CATEGORIA[ev.categoria].badgeClass,
+                          )}
+                        >
+                          {FLAGS_CATEGORIA[ev.categoria].flag}
+                        </span>
+                      )}
                       <span className={cn(ev.cumprido && "line-through")}>
                         {ev.titulo}
                       </span>
@@ -1175,10 +1286,23 @@ function VisualizarEvento({
             className="h-4 w-4"
             style={{ color: evento.cor ?? COR_COMPROMISSO_DEFAULT }}
           />
+          {evento.origem === "compromisso" && evento.categoria && (
+            <span
+              className={cn(
+                "inline-flex h-5 min-w-[26px] items-center justify-center rounded px-1 text-[10px] font-bold uppercase tracking-wide",
+                FLAGS_CATEGORIA[evento.categoria].badgeClass,
+              )}
+            >
+              {FLAGS_CATEGORIA[evento.categoria].flag}
+            </span>
+          )}
           {evento.titulo}
         </DialogTitle>
         <DialogDescription>
           {origemLabel}
+          {evento.origem === "compromisso" && evento.categoria
+            ? ` · ${FLAGS_CATEGORIA[evento.categoria].label}`
+            : ""}
           {evento.tipo ? ` · ${evento.tipo}` : ""}
         </DialogDescription>
       </DialogHeader>

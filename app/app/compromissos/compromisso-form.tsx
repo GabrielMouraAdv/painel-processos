@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
-import type { CalendarEvento } from "./types";
+import type { CalendarEvento, CompromissoCategoriaEvento } from "./types";
 import type {
   AdvogadoOption,
   ProcessoTceOption,
@@ -85,6 +85,10 @@ export function CompromissoForm({
 
   const [titulo, setTitulo] = React.useState(evento?.titulo ?? "");
   const [tipo, setTipo] = React.useState<string>(evento?.tipo ?? "REUNIAO");
+  const [categoria, setCategoria] =
+    React.useState<CompromissoCategoriaEvento>(
+      evento?.categoria ?? "ESCRITORIO",
+    );
   const [dateInicio, setDateInicio] = React.useState(inicial.date);
   const [horaInicio, setHoraInicio] = React.useState(inicial.time || "09:00");
   const [dateFim, setDateFim] = React.useState(fim.date);
@@ -139,6 +143,7 @@ export function CompromissoForm({
       diaInteiro,
       cor,
       tipo,
+      categoria,
       local: local.trim() || null,
       advogadoId,
       processoTceId: vinculo === "tce" ? processoTceId || null : null,
@@ -177,8 +182,72 @@ export function CompromissoForm({
     }
   }
 
+  const categoriaOpcoes: {
+    value: CompromissoCategoriaEvento;
+    label: string;
+    flag: string;
+    flagClass: string;
+  }[] = [
+    {
+      value: "ESCRITORIO",
+      label: "Escritorio",
+      flag: "PRC",
+      flagClass: "bg-blue-600 text-white",
+    },
+    {
+      value: "PROFISSIONAL_PRIVADO",
+      label: "Profissional Privado (GM)",
+      flag: "GM",
+      flagClass: "bg-purple-600 text-white",
+    },
+    {
+      value: "PESSOAL",
+      label: "Pessoal",
+      flag: "P",
+      flagClass: "bg-emerald-600 text-white",
+    },
+  ];
+
   return (
     <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label>Categoria</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {categoriaOpcoes.map((opt) => {
+            const ativo = categoria === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setCategoria(opt.value)}
+                className={
+                  "flex items-center gap-2 rounded-md border px-2.5 py-2 text-left text-xs font-medium transition-colors " +
+                  (ativo
+                    ? "border-brand-navy bg-brand-navy/5 text-brand-navy"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50")
+                }
+              >
+                <span
+                  className={
+                    "inline-flex h-5 min-w-[26px] items-center justify-center rounded px-1 text-[9px] font-bold uppercase tracking-wide " +
+                    opt.flagClass
+                  }
+                >
+                  {opt.flag}
+                </span>
+                <span className="leading-tight">{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {categoria !== "ESCRITORIO" && (
+          <p className="text-[11px] text-amber-700">
+            Compromisso privado: visivel apenas para voce e nao entra em
+            relatorios do escritorio.
+          </p>
+        )}
+      </div>
+
       <div className="space-y-1.5">
         <Label>
           Titulo <span className="text-red-600">*</span>

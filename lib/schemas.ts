@@ -208,6 +208,13 @@ export const COMPROMISSO_TIPOS = [
 ] as const;
 export type CompromissoTipo = (typeof COMPROMISSO_TIPOS)[number];
 
+export const COMPROMISSO_CATEGORIAS = [
+  "ESCRITORIO",
+  "PROFISSIONAL_PRIVADO",
+  "PESSOAL",
+] as const;
+export type CompromissoCategoria = (typeof COMPROMISSO_CATEGORIAS)[number];
+
 const compromissoDateTime = z
   .union([z.string(), z.date()])
   .transform((v) => (v instanceof Date ? v : new Date(v)))
@@ -232,6 +239,7 @@ export const compromissoCreateSchema = z.object({
     .optional()
     .nullable(),
   tipo: z.enum(COMPROMISSO_TIPOS),
+  categoria: z.enum(COMPROMISSO_CATEGORIAS).default("ESCRITORIO"),
   local: z.string().max(200).optional().nullable(),
   advogadoId: z.string().min(1, "Selecione o advogado responsavel"),
   processoTceId: z.string().optional().nullable(),

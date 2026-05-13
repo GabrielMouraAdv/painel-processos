@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 
 export type EventoOrigem = "compromisso" | "prazoTce" | "prazoJudicial";
 
+export type CompromissoCategoriaEvento =
+  | "ESCRITORIO"
+  | "PROFISSIONAL_PRIVADO"
+  | "PESSOAL";
+
 export type CalendarEvento = {
   id: string;
   origem: EventoOrigem;
@@ -12,6 +17,8 @@ export type CalendarEvento = {
   diaInteiro: boolean;
   cor: string | null;
   tipo: string | null;
+  categoria: CompromissoCategoriaEvento | null;
+  privado: boolean;
   local: string | null;
   cumprido: boolean;
   dispensado: boolean;
@@ -33,12 +40,13 @@ type Filtros = {
   fim: Date;
   advogadoId?: string;
   origens?: EventoOrigem[];
+  userId: string;
 };
 
 export async function carregarEventos(
   filtros: Filtros,
 ): Promise<CalendarEvento[]> {
-  const { escritorioId, inicio, fim, advogadoId, origens } = filtros;
+  const { escritorioId, inicio, fim, advogadoId, origens, userId } = filtros;
 
   const incluirCompromissos = !origens || origens.includes("compromisso");
   const incluirPrazoTce = !origens || origens.includes("prazoTce");
@@ -51,6 +59,7 @@ export async function carregarEventos(
             escritorioId,
             ...(advogadoId && { advogadoId }),
             dataInicio: { gte: inicio, lte: fim },
+            OR: [{ privado: false }, { advogadoId: userId }],
           },
           include: {
             advogado: { select: { id: true, nome: true } },
@@ -103,6 +112,8 @@ export async function carregarEventos(
       diaInteiro: c.diaInteiro,
       cor: c.cor ?? COR_COMPROMISSO_DEFAULT,
       tipo: c.tipo,
+      categoria: (c.categoria as CompromissoCategoriaEvento) ?? "ESCRITORIO",
+      privado: c.privado,
       local: c.local,
       cumprido: c.cumprido,
       dispensado: false,
@@ -132,6 +143,8 @@ export async function carregarEventos(
       diaInteiro: true,
       cor: COR_PRAZO_TCE,
       tipo: p.tipo,
+      categoria: "ESCRITORIO",
+      privado: false,
       local: null,
       cumprido: p.cumprido,
       dispensado: p.dispensado,
@@ -157,6 +170,8 @@ export async function carregarEventos(
       diaInteiro: !p.hora,
       cor: COR_PRAZO_JUDICIAL,
       tipo: p.tipo,
+      categoria: "ESCRITORIO",
+      privado: false,
       local: null,
       cumprido: p.cumprido,
       dispensado: p.dispensado,

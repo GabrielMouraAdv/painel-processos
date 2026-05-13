@@ -9,7 +9,7 @@ import { compromissoUpdateSchema } from "@/lib/schemas";
 async function ensureOwned(id: string, escritorioId: string) {
   return prisma.compromisso.findFirst({
     where: { id, escritorioId },
-    select: { id: true, titulo: true },
+    select: { id: true, titulo: true, privado: true, advogadoId: true },
   });
 }
 
@@ -24,6 +24,9 @@ export async function PATCH(
   const escritorioId = session.user.escritorioId;
   const existing = await ensureOwned(params.id, escritorioId);
   if (!existing) {
+    return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
+  }
+  if (existing.privado && existing.advogadoId !== session.user.id) {
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
   }
 
@@ -62,6 +65,10 @@ export async function PATCH(
       ...(data.diaInteiro !== undefined && { diaInteiro: data.diaInteiro }),
       ...(data.cor !== undefined && { cor: data.cor }),
       ...(data.tipo !== undefined && { tipo: data.tipo }),
+      ...(data.categoria !== undefined && {
+        categoria: data.categoria,
+        privado: data.categoria !== "ESCRITORIO",
+      }),
       ...(data.local !== undefined && {
         local: data.local?.trim() || null,
       }),
@@ -104,6 +111,9 @@ export async function DELETE(
   }
   const existing = await ensureOwned(params.id, session.user.escritorioId);
   if (!existing) {
+    return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
+  }
+  if (existing.privado && existing.advogadoId !== session.user.id) {
     return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
   }
 

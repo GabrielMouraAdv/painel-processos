@@ -58,6 +58,7 @@ export async function GET(req: Request): Promise<NextResponse<CalendarEvento[] |
     fim,
     advogadoId,
     origens,
+    userId: session.user.id,
   });
   return NextResponse.json(eventos);
 }
@@ -115,6 +116,9 @@ export async function POST(req: Request) {
     }
   }
 
+  const categoria = data.categoria ?? "ESCRITORIO";
+  const privado = categoria !== "ESCRITORIO";
+
   const compromisso = await prisma.compromisso.create({
     data: {
       titulo: data.titulo.trim(),
@@ -124,6 +128,8 @@ export async function POST(req: Request) {
       diaInteiro: data.diaInteiro,
       cor: data.cor ?? null,
       tipo: data.tipo,
+      categoria,
+      privado,
       local: data.local?.trim() || null,
       advogadoId: data.advogadoId,
       processoTceId: data.processoTceId || null,

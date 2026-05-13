@@ -109,6 +109,7 @@ export default async function AppLayout({
         escritorioId,
         advogadoId: session.user.id,
         cumprido: false,
+        privado: false,
         dataInicio: { gte: hoje, lte: fimHoje },
       },
     }),

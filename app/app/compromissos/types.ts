@@ -1,5 +1,10 @@
 export type EventoOrigem = "compromisso" | "prazoTce" | "prazoJudicial";
 
+export type CompromissoCategoriaEvento =
+  | "ESCRITORIO"
+  | "PROFISSIONAL_PRIVADO"
+  | "PESSOAL";
+
 export type CalendarEvento = {
   id: string;
   origem: EventoOrigem;
@@ -10,6 +15,8 @@ export type CalendarEvento = {
   diaInteiro: boolean;
   cor: string | null;
   tipo: string | null;
+  categoria: CompromissoCategoriaEvento | null;
+  privado: boolean;
   local: string | null;
   cumprido: boolean;
   dispensado: boolean;

@@ -881,6 +881,8 @@ model Compromisso {
   diaInteiro    Boolean   @default(false)
   cor           String?
   tipo          String
+  categoria     String    @default("ESCRITORIO")
+  privado       Boolean   @default(false)
   local         String?
   cumprido      Boolean   @default(false)
   advogadoId    String
@@ -900,4 +902,6 @@ model Compromisso {
   @@index([dataInicio])
   @@index([processoTceId])
   @@index([processoId])
+  @@index([categoria])
+  @@index([privado])
 }

@@ -44,9 +44,19 @@ export async function PATCH(req: Request) {
   if (origem === "compromisso") {
     const c = await prisma.compromisso.findFirst({
       where: { id, escritorioId },
-      select: { id: true, titulo: true, dataInicio: true, dataFim: true },
+      select: {
+        id: true,
+        titulo: true,
+        dataInicio: true,
+        dataFim: true,
+        privado: true,
+        advogadoId: true,
+      },
     });
     if (!c) {
+      return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
+    }
+    if (c.privado && c.advogadoId !== session.user.id) {
       return NextResponse.json({ error: "Nao encontrado" }, { status: 404 });
     }
     const novaInicio = preservaHora(c.dataInicio, novaData);
