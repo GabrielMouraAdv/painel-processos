@@ -6,9 +6,10 @@ import { buscarPublicacaoNoDJEN, ehProcessoTrabalhista, montarUpdateDjen } from 
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-// O cliente DJEN pode retentar ate 3x em 429 esperando o reset do rate-limit
-// (ate 30s por tentativa). Damos folga para esses retries terminarem.
-export const maxDuration = 120;
+// O cliente DJEN tem rate-limiter preventivo + cooldown global em 429
+// (ate ~65s por incidente). Damos folga para uma chamada esperar slot
+// ou um cooldown completo sem estourar o timeout do edge runtime.
+export const maxDuration = 300;
 
 export async function POST(
   _req: Request,

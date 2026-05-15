@@ -206,8 +206,7 @@ export async function verificarNovasMovimentacoes(
 
       // Para movimentacoes novas em processos NAO trabalhistas, busca inteiro
       // teor no DJEN. Falhas/timeouts nao quebram o cron.
-      // DJEN rate-limita em 20 req/min — espacamos 3s entre chamadas para
-      // ficar abaixo do limite e evitar 429s em rajada.
+      // O rate-limiter interno do djen-client cuida do espacamento (20 req/min).
       if (criada && !trabalhista) {
         try {
           const djen = await buscarPublicacaoNoDJEN(processo.numero, data);
@@ -221,7 +220,6 @@ export async function verificarNovasMovimentacoes(
             `[djen] erro ao salvar inteiro teor para mov ${criada.id}: ${errorMessage(err)}`,
           );
         }
-        await new Promise((resolve) => setTimeout(resolve, 3_000));
 
         // TODO(telegram): quando o bot enviar resumo de nova movimentacao, se
         // `update.conteudoIntegral` estiver disponivel, incluir um trecho do

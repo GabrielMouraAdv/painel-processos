@@ -10,13 +10,113 @@
  */
 
 const DJEN_ENDPOINT = "https://comunicaapi.pje.jus.br/api/v1/comunicacao";
-const DJEN_TIMEOUT_MS = 5000;
+const DJEN_TIMEOUT_MS = 8_000;
 const JANELA_DIAS = 3;
 const TAMANHO_MAXIMO = 50 * 1024; // 50KB
-// DJEN aplica rate-limit (20 req/min) e responde 429 com cabecalhos
-// `Retry-After` e `x-ratelimit-reset`. Retentamos ate este teto.
-const DJEN_MAX_TENTATIVAS = 3;
-const DJEN_ESPERA_MAX_MS = 30_000;
+
+// ============================================================================
+// Rate limit + cooldown
+// ============================================================================
+// O DJEN aplica rate-limit por IP. Observacao empirica:
+//   x-ratelimit-limit: 20 (por minuto)
+// Quando estouramos o limite, o servidor entra em "cooldown" e:
+//   - mantem 429 por um tempo que excede 1 janela (~1 min);
+//   - devolve Retry-After com valor negativo (ex.: -34) e x-ratelimit-reset
+//     ja no passado, ou seja, os cabecalhos NAO sao confiaveis para decidir
+//     o backoff.
+//
+// Estrategia em duas camadas:
+//
+//   (a) Preventiva — janela deslizante em memoria limitada a `MAX_REQ_POR_MIN`,
+//       deixando margem sobre o limite oficial. Toda chamada espera um slot
+//       antes de tocar o fetch. Evita o 429 acontecer.
+//
+//   (b) Reativa — se mesmo assim vier 429 (rajada concorrente, varias
+//       instancias, etc.), entramos em "modo cooldown" global por
+//       `COOLDOWN_MS`: novas chamadas esperam o fim do cooldown antes de
+//       tentar de novo. Cada 429 estende o cooldown.
+const MAX_REQ_POR_MIN = 16;
+const JANELA_MS = 60_000;
+const COOLDOWN_MS = 65_000;
+const DJEN_MAX_TENTATIVAS = 4;
+
+const reqTimestamps: number[] = [];
+let cooldownAte = 0;
+
+function dormir(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function aguardarSlotDjen(): Promise<void> {
+  // 1) Cooldown global ativo? Espera ele acabar.
+  while (Date.now() < cooldownAte) {
+    await dormir(Math.max(cooldownAte - Date.now() + 50, 100));
+  }
+  // 2) Janela deslizante.
+  while (true) {
+    const agora = Date.now();
+    while (reqTimestamps.length > 0 && reqTimestamps[0] < agora - JANELA_MS) {
+      reqTimestamps.shift();
+    }
+    if (reqTimestamps.length < MAX_REQ_POR_MIN) {
+      reqTimestamps.push(agora);
+      return;
+    }
+    const espera = reqTimestamps[0] + JANELA_MS - agora + 100;
+    await dormir(Math.max(espera, 100));
+  }
+}
+
+function entrarEmCooldown(): void {
+  cooldownAte = Math.max(cooldownAte, Date.now() + COOLDOWN_MS);
+  // Tambem zera a janela: o servidor nao confia nos timestamps locais.
+  reqTimestamps.length = 0;
+}
+
+// ============================================================================
+// Cache de resultados (em memoria)
+// ============================================================================
+// Mesma (numero, data) consultada repetidamente nao precisa bater no DJEN.
+// Cacheia "encontrado" indefinidamente (o conteudo do diario nao muda) e
+// "INDISPONIVEL" por 30 minutos (o diario pode aparecer depois). Nao cacheia
+// ERRO_BUSCA — precisa retentar.
+const CACHE_TTL_INDISP_MS = 30 * 60_000;
+const cacheResultados = new Map<
+  string,
+  { resultado: BuscaPublicacaoResultado; expira: number }
+>();
+
+function chaveCache(numero: string, data: Date): string {
+  return `${numero.replace(/\D+/g, "")}|${data.toISOString().slice(0, 10)}`;
+}
+
+function cacheGet(numero: string, data: Date): BuscaPublicacaoResultado | null {
+  const v = cacheResultados.get(chaveCache(numero, data));
+  if (!v) return null;
+  if (Date.now() > v.expira) {
+    cacheResultados.delete(chaveCache(numero, data));
+    return null;
+  }
+  return v.resultado;
+}
+
+function cacheSet(
+  numero: string,
+  data: Date,
+  resultado: BuscaPublicacaoResultado,
+): void {
+  if (resultado.encontrado) {
+    cacheResultados.set(chaveCache(numero, data), {
+      resultado,
+      expira: Number.MAX_SAFE_INTEGER,
+    });
+  } else if (resultado.motivo === "INDISPONIVEL") {
+    cacheResultados.set(chaveCache(numero, data), {
+      resultado,
+      expira: Date.now() + CACHE_TTL_INDISP_MS,
+    });
+  }
+}
 
 export type BuscaPublicacaoResultado =
   | {
@@ -115,35 +215,15 @@ function extrairId(item: DjenItem): string | null {
   return item.id != null ? String(item.id) : null;
 }
 
-function dormir(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Calcula quanto esperar antes de tentar de novo apos um 429.
- * Le os cabecalhos `Retry-After` (segundos) e `x-ratelimit-reset` (epoch
- * seconds). Se nenhum estiver presente ou for invalido, usa backoff fixo
- * proporcional ao numero da tentativa.
- */
-function calcularEspera(res: Response, tentativa: number): number {
-  const retryAfter = Number(res.headers.get("retry-after"));
-  if (Number.isFinite(retryAfter) && retryAfter > 0) {
-    return Math.min(retryAfter * 1000, DJEN_ESPERA_MAX_MS);
-  }
-  const reset = Number(res.headers.get("x-ratelimit-reset"));
-  if (Number.isFinite(reset) && reset > 0) {
-    const delta = reset * 1000 - Date.now();
-    if (delta > 0) return Math.min(delta, DJEN_ESPERA_MAX_MS);
-  }
-  // Backoff fixo: 2s, 4s, 8s ...
-  return Math.min(2_000 * 2 ** (tentativa - 1), DJEN_ESPERA_MAX_MS);
-}
-
 /**
  * Busca o inteiro teor de uma publicacao no DJEN, dado o numero do processo e
  * a data aproximada do andamento. Busca em janela de +/- 3 dias.
  *
  * Retorna o primeiro match que bater na janela de data.
+ *
+ * Internamente, respeita um rate-limiter (janela deslizante) e um cooldown
+ * global em caso de 429 — o servidor publico do DJEN limita 20 req/min e nao
+ * envia cabecalhos confiaveis quando estoura o limite.
  */
 export async function buscarPublicacaoNoDJEN(
   numeroProcesso: string,
@@ -157,17 +237,20 @@ export async function buscarPublicacaoNoDJEN(
   }
 
   const numero = normalizarNumero(numeroProcesso);
-  const { inicio, fim } = janelaDatas(dataAndamento);
 
+  // Cache em memoria evita bater na API para a mesma chave (numero, data) em
+  // curto intervalo (UI re-renderiza, cron passa de novo, etc.).
+  const cached = cacheGet(numero, dataAndamento);
+  if (cached) return cached;
+
+  const { inicio, fim } = janelaDatas(dataAndamento);
   const params = new URLSearchParams({
     numeroProcesso: numero,
     dataDisponibilizacaoInicio: inicio,
     dataDisponibilizacaoFim: fim,
     itensPorPagina: "20",
   });
-
   const url = `${DJEN_ENDPOINT}?${params.toString()}`;
-  console.log(`[djen] GET ${url}`);
 
   let ultimoErro: { motivo: "ERRO_BUSCA"; erro: string } = {
     motivo: "ERRO_BUSCA",
@@ -175,10 +258,13 @@ export async function buscarPublicacaoNoDJEN(
   };
 
   for (let tentativa = 1; tentativa <= DJEN_MAX_TENTATIVAS; tentativa++) {
+    await aguardarSlotDjen();
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), DJEN_TIMEOUT_MS);
 
     try {
+      console.log(`[djen] GET ${url} (tentativa ${tentativa})`);
       const res = await fetch(url, {
         method: "GET",
         headers: { Accept: "application/json" },
@@ -187,15 +273,12 @@ export async function buscarPublicacaoNoDJEN(
       });
 
       if (res.status === 429) {
-        const espera = calcularEspera(res, tentativa);
+        entrarEmCooldown();
         console.warn(
-          `[djen] HTTP 429 para ${numeroProcesso} (tentativa ${tentativa}/${DJEN_MAX_TENTATIVAS}), aguardando ${espera}ms`,
+          `[djen] HTTP 429 para ${numeroProcesso} (tentativa ${tentativa}/${DJEN_MAX_TENTATIVAS}); cooldown de ${COOLDOWN_MS}ms ativado`,
         );
         ultimoErro = { motivo: "ERRO_BUSCA", erro: "HTTP 429 (rate-limit)" };
-        if (tentativa < DJEN_MAX_TENTATIVAS) {
-          await dormir(espera);
-          continue;
-        }
+        if (tentativa < DJEN_MAX_TENTATIVAS) continue;
         return { encontrado: false, ...ultimoErro };
       }
 
@@ -212,7 +295,12 @@ export async function buscarPublicacaoNoDJEN(
       const items = json.items ?? json.data ?? json.result ?? [];
 
       if (!Array.isArray(items) || items.length === 0) {
-        return { encontrado: false, motivo: "INDISPONIVEL" };
+        const resultado: BuscaPublicacaoResultado = {
+          encontrado: false,
+          motivo: "INDISPONIVEL",
+        };
+        cacheSet(numero, dataAndamento, resultado);
+        return resultado;
       }
 
       // ordena por data (mais proxima do andamento primeiro) e pega a primeira nao-vazia
@@ -226,27 +314,36 @@ export async function buscarPublicacaoNoDJEN(
       for (const it of ordenados) {
         const conteudo = extrairConteudo(it);
         if (conteudo.length === 0) continue;
-        return {
+        const resultado: BuscaPublicacaoResultado = {
           encontrado: true,
           conteudo: truncarSeNecessario(conteudo),
           linkOficial: extrairLink(it),
           idPublicacao: extrairId(it),
           dataPublicacao: extrairData(it),
         };
+        cacheSet(numero, dataAndamento, resultado);
+        return resultado;
       }
 
-      return { encontrado: false, motivo: "INDISPONIVEL" };
+      const resultado: BuscaPublicacaoResultado = {
+        encontrado: false,
+        motivo: "INDISPONIVEL",
+      };
+      cacheSet(numero, dataAndamento, resultado);
+      return resultado;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       const isAbort = err instanceof Error && err.name === "AbortError";
       console.warn(
         `[djen] erro buscando ${numeroProcesso}: ${isAbort ? "timeout" : msg}`,
       );
-      return {
-        encontrado: false,
+      // Em timeout ou erro de rede, retentamos se ainda houver tentativas.
+      ultimoErro = {
         motivo: "ERRO_BUSCA",
         erro: isAbort ? "timeout" : msg,
       };
+      if (tentativa < DJEN_MAX_TENTATIVAS) continue;
+      return { encontrado: false, ...ultimoErro };
     } finally {
       clearTimeout(timer);
     }
