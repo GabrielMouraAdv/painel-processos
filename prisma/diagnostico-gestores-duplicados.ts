@@ -93,7 +93,7 @@ function classificar(a: GestorRow, b: GestorRow): Par | null {
     // Se houver pelo menos 1 token do meio compartilhado, mais forte
     const meioA = new Set(tokensA.slice(1, -1));
     const meioB = new Set(tokensB.slice(1, -1));
-    const compartilhamMeio = [...meioA].some((t) => meioB.has(t));
+    const compartilhamMeio = Array.from(meioA).some((t) => meioB.has(t));
     return {
       a,
       b,
