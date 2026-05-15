@@ -6,6 +6,9 @@ import { buscarPublicacaoNoDJEN, ehProcessoTrabalhista, montarUpdateDjen } from 
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+// O cliente DJEN pode retentar ate 3x em 429 esperando o reset do rate-limit
+// (ate 30s por tentativa). Damos folga para esses retries terminarem.
+export const maxDuration = 120;
 
 export async function POST(
   _req: Request,

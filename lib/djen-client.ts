@@ -13,6 +13,10 @@ const DJEN_ENDPOINT = "https://comunicaapi.pje.jus.br/api/v1/comunicacao";
 const DJEN_TIMEOUT_MS = 5000;
 const JANELA_DIAS = 3;
 const TAMANHO_MAXIMO = 50 * 1024; // 50KB
+// DJEN aplica rate-limit (20 req/min) e responde 429 com cabecalhos
+// `Retry-After` e `x-ratelimit-reset`. Retentamos ate este teto.
+const DJEN_MAX_TENTATIVAS = 3;
+const DJEN_ESPERA_MAX_MS = 30_000;
 
 export type BuscaPublicacaoResultado =
   | {
@@ -111,6 +115,30 @@ function extrairId(item: DjenItem): string | null {
   return item.id != null ? String(item.id) : null;
 }
 
+function dormir(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Calcula quanto esperar antes de tentar de novo apos um 429.
+ * Le os cabecalhos `Retry-After` (segundos) e `x-ratelimit-reset` (epoch
+ * seconds). Se nenhum estiver presente ou for invalido, usa backoff fixo
+ * proporcional ao numero da tentativa.
+ */
+function calcularEspera(res: Response, tentativa: number): number {
+  const retryAfter = Number(res.headers.get("retry-after"));
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Math.min(retryAfter * 1000, DJEN_ESPERA_MAX_MS);
+  }
+  const reset = Number(res.headers.get("x-ratelimit-reset"));
+  if (Number.isFinite(reset) && reset > 0) {
+    const delta = reset * 1000 - Date.now();
+    if (delta > 0) return Math.min(delta, DJEN_ESPERA_MAX_MS);
+  }
+  // Backoff fixo: 2s, 4s, 8s ...
+  return Math.min(2_000 * 2 ** (tentativa - 1), DJEN_ESPERA_MAX_MS);
+}
+
 /**
  * Busca o inteiro teor de uma publicacao no DJEN, dado o numero do processo e
  * a data aproximada do andamento. Busca em janela de +/- 3 dias.
@@ -141,68 +169,90 @@ export async function buscarPublicacaoNoDJEN(
   const url = `${DJEN_ENDPOINT}?${params.toString()}`;
   console.log(`[djen] GET ${url}`);
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), DJEN_TIMEOUT_MS);
+  let ultimoErro: { motivo: "ERRO_BUSCA"; erro: string } = {
+    motivo: "ERRO_BUSCA",
+    erro: "sem tentativas",
+  };
 
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-      cache: "no-store",
-    });
+  for (let tentativa = 1; tentativa <= DJEN_MAX_TENTATIVAS; tentativa++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), DJEN_TIMEOUT_MS);
 
-    if (!res.ok) {
-      console.warn(`[djen] HTTP ${res.status} para ${numeroProcesso}`);
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+        cache: "no-store",
+      });
+
+      if (res.status === 429) {
+        const espera = calcularEspera(res, tentativa);
+        console.warn(
+          `[djen] HTTP 429 para ${numeroProcesso} (tentativa ${tentativa}/${DJEN_MAX_TENTATIVAS}), aguardando ${espera}ms`,
+        );
+        ultimoErro = { motivo: "ERRO_BUSCA", erro: "HTTP 429 (rate-limit)" };
+        if (tentativa < DJEN_MAX_TENTATIVAS) {
+          await dormir(espera);
+          continue;
+        }
+        return { encontrado: false, ...ultimoErro };
+      }
+
+      if (!res.ok) {
+        console.warn(`[djen] HTTP ${res.status} para ${numeroProcesso}`);
+        return {
+          encontrado: false,
+          motivo: "ERRO_BUSCA",
+          erro: `HTTP ${res.status}`,
+        };
+      }
+
+      const json = (await res.json()) as DjenResponse;
+      const items = json.items ?? json.data ?? json.result ?? [];
+
+      if (!Array.isArray(items) || items.length === 0) {
+        return { encontrado: false, motivo: "INDISPONIVEL" };
+      }
+
+      // ordena por data (mais proxima do andamento primeiro) e pega a primeira nao-vazia
+      const baseTs = dataAndamento.getTime();
+      const ordenados = [...items].sort((a, b) => {
+        const da = new Date(extrairData(a) ?? "").getTime() || 0;
+        const db = new Date(extrairData(b) ?? "").getTime() || 0;
+        return Math.abs(da - baseTs) - Math.abs(db - baseTs);
+      });
+
+      for (const it of ordenados) {
+        const conteudo = extrairConteudo(it);
+        if (conteudo.length === 0) continue;
+        return {
+          encontrado: true,
+          conteudo: truncarSeNecessario(conteudo),
+          linkOficial: extrairLink(it),
+          idPublicacao: extrairId(it),
+          dataPublicacao: extrairData(it),
+        };
+      }
+
+      return { encontrado: false, motivo: "INDISPONIVEL" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isAbort = err instanceof Error && err.name === "AbortError";
+      console.warn(
+        `[djen] erro buscando ${numeroProcesso}: ${isAbort ? "timeout" : msg}`,
+      );
       return {
         encontrado: false,
         motivo: "ERRO_BUSCA",
-        erro: `HTTP ${res.status}`,
+        erro: isAbort ? "timeout" : msg,
       };
+    } finally {
+      clearTimeout(timer);
     }
-
-    const json = (await res.json()) as DjenResponse;
-    const items = json.items ?? json.data ?? json.result ?? [];
-
-    if (!Array.isArray(items) || items.length === 0) {
-      return { encontrado: false, motivo: "INDISPONIVEL" };
-    }
-
-    // ordena por data (mais proxima do andamento primeiro) e pega a primeira nao-vazia
-    const baseTs = dataAndamento.getTime();
-    const ordenados = [...items].sort((a, b) => {
-      const da = new Date(extrairData(a) ?? "").getTime() || 0;
-      const db = new Date(extrairData(b) ?? "").getTime() || 0;
-      return Math.abs(da - baseTs) - Math.abs(db - baseTs);
-    });
-
-    for (const it of ordenados) {
-      const conteudo = extrairConteudo(it);
-      if (conteudo.length === 0) continue;
-      return {
-        encontrado: true,
-        conteudo: truncarSeNecessario(conteudo),
-        linkOficial: extrairLink(it),
-        idPublicacao: extrairId(it),
-        dataPublicacao: extrairData(it),
-      };
-    }
-
-    return { encontrado: false, motivo: "INDISPONIVEL" };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const isAbort = err instanceof Error && err.name === "AbortError";
-    console.warn(
-      `[djen] erro buscando ${numeroProcesso}: ${isAbort ? "timeout" : msg}`,
-    );
-    return {
-      encontrado: false,
-      motivo: "ERRO_BUSCA",
-      erro: isAbort ? "timeout" : msg,
-    };
-  } finally {
-    clearTimeout(timer);
   }
+
+  return { encontrado: false, ...ultimoErro };
 }
 
 /**
