@@ -161,15 +161,11 @@ export function AlertaMonitoramentoDialog({ detalhe, onOpenChange }: Props) {
                 </div>
               ) : (
                 <p className="whitespace-pre-wrap text-sm text-slate-800">
-                  {detalhe.conteudo ??
-                    "Sem texto disponivel — apenas o registro da publicacao foi capturado."}
+                  {detalhe.conteudo && detalhe.conteudo.trim().length > 0
+                    ? detalhe.conteudo
+                    : "Sem texto disponivel — apenas o registro da publicacao foi capturado."}
                 </p>
               )}
-              <p className="mt-3 text-[11px] text-muted-foreground">
-                Conteudo retornado pela API publica do CNJ ({detalhe.fonte}).
-                Para o inteiro teor da peca, consulte os autos no sistema do
-                tribunal.
-              </p>
             </div>
           </>
         )}

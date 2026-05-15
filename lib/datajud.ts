@@ -60,15 +60,22 @@ function extrairComplementos(mov: RawMovimento): string[] {
   const lista: string[] = [];
   if (Array.isArray(mov.complementosTabelados)) {
     for (const c of mov.complementosTabelados) {
-      // No Datajud, `nome` traz o valor humano do complemento (ex.: "Mandado",
-      // "Acordao") e `descricao` traz o rotulo do campo (ex.: "tipo_de_documento").
-      // Queremos o valor; usamos `descricao` so como fallback ou quando `nome`
-      // veio em formato raw (snake_case minusculo).
+      // No Datajud, `nome` quase sempre traz o valor humano do complemento
+      // (ex.: "Mandado", "para decisao", "sorteio") e `descricao` traz o
+      // rotulo do campo em snake_case (ex.: "tipo_de_documento").
+      // Queremos o valor humano. Consideramos algo "raw" (= rotulo, nao valor)
+      // apenas se contiver underscore — palavras minusculas legitimas como
+      // "sorteio" passam.
       const nome = typeof c?.nome === "string" ? c.nome.trim() : "";
       const descricao =
         typeof c?.descricao === "string" ? c.descricao.trim() : "";
-      const pareceRaw = nome.length > 0 && /^[a-z][a-z0-9_]*$/.test(nome);
-      const valor = pareceRaw ? descricao || nome : nome || descricao;
+      const nomeRaw = nome.includes("_");
+      const descRaw = descricao.includes("_");
+      const valor = nomeRaw
+        ? descRaw
+          ? nome || descricao
+          : descricao || nome
+        : nome || descricao;
       if (valor) lista.push(valor);
     }
   }
