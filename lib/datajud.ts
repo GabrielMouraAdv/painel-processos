@@ -60,8 +60,16 @@ function extrairComplementos(mov: RawMovimento): string[] {
   const lista: string[] = [];
   if (Array.isArray(mov.complementosTabelados)) {
     for (const c of mov.complementosTabelados) {
-      if (c?.descricao) lista.push(String(c.descricao));
-      else if (c?.nome) lista.push(String(c.nome));
+      // No Datajud, `nome` traz o valor humano do complemento (ex.: "Mandado",
+      // "Acordao") e `descricao` traz o rotulo do campo (ex.: "tipo_de_documento").
+      // Queremos o valor; usamos `descricao` so como fallback ou quando `nome`
+      // veio em formato raw (snake_case minusculo).
+      const nome = typeof c?.nome === "string" ? c.nome.trim() : "";
+      const descricao =
+        typeof c?.descricao === "string" ? c.descricao.trim() : "";
+      const pareceRaw = nome.length > 0 && /^[a-z][a-z0-9_]*$/.test(nome);
+      const valor = pareceRaw ? descricao || nome : nome || descricao;
+      if (valor) lista.push(valor);
     }
   }
   if (Array.isArray(mov.complemento)) {
