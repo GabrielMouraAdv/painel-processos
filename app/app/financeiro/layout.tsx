@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { Lock } from "lucide-react";
 
@@ -13,7 +13,7 @@ export default async function FinanceiroLayout({
   const session = await getServerSession(authOptions);
   if (!session?.user) notFound();
   if (
-    !podeAcessarFinanceiro(session.user.role, session.user.bancaSlug ?? null)
+    !podeAcessarFinanceiro(session.user.role, session.user.email ?? null)
   ) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-3 px-6 py-12 text-center">

@@ -32,7 +32,7 @@ export default async function ModuloHomePage({
   const bancasFiltro = parseBancasParam(searchParams.banca);
   const podeFinanceiro = podeAcessarFinanceiro(
     session!.user.role,
-    session!.user.bancaSlug ?? null,
+    session!.user.email ?? null,
   );
   const tceBase: { escritorioId: string; bancasSlug?: { hasSome: string[] } } = {
     escritorioId,

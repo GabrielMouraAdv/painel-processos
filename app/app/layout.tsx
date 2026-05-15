@@ -155,7 +155,7 @@ export default async function AppLayout({
       compromissosHoje={compromissosHoje}
       podeFinanceiro={podeAcessarFinanceiro(
         session.user.role,
-        session.user.bancaSlug ?? null,
+        session.user.email ?? null,
       )}
       isAdmin={session.user.role === "ADMIN"}
     >

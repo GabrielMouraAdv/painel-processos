@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { TipoHonorario } from "@prisma/client";
 
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
     }
     if (
-      !podeAcessarFinanceiro(session.user.role, session.user.bancaSlug ?? null)
+      !podeAcessarFinanceiro(session.user.role, session.user.email ?? null)
     ) {
       return NextResponse.json({ error: "Sem permissao" }, { status: 403 });
     }
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
     }
     if (
-      !podeAcessarFinanceiro(session.user.role, session.user.bancaSlug ?? null)
+      !podeAcessarFinanceiro(session.user.role, session.user.email ?? null)
     ) {
       return NextResponse.json({ error: "Sem permissao" }, { status: 403 });
     }

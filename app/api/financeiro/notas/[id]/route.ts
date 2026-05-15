@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
@@ -30,7 +30,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
     }
     if (
-      !podeAcessarFinanceiro(session.user.role, session.user.bancaSlug ?? null)
+      !podeAcessarFinanceiro(session.user.role, session.user.email ?? null)
     ) {
       return NextResponse.json({ error: "Sem permissao" }, { status: 403 });
     }
@@ -126,7 +126,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
     }
     if (
-      !podeAcessarFinanceiro(session.user.role, session.user.bancaSlug ?? null)
+      !podeAcessarFinanceiro(session.user.role, session.user.email ?? null)
     ) {
       return NextResponse.json({ error: "Sem permissao" }, { status: 403 });
     }

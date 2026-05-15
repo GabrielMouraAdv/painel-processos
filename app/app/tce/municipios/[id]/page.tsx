@@ -133,7 +133,7 @@ export default async function MunicipioDetailPage({
 
       {podeAcessarFinanceiro(
         session!.user.role,
-        session!.user.bancaSlug ?? null,
+        session!.user.email ?? null,
       ) && (
         <StatusFinanceiroCard municipioId={municipio.id} />
       )}

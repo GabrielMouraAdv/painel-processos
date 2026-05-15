@@ -24,12 +24,22 @@ export type StatusNotaT =
   | "VENCIDA"
   | "EM_ATRASO";
 
+// Apenas Gabriel, Filipe e Julio (alem do admin do sistema) tem acesso ao
+// modulo financeiro. Outras bancas/usuarios nao devem ver o painel.
+const EMAILS_COM_ACESSO_FINANCEIRO = new Set<string>([
+  "gabriel@escritorio.com",
+  "filipe@escritorio.com",
+  "julio@escritorio.com",
+]);
+
 export function podeAcessarFinanceiro(
   role: Role,
-  bancaSlug: string | null,
+  email: string | null,
 ): boolean {
   if (role === Role.ADMIN) return true;
-  if (bancaSlug && isBancaSlug(bancaSlug)) return true;
+  if (email && EMAILS_COM_ACESSO_FINANCEIRO.has(email.toLowerCase())) {
+    return true;
+  }
   return false;
 }
 

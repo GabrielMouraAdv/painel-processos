@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { ACOES, extrairIp, registrarLog } from "@/lib/audit-log";
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
     }
     if (
-      !podeAcessarFinanceiro(session.user.role, session.user.bancaSlug ?? null)
+      !podeAcessarFinanceiro(session.user.role, session.user.email ?? null)
     ) {
       return NextResponse.json({ error: "Sem permissao" }, { status: 403 });
     }
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
     }
     if (
-      !podeAcessarFinanceiro(session.user.role, session.user.bancaSlug ?? null)
+      !podeAcessarFinanceiro(session.user.role, session.user.email ?? null)
     ) {
       return NextResponse.json({ error: "Sem permissao" }, { status: 403 });
     }
@@ -176,7 +176,7 @@ export async function POST(req: Request) {
           notasGeradas = notasParaGerar.length;
         }
       } catch (errGen) {
-        // Contrato ja foi criado — geracao falhou, mas nao bloqueia o sucesso
+        // Contrato ja foi criado â€” geracao falhou, mas nao bloqueia o sucesso
         console.error(
           "[POST /api/financeiro/contratos] erro ao gerar notas auto:",
           errGen,
