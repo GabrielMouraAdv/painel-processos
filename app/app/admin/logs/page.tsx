@@ -91,6 +91,59 @@ export default async function AdminLogsPage({
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  // Estatisticas DJEN do escritorio
+  const processoWhere = { processo: { escritorioId } };
+  const [
+    djenDisponivel,
+    djenIndisponivel,
+    djenErro,
+    djenNuncaBuscado,
+  ] = await Promise.all([
+    prisma.movimentacaoAutomatica.count({
+      where: { ...processoWhere, conteudoIntegralStatus: "DISPONIVEL" },
+    }),
+    prisma.movimentacaoAutomatica.count({
+      where: { ...processoWhere, conteudoIntegralStatus: "INDISPONIVEL" },
+    }),
+    prisma.movimentacaoAutomatica.count({
+      where: { ...processoWhere, conteudoIntegralStatus: "ERRO_BUSCA" },
+    }),
+    prisma.movimentacaoAutomatica.count({
+      where: { ...processoWhere, conteudoIntegralStatus: null },
+    }),
+  ]);
+  const djenBuscados = djenDisponivel + djenIndisponivel + djenErro;
+  const djenTaxaSucesso =
+    djenBuscados > 0 ? Math.round((djenDisponivel / djenBuscados) * 100) : 0;
+
+  const djenErrosRecentes = await prisma.movimentacaoAutomatica.findMany({
+    where: { ...processoWhere, conteudoIntegralStatus: "ERRO_BUSCA" },
+    orderBy: { conteudoIntegralBuscadoEm: "desc" },
+    take: 10,
+    select: {
+      id: true,
+      nomeMovimento: true,
+      dataMovimento: true,
+      conteudoIntegralBuscadoEm: true,
+      processo: { select: { numero: true } },
+    },
+  });
+
+  const djenStats = {
+    disponivel: djenDisponivel,
+    indisponivel: djenIndisponivel,
+    erro: djenErro,
+    nuncaBuscado: djenNuncaBuscado,
+    taxaSucesso: djenTaxaSucesso,
+    errosRecentes: djenErrosRecentes.map((e) => ({
+      id: e.id,
+      processo: e.processo.numero,
+      nome: e.nomeMovimento,
+      dataMovimento: e.dataMovimento.toISOString(),
+      buscadoEm: e.conteudoIntegralBuscadoEm?.toISOString() ?? null,
+    })),
+  };
+
   return (
     <LogsView
       logs={logs.map((l) => ({
@@ -110,6 +163,7 @@ export default async function AdminLogsPage({
       acoes={acoesDistintas.map((a) => a.acao)}
       entidades={entidadesDistintas.map((e) => e.entidade)}
       filtros={{ usuario, acao, entidade, de, ate }}
+      djenStats={djenStats}
     />
   );
 }

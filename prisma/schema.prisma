@@ -756,10 +756,18 @@ model MovimentacaoAutomatica {
   complementos    String?   @db.Text
   fonte           String    @default("DATAJUD")
   lida            Boolean   @default(false)
+  // Inteiro teor da publicacao via DJEN (Diario Eletronico Nacional).
+  // status: DISPONIVEL | INDISPONIVEL | ERRO_BUSCA (null = nunca buscou).
+  conteudoIntegral          String?   @db.Text
+  conteudoIntegralBuscadoEm DateTime?
+  conteudoIntegralStatus    String?
+  djenIdPublicacao          String?
+  djenLinkOficial           String?
   createdAt       DateTime  @default(now())
 
   @@unique([processoId, dataMovimento, nomeMovimento])
   @@index([processoId, lida])
+  @@index([conteudoIntegralStatus])
 }
 
 model PublicacaoDJEN {

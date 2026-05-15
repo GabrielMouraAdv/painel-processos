@@ -2,8 +2,23 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Activity, FileText, Newspaper, RefreshCw } from "lucide-react";
+import {
+  Activity,
+  FileSearch,
+  FileText,
+  Info,
+  Newspaper,
+  RefreshCw,
+} from "lucide-react";
 
+import {
+  AlertaMonitoramentoDialog,
+  type AlertaMonitoramentoDetalhe,
+} from "@/components/alerta-monitoramento-dialog";
+import {
+  PublicacaoDjenDialog,
+  type PublicacaoDjenDetalhe,
+} from "@/components/publicacao-djen-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +38,12 @@ export type MovimentacaoAutoItem = {
   complementos: string | null;
   lida: boolean;
   ehDecisao: boolean;
+  fonte: string;
+  codigoMovimento: string | null;
+  descricao: string | null;
+  conteudoIntegral: string | null;
+  conteudoIntegralStatus: string | null;
+  djenLinkOficial: string | null;
 };
 
 export type PublicacaoDjenItem = {
@@ -33,10 +54,14 @@ export type PublicacaoDjenItem = {
   pagina: string | null;
   lida: boolean;
   geraIntimacao: boolean;
+  fonte: string;
+  dataDisponibilizacao: string | null;
 };
 
 type Props = {
   processoId: string;
+  numeroProcesso: string;
+  tribunal: string;
   ativo: boolean;
   ultimaVerificacao: string | null;
   ultimoErro: string | null;
@@ -59,6 +84,8 @@ function isoToInputDate(iso: string): string {
 
 export function MonitoramentoSection({
   processoId,
+  numeroProcesso,
+  tribunal,
   ativo,
   ultimaVerificacao,
   ultimoErro,
@@ -70,6 +97,99 @@ export function MonitoramentoSection({
   const { toast } = useToast();
   const [verificando, setVerificando] = React.useState(false);
   const [toggling, setToggling] = React.useState(false);
+  const [detalhe, setDetalhe] =
+    React.useState<AlertaMonitoramentoDetalhe | null>(null);
+  const [pubDjen, setPubDjen] = React.useState<PublicacaoDjenDetalhe | null>(
+    null,
+  );
+  const [buscandoMovIds, setBuscandoMovIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const ehTrabalhista = numeroProcesso.replace(/\D+/g, "").charAt(13) === "5";
+
+  function abrirPubDjen(m: MovimentacaoAutoItem) {
+    if (!m.conteudoIntegral) return;
+    setPubDjen({
+      numeroProcesso,
+      tribunal,
+      dataPublicacao: m.data,
+      conteudo: m.conteudoIntegral,
+      linkOficial: m.djenLinkOficial,
+      tipoPublicacao: m.nome,
+    });
+  }
+
+  async function buscarDjen(movId: string) {
+    setBuscandoMovIds((s) => new Set(s).add(movId));
+    try {
+      const res = await fetch(
+        `/api/processos/${processoId}/movimentacoes/${movId}/buscar-djen`,
+        { method: "POST" },
+      );
+      const json = (await res.json().catch(() => ({}))) as {
+        encontrado?: boolean;
+        status?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao buscar no DJEN",
+          description: json.error ?? "Tente novamente.",
+        });
+        return;
+      }
+      if (json.encontrado) {
+        toast({ title: "Texto integral encontrado" });
+      } else if (json.status === "INDISPONIVEL") {
+        toast({
+          title: "Texto nao disponivel no DJEN",
+          description:
+            "Tribunal pode nao ter migrado para o DJEN ou publicacao muito antiga.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Falha temporaria",
+          description: "Tente novamente em alguns instantes.",
+        });
+      }
+      router.refresh();
+    } finally {
+      setBuscandoMovIds((s) => {
+        const ns = new Set(s);
+        ns.delete(movId);
+        return ns;
+      });
+    }
+  }
+
+  function abrirMov(m: MovimentacaoAutoItem) {
+    setDetalhe({
+      tipo: "movimentacao",
+      data: m.data,
+      fonte: m.fonte,
+      codigoMovimento: m.codigoMovimento,
+      nomeMovimento: m.nome,
+      descricao: m.descricao,
+      complementos: m.complementos,
+      ehDecisao: m.ehDecisao,
+    });
+  }
+
+  function abrirPub(p: PublicacaoDjenItem) {
+    setDetalhe({
+      tipo: "publicacao",
+      data: p.data,
+      dataDisponibilizacao: p.dataDisponibilizacao,
+      fonte: p.fonte,
+      conteudo: p.conteudo,
+      caderno: p.caderno,
+      pagina: p.pagina,
+      geraIntimacao: p.geraIntimacao,
+    });
+  }
 
   async function handleToggle(novo: boolean) {
     setToggling(true);
@@ -215,12 +335,66 @@ export function MonitoramentoSection({
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-800">{m.nome}</p>
+                        <button
+                          type="button"
+                          onClick={() => abrirMov(m)}
+                          className="text-left text-sm text-slate-800 hover:text-brand-navy hover:underline"
+                        >
+                          {m.nome}
+                        </button>
                         {m.complementos && (
                           <p className="text-xs text-muted-foreground">
                             {m.complementos}
                           </p>
                         )}
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          {m.conteudoIntegralStatus === "DISPONIVEL" &&
+                          m.conteudoIntegral ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-[11px] text-emerald-700 hover:bg-emerald-50"
+                              onClick={() => abrirPubDjen(m)}
+                            >
+                              <FileText className="mr-1 h-3.5 w-3.5" />
+                              Ver publicacao completa
+                            </Button>
+                          ) : ehTrabalhista ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-muted-foreground">
+                              <Info className="h-3 w-3" />
+                              DJEN nao suportado (Just. do Trabalho)
+                            </span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-[11px]"
+                              disabled={buscandoMovIds.has(m.id)}
+                              onClick={() => buscarDjen(m.id)}
+                              title="O texto completo vem do DJEN. Nem toda publicacao esta disponivel."
+                            >
+                              <FileSearch
+                                className={cn(
+                                  "mr-1 h-3.5 w-3.5",
+                                  buscandoMovIds.has(m.id) && "animate-pulse",
+                                )}
+                              />
+                              {buscandoMovIds.has(m.id)
+                                ? "Buscando..."
+                                : "Buscar texto integral no DJEN"}
+                            </Button>
+                          )}
+                          {m.conteudoIntegralStatus === "INDISPONIVEL" && (
+                            <span className="text-[10px] text-muted-foreground">
+                              Texto nao disponivel no DJEN
+                            </span>
+                          )}
+                          {m.conteudoIntegralStatus === "ERRO_BUSCA" && (
+                            <span className="text-[10px] text-red-600">
+                              Falha temporaria — tente novamente
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <Button
                         size="sm"
@@ -280,9 +454,13 @@ export function MonitoramentoSection({
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => abrirPub(p)}
+                          className="text-left text-sm text-slate-800 hover:text-brand-navy hover:underline"
+                        >
                           {p.conteudo ?? "Publicacao DJEN"}
-                        </p>
+                        </button>
                       </div>
                       <Button
                         size="sm"
@@ -309,6 +487,20 @@ export function MonitoramentoSection({
           </p>
         )}
       </CardContent>
+
+      <AlertaMonitoramentoDialog
+        detalhe={detalhe}
+        onOpenChange={(o) => {
+          if (!o) setDetalhe(null);
+        }}
+      />
+
+      <PublicacaoDjenDialog
+        detalhe={pubDjen}
+        onOpenChange={(o) => {
+          if (!o) setPubDjen(null);
+        }}
+      />
     </Card>
   );
 }

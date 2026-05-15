@@ -58,6 +58,10 @@ import {
   type MovimentacaoAutoItem,
   type PublicacaoDjenItem,
 } from "./monitoramento-section";
+import {
+  PublicacoesSection,
+  type PublicacaoIntegralItem,
+} from "./publicacoes-section";
 import { JulgamentoCardJud } from "./julgamento-card";
 import { DispensaBadgesTce } from "../../tce/processos/[id]/dispensa-badges";
 import {
@@ -151,6 +155,8 @@ export type ProcessoDetail = {
     valorCondenacao: number | null;
     observacoesJulgamento: string | null;
   };
+  publicacoesIntegrais: PublicacaoIntegralItem[];
+  totalPendentesDjen: number;
 };
 
 type Props = {
@@ -493,6 +499,8 @@ export function ProcessoView({
 
       <MonitoramentoSection
         processoId={processo.id}
+        numeroProcesso={processo.numero}
+        tribunal={processo.tribunal}
         ativo={processo.monitoramento.ativo}
         ultimaVerificacao={processo.monitoramento.ultimaVerificacao}
         ultimoErro={processo.monitoramento.ultimoErro}
@@ -502,6 +510,14 @@ export function ProcessoView({
           setAndamentoPrefill(p);
           setAndamentoPrefillTrigger((n) => n + 1);
         }}
+      />
+
+      <PublicacoesSection
+        processoId={processo.id}
+        numeroProcesso={processo.numero}
+        tribunal={processo.tribunal}
+        publicacoes={processo.publicacoesIntegrais}
+        totalPendentes={processo.totalPendentesDjen}
       />
 
       <Card>

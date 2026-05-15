@@ -12,6 +12,10 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+import {
+  AlertaMonitoramentoDialog,
+  type AlertaMonitoramentoDetalhe,
+} from "@/components/alerta-monitoramento-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,6 +36,13 @@ type Alerta = {
   detalhe: string | null;
   ehDecisao: boolean;
   geraIntimacao: boolean;
+  fonte: string;
+  codigoMovimento: string | null;
+  descricao: string | null;
+  conteudoCompleto: string | null;
+  caderno: string | null;
+  pagina: string | null;
+  dataDisponibilizacao: string | null;
   processo: {
     id: string;
     numero: string;
@@ -76,6 +87,40 @@ export function MonitoramentoClient({
   const { toast } = useToast();
   const [verificando, setVerificando] = React.useState(false);
   const [togglingId, setTogglingId] = React.useState<string | null>(null);
+  const [detalhe, setDetalhe] =
+    React.useState<AlertaMonitoramentoDetalhe | null>(null);
+
+  function abrirDetalhe(a: Alerta) {
+    const processo = {
+      numero: a.processo.numero,
+      tribunal: a.processo.tribunal,
+    };
+    if (a.tipo === "movimentacao") {
+      setDetalhe({
+        tipo: "movimentacao",
+        data: a.data,
+        fonte: a.fonte,
+        codigoMovimento: a.codigoMovimento,
+        nomeMovimento: a.titulo,
+        descricao: a.descricao,
+        complementos: a.detalhe,
+        ehDecisao: a.ehDecisao,
+        processo,
+      });
+    } else {
+      setDetalhe({
+        tipo: "publicacao",
+        data: a.data,
+        dataDisponibilizacao: a.dataDisponibilizacao,
+        fonte: a.fonte,
+        conteudo: a.conteudoCompleto,
+        caderno: a.caderno,
+        pagina: a.pagina,
+        geraIntimacao: a.geraIntimacao,
+        processo,
+      });
+    }
+  }
 
   async function handleVerificar() {
     setVerificando(true);
@@ -296,7 +341,13 @@ export function MonitoramentoClient({
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-800">{a.titulo}</p>
+                    <button
+                      type="button"
+                      onClick={() => abrirDetalhe(a)}
+                      className="text-left text-sm text-slate-800 hover:text-brand-navy hover:underline"
+                    >
+                      {a.titulo}
+                    </button>
                     {a.ehDecisao && (
                       <p className="text-[11px] font-medium text-red-700">
                         Verificar necessidade de recurso.
@@ -406,6 +457,13 @@ export function MonitoramentoClient({
           )}
         </CardContent>
       </Card>
+
+      <AlertaMonitoramentoDialog
+        detalhe={detalhe}
+        onOpenChange={(o) => {
+          if (!o) setDetalhe(null);
+        }}
+      />
     </>
   );
 }

@@ -2,7 +2,13 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
-import { ChevronLeft, ChevronRight, History } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  History,
+  Newspaper,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +41,20 @@ type Props = {
     entidade: string;
     de: string;
     ate: string;
+  };
+  djenStats: {
+    disponivel: number;
+    indisponivel: number;
+    erro: number;
+    nuncaBuscado: number;
+    taxaSucesso: number;
+    errosRecentes: {
+      id: string;
+      processo: string;
+      nome: string;
+      dataMovimento: string;
+      buscadoEm: string | null;
+    }[];
   };
 };
 
@@ -83,6 +103,7 @@ export function LogsView({
   acoes,
   entidades,
   filtros,
+  djenStats,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -133,6 +154,82 @@ export function LogsView({
           </p>
         </div>
       </header>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-navy">
+            <Newspaper className="h-4 w-4 text-orange-600" />
+            Inteiro teor — DJEN
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                Disponivel
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-900">
+                {djenStats.disponivel}
+              </p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                Indisponivel
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">
+                {djenStats.indisponivel}
+              </p>
+            </div>
+            <div className="rounded-md border border-red-200 bg-red-50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-red-700">
+                Erro
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-red-900">
+                {djenStats.erro}
+              </p>
+            </div>
+            <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-yellow-700">
+                Nunca buscado
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-yellow-900">
+                {djenStats.nuncaBuscado}
+              </p>
+            </div>
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                Taxa de sucesso
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-blue-900">
+                {djenStats.taxaSucesso}%
+              </p>
+            </div>
+          </div>
+
+          {djenStats.errosRecentes.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-red-700">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Ultimos erros de busca DJEN
+              </p>
+              <ul className="space-y-1 text-xs">
+                {djenStats.errosRecentes.map((e) => (
+                  <li
+                    key={e.id}
+                    className="flex flex-wrap items-center gap-2 rounded border border-red-100 bg-red-50/50 px-2 py-1"
+                  >
+                    <span className="font-mono text-[11px] text-slate-700">
+                      {e.processo}
+                    </span>
+                    <span className="text-slate-600">— {e.nome}</span>
+                    <span className="ml-auto text-[10px] text-slate-500">
+                      tentativa em {formatarDataHora(e.buscadoEm ?? e.dataMovimento)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 lg:grid-cols-5">

@@ -1,4 +1,9 @@
 import { prisma } from "./prisma";
+import {
+  buscarPublicacaoNoDJEN,
+  ehProcessoTrabalhista,
+  montarUpdateDjen,
+} from "./djen-client";
 
 export const DATAJUD_API_URL = "https://api-publica.datajud.cnj.jus.br";
 
@@ -164,13 +169,16 @@ export async function verificarNovasMovimentacoes(
       return 0;
     }
 
+    const trabalhista = ehProcessoTrabalhista(processo.numero);
+
     for (const mov of resultado.movimentos) {
       if (!mov.nome || !mov.dataHora) continue;
       const data = new Date(mov.dataHora);
       if (Number.isNaN(data.getTime())) continue;
 
+      let criada: { id: string } | null = null;
       try {
-        await prisma.movimentacaoAutomatica.create({
+        criada = await prisma.movimentacaoAutomatica.create({
           data: {
             processoId: processo.id,
             codigoMovimento: mov.codigo,
@@ -181,10 +189,34 @@ export async function verificarNovasMovimentacoes(
               : null,
             fonte: "DATAJUD",
           },
+          select: { id: true },
         });
         novas++;
       } catch {
         // duplicada pela unique constraint (processoId, dataMovimento, nomeMovimento)
+      }
+
+      // Para movimentacoes novas em processos NAO trabalhistas, busca inteiro
+      // teor no DJEN. Falhas/timeouts nao quebram o cron.
+      if (criada && !trabalhista) {
+        try {
+          const djen = await buscarPublicacaoNoDJEN(processo.numero, data);
+          const update = montarUpdateDjen(djen);
+          await prisma.movimentacaoAutomatica.update({
+            where: { id: criada.id },
+            data: update,
+          });
+        } catch (err) {
+          console.warn(
+            `[djen] erro ao salvar inteiro teor para mov ${criada.id}: ${errorMessage(err)}`,
+          );
+        }
+
+        // TODO(telegram): quando o bot enviar resumo de nova movimentacao, se
+        // `update.conteudoIntegral` estiver disponivel, incluir um trecho do
+        // texto integral na mensagem. A logica de envio vivera no fluxo do
+        // telegram (lib/telegram.ts) e devera consultar a coluna
+        // conteudoIntegral da MovimentacaoAutomatica recem-criada.
       }
     }
 

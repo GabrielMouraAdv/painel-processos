@@ -50,6 +50,34 @@ export default async function ProcessoDetailPage({
 
   if (!processo) notFound();
 
+  const [publicacoesIntegrais, totalPendentesDjen] = await Promise.all([
+    prisma.movimentacaoAutomatica.findMany({
+      where: {
+        processoId: processo.id,
+        conteudoIntegralStatus: "DISPONIVEL",
+        conteudoIntegral: { not: null },
+      },
+      orderBy: { dataMovimento: "desc" },
+      select: {
+        id: true,
+        nomeMovimento: true,
+        dataMovimento: true,
+        conteudoIntegral: true,
+        djenLinkOficial: true,
+      },
+    }),
+    prisma.movimentacaoAutomatica.count({
+      where: {
+        processoId: processo.id,
+        OR: [
+          { conteudoIntegralStatus: null },
+          { conteudoIntegralStatus: "ERRO_BUSCA" },
+          { conteudoIntegralStatus: "INDISPONIVEL" },
+        ],
+      },
+    }),
+  ]);
+
   const itensPauta = await prisma.itemPautaJudicial.findMany({
     where: { processoId: processo.id },
     orderBy: { sessao: { data: "desc" } },
@@ -164,6 +192,12 @@ export default async function ProcessoDetailPage({
         complementos: m.complementos,
         lida: m.lida,
         ehDecisao: detectaDecisao(m.nomeMovimento),
+        fonte: m.fonte,
+        codigoMovimento: m.codigoMovimento,
+        descricao: m.descricao,
+        conteudoIntegral: m.conteudoIntegral,
+        conteudoIntegralStatus: m.conteudoIntegralStatus,
+        djenLinkOficial: m.djenLinkOficial,
       })),
       publicacoes: processo.publicacoesDjen.map((p) => ({
         id: p.id,
@@ -173,6 +207,8 @@ export default async function ProcessoDetailPage({
         pagina: p.pagina,
         lida: p.lida,
         geraIntimacao: p.geraIntimacao,
+        fonte: p.fonte,
+        dataDisponibilizacao: p.dataDisponibilizacao?.toISOString() ?? null,
       })),
     },
     memorialDispensado:
@@ -207,6 +243,14 @@ export default async function ProcessoDetailPage({
         : null,
       observacoesJulgamento: processo.observacoesJulgamento,
     },
+    publicacoesIntegrais: publicacoesIntegrais.map((p) => ({
+      id: p.id,
+      data: p.dataMovimento.toISOString(),
+      nome: p.nomeMovimento,
+      conteudoIntegral: p.conteudoIntegral,
+      djenLinkOficial: p.djenLinkOficial,
+    })),
+    totalPendentesDjen,
   };
 
   return (
