@@ -5,7 +5,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { verificarNovasMovimentacoes } from "@/lib/datajud";
 import { verificarNovasPublicacoes } from "@/lib/djen";
+import { processarFilaDjen } from "@/lib/djen-fila";
 import { prisma } from "@/lib/prisma";
+
+export const maxDuration = 300;
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
@@ -78,10 +81,25 @@ export async function POST(req: Request) {
     }
   }
 
+  // Processa fila DJEN — pega movimentacoes PENDENTE/NULL/ERRO_BUSCA e busca
+  // o inteiro teor respeitando o rate-limit. Tudo do escritorio do usuario.
+  let djenFila = null;
+  if (session?.user) {
+    try {
+      djenFila = await processarFilaDjen({
+        escritorioId: session.user.escritorioId,
+        limite: 60,
+      });
+    } catch (err) {
+      erros.push({ processoId: "(fila djen)", erro: errorMessage(err) });
+    }
+  }
+
   return NextResponse.json({
     processosVerificados: processosIds.length,
     novasMovimentacoes,
     novasPublicacoes,
+    djenFila,
     erros,
   });
 }

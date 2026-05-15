@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { verificarNovasMovimentacoes } from "@/lib/datajud";
 import { verificarNovasPublicacoes } from "@/lib/djen";
+import { processarFilaDjen } from "@/lib/djen-fila";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +53,19 @@ export async function GET(req: Request) {
     }
   }
 
+  // Processa fila DJEN apos verificacao de novas mov/pub (movimentacoes
+  // pendentes acumuladas + falhas anteriores entrando agora).
+  let djenFila = null;
+  try {
+    djenFila = await processarFilaDjen({ escritorioId: null, limite: 120 });
+  } catch (err) {
+    erros.push({
+      processoId: "(fila djen)",
+      numero: "",
+      erro: msg(err),
+    });
+  }
+
   const duracaoMs = Date.now() - inicio;
   const resultado = {
     ok: true,
@@ -59,6 +73,7 @@ export async function GET(req: Request) {
     processosVerificados: processos.length,
     novasMovimentacoes,
     novasPublicacoes,
+    djenFila,
     duracaoMs,
     erros,
   };

@@ -131,28 +131,24 @@ export function MonitoramentoSection({
         encontrado?: boolean;
         status?: string;
         error?: string;
+        mensagem?: string;
       };
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao buscar no DJEN",
+          title: "Erro ao agendar busca",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
-      if (json.encontrado) {
-        toast({ title: "Texto integral encontrado" });
-      } else if (json.status === "INDISPONIVEL") {
-        toast({
-          title: "Texto nao disponivel no DJEN",
-          description:
-            "Tribunal pode nao ter migrado para o DJEN ou publicacao muito antiga.",
-        });
+      if (json.status === "DISPONIVEL") {
+        toast({ title: "Texto integral ja disponivel" });
       } else {
         toast({
-          variant: "destructive",
-          title: "Falha temporaria",
-          description: "Tente novamente em alguns instantes.",
+          title: "Adicionado a fila",
+          description:
+            json.mensagem ??
+            "Aperte 'Verificar agora' para processar a fila imediatamente.",
         });
       }
       router.refresh();
@@ -364,6 +360,12 @@ export function MonitoramentoSection({
                               <Info className="h-3 w-3" />
                               DJEN nao suportado (Just. do Trabalho)
                             </span>
+                          ) : m.conteudoIntegralStatus === "PENDENTE" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] text-amber-800">
+                              <FileSearch className="h-3 w-3 animate-pulse" />
+                              Na fila — aperte &quot;Verificar agora&quot; para
+                              processar
+                            </span>
                           ) : (
                             <Button
                               size="sm"
@@ -371,7 +373,7 @@ export function MonitoramentoSection({
                               className="h-7 px-2 text-[11px]"
                               disabled={buscandoMovIds.has(m.id)}
                               onClick={() => buscarDjen(m.id)}
-                              title="O texto completo vem do DJEN. Nem toda publicacao esta disponivel."
+                              title="Adiciona a fila. O texto sera buscado na proxima sincronizacao (cron diario ou clique em 'Verificar agora')."
                             >
                               <FileSearch
                                 className={cn(
@@ -380,7 +382,7 @@ export function MonitoramentoSection({
                                 )}
                               />
                               {buscandoMovIds.has(m.id)
-                                ? "Buscando..."
+                                ? "Agendando..."
                                 : "Buscar texto integral no DJEN"}
                             </Button>
                           )}
@@ -390,8 +392,8 @@ export function MonitoramentoSection({
                             </span>
                           )}
                           {m.conteudoIntegralStatus === "ERRO_BUSCA" && (
-                            <span className="text-[10px] text-red-600">
-                              Falha temporaria — tente novamente
+                            <span className="text-[10px] text-amber-700">
+                              Sera retentado na proxima sincronizacao
                             </span>
                           )}
                         </div>
