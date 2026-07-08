@@ -26,6 +26,8 @@ export async function GET(req: Request) {
   const resultado = await processarFilaDjen({
     escritorioId: null,
     limite: LIMITE_POR_EXECUCAO,
+    // maxDuration e 300s; para limpo aos 270s para dar tempo de responder.
+    deadline: Date.now() + 270_000,
   });
   console.log("[cron djen-fila]", JSON.stringify(resultado));
   return NextResponse.json({ ok: true, ...resultado });
