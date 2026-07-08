@@ -8,6 +8,13 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
+// Orcamento de tempo dentro do maxDuration de 300s: a verificacao de
+// movimentacoes/publicacoes roda ate 210s, a fila DJEN ate 270s, e os 30s
+// finais ficam de folga para gravar e responder. Processos nao verificados
+// hoje entram primeiro amanha (ordenacao por ultimaVerificacao).
+const BUDGET_VERIFICACAO_MS = 210_000;
+const BUDGET_TOTAL_MS = 270_000;
+
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization") ?? "";
   const expected = process.env.CRON_SECRET ?? "";
@@ -19,13 +26,19 @@ export async function GET(req: Request) {
   }
 
   const inicio = Date.now();
+  // Quem nunca foi verificado (ou foi ha mais tempo) vem primeiro — rodizio
+  // justo quando o tempo nao alcanca todos.
   const processos = await prisma.processo.findMany({
     where: { monitoramento: { monitoramentoAtivo: true } },
     select: { id: true, numero: true },
+    orderBy: {
+      monitoramento: { ultimaVerificacao: { sort: "asc", nulls: "first" } },
+    },
   });
 
   let novasMovimentacoes = 0;
   let novasPublicacoes = 0;
+  let verificados = 0;
   const erros: { processoId: string; numero: string; erro: string }[] = [];
 
   function msg(err: unknown): string {
@@ -33,6 +46,8 @@ export async function GET(req: Request) {
   }
 
   for (const p of processos) {
+    if (Date.now() - inicio > BUDGET_VERIFICACAO_MS) break;
+    verificados++;
     try {
       novasMovimentacoes += await verificarNovasMovimentacoes(p.id);
     } catch (err) {
@@ -57,7 +72,11 @@ export async function GET(req: Request) {
   // pendentes acumuladas + falhas anteriores entrando agora).
   let djenFila = null;
   try {
-    djenFila = await processarFilaDjen({ escritorioId: null, limite: 120 });
+    djenFila = await processarFilaDjen({
+      escritorioId: null,
+      limite: 120,
+      deadline: inicio + BUDGET_TOTAL_MS,
+    });
   } catch (err) {
     erros.push({
       processoId: "(fila djen)",
@@ -70,7 +89,9 @@ export async function GET(req: Request) {
   const resultado = {
     ok: true,
     timestamp: new Date().toISOString(),
-    processosVerificados: processos.length,
+    processosAtivos: processos.length,
+    processosVerificados: verificados,
+    processosPulados: processos.length - verificados,
     novasMovimentacoes,
     novasPublicacoes,
     djenFila,

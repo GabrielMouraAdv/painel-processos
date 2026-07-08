@@ -17,7 +17,7 @@ import {
 
 const ALL = "__all__";
 
-const tribunais = ["TJPE", "TRF5", "TRF1", "STJ", "STF", "OUTRO"];
+const tribunais = ["TJPE", "TRF5", "TRF1", "TRT6", "STJ", "STF", "OUTRO"];
 const tipos = [
   { value: "IMPROBIDADE", label: "Improbidade" },
   { value: "ACP", label: "ACP" },

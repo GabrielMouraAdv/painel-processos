@@ -47,6 +47,7 @@ export const tribunalLabels: Record<Tribunal, string> = {
   TJPE: "TJPE",
   TRF5: "TRF5",
   TRF1: "TRF1",
+  TRT6: "TRT6",
   STJ: "STJ",
   STF: "STF",
   OUTRO: "Outro",

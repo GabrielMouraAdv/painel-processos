@@ -10,6 +10,11 @@ import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 300;
 
+// Mesmo esquema de orcamento do cron: verificacao ate 210s, fila DJEN ate
+// 270s, folga de 30s para responder antes do maxDuration matar a funcao.
+const BUDGET_VERIFICACAO_MS = 210_000;
+const BUDGET_TOTAL_MS = 270_000;
+
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
@@ -58,15 +63,22 @@ export async function POST(req: Request) {
     const lista = await prisma.processo.findMany({
       where,
       select: { id: true },
+      orderBy: {
+        monitoramento: { ultimaVerificacao: { sort: "asc", nulls: "first" } },
+      },
     });
     processosIds = lista.map((p) => p.id);
   }
 
+  const inicio = Date.now();
   let novasMovimentacoes = 0;
   let novasPublicacoes = 0;
+  let verificados = 0;
   const erros: { processoId: string; erro: string }[] = [];
 
   for (const id of processosIds) {
+    if (Date.now() - inicio > BUDGET_VERIFICACAO_MS) break;
+    verificados++;
     try {
       const m = await verificarNovasMovimentacoes(id);
       novasMovimentacoes += m;
@@ -89,6 +101,7 @@ export async function POST(req: Request) {
       djenFila = await processarFilaDjen({
         escritorioId: session.user.escritorioId,
         limite: 60,
+        deadline: inicio + BUDGET_TOTAL_MS,
       });
     } catch (err) {
       erros.push({ processoId: "(fila djen)", erro: errorMessage(err) });
@@ -96,7 +109,8 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
-    processosVerificados: processosIds.length,
+    processosVerificados: verificados,
+    processosPulados: processosIds.length - verificados,
     novasMovimentacoes,
     novasPublicacoes,
     djenFila,

@@ -51,6 +51,7 @@ const tribunalStyles: Record<Tribunal, string> = {
   TJPE: "bg-pink-100 text-pink-800 hover:bg-pink-100",
   TRF5: "bg-emerald-800 text-emerald-50 hover:bg-emerald-800",
   TRF1: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+  TRT6: "bg-amber-100 text-amber-800 hover:bg-amber-100",
   STJ: "bg-slate-200 text-slate-800 hover:bg-slate-200",
   STF: "bg-slate-200 text-slate-800 hover:bg-slate-200",
   OUTRO: "bg-slate-200 text-slate-800 hover:bg-slate-200",

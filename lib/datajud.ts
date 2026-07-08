@@ -1,9 +1,4 @@
 import { prisma } from "./prisma";
-import {
-  buscarPublicacaoNoDJEN,
-  ehProcessoTrabalhista,
-  montarUpdateDjen,
-} from "./djen-client";
 
 export const DATAJUD_API_URL = "https://api-publica.datajud.cnj.jus.br";
 
@@ -13,9 +8,41 @@ export const TRIBUNAL_ENDPOINTS: Record<string, string> = {
   TJPE: "api_publica_tjpe",
   TRF5: "api_publica_trf5",
   TRF1: "api_publica_trf1",
+  TRT6: "api_publica_trt6",
   STJ: "api_publica_stj",
   STF: "api_publica_stf",
+  // Tribunais consultaveis via derivacao do numero CNJ mesmo quando o
+  // processo esta cadastrado como OUTRO (nao existem no enum Tribunal):
+  TJPB: "api_publica_tjpb",
+  TJRN: "api_publica_tjrn",
 };
+
+/**
+ * Deriva o tribunal a partir do proprio numero CNJ (NNNNNNN-DD.AAAA.J.TR.OOOO):
+ * J = segmento de justica, TR = tribunal/regiao. Cobre processos cadastrados
+ * com tribunal errado (ex.: numero do TJPE salvo como OUTRO).
+ */
+export function tribunalPorNumeroCNJ(numero: string): string | null {
+  const digitos = numero.replace(/\D+/g, "");
+  if (digitos.length !== 20) return null;
+  const segmento = digitos.charAt(13);
+  const tr = digitos.slice(14, 16);
+  if (segmento === "1") return "STF";
+  if (segmento === "3") return "STJ";
+  if (segmento === "4") {
+    if (tr === "05") return "TRF5";
+    if (tr === "01") return "TRF1";
+    return null;
+  }
+  if (segmento === "5") return `TRT${Number(tr)}`;
+  if (segmento === "8") {
+    if (tr === "17") return "TJPE";
+    if (tr === "15") return "TJPB";
+    if (tr === "20") return "TJRN";
+    return null;
+  }
+  return null;
+}
 
 export type DatajudMovimento = {
   codigo: string | null;
@@ -96,7 +123,12 @@ export async function consultarProcesso(
   numeroProcesso: string,
   tribunal: string,
 ): Promise<DatajudConsultaResultado | null> {
-  const endpoint = endpointPorTribunal(tribunal);
+  // Se o tribunal cadastrado nao tem endpoint (ex.: OUTRO), tenta derivar do
+  // proprio numero CNJ antes de desistir.
+  const tribunalEfetivo = TRIBUNAL_ENDPOINTS[tribunal]
+    ? tribunal
+    : (tribunalPorNumeroCNJ(numeroProcesso) ?? tribunal);
+  const endpoint = endpointPorTribunal(tribunalEfetivo);
   if (!endpoint) return null;
   if (!DATAJUD_API_KEY) return null;
 
@@ -184,16 +216,13 @@ export async function verificarNovasMovimentacoes(
       return 0;
     }
 
-    const trabalhista = ehProcessoTrabalhista(processo.numero);
-
     for (const mov of resultado.movimentos) {
       if (!mov.nome || !mov.dataHora) continue;
       const data = new Date(mov.dataHora);
       if (Number.isNaN(data.getTime())) continue;
 
-      let criada: { id: string } | null = null;
       try {
-        criada = await prisma.movimentacaoAutomatica.create({
+        await prisma.movimentacaoAutomatica.create({
           data: {
             processoId: processo.id,
             codigoMovimento: mov.codigo,
@@ -211,29 +240,10 @@ export async function verificarNovasMovimentacoes(
         // duplicada pela unique constraint (processoId, dataMovimento, nomeMovimento)
       }
 
-      // Para movimentacoes novas em processos NAO trabalhistas, busca inteiro
-      // teor no DJEN. Falhas/timeouts nao quebram o cron.
-      // O rate-limiter interno do djen-client cuida do espacamento (20 req/min).
-      if (criada && !trabalhista) {
-        try {
-          const djen = await buscarPublicacaoNoDJEN(processo.numero, data);
-          const update = montarUpdateDjen(djen);
-          await prisma.movimentacaoAutomatica.update({
-            where: { id: criada.id },
-            data: update,
-          });
-        } catch (err) {
-          console.warn(
-            `[djen] erro ao salvar inteiro teor para mov ${criada.id}: ${errorMessage(err)}`,
-          );
-        }
-
-        // TODO(telegram): quando o bot enviar resumo de nova movimentacao, se
-        // `update.conteudoIntegral` estiver disponivel, incluir um trecho do
-        // texto integral na mensagem. A logica de envio vivera no fluxo do
-        // telegram (lib/telegram.ts) e devera consultar a coluna
-        // conteudoIntegral da MovimentacaoAutomatica recem-criada.
-      }
+      // O inteiro teor (DJEN) NAO e buscado aqui: a movimentacao nasce com
+      // conteudoIntegralStatus null e entra na fila (processarFilaDjen), que
+      // respeita rate-limit e orcamento de tempo. Buscar inline derrubava o
+      // cron por timeout antes de percorrer todos os processos.
     }
 
     await prisma.monitoramentoConfig.upsert({

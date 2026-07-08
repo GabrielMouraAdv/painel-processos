@@ -188,6 +188,7 @@ export function PendenciasView({
                 <SelectItem value={Tribunal.TJPE}>TJPE</SelectItem>
                 <SelectItem value={Tribunal.TRF5}>TRF5</SelectItem>
                 <SelectItem value={Tribunal.TRF1}>TRF1</SelectItem>
+                <SelectItem value={Tribunal.TRT6}>TRT6</SelectItem>
                 <SelectItem value={Tribunal.STJ}>STJ</SelectItem>
                 <SelectItem value={Tribunal.STF}>STF</SelectItem>
               </SelectContent>

@@ -46,6 +46,7 @@ enum Tribunal {
   TJPE
   TRF5
   TRF1
+  TRT6
   STJ
   STF
   OUTRO

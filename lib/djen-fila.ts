@@ -8,8 +8,15 @@ export type ProcessarFilaResultado = {
   indisponiveis: number;
   erros: number;
   trabalhistas: number;
+  antigas: number;
+  interrompidoPorTempo: boolean;
   duracaoMs: number;
 };
+
+// O DJEN (Diario de Justica Eletronico Nacional) so existe desde 2024.
+// Movimentacoes anteriores nunca terao publicacao la — marcamos INDISPONIVEL
+// sem gastar requisicao.
+const DJEN_DATA_INICIO = new Date("2024-01-01T00:00:00Z");
 
 /**
  * Processa a fila de movimentacoes pendentes de busca DJEN. Respeita o
@@ -25,10 +32,13 @@ export type ProcessarFilaResultado = {
  * @param opts.escritorioId  restringe a movimentacoes de processos do escritorio
  *                           (null = todos os escritorios, ex.: cron)
  * @param opts.limite        teto de movimentacoes processadas por execucao
+ * @param opts.deadline      epoch ms; ao passar dele, para limpo e retorna
+ *                           parcial (evita ser morto pelo maxDuration do Vercel)
  */
 export async function processarFilaDjen(opts: {
   escritorioId: string | null;
   limite: number;
+  deadline?: number;
 }): Promise<ProcessarFilaResultado> {
   const inicio = Date.now();
   const escritorioFiltro = opts.escritorioId
@@ -81,8 +91,27 @@ export async function processarFilaDjen(opts: {
   let indisponiveis = 0;
   let erros = 0;
   let trabalhistas = 0;
+  let antigas = 0;
+  let interrompidoPorTempo = false;
 
   for (const m of pendentes) {
+    if (opts.deadline && Date.now() > opts.deadline) {
+      interrompidoPorTempo = true;
+      break;
+    }
+
+    if (m.dataMovimento < DJEN_DATA_INICIO) {
+      await prisma.movimentacaoAutomatica.update({
+        where: { id: m.id },
+        data: {
+          conteudoIntegralStatus: "INDISPONIVEL",
+          conteudoIntegralBuscadoEm: new Date(),
+        },
+      });
+      antigas++;
+      continue;
+    }
+
     const numero = m.processo.numero;
     const digitos = numero.replace(/\D+/g, "");
     if (digitos.length >= 14 && digitos.charAt(13) === "5") {
@@ -119,6 +148,8 @@ export async function processarFilaDjen(opts: {
     indisponiveis,
     erros,
     trabalhistas,
+    antigas,
+    interrompidoPorTempo,
     duracaoMs: Date.now() - inicio,
   };
 }
