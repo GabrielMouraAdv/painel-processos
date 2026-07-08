@@ -194,6 +194,15 @@ export async function GET(req: Request) {
           take: 3,
           select: { data: true, texto: true, fase: true },
         },
+        movimentacoesAuto: {
+          orderBy: { dataMovimento: "desc" },
+          take: 3,
+          select: {
+            dataMovimento: true,
+            nomeMovimento: true,
+            complementos: true,
+          },
+        },
         prazos: {
           where: { cumprido: false },
           orderBy: { data: "asc" },
@@ -242,11 +251,25 @@ export async function GET(req: Request) {
         valor: p.valor ? Number(p.valor) : null,
         advogado: p.advogado.nome,
         risco: p.risco as "ALTO" | "MEDIO" | "BAIXO",
-        ultimosAndamentos: p.andamentos.map((a) => ({
-          data: a.data,
-          texto: a.texto,
-          fase: faseLabelPt(a.fase),
-        })),
+        // Funde andamentos manuais com movimentacoes automaticas do DataJud
+        // (monitoramento) e fica com os 3 mais recentes do conjunto — sem
+        // isso o relatorio ignorava os andamentos captados automaticamente.
+        ultimosAndamentos: [
+          ...p.andamentos.map((a) => ({
+            data: a.data,
+            texto: a.texto,
+            fase: faseLabelPt(a.fase),
+          })),
+          ...p.movimentacoesAuto.map((m) => ({
+            data: m.dataMovimento,
+            texto: m.complementos
+              ? `${m.nomeMovimento} — ${m.complementos}`
+              : m.nomeMovimento,
+            fase: "",
+          })),
+        ]
+          .sort((a, b) => b.data.getTime() - a.data.getTime())
+          .slice(0, 3),
         prazos: p.prazos.map((pr) => ({
           tipo: pr.tipo,
           data: pr.data,
