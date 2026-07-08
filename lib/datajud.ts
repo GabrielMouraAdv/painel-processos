@@ -216,35 +216,39 @@ export async function verificarNovasMovimentacoes(
       return 0;
     }
 
+    // Insercao em LOTE: um processo nunca verificado pode trazer centenas de
+    // movimentacoes historicas; criar uma a uma estourava o orcamento de
+    // tempo do cron. createMany + skipDuplicates resolve em uma unica query
+    // (duplicadas pela unique constraint processoId+dataMovimento+nomeMovimento
+    // sao ignoradas, inclusive dentro do proprio lote).
+    const linhas = [];
     for (const mov of resultado.movimentos) {
       if (!mov.nome || !mov.dataHora) continue;
       const data = new Date(mov.dataHora);
       if (Number.isNaN(data.getTime())) continue;
-
-      try {
-        await prisma.movimentacaoAutomatica.create({
-          data: {
-            processoId: processo.id,
-            codigoMovimento: mov.codigo,
-            nomeMovimento: mov.nome,
-            dataMovimento: data,
-            complementos: mov.complementos.length
-              ? mov.complementos.join(" | ")
-              : null,
-            fonte: "DATAJUD",
-          },
-          select: { id: true },
-        });
-        novas++;
-      } catch {
-        // duplicada pela unique constraint (processoId, dataMovimento, nomeMovimento)
-      }
-
-      // O inteiro teor (DJEN) NAO e buscado aqui: a movimentacao nasce com
-      // conteudoIntegralStatus null e entra na fila (processarFilaDjen), que
-      // respeita rate-limit e orcamento de tempo. Buscar inline derrubava o
-      // cron por timeout antes de percorrer todos os processos.
+      linhas.push({
+        processoId: processo.id,
+        codigoMovimento: mov.codigo,
+        nomeMovimento: mov.nome,
+        dataMovimento: data,
+        complementos: mov.complementos.length
+          ? mov.complementos.join(" | ")
+          : null,
+        fonte: "DATAJUD",
+      });
     }
+    if (linhas.length > 0) {
+      const criadas = await prisma.movimentacaoAutomatica.createMany({
+        data: linhas,
+        skipDuplicates: true,
+      });
+      novas = criadas.count;
+    }
+
+    // O inteiro teor (DJEN) NAO e buscado aqui: a movimentacao nasce com
+    // conteudoIntegralStatus null e entra na fila (processarFilaDjen), que
+    // respeita rate-limit e orcamento de tempo. Buscar inline derrubava o
+    // cron por timeout antes de percorrer todos os processos.
 
     await prisma.monitoramentoConfig.upsert({
       where: { processoId: processo.id },

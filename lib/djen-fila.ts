@@ -128,7 +128,9 @@ export async function processarFilaDjen(opts: {
       continue;
     }
 
-    const resultado = await buscarPublicacaoNoDJEN(numero, m.dataMovimento);
+    const resultado = await buscarPublicacaoNoDJEN(numero, m.dataMovimento, {
+      deadline: opts.deadline,
+    });
     const update = montarUpdateDjen(resultado);
     await prisma.movimentacaoAutomatica.update({
       where: { id: m.id },

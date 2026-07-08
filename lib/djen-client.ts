@@ -47,23 +47,38 @@ function dormir(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function aguardarSlotDjen(): Promise<void> {
+/**
+ * Espera um slot do rate-limiter. Se `deadline` (epoch ms) for informado e
+ * chegar antes de conseguir o slot (cooldown de 429 pode durar 65s+), retorna
+ * false — o chamador desiste sem bater na API, em vez de estourar o
+ * maxDuration da funcao serverless.
+ */
+async function aguardarSlotDjen(deadline?: number): Promise<boolean> {
+  function passouDeadline(): boolean {
+    return deadline != null && Date.now() >= deadline;
+  }
+  function dormirAteh(ms: number): Promise<void> {
+    const teto = deadline != null ? Math.max(deadline - Date.now(), 100) : ms;
+    return dormir(Math.max(Math.min(ms, teto), 100));
+  }
   // 1) Cooldown global ativo? Espera ele acabar.
   while (Date.now() < cooldownAte) {
-    await dormir(Math.max(cooldownAte - Date.now() + 50, 100));
+    if (passouDeadline()) return false;
+    await dormirAteh(cooldownAte - Date.now() + 50);
   }
   // 2) Janela deslizante.
   while (true) {
+    if (passouDeadline()) return false;
     const agora = Date.now();
     while (reqTimestamps.length > 0 && reqTimestamps[0] < agora - JANELA_MS) {
       reqTimestamps.shift();
     }
     if (reqTimestamps.length < MAX_REQ_POR_MIN) {
       reqTimestamps.push(agora);
-      return;
+      return true;
     }
     const espera = reqTimestamps[0] + JANELA_MS - agora + 100;
-    await dormir(Math.max(espera, 100));
+    await dormirAteh(espera);
   }
 }
 
@@ -228,6 +243,7 @@ function extrairId(item: DjenItem): string | null {
 export async function buscarPublicacaoNoDJEN(
   numeroProcesso: string,
   dataAndamento: Date,
+  opts?: { deadline?: number },
 ): Promise<BuscaPublicacaoResultado> {
   if (ehProcessoTrabalhista(numeroProcesso)) {
     console.warn(
@@ -258,7 +274,14 @@ export async function buscarPublicacaoNoDJEN(
   };
 
   for (let tentativa = 1; tentativa <= DJEN_MAX_TENTATIVAS; tentativa++) {
-    await aguardarSlotDjen();
+    const conseguiuSlot = await aguardarSlotDjen(opts?.deadline);
+    if (!conseguiuSlot) {
+      return {
+        encontrado: false,
+        motivo: "ERRO_BUSCA",
+        erro: "orcamento de tempo esgotado (fica para a proxima execucao)",
+      };
+    }
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), DJEN_TIMEOUT_MS);

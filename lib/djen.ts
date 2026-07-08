@@ -97,26 +97,23 @@ export async function verificarNovasPublicacoes(
     processo.tribunal,
   );
 
-  let novas = 0;
-  for (const pub of publicacoes) {
-    try {
-      await prisma.publicacaoDJEN.create({
-        data: {
-          processoId: processo.id,
-          dataPublicacao: pub.dataPublicacao,
-          dataDisponibilizacao: pub.dataDisponibilizacao,
-          conteudo: pub.conteudo,
-          caderno: pub.caderno,
-          pagina: pub.pagina,
-          fonte: "DJEN",
-          geraIntimacao: pub.geraIntimacao,
-        },
-      });
-      novas++;
-    } catch {
-      // duplicada pela unique constraint (processoId, dataPublicacao, conteudo)
-    }
-  }
+  if (publicacoes.length === 0) return 0;
 
-  return novas;
+  // Insercao em lote — duplicadas pela unique constraint
+  // (processoId, dataPublicacao, conteudo) sao ignoradas pelo skipDuplicates.
+  const criadas = await prisma.publicacaoDJEN.createMany({
+    data: publicacoes.map((pub) => ({
+      processoId: processo.id,
+      dataPublicacao: pub.dataPublicacao,
+      dataDisponibilizacao: pub.dataDisponibilizacao,
+      conteudo: pub.conteudo,
+      caderno: pub.caderno,
+      pagina: pub.pagina,
+      fonte: "DJEN",
+      geraIntimacao: pub.geraIntimacao,
+    })),
+    skipDuplicates: true,
+  });
+
+  return criadas.count;
 }
