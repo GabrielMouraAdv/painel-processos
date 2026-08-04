@@ -30,6 +30,7 @@ export type StatusPrazo =
   | "PENDENTE"
   | "IMPORTANTE"
   | "EM_ELABORACAO"
+  | "ENVIADO_REVISAO"
   | "CUMPRIDO"
   | "PERDIDO"
   | "DISPENSADO";
@@ -64,6 +65,13 @@ export const STATUS_PRAZO_ELEITORAL: Array<{
     cor: "#ea580c",
     badge: "bg-orange-50 text-orange-800 border-orange-600",
     legenda: "bg-orange-600",
+  },
+  {
+    value: "ENVIADO_REVISAO",
+    label: "Enviado para revisao",
+    cor: "#0891b2",
+    badge: "bg-cyan-50 text-cyan-800 border-cyan-600",
+    legenda: "bg-cyan-600",
   },
   {
     value: "CUMPRIDO",

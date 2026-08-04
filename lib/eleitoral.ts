@@ -80,6 +80,7 @@ const statusPrazoEnum = z.enum([
   "PENDENTE",
   "IMPORTANTE",
   "EM_ELABORACAO",
+  "ENVIADO_REVISAO",
   "CUMPRIDO",
   "PERDIDO",
   "DISPENSADO",
