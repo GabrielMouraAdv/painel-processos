@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/cron/eleitoral-movimentos",
-      "schedule": "0 10,14,18,22 * * *"
+      "schedule": "0 10 * * *"
     },
     {
       "path": "/api/telegram/cron/lembrete-manha",
