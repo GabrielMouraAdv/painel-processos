@@ -71,6 +71,7 @@ export default async function EleitoralCalendarioPage({
       }))}
       processos={processos}
       usuarios={usuarios}
+      usuarioAtualId={session.user.id}
     />
   );
 }

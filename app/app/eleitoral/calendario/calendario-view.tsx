@@ -12,9 +12,16 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { ChevronLeft, ChevronRight, ExternalLink, Plus } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Plus,
+  Users,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -62,7 +69,21 @@ type Props = {
   prazos: PrazoCalendario[];
   processos: ProcessoOption[];
   usuarios: UsuarioOption[];
+  usuarioAtualId: string;
 };
+
+/** Chave da selecao de agendas no navegador (por usuario logado). */
+const LS_AGENDAS = "eleitoral:agendas";
+
+/** Valor especial para os prazos que ainda nao tem responsavel. */
+const SEM_RESPONSAVEL = "__sem_responsavel__";
+
+function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/);
+  const primeira = partes[0]?.[0] ?? "";
+  const ultima = partes.length > 1 ? (partes[partes.length - 1][0] ?? "") : "";
+  return (primeira + ultima).toUpperCase();
+}
 
 const MESES = [
   "Janeiro",
@@ -104,6 +125,7 @@ export function CalendarioEleitoralView({
   prazos,
   processos,
   usuarios,
+  usuarioAtualId,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -116,6 +138,51 @@ export function CalendarioEleitoralView({
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editando, setEditando] = React.useState<PrazoCalendario | null>(null);
   const [dataInicial, setDataInicial] = React.useState<string>(hojeYmd());
+
+  // Agendas visiveis: por padrao todas. A escolha fica no navegador, entao
+  // cada pessoa mantem a sua visao entre sessoes.
+  const todasAgendas = React.useMemo(
+    () => [...usuarios.map((u) => u.id), SEM_RESPONSAVEL],
+    [usuarios],
+  );
+  const [agendas, setAgendas] = React.useState<string[]>(todasAgendas);
+  const [agendasOpen, setAgendasOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      const salvo = window.localStorage.getItem(LS_AGENDAS);
+      if (!salvo) return;
+      const ids = JSON.parse(salvo) as unknown;
+      if (!Array.isArray(ids)) return;
+      // Ignora ids de usuarios que nao existem mais.
+      const validos = ids.filter(
+        (id): id is string =>
+          typeof id === "string" && todasAgendas.includes(id),
+      );
+      if (validos.length > 0) setAgendas(validos);
+    } catch {
+      // localStorage indisponivel (modo privado): segue com todas as agendas
+    }
+  }, [todasAgendas]);
+
+  function atualizarAgendas(novas: string[]) {
+    setAgendas(novas);
+    try {
+      window.localStorage.setItem(LS_AGENDAS, JSON.stringify(novas));
+    } catch {
+      // sem persistencia: a selecao vale so para esta sessao
+    }
+  }
+
+  function toggleAgenda(id: string) {
+    atualizarAgendas(
+      agendas.includes(id)
+        ? agendas.filter((a) => a !== id)
+        : [...agendas, id],
+    );
+  }
+
+  const todasSelecionadas = agendas.length === todasAgendas.length;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -182,8 +249,12 @@ export function CalendarioEleitoralView({
   ];
   while (celulas.length % 7 !== 0) celulas.push(null);
 
+  const visiveis = itens.filter((p) =>
+    agendas.includes(p.responsavel?.id ?? SEM_RESPONSAVEL),
+  );
+
   const porDia = new Map<string, PrazoCalendario[]>();
-  for (const p of itens) {
+  for (const p of visiveis) {
     const lista = porDia.get(p.data) ?? [];
     lista.push(p);
     porDia.set(p.data, lista);
@@ -203,11 +274,26 @@ export function CalendarioEleitoralView({
           <div>
             <h1 className="text-2xl font-semibold">Calendario de prazos</h1>
             <p className="text-sm text-muted-foreground">
-              {itens.length} prazo(s) em {MESES[mes]} de {ano} · clique no dia
-              para criar, arraste para remarcar.
+              {visiveis.length}
+              {visiveis.length !== itens.length ? ` de ${itens.length}` : ""}{" "}
+              prazo(s) em {MESES[mes]} de {ano} · clique no dia para criar,
+              arraste para remarcar.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={todasSelecionadas ? "outline" : "default"}
+              size="sm"
+              onClick={() => setAgendasOpen(true)}
+            >
+              <Users className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Gerenciar agendas
+              {!todasSelecionadas && (
+                <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] font-bold">
+                  {agendas.length}/{todasAgendas.length}
+                </span>
+              )}
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link href={`/app/eleitoral/calendario?mes=${anterior}`}>
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
@@ -278,6 +364,99 @@ export function CalendarioEleitoralView({
         processos={processos}
         usuarios={usuarios}
       />
+
+      <Dialog open={agendasOpen} onOpenChange={setAgendasOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gerenciar agendas</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Escolha de quem voce quer ver os prazos no calendario. A selecao
+            fica salva neste navegador.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => atualizarAgendas(todasAgendas)}
+            >
+              Selecionar todas
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => atualizarAgendas([usuarioAtualId])}
+            >
+              Somente a minha
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => atualizarAgendas([])}
+            >
+              Limpar
+            </Button>
+          </div>
+          <div className="max-h-[50vh] space-y-1 overflow-y-auto">
+            {usuarios.map((u) => {
+              const marcado = agendas.includes(u.id);
+              const qtd = itens.filter(
+                (p) => p.responsavel?.id === u.id,
+              ).length;
+              return (
+                <label
+                  key={u.id}
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-md border p-2.5 transition-colors hover:bg-muted/50"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Checkbox
+                      checked={marcado}
+                      onChange={() => toggleAgenda(u.id)}
+                    />
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-navy text-[10px] font-bold text-white">
+                      {iniciais(u.nome)}
+                    </span>
+                    <span className="text-sm font-medium">
+                      {u.nome}
+                      {u.id === usuarioAtualId && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          (voce)
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {qtd} no mes
+                  </span>
+                </label>
+              );
+            })}
+            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-md border p-2.5 transition-colors hover:bg-muted/50">
+              <span className="flex items-center gap-2.5">
+                <Checkbox
+                  checked={agendas.includes(SEM_RESPONSAVEL)}
+                  onChange={() => toggleAgenda(SEM_RESPONSAVEL)}
+                />
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-[10px] font-bold text-slate-700">
+                  ?
+                </span>
+                <span className="text-sm font-medium">Sem responsavel</span>
+              </span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {itens.filter((p) => !p.responsavel).length} no mes
+              </span>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => setAgendasOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DndContext>
   );
 }
@@ -409,6 +588,17 @@ function PrazoBadge({
         prazo.status === "DISPENSADO" && "line-through",
       )}
     >
+      <span
+        className={cn(
+          "mr-1 inline-flex h-3.5 min-w-[18px] items-center justify-center rounded px-0.5 text-[8px] font-bold uppercase tracking-wide",
+          prazo.responsavel
+            ? "bg-brand-navy text-white"
+            : "bg-slate-300 text-slate-700",
+        )}
+        title={prazo.responsavel?.nome ?? "Sem responsavel"}
+      >
+        {prazo.responsavel ? iniciais(prazo.responsavel.nome) : "?"}
+      </span>
       {prazo.hora ? `${prazo.hora} ` : ""}
       {prazo.tarefa}
       <span className="opacity-70">
