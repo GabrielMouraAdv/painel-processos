@@ -31,10 +31,15 @@ export const LINKS_ELEITORAIS: GrupoLinks[] = [
     ],
   },
   {
-    titulo: "Resolucoes TSE — Eleicoes 2026",
-    descricao: "Texto compilado no portal do TSE.",
+    titulo: "Legislacao e resolucoes",
+    descricao: "Lei das Eleicoes e resolucoes do TSE para 2026.",
     icone: "scale",
     links: [
+      {
+        titulo: "Lei 9.504/1997 — Lei das Eleicoes",
+        descricao: "Texto compilado no Planalto",
+        url: "https://www.planalto.gov.br/ccivil_03/leis/l9504.htm",
+      },
       {
         titulo: "Res. 23.755/2026 — Propaganda eleitoral",
         descricao: "Propaganda, utilizacao e geracao do horario gratuito",
@@ -71,6 +76,11 @@ export const LINKS_ELEITORAIS: GrupoLinks[] = [
         titulo: "PJe TRE-PE (2o grau)",
         descricao: "Login no processo judicial eletronico do TRE-PE",
         url: "https://sso.cloud.pje.jus.br/auth/realms/pje/protocol/openid-connect/auth?response_type=code&client_id=pje-trepe-2g&redirect_uri=https%3A%2F%2Fpje.tre-pe.jus.br%2Fpje%2Flogin.seam&state=98c20df0-f354-48af-9f47-4fa7f15d96cf&login=true&scope=openid",
+      },
+      {
+        titulo: "PJe TRE-PE (1o grau)",
+        descricao: "Login no PJe das zonas eleitorais de Pernambuco",
+        url: "https://sso.cloud.pje.jus.br/auth/realms/pje/protocol/openid-connect/auth?response_type=code&client_id=pje-trepe-1g&redirect_uri=https%3A%2F%2Fpje1g-pe.tse.jus.br%2Fpje%2Flogin.seam&state=da0a4c5d-0c73-4617-bd03-dd9442735b5c&login=true&scope=openid",
       },
     ],
   },
