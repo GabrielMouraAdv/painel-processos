@@ -221,7 +221,8 @@ export default async function EleitoralDashboardPage() {
                   </span>
                 </div>
                 <p className="truncate text-xs text-muted-foreground">
-                  {m.processo.apelido ?? m.processo.numero}
+                  {m.processo.numero}
+                  {m.processo.apelido ? ` · ${m.processo.apelido}` : ""}
                   {m.complemento ? ` — ${m.complemento}` : ""}
                 </p>
               </Link>
