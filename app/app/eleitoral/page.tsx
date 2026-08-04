@@ -6,7 +6,6 @@ import {
   Gavel,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -17,6 +16,8 @@ import {
   diasAteUTC,
   formatarDataHoraRecife,
   formatarDataUTC,
+  STATUS_ENCERRADOS,
+  statusPrazoInfo,
 } from "@/lib/eleitoral-labels";
 import { exigirPaginaEleitoral } from "@/lib/eleitoral-server";
 import { prisma } from "@/lib/prisma";
@@ -46,11 +47,14 @@ export default async function EleitoralDashboardPage() {
       where: { escritorioId, status: "EM_TRAMITACAO" },
     }),
     prisma.prazoEleitoral.count({
-      where: { cumprido: false, processo: { escritorioId } },
+      where: {
+        status: { notIn: STATUS_ENCERRADOS },
+        processo: { escritorioId },
+      },
     }),
     prisma.prazoEleitoral.findMany({
       where: {
-        cumprido: false,
+        status: { notIn: STATUS_ENCERRADOS },
         data: { lte: em7 },
         processo: { escritorioId },
       },
@@ -174,10 +178,16 @@ export default async function EleitoralDashboardPage() {
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <Badge variant={dias < 0 ? "destructive" : dias <= 1 ? "destructive" : "secondary"}>
+                    <span
+                      className="inline-block rounded border-l-4 px-1.5 py-0.5 text-xs font-semibold"
+                      style={{
+                        borderLeftColor: statusPrazoInfo(p.status).cor,
+                        color: statusPrazoInfo(p.status).cor,
+                      }}
+                    >
                       {formatarDataUTC(p.data)}
                       {p.hora ? ` ${p.hora}` : ""}
-                    </Badge>
+                    </span>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {dias < 0
                         ? `vencido ha ${Math.abs(dias)} dia(s)`

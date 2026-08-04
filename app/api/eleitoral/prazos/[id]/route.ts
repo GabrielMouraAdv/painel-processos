@@ -4,6 +4,7 @@ import { registrarLog } from "@/lib/audit-log";
 import {
   exigirSessaoEleitoral,
   prazoEleitoralUpdateSchema,
+  sincronizarStatusPrazo,
 } from "@/lib/eleitoral";
 import { prisma } from "@/lib/prisma";
 
@@ -39,6 +40,11 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   const d = parsed.data;
 
+  const statusSync = sincronizarStatusPrazo({
+    status: d.status,
+    cumprido: d.cumprido,
+  });
+
   const prazo = await prisma.prazoEleitoral.update({
     where: { id: existente.id },
     data: {
@@ -51,7 +57,7 @@ export async function PATCH(req: Request, { params }: Params) {
       ...(d.observacoes !== undefined
         ? { observacoes: d.observacoes || null }
         : {}),
-      ...(d.cumprido !== undefined ? { cumprido: d.cumprido } : {}),
+      ...statusSync,
     },
   });
 
@@ -61,9 +67,11 @@ export async function PATCH(req: Request, { params }: Params) {
     entidade: "PrazoEleitoral",
     entidadeId: prazo.id,
     descricao:
-      d.cumprido !== undefined
-        ? `Marcou prazo eleitoral (${existente.tarefa}) como ${d.cumprido ? "cumprido" : "pendente"}`
-        : `Editou prazo eleitoral (${existente.tarefa})`,
+      statusSync.status !== undefined
+        ? `Prazo eleitoral (${existente.tarefa}) marcado como ${statusSync.status}`
+        : d.data !== undefined
+          ? `Moveu o prazo eleitoral (${existente.tarefa}) para ${d.data.toISOString().slice(0, 10)}`
+          : `Editou prazo eleitoral (${existente.tarefa})`,
   });
 
   return NextResponse.json({ prazo });

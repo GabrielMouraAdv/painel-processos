@@ -22,6 +22,90 @@ export const STATUS_ELEITORAIS = [
   { value: "ARQUIVADO", label: "Arquivado" },
 ] as const;
 
+// ------------------------------------------------------------
+// Status dos prazos — cada um tem cor propria no calendario.
+// ------------------------------------------------------------
+
+export type StatusPrazo =
+  | "PENDENTE"
+  | "IMPORTANTE"
+  | "EM_ELABORACAO"
+  | "CUMPRIDO"
+  | "PERDIDO"
+  | "DISPENSADO";
+
+export const STATUS_PRAZO_ELEITORAL: Array<{
+  value: StatusPrazo;
+  label: string;
+  /** Cor da bolinha/legenda e da borda esquerda do evento. */
+  cor: string;
+  /** Classes do badge dentro da celula do dia. */
+  badge: string;
+  /** Classe do quadradinho da legenda. */
+  legenda: string;
+}> = [
+  {
+    value: "IMPORTANTE",
+    label: "Importante",
+    cor: "#dc2626",
+    badge: "bg-red-50 text-red-800 border-red-600",
+    legenda: "bg-red-600",
+  },
+  {
+    value: "PENDENTE",
+    label: "Pendente",
+    cor: "#2563eb",
+    badge: "bg-blue-50 text-blue-800 border-blue-600",
+    legenda: "bg-blue-600",
+  },
+  {
+    value: "EM_ELABORACAO",
+    label: "Em elaboracao",
+    cor: "#ea580c",
+    badge: "bg-orange-50 text-orange-800 border-orange-600",
+    legenda: "bg-orange-600",
+  },
+  {
+    value: "CUMPRIDO",
+    label: "Cumprido",
+    cor: "#16a34a",
+    badge: "bg-emerald-50 text-emerald-800 border-emerald-600",
+    legenda: "bg-emerald-600",
+  },
+  {
+    value: "PERDIDO",
+    label: "Perdido",
+    cor: "#7c3aed",
+    badge: "bg-violet-50 text-violet-800 border-violet-600",
+    legenda: "bg-violet-600",
+  },
+  {
+    value: "DISPENSADO",
+    label: "Dispensado",
+    cor: "#94a3b8",
+    badge: "bg-slate-100 text-slate-600 border-slate-400",
+    legenda: "bg-slate-400",
+  },
+];
+
+export function statusPrazoInfo(value: string) {
+  return (
+    STATUS_PRAZO_ELEITORAL.find((s) => s.value === value) ??
+    STATUS_PRAZO_ELEITORAL[1]
+  );
+}
+
+export function labelStatusPrazo(value: string): string {
+  return statusPrazoInfo(value).label;
+}
+
+/** Status que encerram o prazo (nao aparecem como pendencia). */
+export const STATUS_ENCERRADOS: StatusPrazo[] = [
+  "CUMPRIDO",
+  "PERDIDO",
+  "DISPENSADO",
+];
+
 export const CATEGORIAS_DOCUMENTO_ELEITORAL = [
   { value: "INICIAL", label: "Inicial / Representacao" },
   { value: "DEFESA", label: "Defesa / Contestacao" },

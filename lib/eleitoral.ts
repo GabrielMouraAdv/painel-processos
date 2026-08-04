@@ -73,6 +73,15 @@ export const processoEleitoralUpdateSchema = processoEleitoralCreateSchema
     resultado: z.string().optional().nullable(),
   });
 
+const statusPrazoEnum = z.enum([
+  "PENDENTE",
+  "IMPORTANTE",
+  "EM_ELABORACAO",
+  "CUMPRIDO",
+  "PERDIDO",
+  "DISPENSADO",
+]);
+
 export const prazoEleitoralCreateSchema = z.object({
   processoId: z.string().min(1),
   tarefa: z.string().trim().min(1, "Informe a tarefa"),
@@ -80,6 +89,7 @@ export const prazoEleitoralCreateSchema = z.object({
   hora: z.string().trim().optional().nullable(),
   responsavelId: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
+  status: statusPrazoEnum.default("PENDENTE"),
 });
 
 export const prazoEleitoralUpdateSchema = z.object({
@@ -89,7 +99,29 @@ export const prazoEleitoralUpdateSchema = z.object({
   responsavelId: z.string().nullable().optional(),
   observacoes: z.string().nullable().optional(),
   cumprido: z.boolean().optional(),
+  status: statusPrazoEnum.optional(),
 });
+
+/**
+ * `status` e a fonte da verdade; `cumprido` continua existindo para as
+ * telas/contagens antigas. Aqui mantemos os dois coerentes: mexeu em um,
+ * o outro acompanha.
+ */
+export function sincronizarStatusPrazo(input: {
+  status?: z.infer<typeof statusPrazoEnum>;
+  cumprido?: boolean;
+}): { status?: z.infer<typeof statusPrazoEnum>; cumprido?: boolean } {
+  if (input.status !== undefined) {
+    return { status: input.status, cumprido: input.status === "CUMPRIDO" };
+  }
+  if (input.cumprido !== undefined) {
+    return {
+      cumprido: input.cumprido,
+      status: input.cumprido ? "CUMPRIDO" : "PENDENTE",
+    };
+  }
+  return {};
+}
 
 // ============================================================
 // Movimentos via Datajud (TRE-PE)

@@ -33,6 +33,7 @@ import {
   labelClasseEleitoral,
   labelPoloEleitoral,
   labelStatusEleitoral,
+  statusPrazoInfo,
 } from "@/lib/eleitoral-labels";
 import {
   exigirPaginaEleitoral,
@@ -280,10 +281,21 @@ export default async function EleitoralProcessoPage({
                   }`}
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">
-                      {p.tarefa}
-                      {p.responsavel ? ` — ${p.responsavel.nome}` : ""}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">
+                        {p.tarefa}
+                        {p.responsavel ? ` — ${p.responsavel.nome}` : ""}
+                      </p>
+                      <span
+                        className="rounded border-l-4 px-1.5 py-0.5 text-[10px] font-semibold"
+                        style={{
+                          borderLeftColor: statusPrazoInfo(p.status).cor,
+                          color: statusPrazoInfo(p.status).cor,
+                        }}
+                      >
+                        {statusPrazoInfo(p.status).label}
+                      </span>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {formatarDataUTC(p.data)}
                       {p.hora ? ` as ${p.hora}` : ""}
@@ -313,6 +325,7 @@ export default async function EleitoralProcessoPage({
                         hora: p.hora,
                         observacoes: p.observacoes,
                         responsavelId: p.responsavel?.id ?? null,
+                        status: p.status,
                       }}
                       usuarios={usuarios}
                       trigger={

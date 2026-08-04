@@ -56,6 +56,8 @@ export async function POST(req: Request) {
       hora: data.hora || null,
       responsavelId: data.responsavelId || null,
       observacoes: data.observacoes || null,
+      status: data.status,
+      cumprido: data.status === "CUMPRIDO",
     },
   });
 

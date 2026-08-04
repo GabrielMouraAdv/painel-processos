@@ -1012,17 +1012,27 @@ model ProcessoEleitoral {
   @@index([advogadoRespId])
 }
 
+enum StatusPrazoEleitoral {
+  PENDENTE
+  IMPORTANTE
+  EM_ELABORACAO
+  CUMPRIDO
+  PERDIDO
+  DISPENSADO
+}
+
 model PrazoEleitoral {
-  id            String   @id @default(cuid())
+  id            String               @id @default(cuid())
   processoId    String
   tarefa        String
   data          DateTime
   hora          String?
-  observacoes   String?  @db.Text
-  cumprido      Boolean  @default(false)
+  observacoes   String?              @db.Text
+  status        StatusPrazoEleitoral @default(PENDENTE)
+  cumprido      Boolean              @default(false)
   responsavelId String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   processo    ProcessoEleitoral @relation(fields: [processoId], references: [id], onDelete: Cascade)
   responsavel User?             @relation("PrazoEleitoralResp", fields: [responsavelId], references: [id])

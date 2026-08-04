@@ -16,6 +16,8 @@ import {
   formatarDataUTC,
   labelClasseEleitoral,
   labelStatusEleitoral,
+  STATUS_ENCERRADOS,
+  statusPrazoInfo,
 } from "@/lib/eleitoral-labels";
 import {
   exigirPaginaEleitoral,
@@ -37,7 +39,7 @@ export default async function EleitoralProcessosPage() {
         coordenador: { select: { nome: true } },
         advogadoResp: { select: { nome: true } },
         prazos: {
-          where: { cumprido: false },
+          where: { status: { notIn: STATUS_ENCERRADOS } },
           orderBy: { data: "asc" },
           take: 1,
           include: { responsavel: { select: { nome: true } } },
@@ -119,9 +121,16 @@ export default async function EleitoralProcessosPage() {
                   <TableCell>
                     {proximo ? (
                       <div>
-                        <Badge variant="destructive">
+                        <span
+                          className="inline-block rounded border-l-4 px-1.5 py-0.5 text-xs font-semibold"
+                          style={{
+                            borderLeftColor: statusPrazoInfo(proximo.status)
+                              .cor,
+                            color: statusPrazoInfo(proximo.status).cor,
+                          }}
+                        >
                           {formatarDataUTC(proximo.data)}
-                        </Badge>
+                        </span>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {proximo.tarefa}
                           {proximo.responsavel

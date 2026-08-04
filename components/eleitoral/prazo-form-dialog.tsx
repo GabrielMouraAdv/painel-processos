@@ -23,7 +23,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { dataInputUTC } from "@/lib/eleitoral-labels";
+import {
+  dataInputUTC,
+  STATUS_PRAZO_ELEITORAL,
+} from "@/lib/eleitoral-labels";
 
 export type UsuarioOption = { id: string; nome: string };
 
@@ -34,6 +37,7 @@ export type PrazoEleitoralInitial = {
   hora: string | null;
   observacoes: string | null;
   responsavelId: string | null;
+  status: string;
 };
 
 type Props = {
@@ -67,6 +71,7 @@ export function PrazoFormDialog({
   const [responsavelId, setResponsavelId] = React.useState(
     prazo?.responsavelId ?? NENHUM,
   );
+  const [status, setStatus] = React.useState(prazo?.status ?? "PENDENTE");
   const [observacoes, setObservacoes] = React.useState(prazo?.observacoes ?? "");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -78,6 +83,7 @@ export function PrazoFormDialog({
         tarefa,
         data,
         hora: hora || null,
+        status,
         responsavelId: responsavelId === NENHUM ? null : responsavelId,
         observacoes: observacoes || null,
       };
@@ -151,6 +157,21 @@ export function PrazoFormDialog({
                 onChange={(e) => setHora(e.target.value)}
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_PRAZO_ELEITORAL.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Responsavel</Label>

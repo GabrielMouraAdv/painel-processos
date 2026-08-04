@@ -42,7 +42,7 @@ export default async function AppLayout({
         }),
         prisma.prazoEleitoral.count({
           where: {
-            cumprido: false,
+            status: { notIn: ["CUMPRIDO", "PERDIDO", "DISPENSADO"] },
             data: { lte: em7UTC },
             processo: { escritorioId },
           },
