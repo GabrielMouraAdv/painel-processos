@@ -48,30 +48,59 @@ export type ProcessoEleitoralInitial = {
   advogadoRespId: string | null;
 };
 
+export type ProcessoDefaults = {
+  numero?: string;
+  parteAutora?: string;
+  parteRe?: string;
+  objeto?: string;
+  relator?: string;
+};
+
 type Props = {
   mode: "create" | "edit";
   processo?: ProcessoEleitoralInitial;
   usuarios: UsuarioOption[];
   trigger: React.ReactNode;
+  /** Pre-preenchimento no modo create (ex.: triagem do monitoramento). */
+  defaults?: ProcessoDefaults;
+  /** Deteccao da triagem que sera fechada quando o cadastro der certo. */
+  deteccaoId?: string;
 };
 
 const NENHUM = "__nenhum__";
 
-export function ProcessoFormDialog({ mode, processo, usuarios, trigger }: Props) {
+export function ProcessoFormDialog({
+  mode,
+  processo,
+  usuarios,
+  trigger,
+  defaults,
+  deteccaoId,
+}: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
 
-  const [numero, setNumero] = React.useState(processo?.numero ?? "");
+  const [numero, setNumero] = React.useState(
+    processo?.numero ?? defaults?.numero ?? "",
+  );
   const [classe, setClasse] = React.useState(processo?.classe ?? "REPRESENTACAO");
   const [apelido, setApelido] = React.useState(processo?.apelido ?? "");
-  const [parteAutora, setParteAutora] = React.useState(processo?.parteAutora ?? "");
-  const [parteRe, setParteRe] = React.useState(processo?.parteRe ?? "");
+  const [parteAutora, setParteAutora] = React.useState(
+    processo?.parteAutora ?? defaults?.parteAutora ?? "",
+  );
+  const [parteRe, setParteRe] = React.useState(
+    processo?.parteRe ?? defaults?.parteRe ?? "",
+  );
   const [polo, setPolo] = React.useState(processo?.polo ?? "PASSIVO");
-  const [objeto, setObjeto] = React.useState(processo?.objeto ?? "");
-  const [relator, setRelator] = React.useState(processo?.relator ?? "");
+  const [objeto, setObjeto] = React.useState(
+    processo?.objeto ?? defaults?.objeto ?? "",
+  );
+  const [relator, setRelator] = React.useState(
+    processo?.relator ?? defaults?.relator ?? "",
+  );
   const [status, setStatus] = React.useState(processo?.status ?? "EM_TRAMITACAO");
   const [resultado, setResultado] = React.useState(processo?.resultado ?? "");
   const [observacoes, setObservacoes] = React.useState(processo?.observacoes ?? "");
@@ -98,6 +127,7 @@ export function ProcessoFormDialog({ mode, processo, usuarios, trigger }: Props)
         observacoes: observacoes || null,
         coordenadorId: coordenadorId === NENHUM ? null : coordenadorId,
         advogadoRespId: advogadoRespId === NENHUM ? null : advogadoRespId,
+        ...(mode === "create" && deteccaoId ? { deteccaoId } : {}),
         ...(mode === "edit" ? { status, resultado: resultado || null } : {}),
       };
       const res = await fetch(

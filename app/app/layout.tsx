@@ -29,25 +29,32 @@ export default async function AppLayout({
     em7UTC.setUTCDate(em7UTC.getUTCDate() + 7);
     em7UTC.setUTCHours(23, 59, 59, 999);
 
-    const [processosEleitoralTotal, prazosEleitoralUrgentes] =
-      await Promise.all([
-        prisma.processoEleitoral.count({
-          where: { escritorioId, status: "EM_TRAMITACAO" },
-        }),
-        prisma.prazoEleitoral.count({
-          where: {
-            status: { notIn: ["CUMPRIDO", "PERDIDO", "DISPENSADO"] },
-            data: { lte: em7UTC },
-            processo: { escritorioId },
-          },
-        }),
-      ]);
+    const [
+      processosEleitoralTotal,
+      prazosEleitoralUrgentes,
+      deteccoesEleitoralPendentes,
+    ] = await Promise.all([
+      prisma.processoEleitoral.count({
+        where: { escritorioId, status: "EM_TRAMITACAO" },
+      }),
+      prisma.prazoEleitoral.count({
+        where: {
+          status: { notIn: ["CUMPRIDO", "PERDIDO", "DISPENSADO"] },
+          data: { lte: em7UTC },
+          processo: { escritorioId },
+        },
+      }),
+      prisma.deteccaoEleitoral.count({
+        where: { escritorioId, status: "PENDENTE" },
+      }),
+    ]);
 
     return (
       <AppShell
         modoEleitoral
         processosEleitoralTotal={processosEleitoralTotal}
         prazosEleitoralUrgentes={prazosEleitoralUrgentes}
+        deteccoesEleitoralPendentes={deteccoesEleitoralPendentes}
         prazosUrgentes={0}
         prazosTceUrgentes={0}
         processosTceTotal={0}

@@ -27,6 +27,7 @@ type Props = {
   modoEleitoral?: boolean;
   processosEleitoralTotal?: number;
   prazosEleitoralUrgentes?: number;
+  deteccoesEleitoralPendentes?: number;
 };
 
 export function AppShell({
@@ -43,6 +44,7 @@ export function AppShell({
   modoEleitoral = false,
   processosEleitoralTotal = 0,
   prazosEleitoralUrgentes = 0,
+  deteccoesEleitoralPendentes = 0,
 }: Props) {
   const [open, setOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -108,6 +110,7 @@ export function AppShell({
           modoEleitoral={modoEleitoral}
           processosEleitoralTotal={processosEleitoralTotal}
           prazosEleitoralUrgentes={prazosEleitoralUrgentes}
+          deteccoesEleitoralPendentes={deteccoesEleitoralPendentes}
           onOpenSearch={() => setSearchOpen(true)}
         />
       </aside>

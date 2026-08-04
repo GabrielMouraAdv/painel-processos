@@ -104,6 +104,7 @@ model Escritorio {
   compromissos        Compromisso[]
   processosEleitoral  ProcessoEleitoral[]
   relatoriosEleitoral RelatorioEleitoral[]
+  deteccoesEleitoral  DeteccaoEleitoral[]
 }
 
 model User {
@@ -140,6 +141,7 @@ model User {
   prazosEleitoralResp     PrazoEleitoral[]     @relation("PrazoEleitoralResp")
   relatoriosEleitoral     RelatorioEleitoral[] @relation("RelatorioEleitoralUpload")
   documentosEleitoral     DocumentoEleitoral[] @relation("DocumentoEleitoralUpload")
+  deteccoesResolvidas     DeteccaoEleitoral[]  @relation("DeteccaoResolvidaPor")
 
   @@index([escritorioId])
   @@index([telegramAtivo])
@@ -1005,6 +1007,7 @@ model ProcessoEleitoral {
   prazos       PrazoEleitoral[]
   movimentos   MovimentoEleitoral[]
   documentos   DocumentoEleitoral[]
+  deteccoes    DeteccaoEleitoral[]
 
   @@index([escritorioId])
   @@index([status])
@@ -1099,4 +1102,41 @@ model DocumentoEleitoral {
 
   @@index([processoId])
   @@index([uploadedById])
+}
+
+enum StatusDeteccao {
+  PENDENTE
+  CADASTRADO
+  DISPENSADO
+  OUTRO_ESCRITORIO
+}
+
+model DeteccaoEleitoral {
+  id                     String         @id @default(cuid())
+  numero                 String         @unique
+  classe                 String?
+  parteAutora            String?
+  parteRe                String?
+  objeto                 String?        @db.Text
+  relator                String?
+  orgao                  String?
+  fonte                  String         @default("PDPJ")
+  observacoes            String?        @db.Text
+  status                 StatusDeteccao @default(PENDENTE)
+  processoId             String?
+  escritorioResponsavel  String?
+  motivoDispensa         String?        @db.Text
+  resolvidoPorId         String?
+  resolvidoEm            DateTime?
+  escritorioId           String
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  processo     ProcessoEleitoral? @relation(fields: [processoId], references: [id], onDelete: SetNull)
+  resolvidoPor User?              @relation("DeteccaoResolvidaPor", fields: [resolvidoPorId], references: [id])
+  escritorio   Escritorio         @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+
+  @@index([escritorioId])
+  @@index([status])
+  @@index([createdAt])
 }

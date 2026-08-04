@@ -50,6 +50,7 @@ type Props = {
   modoEleitoral?: boolean;
   processosEleitoralTotal?: number;
   prazosEleitoralUrgentes?: number;
+  deteccoesEleitoralPendentes?: number;
   onOpenSearch?: () => void;
 };
 
@@ -66,6 +67,7 @@ export function Sidebar({
   modoEleitoral = false,
   processosEleitoralTotal = 0,
   prazosEleitoralUrgentes = 0,
+  deteccoesEleitoralPendentes = 0,
   onOpenSearch,
 }: Props) {
   const groupsEleitoral: NavGroup[] = [
@@ -87,6 +89,16 @@ export function Sidebar({
           icon: CalendarRange,
           badge:
             prazosEleitoralUrgentes > 0 ? prazosEleitoralUrgentes : undefined,
+          badgeTone: "red",
+        },
+        {
+          label: "Monitoramento",
+          href: "/app/eleitoral/monitoramento",
+          icon: Activity,
+          badge:
+            deteccoesEleitoralPendentes > 0
+              ? deteccoesEleitoralPendentes
+              : undefined,
           badgeTone: "red",
         },
         {

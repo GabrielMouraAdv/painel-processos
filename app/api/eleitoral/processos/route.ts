@@ -70,6 +70,19 @@ export async function POST(req: Request) {
       },
     });
 
+    // Cadastro vindo da triagem do monitoramento: fecha a deteccao.
+    if (data.deteccaoId) {
+      await prisma.deteccaoEleitoral.updateMany({
+        where: { id: data.deteccaoId, escritorioId },
+        data: {
+          status: "CADASTRADO",
+          processoId: processo.id,
+          resolvidoPorId: session.user.id,
+          resolvidoEm: new Date(),
+        },
+      });
+    }
+
     await registrarLog({
       userId: session.user.id,
       acao: "CRIAR_PROCESSO_ELEITORAL",

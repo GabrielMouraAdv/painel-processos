@@ -64,9 +64,12 @@ export const processoEleitoralCreateSchema = z.object({
   coordenadorId: z.string().optional().nullable(),
   advogadoRespId: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
+  /** Quando o cadastro nasce da triagem, a deteccao e marcada como CADASTRADO. */
+  deteccaoId: z.string().optional().nullable(),
 });
 
 export const processoEleitoralUpdateSchema = processoEleitoralCreateSchema
+  .omit({ deteccaoId: true })
   .partial()
   .extend({
     status: z.enum(["EM_TRAMITACAO", "JULGADO", "ARQUIVADO"]).optional(),
