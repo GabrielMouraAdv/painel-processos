@@ -15,6 +15,9 @@ export const TRIBUNAL_ENDPOINTS: Record<string, string> = {
   // processo esta cadastrado como OUTRO (nao existem no enum Tribunal):
   TJPB: "api_publica_tjpb",
   TJRN: "api_publica_tjrn",
+  // Justica Eleitoral (usada pelo modulo eleitoral):
+  "TRE-PE": "api_publica_tre-pe",
+  TSE: "api_publica_tse",
 };
 
 /**
@@ -35,6 +38,11 @@ export function tribunalPorNumeroCNJ(numero: string): string | null {
     return null;
   }
   if (segmento === "5") return `TRT${Number(tr)}`;
+  if (segmento === "6") {
+    if (tr === "00") return "TSE";
+    if (tr === "17") return "TRE-PE";
+    return null;
+  }
   if (segmento === "8") {
     if (tr === "17") return "TJPE";
     if (tr === "15") return "TJPB";

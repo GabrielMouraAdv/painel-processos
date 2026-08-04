@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { AppShell } from "@/components/app-shell";
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
+import { isUsuarioEleitoral } from "@/lib/eleitoral";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
@@ -18,6 +19,55 @@ export default async function AppLayout({
   if (!session) redirect("/login");
 
   const escritorioId = session.user.escritorioId;
+
+  // Usuarios @eleitoral2026.com veem apenas o modulo eleitoral: sidebar
+  // propria e sem as consultas dos demais modulos.
+  if (isUsuarioEleitoral(session.user.email)) {
+    const hojeEleitoral = new Date();
+    const hojeUTC = new Date(
+      Date.UTC(
+        hojeEleitoral.getUTCFullYear(),
+        hojeEleitoral.getUTCMonth(),
+        hojeEleitoral.getUTCDate(),
+      ),
+    );
+    const em7UTC = new Date(hojeUTC);
+    em7UTC.setUTCDate(em7UTC.getUTCDate() + 7);
+    em7UTC.setUTCHours(23, 59, 59, 999);
+
+    const [processosEleitoralTotal, prazosEleitoralUrgentes] =
+      await Promise.all([
+        prisma.processoEleitoral.count({
+          where: { escritorioId, status: "EM_TRAMITACAO" },
+        }),
+        prisma.prazoEleitoral.count({
+          where: {
+            cumprido: false,
+            data: { lte: em7UTC },
+            processo: { escritorioId },
+          },
+        }),
+      ]);
+
+    return (
+      <AppShell
+        modoEleitoral
+        processosEleitoralTotal={processosEleitoralTotal}
+        prazosEleitoralUrgentes={prazosEleitoralUrgentes}
+        prazosUrgentes={0}
+        prazosTceUrgentes={0}
+        processosTceTotal={0}
+        pautasJudiciaisTotal={0}
+        alertasMonitoramento={0}
+        despachosTcePendentes={0}
+        compromissosHoje={0}
+        podeFinanceiro={false}
+        isAdmin={false}
+      >
+        {children}
+      </AppShell>
+    );
+  }
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);

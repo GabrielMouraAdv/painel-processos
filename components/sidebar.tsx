@@ -8,6 +8,7 @@ import {
   CalendarRange,
   ClipboardCheck,
   DollarSign,
+  FileText,
   Gavel,
   History,
   Home,
@@ -45,6 +46,9 @@ type Props = {
   compromissosHoje?: number;
   podeFinanceiro?: boolean;
   isAdmin?: boolean;
+  modoEleitoral?: boolean;
+  processosEleitoralTotal?: number;
+  prazosEleitoralUrgentes?: number;
   onOpenSearch?: () => void;
 };
 
@@ -58,9 +62,42 @@ export function Sidebar({
   compromissosHoje = 0,
   podeFinanceiro = false,
   isAdmin = false,
+  modoEleitoral = false,
+  processosEleitoralTotal = 0,
+  prazosEleitoralUrgentes = 0,
   onOpenSearch,
 }: Props) {
-  const groups: NavGroup[] = [
+  const groupsEleitoral: NavGroup[] = [
+    {
+      title: "Eleitoral 2026",
+      items: [
+        { label: "Dashboard", href: "/app/eleitoral", icon: LayoutDashboard },
+        {
+          label: "Processos",
+          href: "/app/eleitoral/processos",
+          icon: Gavel,
+          badge:
+            processosEleitoralTotal > 0 ? processosEleitoralTotal : undefined,
+          badgeTone: "navy",
+        },
+        {
+          label: "Calendario",
+          href: "/app/eleitoral/calendario",
+          icon: CalendarRange,
+          badge:
+            prazosEleitoralUrgentes > 0 ? prazosEleitoralUrgentes : undefined,
+          badgeTone: "red",
+        },
+        {
+          label: "Relatorios",
+          href: "/app/eleitoral/relatorios",
+          icon: FileText,
+        },
+      ],
+    },
+  ];
+
+  const groupsPadrao: NavGroup[] = [
     {
       title: "Tribunal de Contas",
       items: [
@@ -125,6 +162,8 @@ export function Sidebar({
     },
   ];
 
+  const groups = modoEleitoral ? groupsEleitoral : groupsPadrao;
+
   return (
     <div className="flex h-full flex-col bg-brand-navy text-slate-100">
       <div className="flex items-center gap-3 border-b border-white/10 px-6 py-6">
@@ -132,8 +171,12 @@ export function Sidebar({
           <Landmark className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold leading-tight">Gestao</p>
-          <p className="text-xs leading-tight text-slate-300">Processual</p>
+          <p className="text-sm font-semibold leading-tight">
+            {modoEleitoral ? "Eleitoral" : "Gestao"}
+          </p>
+          <p className="text-xs leading-tight text-slate-300">
+            {modoEleitoral ? "TRE-PE 2026" : "Processual"}
+          </p>
         </div>
         {onOpenSearch && (
           <button
@@ -152,7 +195,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-6">
-        <div className="space-y-1 pb-2">
+        <div className={cn("space-y-1 pb-2", modoEleitoral && "hidden")}>
           <Link
             href="/app"
             className={cn(

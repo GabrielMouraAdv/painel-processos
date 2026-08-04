@@ -94,14 +94,16 @@ model Escritorio {
   cnpj      String   @unique
   createdAt DateTime @default(now())
 
-  usuarios         User[]
-  gestores         Gestor[]
-  processos        Processo[]
-  municipios       Municipio[]
-  processosTce     ProcessoTce[]
-  sessoesPauta     SessaoPauta[]
-  sessoesJudiciais SessaoJudicial[]
-  compromissos     Compromisso[]
+  usuarios            User[]
+  gestores            Gestor[]
+  processos           Processo[]
+  municipios          Municipio[]
+  processosTce        ProcessoTce[]
+  sessoesPauta        SessaoPauta[]
+  sessoesJudiciais    SessaoJudicial[]
+  compromissos        Compromisso[]
+  processosEleitoral  ProcessoEleitoral[]
+  relatoriosEleitoral RelatorioEleitoral[]
 }
 
 model User {
@@ -133,6 +135,10 @@ model User {
   logsAuditoria         LogAuditoria[]
   compromissos          Compromisso[]  @relation("CompromissoAdvogado")
   intencoesTelegram     IntencaoTelegram[]
+  processosEleitoralCoord ProcessoEleitoral[]  @relation("EleitoralCoordenador")
+  processosEleitoralResp  ProcessoEleitoral[]  @relation("EleitoralAdvogadoResp")
+  prazosEleitoralResp     PrazoEleitoral[]     @relation("PrazoEleitoralResp")
+  relatoriosEleitoral     RelatorioEleitoral[] @relation("RelatorioEleitoralUpload")
 
   @@index([escritorioId])
   @@index([telegramAtivo])
@@ -943,4 +949,122 @@ model Compromisso {
   @@index([categoria])
   @@index([privado])
   @@index([escritorioResponsavelSlug])
+}
+
+// ============================================================
+// MODULO ELEITORAL (TRE-PE 2026)
+// ============================================================
+
+enum ClasseEleitoral {
+  REPRESENTACAO
+  AIJE
+  AIME
+  PETICAO
+  MANDADO_SEGURANCA
+  RECURSO
+  OUTRO
+}
+
+enum PoloEleitoral {
+  ATIVO
+  PASSIVO
+}
+
+enum StatusEleitoral {
+  EM_TRAMITACAO
+  JULGADO
+  ARQUIVADO
+}
+
+model ProcessoEleitoral {
+  id                    String          @id @default(cuid())
+  numero                String          @unique
+  classe                ClasseEleitoral @default(REPRESENTACAO)
+  apelido               String?
+  parteAutora           String
+  parteRe               String
+  polo                  PoloEleitoral   @default(PASSIVO)
+  objeto                String          @db.Text
+  relator               String?
+  status                StatusEleitoral @default(EM_TRAMITACAO)
+  resultado             String?         @db.Text
+  observacoes           String?         @db.Text
+  coordenadorId         String?
+  advogadoRespId        String?
+  datajudClasse         String?
+  datajudOrgao          String?
+  ultimaConsultaDatajud DateTime?
+  escritorioId          String
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  coordenador  User?                @relation("EleitoralCoordenador", fields: [coordenadorId], references: [id])
+  advogadoResp User?                @relation("EleitoralAdvogadoResp", fields: [advogadoRespId], references: [id])
+  escritorio   Escritorio           @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  prazos       PrazoEleitoral[]
+  movimentos   MovimentoEleitoral[]
+
+  @@index([escritorioId])
+  @@index([status])
+  @@index([coordenadorId])
+  @@index([advogadoRespId])
+}
+
+model PrazoEleitoral {
+  id            String   @id @default(cuid())
+  processoId    String
+  tarefa        String
+  data          DateTime
+  hora          String?
+  observacoes   String?  @db.Text
+  cumprido      Boolean  @default(false)
+  responsavelId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  processo    ProcessoEleitoral @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  responsavel User?             @relation("PrazoEleitoralResp", fields: [responsavelId], references: [id])
+
+  @@index([processoId])
+  @@index([data])
+  @@index([cumprido])
+  @@index([responsavelId])
+}
+
+model MovimentoEleitoral {
+  id          String   @id @default(cuid())
+  processoId  String
+  codigo      String?
+  nome        String
+  complemento String?  @db.Text
+  dataHora    DateTime
+  lida        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  processo ProcessoEleitoral @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  @@unique([processoId, dataHora, nome])
+  @@index([processoId])
+  @@index([dataHora])
+  @@index([lida])
+}
+
+model RelatorioEleitoral {
+  id             String   @id @default(cuid())
+  titulo         String
+  dataReferencia DateTime
+  nomeArquivo    String
+  url            String
+  mime           String
+  tamanho        Int
+  observacoes    String?  @db.Text
+  uploadedById   String
+  escritorioId   String
+  createdAt      DateTime @default(now())
+
+  uploadedBy User       @relation("RelatorioEleitoralUpload", fields: [uploadedById], references: [id])
+  escritorio Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+
+  @@index([escritorioId])
+  @@index([dataReferencia])
 }

@@ -23,6 +23,9 @@ type Props = {
   compromissosHoje: number;
   podeFinanceiro: boolean;
   isAdmin?: boolean;
+  modoEleitoral?: boolean;
+  processosEleitoralTotal?: number;
+  prazosEleitoralUrgentes?: number;
 };
 
 export function AppShell({
@@ -36,6 +39,9 @@ export function AppShell({
   compromissosHoje,
   podeFinanceiro,
   isAdmin = false,
+  modoEleitoral = false,
+  processosEleitoralTotal = 0,
+  prazosEleitoralUrgentes = 0,
 }: Props) {
   const [open, setOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -98,7 +104,10 @@ export function AppShell({
           compromissosHoje={compromissosHoje}
           podeFinanceiro={podeFinanceiro}
           isAdmin={isAdmin}
-          onOpenSearch={() => setSearchOpen(true)}
+          modoEleitoral={modoEleitoral}
+          processosEleitoralTotal={processosEleitoralTotal}
+          prazosEleitoralUrgentes={prazosEleitoralUrgentes}
+          onOpenSearch={modoEleitoral ? undefined : () => setSearchOpen(true)}
         />
       </aside>
 
@@ -114,29 +123,33 @@ export function AppShell({
             <Menu className="h-5 w-5" />
           </button>
           <p className="truncate text-sm font-semibold text-brand-navy">
-            Gestao Processual
+            {modoEleitoral ? "Eleitoral 2026" : "Gestao Processual"}
           </p>
           <div className="flex items-center gap-1">
-            <Link
-              href="/app/compromissos"
-              aria-label="Compromissos de hoje"
-              className="relative rounded-md p-2 text-slate-600 hover:bg-slate-100"
-            >
-              <CalendarCheck className="h-5 w-5" />
-              {compromissosHoje > 0 && (
-                <span className="absolute right-0.5 top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold leading-none text-white">
-                  {compromissosHoje}
-                </span>
-              )}
-            </Link>
-            <button
-              type="button"
-              aria-label="Buscar"
-              onClick={() => setSearchOpen(true)}
-              className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
-            >
-              <Search className="h-5 w-5" />
-            </button>
+            {!modoEleitoral && (
+              <Link
+                href="/app/compromissos"
+                aria-label="Compromissos de hoje"
+                className="relative rounded-md p-2 text-slate-600 hover:bg-slate-100"
+              >
+                <CalendarCheck className="h-5 w-5" />
+                {compromissosHoje > 0 && (
+                  <span className="absolute right-0.5 top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold leading-none text-white">
+                    {compromissosHoje}
+                  </span>
+                )}
+              </Link>
+            )}
+            {!modoEleitoral && (
+              <button
+                type="button"
+                aria-label="Buscar"
+                onClick={() => setSearchOpen(true)}
+                className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+            )}
             <button
               type="button"
               aria-label="Sair"
@@ -151,7 +164,9 @@ export function AppShell({
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
 
-      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      {!modoEleitoral && (
+        <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      )}
     </div>
   );
 }
