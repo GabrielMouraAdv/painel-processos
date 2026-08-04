@@ -1,4 +1,4 @@
-import { dataInputUTC } from "@/lib/eleitoral-labels";
+import { anoMesBrasil, dataInputUTC } from "@/lib/eleitoral-labels";
 import {
   exigirPaginaEleitoral,
   listarUsuariosEleitoral,
@@ -16,8 +16,7 @@ function parseMes(raw: string | undefined): { ano: number; mes: number } {
     const mes = Number(m[2]) - 1;
     if (mes >= 0 && mes <= 11) return { ano, mes };
   }
-  const agora = new Date();
-  return { ano: agora.getUTCFullYear(), mes: agora.getUTCMonth() };
+  return anoMesBrasil();
 }
 
 export default async function EleitoralCalendarioPage({

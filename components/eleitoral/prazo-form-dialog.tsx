@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   dataInputUTC,
+  hojeBrasilYmd,
   STATUS_PRAZO_ELEITORAL,
 } from "@/lib/eleitoral-labels";
 
@@ -65,7 +66,7 @@ export function PrazoFormDialog({
 
   const [tarefa, setTarefa] = React.useState(prazo?.tarefa ?? "");
   const [data, setData] = React.useState(
-    prazo ? dataInputUTC(prazo.data) : new Date().toISOString().slice(0, 10),
+    prazo ? dataInputUTC(prazo.data) : hojeBrasilYmd(),
   );
   const [hora, setHora] = React.useState(prazo?.hora ?? "");
   const [responsavelId, setResponsavelId] = React.useState(

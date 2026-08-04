@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { authOptions } from "@/lib/auth";
 import { diasUteisEntre } from "@/lib/dias-uteis";
 import { isUsuarioEleitoral } from "@/lib/eleitoral";
+import { inicioDoDiaBrasilUTC } from "@/lib/eleitoral-labels";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
@@ -23,14 +24,7 @@ export default async function AppLayout({
   // Usuarios @eleitoral2026.com veem apenas o modulo eleitoral: sidebar
   // propria e sem as consultas dos demais modulos.
   if (isUsuarioEleitoral(session.user.email)) {
-    const hojeEleitoral = new Date();
-    const hojeUTC = new Date(
-      Date.UTC(
-        hojeEleitoral.getUTCFullYear(),
-        hojeEleitoral.getUTCMonth(),
-        hojeEleitoral.getUTCDate(),
-      ),
-    );
+    const hojeUTC = inicioDoDiaBrasilUTC();
     const em7UTC = new Date(hojeUTC);
     em7UTC.setUTCDate(em7UTC.getUTCDate() + 7);
     em7UTC.setUTCHours(23, 59, 59, 999);

@@ -40,7 +40,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { STATUS_PRAZO_ELEITORAL, statusPrazoInfo } from "@/lib/eleitoral-labels";
+import {
+  hojeBrasilYmd,
+  STATUS_PRAZO_ELEITORAL,
+  statusPrazoInfo,
+} from "@/lib/eleitoral-labels";
 import { cn } from "@/lib/utils";
 
 export type PrazoCalendario = {
@@ -111,8 +115,10 @@ function ymdUTC(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+// "Hoje" sempre pelo relogio de Brasilia — o navegador pode estar em outro
+// fuso, e depois das 21h UTC o dia em UTC ja virou.
 function hojeYmd(): string {
-  return ymdUTC(new Date());
+  return hojeBrasilYmd();
 }
 
 function mesParam(ano: number, mes: number): string {

@@ -16,6 +16,7 @@ import {
   diasAteUTC,
   formatarDataHoraRecife,
   formatarDataUTC,
+  inicioDoDiaBrasilUTC,
   STATUS_ENCERRADOS,
   statusPrazoInfo,
 } from "@/lib/eleitoral-labels";
@@ -28,10 +29,7 @@ export default async function EleitoralDashboardPage() {
   const session = await exigirPaginaEleitoral();
   const escritorioId = session.user.escritorioId;
 
-  const hoje = new Date();
-  const hojeUTC = new Date(
-    Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate()),
-  );
+  const hojeUTC = inicioDoDiaBrasilUTC();
   const em7 = new Date(hojeUTC);
   em7.setUTCDate(em7.getUTCDate() + 7);
   em7.setUTCHours(23, 59, 59, 999);

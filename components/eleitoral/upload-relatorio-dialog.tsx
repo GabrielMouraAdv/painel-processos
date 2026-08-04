@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { hojeBrasilYmd } from "@/lib/eleitoral-labels";
 
 export function UploadRelatorioDialog() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export function UploadRelatorioDialog() {
   const [saving, setSaving] = React.useState(false);
   const [titulo, setTitulo] = React.useState("");
   const [dataReferencia, setDataReferencia] = React.useState(
-    new Date().toISOString().slice(0, 10),
+    hojeBrasilYmd(),
   );
   const [observacoes, setObservacoes] = React.useState("");
   const fileRef = React.useRef<HTMLInputElement>(null);

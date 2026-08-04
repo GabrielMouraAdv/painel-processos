@@ -148,6 +148,39 @@ export function labelStatusEleitoral(value: string): string {
 // fuso de Recife. Movimentos tem hora real e sao exibidos no fuso local.
 // ------------------------------------------------------------
 
+/**
+ * Fuso do escritorio. Depois das 21h UTC o "hoje" em UTC ja virou o dia
+ * seguinte, entao qualquer nocao de "hoje" precisa passar por aqui — nunca
+ * por getUTCDate() do relogio da maquina.
+ */
+export const TZ_BRASIL = "America/Recife";
+
+/** Data de hoje no fuso de Brasilia/Recife, no formato YYYY-MM-DD. */
+export function hojeBrasilYmd(): string {
+  // en-CA formata como YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ_BRASIL,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/**
+ * Meia-noite UTC do dia de hoje em Brasilia — as datas de prazo sao gravadas
+ * assim, entao esta e a referencia correta para comparacoes no banco.
+ */
+export function inicioDoDiaBrasilUTC(): Date {
+  const [ano, mes, dia] = hojeBrasilYmd().split("-").map(Number);
+  return new Date(Date.UTC(ano, mes - 1, dia));
+}
+
+/** Ano e mes (0-11) correntes em Brasilia. */
+export function anoMesBrasil(): { ano: number; mes: number } {
+  const [ano, mes] = hojeBrasilYmd().split("-").map(Number);
+  return { ano, mes: mes - 1 };
+}
+
 export function formatarDataUTC(d: Date | string): string {
   const date = typeof d === "string" ? new Date(d) : d;
   return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
@@ -174,15 +207,13 @@ export function dataInputUTC(d: Date | string): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Dias (inteiros) entre hoje e a data do prazo, em UTC. Negativo = vencido. */
+/**
+ * Dias (inteiros) entre hoje (em Brasilia) e a data do prazo.
+ * Negativo = vencido.
+ */
 export function diasAteUTC(d: Date | string): number {
   const date = typeof d === "string" ? new Date(d) : d;
-  const agora = new Date();
-  const hojeUTC = Date.UTC(
-    agora.getUTCFullYear(),
-    agora.getUTCMonth(),
-    agora.getUTCDate(),
-  );
+  const hojeUTC = inicioDoDiaBrasilUTC().getTime();
   const alvoUTC = Date.UTC(
     date.getUTCFullYear(),
     date.getUTCMonth(),
