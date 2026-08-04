@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { registrarLog } from "@/lib/audit-log";
 import {
+  criarPrazosRevisao,
   exigirSessaoEleitoral,
   prazoEleitoralCreateSchema,
 } from "@/lib/eleitoral";
@@ -61,13 +62,25 @@ export async function POST(req: Request) {
     },
   });
 
+  let revisoesCriadas = 0;
+  if (data.status === "ENVIADO_REVISAO" && data.revisores?.length) {
+    revisoesCriadas = await criarPrazosRevisao({
+      processoId: data.processoId,
+      tarefaBase: data.tarefa,
+      data: data.data,
+      hora: data.hora || null,
+      revisores: data.revisores,
+      escritorioId,
+    });
+  }
+
   await registrarLog({
     userId: session.user.id,
     acao: "CRIAR_PRAZO_ELEITORAL",
     entidade: "PrazoEleitoral",
     entidadeId: prazo.id,
-    descricao: `Cadastrou prazo eleitoral (${data.tarefa}) no processo ${processo.numero}`,
+    descricao: `Cadastrou prazo eleitoral (${data.tarefa}) no processo ${processo.numero}${revisoesCriadas > 0 ? ` com ${revisoesCriadas} prazo(s) de revisao` : ""}`,
   });
 
-  return NextResponse.json({ prazo }, { status: 201 });
+  return NextResponse.json({ prazo, revisoesCriadas }, { status: 201 });
 }

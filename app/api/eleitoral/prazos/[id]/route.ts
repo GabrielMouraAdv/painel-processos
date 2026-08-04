@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { registrarLog } from "@/lib/audit-log";
 import {
+  criarPrazosRevisao,
   exigirSessaoEleitoral,
   prazoEleitoralUpdateSchema,
   sincronizarStatusPrazo,
@@ -61,6 +62,20 @@ export async function PATCH(req: Request, { params }: Params) {
     },
   });
 
+  // Peca enviada para revisao com revisores marcados: cada revisor ganha
+  // automaticamente um prazo de revisao no mesmo processo.
+  let revisoesCriadas = 0;
+  if (prazo.status === "ENVIADO_REVISAO" && d.revisores?.length) {
+    revisoesCriadas = await criarPrazosRevisao({
+      processoId: prazo.processoId,
+      tarefaBase: prazo.tarefa,
+      data: prazo.data,
+      hora: prazo.hora,
+      revisores: d.revisores,
+      escritorioId: session.user.escritorioId,
+    });
+  }
+
   await registrarLog({
     userId: session.user.id,
     acao: "EDITAR_PRAZO_ELEITORAL",
@@ -68,13 +83,13 @@ export async function PATCH(req: Request, { params }: Params) {
     entidadeId: prazo.id,
     descricao:
       statusSync.status !== undefined
-        ? `Prazo eleitoral (${existente.tarefa}) marcado como ${statusSync.status}`
+        ? `Prazo eleitoral (${existente.tarefa}) marcado como ${statusSync.status}${revisoesCriadas > 0 ? ` com ${revisoesCriadas} prazo(s) de revisao` : ""}`
         : d.data !== undefined
           ? `Moveu o prazo eleitoral (${existente.tarefa}) para ${d.data.toISOString().slice(0, 10)}`
           : `Editou prazo eleitoral (${existente.tarefa})`,
   });
 
-  return NextResponse.json({ prazo });
+  return NextResponse.json({ prazo, revisoesCriadas });
 }
 
 export async function DELETE(_req: Request, { params }: Params) {

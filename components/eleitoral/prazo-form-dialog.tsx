@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +75,13 @@ export function PrazoFormDialog({
   );
   const [status, setStatus] = React.useState(prazo?.status ?? "PENDENTE");
   const [observacoes, setObservacoes] = React.useState(prazo?.observacoes ?? "");
+  const [revisores, setRevisores] = React.useState<string[]>([]);
+
+  function toggleRevisor(id: string) {
+    setRevisores((prev) =>
+      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id],
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +95,9 @@ export function PrazoFormDialog({
         status,
         responsavelId: responsavelId === NENHUM ? null : responsavelId,
         observacoes: observacoes || null,
+        ...(status === "ENVIADO_REVISAO" && revisores.length > 0
+          ? { revisores }
+          : {}),
       };
       const res = await fetch(
         mode === "create"
@@ -104,6 +115,10 @@ export function PrazoFormDialog({
       }
       toast({
         title: mode === "create" ? "Prazo cadastrado" : "Prazo atualizado",
+        description:
+          json?.revisoesCriadas > 0
+            ? `${json.revisoesCriadas} prazo(s) de revisao criados no processo.`
+            : undefined,
       });
       setOpen(false);
       router.refresh();
@@ -174,6 +189,29 @@ export function PrazoFormDialog({
               </SelectContent>
             </Select>
           </div>
+          {status === "ENVIADO_REVISAO" && (
+            <div className="space-y-1.5 rounded-md border border-cyan-200 bg-cyan-50/60 p-3">
+              <Label>Quem esta responsavel pela revisao?</Label>
+              <p className="text-xs text-muted-foreground">
+                Cada pessoa marcada recebe automaticamente um prazo de revisao
+                neste processo, com a mesma data da peca.
+              </p>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {usuarios.map((u) => (
+                  <label
+                    key={u.id}
+                    className="flex cursor-pointer items-center gap-2 text-sm"
+                  >
+                    <Checkbox
+                      checked={revisores.includes(u.id)}
+                      onChange={() => toggleRevisor(u.id)}
+                    />
+                    {u.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Responsavel</Label>
             <Select value={responsavelId} onValueChange={setResponsavelId}>

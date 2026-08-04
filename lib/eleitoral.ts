@@ -94,6 +94,8 @@ export const prazoEleitoralCreateSchema = z.object({
   responsavelId: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
   status: statusPrazoEnum.default("PENDENTE"),
+  /** Ao enviar para revisao: revisores marcados geram prazos automaticos. */
+  revisores: z.array(z.string()).max(10).optional(),
 });
 
 export const prazoEleitoralUpdateSchema = z.object({
@@ -104,7 +106,59 @@ export const prazoEleitoralUpdateSchema = z.object({
   observacoes: z.string().nullable().optional(),
   cumprido: z.boolean().optional(),
   status: statusPrazoEnum.optional(),
+  revisores: z.array(z.string()).max(10).optional(),
 });
+
+/**
+ * Cria um prazo de revisao para cada revisor marcado, no mesmo processo e
+ * com a mesma data/hora da peca enviada para revisao. Idempotente: revisor
+ * que ja tem prazo de revisao aberto para a mesma tarefa nao ganha outro.
+ * Retorna quantos prazos foram criados.
+ */
+export async function criarPrazosRevisao(params: {
+  processoId: string;
+  tarefaBase: string;
+  data: Date;
+  hora: string | null;
+  revisores: string[];
+  escritorioId: string;
+}): Promise<number> {
+  const tarefa = `Revisao: ${params.tarefaBase}`;
+  let criados = 0;
+  for (const revisorId of params.revisores) {
+    const revisor = await prisma.user.findFirst({
+      where: { id: revisorId, escritorioId: params.escritorioId },
+      select: { id: true },
+    });
+    if (!revisor) continue;
+
+    const jaExiste = await prisma.prazoEleitoral.findFirst({
+      where: {
+        processoId: params.processoId,
+        tarefa,
+        responsavelId: revisorId,
+        status: { notIn: ["CUMPRIDO", "PERDIDO", "DISPENSADO"] },
+      },
+      select: { id: true },
+    });
+    if (jaExiste) continue;
+
+    await prisma.prazoEleitoral.create({
+      data: {
+        processoId: params.processoId,
+        tarefa,
+        data: params.data,
+        hora: params.hora,
+        responsavelId: revisorId,
+        status: "PENDENTE",
+        observacoes:
+          "Criado automaticamente ao enviar a peca para revisao.",
+      },
+    });
+    criados += 1;
+  }
+  return criados;
+}
 
 /**
  * `status` e a fonte da verdade; `cumprido` continua existindo para as

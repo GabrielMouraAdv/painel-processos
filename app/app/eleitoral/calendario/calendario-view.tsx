@@ -642,6 +642,13 @@ function PrazoDialog({
   const [status, setStatus] = React.useState("PENDENTE");
   const [responsavelId, setResponsavelId] = React.useState(NENHUM);
   const [observacoes, setObservacoes] = React.useState("");
+  const [revisores, setRevisores] = React.useState<string[]>([]);
+
+  function toggleRevisor(id: string) {
+    setRevisores((prev) =>
+      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id],
+    );
+  }
 
   // Recarrega o formulario sempre que o dialog abre (novo ou edicao).
   React.useEffect(() => {
@@ -653,6 +660,7 @@ function PrazoDialog({
     setStatus(prazo?.status ?? "PENDENTE");
     setResponsavelId(prazo?.responsavel?.id ?? NENHUM);
     setObservacoes(prazo?.observacoes ?? "");
+    setRevisores([]);
   }, [open, prazo, dataInicial, processos]);
 
   async function salvar(e: React.FormEvent) {
@@ -667,6 +675,9 @@ function PrazoDialog({
         status,
         responsavelId: responsavelId === NENHUM ? null : responsavelId,
         observacoes: observacoes || null,
+        ...(status === "ENVIADO_REVISAO" && revisores.length > 0
+          ? { revisores }
+          : {}),
       };
       const res = await fetch(
         modo === "create"
@@ -680,7 +691,13 @@ function PrazoDialog({
       );
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Falha ao salvar o prazo");
-      toast({ title: modo === "create" ? "Prazo criado" : "Prazo atualizado" });
+      toast({
+        title: modo === "create" ? "Prazo criado" : "Prazo atualizado",
+        description:
+          json?.revisoesCriadas > 0
+            ? `${json.revisoesCriadas} prazo(s) de revisao criados no processo.`
+            : undefined,
+      });
       onOpenChange(false);
       router.refresh();
     } catch (err) {
@@ -807,6 +824,29 @@ function PrazoDialog({
             </div>
           </div>
 
+          {status === "ENVIADO_REVISAO" && (
+            <div className="space-y-1.5 rounded-md border border-cyan-200 bg-cyan-50/60 p-3">
+              <Label>Quem esta responsavel pela revisao?</Label>
+              <p className="text-xs text-muted-foreground">
+                Cada pessoa marcada recebe automaticamente um prazo de revisao
+                neste processo, com a mesma data da peca.
+              </p>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {usuarios.map((u) => (
+                  <label
+                    key={u.id}
+                    className="flex cursor-pointer items-center gap-2 text-sm"
+                  >
+                    <Checkbox
+                      checked={revisores.includes(u.id)}
+                      onChange={() => toggleRevisor(u.id)}
+                    />
+                    {u.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Responsavel</Label>
             <Select value={responsavelId} onValueChange={setResponsavelId}>
