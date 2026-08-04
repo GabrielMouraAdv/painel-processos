@@ -8,6 +8,7 @@ import { LogOut, Menu, Search, X } from "lucide-react";
 import Link from "next/link";
 import { CalendarCheck } from "lucide-react";
 
+import { BuscaEleitoral } from "./eleitoral/busca-eleitoral";
 import { GlobalSearch } from "./global-search";
 import { Sidebar } from "./sidebar";
 import { cn } from "@/lib/utils";
@@ -107,7 +108,7 @@ export function AppShell({
           modoEleitoral={modoEleitoral}
           processosEleitoralTotal={processosEleitoralTotal}
           prazosEleitoralUrgentes={prazosEleitoralUrgentes}
-          onOpenSearch={modoEleitoral ? undefined : () => setSearchOpen(true)}
+          onOpenSearch={() => setSearchOpen(true)}
         />
       </aside>
 
@@ -140,16 +141,14 @@ export function AppShell({
                 )}
               </Link>
             )}
-            {!modoEleitoral && (
-              <button
-                type="button"
-                aria-label="Buscar"
-                onClick={() => setSearchOpen(true)}
-                className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-            )}
+            <button
+              type="button"
+              aria-label="Buscar"
+              onClick={() => setSearchOpen(true)}
+              className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+            >
+              <Search className="h-5 w-5" />
+            </button>
             <button
               type="button"
               aria-label="Sair"
@@ -164,7 +163,9 @@ export function AppShell({
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
 
-      {!modoEleitoral && (
+      {modoEleitoral ? (
+        <BuscaEleitoral open={searchOpen} onOpenChange={setSearchOpen} />
+      ) : (
         <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
       )}
     </div>
