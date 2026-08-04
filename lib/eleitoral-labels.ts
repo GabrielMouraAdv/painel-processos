@@ -22,6 +22,30 @@ export const STATUS_ELEITORAIS = [
   { value: "ARQUIVADO", label: "Arquivado" },
 ] as const;
 
+export const CATEGORIAS_DOCUMENTO_ELEITORAL = [
+  { value: "INICIAL", label: "Inicial / Representacao" },
+  { value: "DEFESA", label: "Defesa / Contestacao" },
+  { value: "DECISAO", label: "Decisao / Sentenca / Acordao" },
+  { value: "RECURSO", label: "Recurso" },
+  { value: "PROVA", label: "Prova (video, print, midia)" },
+  { value: "PARECER", label: "Parecer / Nota tecnica" },
+  { value: "PROCURACAO", label: "Procuracao / Documentos da parte" },
+  { value: "OUTRO", label: "Outro" },
+] as const;
+
+export function labelCategoriaDocumento(value: string): string {
+  return (
+    CATEGORIAS_DOCUMENTO_ELEITORAL.find((c) => c.value === value)?.label ??
+    value
+  );
+}
+
+export function formatarTamanhoArquivo(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function labelClasseEleitoral(value: string): string {
   return CLASSES_ELEITORAIS.find((c) => c.value === value)?.label ?? value;
 }

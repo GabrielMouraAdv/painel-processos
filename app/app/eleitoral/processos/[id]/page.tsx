@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarClock, Pencil, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  ExternalLink,
+  FolderOpen,
+  Pencil,
+  Plus,
+} from "lucide-react";
 
 import { AtualizarMovimentosButton } from "@/components/eleitoral/atualizar-movimentos-button";
+import { ExcluirDocumentoButton } from "@/components/eleitoral/excluir-documento-button";
 import { ExcluirProcessoButton } from "@/components/eleitoral/excluir-processo-button";
 import { PrazoAcoes } from "@/components/eleitoral/prazo-acoes";
 import { PrazoFormDialog } from "@/components/eleitoral/prazo-form-dialog";
 import { ProcessoFormDialog } from "@/components/eleitoral/processo-form-dialog";
+import { UploadDocumentoDialog } from "@/components/eleitoral/upload-documento-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +28,8 @@ import {
   diasAteUTC,
   formatarDataHoraRecife,
   formatarDataUTC,
+  formatarTamanhoArquivo,
+  labelCategoriaDocumento,
   labelClasseEleitoral,
   labelPoloEleitoral,
   labelStatusEleitoral,
@@ -50,6 +61,10 @@ export default async function EleitoralProcessoPage({
           include: { responsavel: { select: { id: true, nome: true } } },
         },
         movimentos: { orderBy: { dataHora: "desc" } },
+        documentos: {
+          orderBy: { createdAt: "desc" },
+          include: { uploadedBy: { select: { nome: true } } },
+        },
       },
     }),
     listarUsuariosEleitoral(escritorioId),
@@ -175,6 +190,58 @@ export default async function EleitoralProcessoPage({
               )}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FolderOpen className="h-4 w-4" />
+            Pecas do processo ({processo.documentos.length})
+          </CardTitle>
+          <UploadDocumentoDialog processoId={processo.id} />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {processo.documentos.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma peca enviada. Use &quot;Enviar peca&quot; para anexar
+              iniciais, defesas, decisoes, provas e demais arquivos.
+            </p>
+          )}
+          {processo.documentos.map((d) => (
+            <div
+              key={d.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate text-sm font-medium">{d.nome}</p>
+                  <Badge variant="secondary">
+                    {labelCategoriaDocumento(d.categoria)}
+                  </Badge>
+                </div>
+                <p className="truncate text-xs text-muted-foreground">
+                  {d.nomeArquivo} · {formatarTamanhoArquivo(d.tamanho)} ·
+                  enviado por {d.uploadedBy.nome} em{" "}
+                  {formatarDataHoraRecife(d.createdAt)}
+                </p>
+                {d.observacoes && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {d.observacoes}
+                  </p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button asChild size="sm" variant="outline">
+                  <a href={d.url} target="_blank" rel="noreferrer">
+                    <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                    Abrir
+                  </a>
+                </Button>
+                <ExcluirDocumentoButton documentoId={d.id} nome={d.nome} />
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
 
