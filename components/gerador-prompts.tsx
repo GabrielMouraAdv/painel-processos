@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   buildPrompt,
+  DESTINOS,
   FORMATOS,
   MODULOS,
   nivelForca,
@@ -26,7 +27,14 @@ type Props = {
   modulos?: Array<Modulo["id"]>;
 };
 
-const VAZIO: ValoresForm = { campos: {}, descobrir: [], web: false, fmt: FORMATOS[0], obs: "" };
+const VAZIO: ValoresForm = {
+  campos: {},
+  descobrir: [],
+  web: false,
+  fmt: FORMATOS[0],
+  obs: "",
+  destino: "generico",
+};
 
 function storageKey(modId: string, cenId: string) {
   return `gp.${modId}.${cenId}`;
@@ -44,6 +52,7 @@ function carregarRascunho(modId: string, cenId: string): ValoresForm {
       web: Boolean(p.web),
       fmt: typeof p.fmt === "string" ? p.fmt : FORMATOS[0],
       obs: typeof p.obs === "string" ? p.obs : "",
+      destino: typeof p.destino === "string" ? p.destino : "generico",
     };
   } catch {
     return VAZIO;
@@ -285,6 +294,24 @@ export function GeradorPrompts({ modulos }: Props) {
               </label>
 
               <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Onde você vai usar o prompt</Label>
+                <select
+                  value={valores.destino}
+                  onChange={(e) => setValores((v) => ({ ...v, destino: e.target.value }))}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  {DESTINOS.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-muted-foreground">
+                  Muda só a forma de citar as fontes. O prompt funciona em qualquer IA.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Formato da resposta</Label>
                 <select
                   value={valores.fmt}
@@ -364,19 +391,28 @@ export function GeradorPrompts({ modulos }: Props) {
         <CardContent>
           <ul className="list-disc space-y-1.5 pl-5 text-xs text-muted-foreground">
             <li>
-              Crie um notebook no <b className="text-foreground">NotebookLM</b> e carregue as
-              fontes do caso: a peça atacada ou o relatório, os autos relevantes, a legislação
-              aplicável e a jurisprudência que você já separou.
-            </li>
-            <li>Cole o prompt no chat do notebook (ou no Gemini com o conector de notebooks ativado).</li>
-            <li>
-              <b className="text-foreground">Sempre confira as citações numeradas</b> direto na
-              fonte original antes de levar o resultado à peça final.
+              Funciona em <b className="text-foreground">qualquer IA</b> — Claude, ChatGPT,
+              Gemini, NotebookLM. Anexe (ou cole) os documentos do caso: a peça atacada ou o
+              relatório, os autos relevantes, a legislação aplicável e a jurisprudência que você
+              já separou.
             </li>
             <li>
-              Se a resposta vier rasa, peça: <b className="text-foreground">&quot;aprofunde com base nos trechos exatos das fontes [X, Y]&quot;</b>.
+              Cole o prompt na conversa <b className="text-foreground">depois</b> de anexar os
+              documentos. Se a IA não tiver os arquivos, ela vai avisar em vez de inventar.
             </li>
-            <li>Para dados sigilosos, use conta Google Workspace Business/Enterprise (LGPD).</li>
+            <li>
+              <b className="text-foreground">Sempre confira as citações</b> direto na fonte
+              original antes de levar o resultado à peça final — o prompt pede a transcrição do
+              trecho justamente para facilitar essa conferência.
+            </li>
+            <li>
+              Se a resposta vier rasa, peça:{" "}
+              <b className="text-foreground">&quot;aprofunde com base nos trechos exatos dos documentos [X, Y]&quot;</b>.
+            </li>
+            <li>
+              Para dados sigilosos, prefira contas corporativas (Claude/ChatGPT Team ou Enterprise,
+              Google Workspace Business) — atenção à LGPD.
+            </li>
           </ul>
         </CardContent>
       </Card>

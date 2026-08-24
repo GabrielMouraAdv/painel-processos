@@ -1,5 +1,7 @@
 /**
- * Gerador de Prompts NotebookLM do escritorio — dados e logica (client-safe).
+ * Gerador de Prompts do escritorio — dados e logica (client-safe).
+ * Os prompts saem neutros: funcionam em qualquer LLM (Claude, ChatGPT,
+ * Gemini, NotebookLM...). O campo `destino` so ajusta a forma de citar.
  * Modulos: TCE-PE, Eleitoral e Contencioso (civel, trabalhista, execucoes).
  * Prazos conferidos na LOTCE (Lei 12.600/2004), RI TCE-PE (Res. 15/2010 +
  * Res. 241/2024), Res. TC 155/2021, Codigo Eleitoral, Lei 9.504/97, CPC e CLT.
@@ -49,6 +51,8 @@ export type ValoresForm = {
   web: boolean;
   fmt: string;
   obs: string;
+  /** Id de DESTINOS — so muda a forma de citar. Default: "generico". */
+  destino: string;
 };
 
 export const FORMATOS = [
@@ -59,12 +63,22 @@ export const FORMATOS = [
   "Minuta estruturada da peça (tópicos com fundamentos)",
 ];
 
-const FONTES_PADRAO = `Use TODAS as fontes carregadas neste notebook como base ancorada da sua análise (autos, relatórios, decisões, legislação e jurisprudência).
+/** Opcoes de destino: mudam apenas COMO a IA deve citar as fontes. */
+export const DESTINOS = [
+  { id: "generico", label: "Qualquer LLM (Claude, ChatGPT, Gemini...)" },
+  { id: "notebooklm", label: "NotebookLM (citações nativas)" },
+] as const;
+
+const FONTES_GENERICO = `Baseie toda a análise EXCLUSIVAMENTE nos documentos que eu forneci nesta conversa (autos, relatórios, decisões, legislação e jurisprudência — anexados, enviados como arquivo ou colados no chat).
+Para cada afirmação relevante, identifique a fonte exata: nome do documento, página ou trecho, órgão e data — e transcreva entre aspas o trecho que sustenta a afirmação.
+Se algum documento mencionado no contexto abaixo não tiver sido efetivamente fornecido, diga isso logo no início da resposta, em vez de presumir o conteúdo.`;
+
+const FONTES_NOTEBOOKLM = `Use TODAS as fontes carregadas neste notebook como base ancorada da sua análise (autos, relatórios, decisões, legislação e jurisprudência).
 Para cada afirmação relevante, indique a fonte exata (documento, página/trecho, órgão, data) por meio das citações nativas do NotebookLM.`;
 
 const RESTRICOES_PADRAO = [
-  "Use APENAS as fontes carregadas no notebook como base factual. Não invente dispositivos, julgados ou fatos.",
-  "Cite o trecho exato em cada afirmação relevante (use o sistema nativo de citações).",
+  "Use APENAS os documentos fornecidos como base factual. Não invente dispositivos, julgados, números de processo ou fatos.",
+  "Transcreva o trecho exato que sustenta cada afirmação relevante, indicando de qual documento saiu.",
   'Se uma fonte for ambígua ou contraditória, sinalize expressamente em vez de "harmonizar".',
   'Se faltar informação para uma conclusão, diga "não há base nas fontes carregadas para afirmar X".',
   "Não formate como petição final: entregue a análise/minuta estruturada para revisão do advogado.",
@@ -79,7 +93,7 @@ const F_TCE: Campo[] = [
   { id: "parte", l: "Interessado(s) e cargo(s)", t: "text", ph: "Ex.: Fulano de Tal — Prefeito; Sicrano — Secretário de..." },
   { id: "fatos", l: "Resumo dos achados / imputações", t: "ta", ph: "Descreva os achados do relatório de auditoria ou os fundamentos da decisão atacada, um por linha.", req: true, help: "Seja específico: item do relatório, valor do dano apontado, dispositivo tido por violado." },
   { id: "teses", l: "Teses e fatos favoráveis já identificados", t: "ta", ph: "Ex.: ausência de dolo; contas de governo x gestão; parecer jurídico favorável; LINDB art. 22 (contexto do gestor)..." },
-  { id: "docs", l: "Documentos carregados no notebook", t: "ta", ph: "Ex.: Relatório de Auditoria; Defesa Prévia anterior; NE/NF; LOTCE; Regimento Interno; acórdãos do TCE-PE..." },
+  { id: "docs", l: "Documentos fornecidos à IA", t: "ta", ph: "Ex.: Relatório de Auditoria; Defesa Prévia anterior; NE/NF; LOTCE; Regimento Interno; acórdãos do TCE-PE..." },
 ];
 
 const F_ELE: Campo[] = [
@@ -89,7 +103,7 @@ const F_ELE: Campo[] = [
   { id: "parte", l: "Partes (representante × representado)", t: "text", ph: "Ex.: Partido X × João Campos e PSB", req: true },
   { id: "fatos", l: "Resumo dos fatos imputados / da decisão", t: "ta", ph: "O que a inicial imputa (publicação, data, plataforma, alcance) ou o que a decisão decidiu.", req: true },
   { id: "teses", l: "Teses e fatos favoráveis já identificados", t: "ta", ph: "Ex.: ausência de pedido explícito de voto; liberdade de expressão; mero ato de pré-campanha (art. 36-A); perda de objeto..." },
-  { id: "docs", l: "Documentos carregados no notebook", t: "ta", ph: "Ex.: inicial; mídias/prints; decisão liminar; Lei 9.504/97; Res. TSE 23.608 e 23.610; precedentes TRE-PE/TSE..." },
+  { id: "docs", l: "Documentos fornecidos à IA", t: "ta", ph: "Ex.: inicial; mídias/prints; decisão liminar; Lei 9.504/97; Res. TSE 23.608 e 23.610; precedentes TRE-PE/TSE..." },
 ];
 
 const F_CON: Campo[] = [
@@ -100,7 +114,7 @@ const F_CON: Campo[] = [
   { id: "valor", l: "Valor da causa / valor executado", t: "text", ph: "Ex.: R$ 250.000,00" },
   { id: "fatos", l: "Resumo fático e objeto da demanda", t: "ta", ph: "O que se pede, com base em quê, e em que fase o processo está.", req: true },
   { id: "teses", l: "Teses e fatos favoráveis já identificados", t: "ta", ph: "Preliminares, prejudiciais (prescrição/decadência), mérito, provas favoráveis..." },
-  { id: "docs", l: "Documentos carregados no notebook", t: "ta", ph: "Ex.: inicial; contratos; CDA; sentença; laudos; legislação e jurisprudência aplicáveis..." },
+  { id: "docs", l: "Documentos fornecidos à IA", t: "ta", ph: "Ex.: inicial; contratos; CDA; sentença; laudos; legislação e jurisprudência aplicáveis..." },
 ];
 
 const D_DEF = ["Mapa achado × defesa possível (item a item)", "Fragilidades probatórias da acusação", "Individualização de condutas e responsabilidades", "Precedentes favoráveis nas fontes", "Aplicação da LINDB (arts. 20, 22 e 28)", "Riscos residuais e estratégia"];
@@ -161,7 +175,7 @@ export const MODULOS: Modulo[] = [
           "Confronte cada fundamento com as provas e normas carregadas, apontando error in judicando e error in procedendo.",
           "Verifique a regularidade do procedimento cautelar à luz da Res. TC 155/2021 (oitiva do art. 10, prazo do art. 12, homologação do art. 13).",
           "Demonstre a insubsistência dos requisitos da tutela (fumus/periculum) com base nas fontes, e o periculum reverso.",
-          "Identifique precedentes do próprio TCE-PE ou do Pleno carregados no notebook que destoem da decisão agravada.",
+          "Identifique precedentes do próprio TCE-PE ou do Pleno fornecidos que destoem da decisão agravada.",
           "Estruture o pedido: efeito suspensivo/reconsideração, reforma integral ou parcial, e alternativas menos gravosas.",
         ],
         minimos: ["Quadro fundamento da decisão × contra-argumento × fonte", "Vícios procedimentais identificados (se houver)", "Precedentes divergentes com citação exata", "Estratégia: o que pedir ao Pleno e ordem dos pedidos"],
@@ -273,7 +287,7 @@ export const MODULOS: Modulo[] = [
           "Identifique o rito e o prazo aplicável ao caso concreto (art. 96, § 8º, da Lei 9.504/97 × art. 258 do CE × art. 19 da Res. 23.608) e diga qual é, com fundamento.",
           "Disseque a decisão recorrida: cada fundamento, a prova em que se apoiou e o pedido que acolheu/rejeitou.",
           "Confronte cada fundamento com as provas e precedentes carregados, apontando error in judicando e omissões.",
-          "Verifique se a decisão destoa da jurisprudência dominante do TSE carregada no notebook (art. 36-A, liberdade de expressão, prévio conhecimento).",
+          "Verifique se a decisão destoa da jurisprudência dominante do TSE fornecida (art. 36-A, liberdade de expressão, prévio conhecimento).",
           "Avalie efeito suspensivo/tutela recursal: risco de dano irreparável enquanto o recurso não é julgado.",
           "Monte a matriz recursal: argumento × probabilidade de êxito × precedente, com recomendação de ordem.",
         ],
@@ -368,7 +382,7 @@ export const MODULOS: Modulo[] = [
       {
         id: "juris-ele", ico: "⚖️", tit: "Cruzamento de Jurisprudência", prazo: "análise",
         desc: "Tendências do TRE-PE e do TSE nos acórdãos carregados — argumentos vencedores e placares.",
-        base: "Análise transversal dos acórdãos e decisões carregados no notebook: padrões decisórios, placares por relator, evolução do entendimento sobre propaganda antecipada, pesquisa e direito de resposta.",
+        base: "Análise transversal dos acórdãos e decisões fornecidos: padrões decisórios, placares por relator, evolução do entendimento sobre propaganda antecipada, pesquisa e direito de resposta.",
         papel: "Você é um advogado eleitoralista sênior com expertise em análise jurisprudencial estratégica, encarregado de cruzar as decisões carregadas para orientar a atuação do escritório.",
         descobrir: ["Argumento mais frequentemente vencedor", "Padrões por relator", "Tendência de mudança de entendimento", "Divergências internas no TRE-PE", "Ratio decidendi recorrente", "Parâmetros de multa aplicados"],
         tarefa: [
@@ -656,11 +670,12 @@ export function buildPrompt(m: Modulo, c: Cenario, v: ValoresForm): string {
   }
   p += `\n`;
 
-  p += `# BASE NORMATIVA DE REFERÊNCIA\n${stripTags(c.base)}\nConfirme e aprofunde cada fundamento diretamente nas normas carregadas no notebook.\n\n`;
+  p += `# BASE NORMATIVA DE REFERÊNCIA\n${stripTags(c.base)}\nConfirme e aprofunde cada fundamento diretamente nas normas que eu forneci.\n\n`;
 
-  p += `# FONTES\n${FONTES_PADRAO}\n`;
+  const fontes = v.destino === "notebooklm" ? FONTES_NOTEBOOKLM : FONTES_GENERICO;
+  p += `# FONTES\n${fontes}\n`;
   if (v.web) {
-    p += `Além das fontes locais, verifique se há mudanças recentes (legislação, resoluções ou jurisprudência nova) pesquisando na web — e SINALIZE claramente o que veio da web e o que veio das fontes do notebook.\n`;
+    p += `Se você tiver acesso à internet, verifique também se há mudanças recentes (legislação, resoluções ou jurisprudência nova) e SINALIZE claramente o que veio da web e o que veio dos documentos fornecidos. Se NÃO tiver acesso à web, diga isso expressamente em vez de responder de memória.\n`;
   }
   p += `\n`;
 
