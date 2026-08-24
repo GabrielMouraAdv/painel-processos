@@ -19,6 +19,7 @@ import {
   Search,
   UserCheck,
   Users,
+  Wand2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -107,6 +108,11 @@ export function Sidebar({
           icon: FileText,
         },
         {
+          label: "Gerador de prompts",
+          href: "/app/eleitoral/prompts",
+          icon: Wand2,
+        },
+        {
           label: "Links uteis",
           href: "/app/eleitoral/links",
           icon: LinkIcon,
@@ -175,6 +181,16 @@ export function Sidebar({
           badge:
             alertasMonitoramento > 0 ? alertasMonitoramento : undefined,
           badgeTone: "red",
+        },
+      ],
+    },
+    {
+      title: "Ferramentas",
+      items: [
+        {
+          label: "Gerador de prompts",
+          href: "/app/prompts",
+          icon: Wand2,
         },
       ],
     },
