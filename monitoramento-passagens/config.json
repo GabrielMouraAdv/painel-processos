@@ -1,0 +1,25 @@
+{
+  "viagem": {
+    "origem": "REC",
+    "origemNome": "Recife - Guararapes",
+    "destino": "CNF",
+    "destinoNome": "Belo Horizonte - Confins",
+    "destinoAlternativo": "PLU",
+    "ida": "2027-02-17",
+    "volta": "2027-02-21",
+    "adultos": 1,
+    "classe": "ECONOMY",
+    "moeda": "BRL"
+  },
+  "alertas": {
+    "comentario": "Valores por passageiro, ida e volta, em reais. Referencia de mercado da rota em ago/2026: media R$ 1.033, boas ofertas a partir de R$ 602.",
+    "compraImediata": 750,
+    "fiqueAtento": 900,
+    "quedaRelevantePercentual": 12,
+    "tetoAceitavel": 1200
+  },
+  "execucao": {
+    "notificarSomenteSeRelevante": true,
+    "diasAntesDaViagemParaPararDeMonitorar": 7
+  }
+}
