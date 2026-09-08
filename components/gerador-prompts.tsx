@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Copy, Eraser, RotateCcw } from "lucide-react";
+import { Check, Copy, Download, Eraser, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,11 +15,13 @@ import {
   FORMATOS,
   MODULOS,
   nivelForca,
+  nomeArquivoPrompt,
   scorePrompt,
   type Cenario,
   type Modulo,
   type ValoresForm,
 } from "@/lib/gerador-prompts";
+import { baixarPromptDocx } from "@/lib/prompt-docx";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -69,6 +71,9 @@ export function GeradorPrompts({ modulos }: Props) {
   const [cenId, setCenId] = useState<string | null>(null);
   const [valores, setValores] = useState<ValoresForm>(VAZIO);
   const [copiado, setCopiado] = useState(false);
+  /** null = nome automatico; string = nome editado a mao pelo usuario. */
+  const [nomeManual, setNomeManual] = useState<string | null>(null);
+  const [baixando, setBaixando] = useState(false);
 
   const mod = listaModulos.find((m) => m.id === modId) ?? listaModulos[0];
   const cen: Cenario | undefined = mod?.cen.find((c) => c.id === cenId);
@@ -77,6 +82,7 @@ export function GeradorPrompts({ modulos }: Props) {
     (id: string) => {
       setCenId(id);
       setValores(carregarRascunho(mod.id, id));
+      setNomeManual(null);
     },
     [mod],
   );
@@ -95,6 +101,8 @@ export function GeradorPrompts({ modulos }: Props) {
   const score = cen ? scorePrompt(mod, valores) : 0;
   const nivel = nivelForca(score);
   const palavras = prompt ? prompt.split(/\s+/).filter(Boolean).length : 0;
+  const nomeAuto = cen ? nomeArquivoPrompt(cen, valores) : "";
+  const nomeArquivo = nomeManual ?? nomeAuto;
 
   const setCampo = (id: string, valor: string) =>
     setValores((v) => ({ ...v, campos: { ...v.campos, [id]: valor } }));
@@ -106,6 +114,15 @@ export function GeradorPrompts({ modulos }: Props) {
         ? v.descobrir.filter((x) => x !== i)
         : [...v.descobrir, i],
     }));
+
+  const baixarDocx = async () => {
+    setBaixando(true);
+    try {
+      await baixarPromptDocx(prompt, nomeArquivo || "Prompt");
+    } finally {
+      setBaixando(false);
+    }
+  };
 
   const copiar = async () => {
     try {
@@ -365,17 +382,54 @@ export function GeradorPrompts({ modulos }: Props) {
               <pre className="max-h-[540px] overflow-y-auto whitespace-pre-wrap break-words rounded-md border bg-slate-950 p-4 font-mono text-xs leading-relaxed text-slate-100">
                 {prompt}
               </pre>
-              <Button onClick={copiar} className="w-full bg-brand-navy hover:bg-brand-navy/90">
-                {copiado ? (
-                  <>
-                    <Check className="mr-2 h-4 w-4" /> Copiado!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="mr-2 h-4 w-4" /> Copiar prompt
-                  </>
-                )}
-              </Button>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Nome do arquivo .docx</Label>
+                <Input
+                  value={nomeArquivo}
+                  onChange={(e) => setNomeManual(e.target.value)}
+                  placeholder="Prompt ..."
+                  className="font-mono text-xs"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Montado com peça, processo, partes e assunto. Edite se quiser —{" "}
+                  {nomeManual !== null && (
+                    <button
+                      type="button"
+                      onClick={() => setNomeManual(null)}
+                      className="underline underline-offset-2 hover:text-foreground"
+                    >
+                      voltar ao nome automático
+                    </button>
+                  )}
+                  {nomeManual === null && "a extensão .docx é adicionada no download."}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  onClick={copiar}
+                  className="flex-1 bg-brand-navy hover:bg-brand-navy/90"
+                >
+                  {copiado ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" /> Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-2 h-4 w-4" /> Copiar prompt
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={baixarDocx}
+                  disabled={baixando}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {baixando ? "Gerando..." : "Baixar .docx"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -91,6 +91,7 @@ const F_TCE: Campo[] = [
   { id: "orgao", l: "Órgão / unidade gestora e exercício", t: "text", ph: "Ex.: Prefeitura de ..., exercício 2024" },
   { id: "rel", l: "Relatoria", t: "text", ph: "Conselheiro(a) relator(a)" },
   { id: "parte", l: "Interessado(s) e cargo(s)", t: "text", ph: "Ex.: Fulano de Tal — Prefeito; Sicrano — Secretário de..." },
+  { id: "assunto", l: "Assunto / tema", t: "text", ph: "Ex.: Panfletos apócrifos", help: "Descrição curta do caso — entra no contexto do prompt e no nome do arquivo .docx." },
   { id: "fatos", l: "Resumo dos achados / imputações", t: "ta", ph: "Descreva os achados do relatório de auditoria ou os fundamentos da decisão atacada, um por linha.", req: true, help: "Seja específico: item do relatório, valor do dano apontado, dispositivo tido por violado." },
   { id: "teses", l: "Teses e fatos favoráveis já identificados", t: "ta", ph: "Ex.: ausência de dolo; contas de governo x gestão; parecer jurídico favorável; LINDB art. 22 (contexto do gestor)..." },
   { id: "docs", l: "Documentos fornecidos à IA", t: "ta", ph: "Ex.: Relatório de Auditoria; Defesa Prévia anterior; NE/NF; LOTCE; Regimento Interno; acórdãos do TCE-PE..." },
@@ -101,6 +102,7 @@ const F_ELE: Campo[] = [
   { id: "classe", l: "Classe / rito", t: "select", opts: ["— escolha —", "Representação — propaganda antecipada (art. 36-A)", "Representação — propaganda irregular", "Representação — pesquisa eleitoral", "Direito de resposta", "AIJE", "Recurso / Agravo interno", "Outro"] },
   { id: "rel", l: "Relatoria / juízo", t: "text", ph: "Ex.: Des. ... — TRE-PE" },
   { id: "parte", l: "Partes (representante × representado)", t: "text", ph: "Ex.: Partido X × João Campos e PSB", req: true },
+  { id: "assunto", l: "Assunto / tema", t: "text", ph: "Ex.: Panfletos apócrifos", help: "Descrição curta do caso — entra no contexto do prompt e no nome do arquivo .docx." },
   { id: "fatos", l: "Resumo dos fatos imputados / da decisão", t: "ta", ph: "O que a inicial imputa (publicação, data, plataforma, alcance) ou o que a decisão decidiu.", req: true },
   { id: "teses", l: "Teses e fatos favoráveis já identificados", t: "ta", ph: "Ex.: ausência de pedido explícito de voto; liberdade de expressão; mero ato de pré-campanha (art. 36-A); perda de objeto..." },
   { id: "docs", l: "Documentos fornecidos à IA", t: "ta", ph: "Ex.: inicial; mídias/prints; decisão liminar; Lei 9.504/97; Res. TSE 23.608 e 23.610; precedentes TRE-PE/TSE..." },
@@ -111,6 +113,7 @@ const F_CON: Campo[] = [
   { id: "juizo", l: "Juízo / vara / tribunal de origem", t: "text", ph: "Ex.: 2ª Vara da Fazenda Pública de ..." },
   { id: "trib", l: "Tribunal / instância de destino", t: "select", opts: ["— escolha —", "TJPE", "TRF5", "STJ", "STF", "TRT6", "TST", "1º grau (Justiça Estadual)", "1º grau (Justiça Federal)", "Outro"] },
   { id: "parte", l: "Partes e posição do cliente", t: "text", ph: "Ex.: Município X (réu/executado) × Fulano (autor/exequente)", req: true },
+  { id: "assunto", l: "Assunto / tema", t: "text", ph: "Ex.: Panfletos apócrifos", help: "Descrição curta do caso — entra no contexto do prompt e no nome do arquivo .docx." },
   { id: "valor", l: "Valor da causa / valor executado", t: "text", ph: "Ex.: R$ 250.000,00" },
   { id: "fatos", l: "Resumo fático e objeto da demanda", t: "ta", ph: "O que se pede, com base em quê, e em que fase o processo está.", req: true },
   { id: "teses", l: "Teses e fatos favoráveis já identificados", t: "ta", ph: "Preliminares, prejudiciais (prescrição/decadência), mérito, provas favoráveis..." },
@@ -735,4 +738,21 @@ export function nivelForca(s: number): { nome: string; cor: string } {
   if (s < 60) return { nome: "MÉDIO", cor: "text-amber-600" };
   if (s < 85) return { nome: "FORTE", cor: "text-emerald-600" };
   return { nome: "EXCELENTE", cor: "text-brand-navy" };
+}
+
+/**
+ * Nome do arquivo .docx, no padrao do escritorio:
+ *   Prompt <Peca> <nº processo> - <partes> - <assunto>
+ * Partes vazias sao omitidas; caracteres invalidos em nome de arquivo viram "-".
+ */
+export function nomeArquivoPrompt(c: Cenario, v: ValoresForm): string {
+  const campo = (id: string) => (v.campos[id] ?? "").trim();
+  const cabeca = ["Prompt", c.tit, campo("proc")].filter(Boolean).join(" ");
+  const cauda = [campo("parte"), campo("assunto")].filter(Boolean).join(" - ");
+  const bruto = cauda ? `${cabeca} - ${cauda}` : cabeca;
+  return bruto
+    .replace(/[\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 180);
 }
