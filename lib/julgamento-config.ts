@@ -13,6 +13,7 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
     "Cautelar Deferida",
     "Cautelar Indeferida",
     "Cautelar Parcialmente Deferida",
+    "Arquivada / Prejudicada",
   ],
   PRESTACAO_CONTAS_GOVERNO: [
     "Parecer Previo pela Aprovacao",

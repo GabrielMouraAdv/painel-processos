@@ -159,13 +159,17 @@ async function main() {
       valorDevolucao: { atual: p.valorDevolucao, novo: l.valor_devolucao, rotulo: "valor da devolucao", igual: Number(p.valorDevolucao ?? 0) === Number(l.valor_devolucao ?? 0), vazio: p.valorDevolucao === null },
       observacoesJulgamento: { atual: p.observacoesJulgamento, novo: l.observacoes, rotulo: "observacoes", igual: norm(p.observacoesJulgamento) === norm(l.observacoes), vazio: !p.observacoesJulgamento },
     };
+    // Observacoes divergentes nao travam a linha: o texto do painel e mantido.
+    const obsDiverge = !novo.observacoesJulgamento.igual && !novo.observacoesJulgamento.vazio && !!l.observacoes;
+    if (obsDiverge) novo.observacoesJulgamento.igual = true;
     const conflitos = Object.values(novo).filter((c) => !c.igual && !c.vazio && c.novo !== null && c.novo !== undefined);
     if (conflitos.length) {
       add("Julgamentos", l, "conflito", conflitos.map((c) => `${c.rotulo}: painel '${c.atual instanceof Date ? br(diaDe(c.atual)) : c.atual}' x planilha '${c.novo instanceof Date ? br(l.data!) : c.novo}'`).join("; "));
       continue;
     }
     const preencher = Object.entries(novo).filter(([, c]) => !c.igual && c.vazio && c.novo !== null && c.novo !== undefined);
-    if (!preencher.length && p.julgado) { add("Julgamentos", l, "pular", "julgamento ja registrado igual"); continue; }
+    const notaObs = obsDiverge ? " (observacoes do painel mantidas)" : "";
+    if (!preencher.length && p.julgado) { add("Julgamentos", l, "pular", `julgamento ja registrado igual${notaObs}`); continue; }
     const campos: Record<string, unknown> = { julgado: true };
     for (const [k, c] of preencher) campos[k] = c.novo;
     ops.push({ kind: "update", processoId: p.id, campos });
@@ -185,7 +189,7 @@ async function main() {
       });
       extra = " + andamento 'julgamento'";
     }
-    add("Julgamentos", l, "gravar", `preenche ${preencher.map(([, c]) => c.rotulo).join(", ") || "marca como julgado"}${extra}`);
+    add("Julgamentos", l, "gravar", `preenche ${preencher.map(([, c]) => c.rotulo).join(", ") || "marca como julgado"}${extra}${notaObs}`);
   }
 
   // ---------------------------------------------------------------- Dispensas
