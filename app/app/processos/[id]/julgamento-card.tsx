@@ -14,6 +14,7 @@ import {
   classificarResultadoJud,
 } from "@/lib/julgamento-config";
 import { cn } from "@/lib/utils";
+import { formatarDia } from "@/lib/datas";
 
 function fmtBRL(v: number | null | undefined): string {
   if (v === null || v === undefined) return "-";
@@ -121,7 +122,7 @@ export function JulgamentoCardJud({
                 {j.dataJulgamento && (
                   <p className="text-xs text-muted-foreground">
                     Julgado em{" "}
-                    {new Date(j.dataJulgamento).toLocaleDateString("pt-BR")}
+                    {formatarDia(j.dataJulgamento)}
                   </p>
                 )}
               </div>

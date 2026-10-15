@@ -42,7 +42,7 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
     "Nao Homologado",
     "Parcialmente Homologado",
   ],
-  RGF: ["Regular", "Irregular"],
+  RGF: ["Regular", "Regular com Ressalvas", "Irregular"],
   DENUNCIA: [
     "Procedente",
     "Improcedente",

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { authOptions } from "@/lib/auth";
 import { calcularDataVencimento, diasUteisEntre } from "@/lib/dias-uteis";
+import { dataDia } from "@/lib/datas";
 import { prisma } from "@/lib/prisma";
 
 const baseProcessoSchema = z.object({
@@ -692,8 +693,8 @@ export async function POST(req: Request) {
   }
 
   if (data.acao === "registrar_julgamento") {
-    const dataJ = new Date(data.dataJulgamento);
-    dataJ.setHours(0, 0, 0, 0);
+    // Meio-dia UTC: o dia aparece certo em qualquer fuso (ver lib/datas.ts).
+    const dataJ = dataDia(data.dataJulgamento);
     const penalidade = data.penalidade?.trim() || null;
     const obs = data.observacoesJulgamento?.trim() || null;
 

@@ -28,6 +28,7 @@ import {
   classificarResultadoTce,
 } from "@/lib/julgamento-config";
 import { cn } from "@/lib/utils";
+import { formatarDia } from "@/lib/datas";
 
 import { CriarPrazoDialog } from "../../pendencias/criar-prazo-dialog";
 import { DespachoFeitoDialog } from "../../pendencias/despacho-feito-dialog";
@@ -194,7 +195,7 @@ function CardResultadoJulgamento(props: Props) {
                 {j.dataJulgamento && (
                   <p className="text-xs text-muted-foreground">
                     Julgado em{" "}
-                    {new Date(j.dataJulgamento).toLocaleDateString("pt-BR")}
+                    {formatarDia(j.dataJulgamento)}
                   </p>
                 )}
               </div>

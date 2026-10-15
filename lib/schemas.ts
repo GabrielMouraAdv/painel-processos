@@ -12,6 +12,8 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
+import { dataDia } from "./datas";
+
 import { isBancaSlug } from "./bancas";
 
 const bancasSlugSchema = z
@@ -267,6 +269,17 @@ const dateInput = z
   .union([z.string(), z.date()])
   .transform((v) => (v instanceof Date ? v : new Date(v)));
 
+// Data so de dia (andamento TCE): gravada ao meio-dia UTC. Ver lib/datas.ts.
+const dataDiaInput = z
+  .union([z.string().min(1), z.date()])
+  .transform((v) => dataDia(v));
+
+export const andamentoTceUpdateSchema = z.object({
+  data: dataDiaInput.optional(),
+  fase: z.string().min(1, "Selecione a fase").optional(),
+  descricao: z.string().trim().min(1, "Descreva o andamento").optional(),
+});
+
 const optionalDate = z
   .union([z.string(), z.date(), z.null()])
   .nullish()
@@ -352,7 +365,7 @@ export const processoTceUpdateSchema = z.object({
 
 export const andamentoTceInputSchema = z.object({
   processoId: z.string().min(1),
-  data: dateInput,
+  data: dataDiaInput,
   fase: z.string().min(1, "Selecione a fase"),
   descricao: z.string().min(1, "Descreva o andamento"),
   atualizarFaseProcesso: z.boolean().optional().default(true),

@@ -10,11 +10,20 @@ type ProcessoFlags = {
   despachadoComRelator: boolean;
   memorialPronto: boolean;
   despachoDispensado?: boolean;
+  contrarrazoesNtApresentadas?: boolean;
+  contrarrazoesNtDispensadas?: boolean;
+  contrarrazoesMpcoApresentadas?: boolean;
+  contrarrazoesMpcoDispensadas?: boolean;
 };
 
 export function computeTceAlertas(p: ProcessoFlags): TceAlerta[] {
   const lista: TceAlerta[] = [];
-  if (p.notaTecnica) {
+  // Contrarrazoes ja apresentadas ou dispensadas nao geram alerta.
+  if (
+    p.notaTecnica &&
+    !p.contrarrazoesNtApresentadas &&
+    !p.contrarrazoesNtDispensadas
+  ) {
     lista.push({
       key: "contrarrazoes_nt",
       titulo: "Elaborar contrarrazoes a Nota Tecnica",
@@ -22,7 +31,11 @@ export function computeTceAlertas(p: ProcessoFlags): TceAlerta[] {
         "O processo teve Nota Tecnica juntada. Elabore contrarrazoes antes da apreciacao.",
     });
   }
-  if (p.parecerMpco) {
+  if (
+    p.parecerMpco &&
+    !p.contrarrazoesMpcoApresentadas &&
+    !p.contrarrazoesMpcoDispensadas
+  ) {
     lista.push({
       key: "contrarrazoes_mpco",
       titulo: "Elaborar contrarrazoes ao Parecer MPCO",

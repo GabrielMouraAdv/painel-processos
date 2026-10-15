@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { diaDe, hojeDia } from "@/lib/datas";
 import { calcularDataVencimento } from "@/lib/dias-uteis";
 import { fasesDoTipo, prazoAutomaticoDaFase } from "@/lib/tce-config";
 
@@ -26,6 +27,9 @@ type Props = {
   tipo: TipoProcessoTce;
   faseAtual: string;
   advogados: AdvogadoOption[];
+  // Data do andamento mais recente (ISO). Andamento com data anterior e
+  // historico: nao atualiza a fase nem gera prazo, salvo se o usuario marcar.
+  ultimaData?: string | null;
 };
 
 function toDateInput(d: Date): string {
@@ -40,21 +44,18 @@ export function AndamentoTceForm({
   tipo,
   faseAtual,
   advogados,
+  ultimaData,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const fases = React.useMemo(() => fasesDoTipo(tipo), [tipo]);
 
-  const [data, setData] = React.useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [data, setData] = React.useState(hojeDia);
   const [fase, setFase] = React.useState(faseAtual);
   const [descricao, setDescricao] = React.useState("");
   const [atualizarFase, setAtualizarFase] = React.useState(true);
   const [gerarPrazo, setGerarPrazo] = React.useState(true);
-  const [dataIntimacao, setDataIntimacao] = React.useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [dataIntimacao, setDataIntimacao] = React.useState(hojeDia);
   const [advogadoRespId, setAdvogadoRespId] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -70,10 +71,20 @@ export function AndamentoTceForm({
     );
   }, [prazoConfig, dataIntimacao]);
 
-  // Ao trocar de fase, reset gerarPrazo para true se houver prazo automatico
+  const ultimoDia = ultimaData ? diaDe(ultimaData) : null;
+  const historico = !!ultimoDia && !!data && data < ultimoDia;
+
+  // Andamento historico (data anterior ao ultimo andamento) nao muda a fase
+  // atual nem gera prazo; o usuario pode marcar manualmente se quiser.
   React.useEffect(() => {
-    setGerarPrazo(!!prazoConfig);
-  }, [prazoConfig]);
+    setAtualizarFase(!historico);
+  }, [historico]);
+
+  // Ao trocar de fase, gerarPrazo volta a true se houver prazo automatico
+  // (exceto em andamento historico).
+  React.useEffect(() => {
+    setGerarPrazo(!!prazoConfig && !historico);
+  }, [prazoConfig, historico]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -184,6 +195,12 @@ export function AndamentoTceForm({
         />
         Atualizar fase atual do processo para a fase escolhida
       </label>
+      {historico && (
+        <p className="text-xs text-muted-foreground">
+          Data anterior ao ultimo andamento ({ultimoDia!.split("-").reverse().join("/")}):
+          registro historico, a fase atual e os prazos nao mudam.
+        </p>
+      )}
 
       {prazoConfig && (
         <div className="rounded-md border border-brand-navy/20 bg-brand-navy/5 p-3">

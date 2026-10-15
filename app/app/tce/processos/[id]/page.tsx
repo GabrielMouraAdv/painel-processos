@@ -38,7 +38,9 @@ import {
   faseTceLabel,
 } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
+import { formatarDia } from "@/lib/datas";
 
+import { AndamentoTceAcoes } from "./andamento-tce-acoes";
 import { AndamentoTceForm } from "./andamento-tce-form";
 import { BancasSection } from "./bancas-section";
 import {
@@ -50,8 +52,7 @@ import { RecursosSection } from "./recursos-section";
 import { StatusAcoesSection } from "./status-acoes-section";
 
 function formatDate(d: Date | null | undefined): string {
-  if (!d) return "-";
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(d);
+  return formatarDia(d, "media");
 }
 
 function formatCurrency(v: number | null): string {
@@ -233,6 +234,10 @@ export default async function ProcessoTceDetailPage({
     despachadoComRelator: processo.despachadoComRelator,
     memorialPronto: processo.memorialPronto,
     despachoDispensado: processo.despachoDispensado,
+    contrarrazoesNtApresentadas: processo.contrarrazoesNtApresentadas,
+    contrarrazoesNtDispensadas: processo.contrarrazoesNtDispensadas,
+    contrarrazoesMpcoApresentadas: processo.contrarrazoesMpcoApresentadas,
+    contrarrazoesMpcoDispensadas: processo.contrarrazoesMpcoDispensadas,
   });
 
   const documentos: DocumentoItem[] = processo.documentos.map((d) => ({
@@ -270,6 +275,8 @@ export default async function ProcessoTceDetailPage({
     : null;
 
   const canDeleteDocumentos = session!.user.role === Role.ADMIN;
+  const canEditarAndamentos =
+    session!.user.role === Role.ADMIN || session!.user.role === Role.ADVOGADO;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
@@ -592,6 +599,7 @@ export default async function ProcessoTceDetailPage({
             tipo={processo.tipo}
             faseAtual={processo.faseAtual}
             advogados={advogados}
+            ultimaData={processo.andamentos[0]?.data.toISOString() ?? null}
           />
         </CardContent>
       </Card>
@@ -623,6 +631,17 @@ export default async function ProcessoTceDetailPage({
                     <span className="font-medium text-brand-navy">
                       {faseTceLabel(processo.tipo, a.fase)}
                     </span>
+                    {canEditarAndamentos && (
+                      <AndamentoTceAcoes
+                        tipo={processo.tipo}
+                        andamento={{
+                          id: a.id,
+                          data: a.data.toISOString(),
+                          fase: a.fase,
+                          descricao: a.descricao,
+                        }}
+                      />
+                    )}
                   </div>
                   <p className="mt-1 text-sm text-slate-700">{a.descricao}</p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
