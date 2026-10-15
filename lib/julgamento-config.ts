@@ -31,6 +31,10 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
     "Regular com Ressalvas",
     "Irregular",
     "Arquivamento",
+    // Admissao de Pessoal (cadastrada como Auditoria Especial)
+    "Legal (registro concedido)",
+    "Ilegal (registro negado)",
+    "Parcialmente Legal",
   ],
   TOMADA_CONTAS_ESPECIAL: [
     "Contas Regulares",
@@ -53,7 +57,12 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
   DESTAQUE: ["Procedente", "Improcedente"],
   CONSULTA: ["Respondida"],
   PEDIDO_RESCISAO: ["Deferido", "Indeferido"],
-  TERMO_AJUSTE_GESTAO: ["Cumprido", "Descumprido", "Em Andamento"],
+  TERMO_AJUSTE_GESTAO: [
+    "Cumprido",
+    "Parcialmente Cumprido",
+    "Descumprido",
+    "Em Andamento",
+  ],
 };
 
 export const PENALIDADES_TCE: string[] = [
@@ -82,6 +91,9 @@ const TCE_RESULTADOS_COM_PENALIDADE = new Set<string>([
   "Parcialmente Procedente",
   "Deferido",
   "Descumprido",
+  "Parcialmente Cumprido",
+  "Ilegal (registro negado)",
+  "Parcialmente Legal",
 ]);
 
 export function tceTemPenalidade(resultado: string | null | undefined): boolean {
@@ -135,6 +147,10 @@ export function classificarResultadoTce(
       return "favoravel";
     if (/descumprido/i.test(resultado)) return "desfavoravel";
   }
+
+  // Admissao de Pessoal: legalidade do ato (registro)
+  if (/^ilegal/i.test(resultado)) return "desfavoravel";
+  if (/^legal/i.test(resultado)) return "favoravel";
 
   // CONSULTA — apenas "Respondida" — neutro/positivo
   if (tipo === "CONSULTA") return "neutro";

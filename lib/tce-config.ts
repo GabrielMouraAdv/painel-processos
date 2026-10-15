@@ -221,7 +221,12 @@ export function fasesDoTipo(tipo: TipoProcessoTce): FaseTce[] {
 }
 
 export function faseTceLabel(tipo: TipoProcessoTce, key: string): string {
-  return fasesDoTipo(tipo).find((f) => f.key === key)?.label ?? key;
+  // Fase do outro fluxo (ex.: acordao de recurso em cautelar) tambem tem rotulo.
+  return (
+    fasesDoTipo(tipo).find((f) => f.key === key)?.label ??
+    todasFasesTce().find((f) => f.key === key)?.label ??
+    key
+  );
 }
 
 export function prazoAutomaticoDaFase(

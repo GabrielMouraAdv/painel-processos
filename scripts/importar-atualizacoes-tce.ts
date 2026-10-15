@@ -21,7 +21,7 @@ import { PrismaClient, type TipoProcessoTce } from "@prisma/client";
 import { readFileSync, writeFileSync } from "fs";
 
 import { PENALIDADES_TCE, RESULTADOS_POR_TIPO_TCE } from "../lib/julgamento-config";
-import { fasesDoTipo } from "../lib/tce-config";
+import { todasFasesTce } from "../lib/tce-config";
 
 const prisma = new PrismaClient();
 const [ENTRADA, RELATORIO] = process.argv.slice(2);
@@ -130,8 +130,9 @@ async function main() {
   for (const l of entrada.andamentos) {
     const p = processoOuErro("Andamentos", l);
     if (!p) continue;
-    const validas = fasesDoTipo(p.tipo as TipoProcessoTce).map((f) => f.key);
-    if (!validas.includes(l.fase)) { add("Andamentos", l, "erro", `fase '${l.fase}' nao vale para ${p.tipo}. Validas: ${validas.join(", ")}`); continue; }
+    // Fases oficiais dos dois fluxos (padrao e cautelar) valem para qualquer tipo.
+    const validas = todasFasesTce().map((f) => f.key);
+    if (!validas.includes(l.fase)) { add("Andamentos", l, "erro", `fase '${l.fase}' nao e uma fase oficial. Validas: ${validas.join(", ")}`); continue; }
     if (!l.descricao) { add("Andamentos", l, "erro", "descricao vazia"); continue; }
     const chave = `${p.id}|${l.data}|${l.fase}`;
     if (chaves.has(chave)) { add("Andamentos", l, "pular", `ja existe andamento '${l.fase}' em ${br(l.data!)}`); continue; }
