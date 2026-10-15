@@ -206,6 +206,22 @@ export default async function ProcessoTceDetailPage({
 
   const camara = TCE_CAMARAS[processo.camara];
 
+  const iso = (d: Date | null) => (d ? d.toISOString() : null);
+  // Recursos (inclusive recursos de recursos) com o desfecho proprio, para o
+  // cartao "Desfecho apos recursos" do processo de origem.
+  const recursosDesfecho = processo.ehRecurso
+    ? []
+    : (
+        await prisma.processoTce.findMany({
+          where: { escritorioId, ehRecurso: true, numero: { startsWith: processo.numero } },
+          orderBy: { numero: "asc" },
+          select: {
+            id: true, numero: true, julgado: true, resultadoRecurso: true, numeroAcordao: true,
+            orgaoJulgador: true, dataSessao: true, dataTransito: true,
+          },
+        })
+      ).map((r) => ({ ...r, dataSessao: iso(r.dataSessao), dataTransito: iso(r.dataTransito) }));
+
   const interessados: InteressadoItem[] = processo.interessados.map((i) => ({
     id: i.id,
     cargo: i.cargo,
@@ -457,6 +473,19 @@ export default async function ProcessoTceDetailPage({
       <StatusAcoesSection
         processoId={processo.id}
         tipo={processo.tipo}
+        ehRecurso={processo.ehRecurso}
+        desfechoRecurso={{
+          resultadoRecurso: processo.resultadoRecurso,
+          numeroAcordao: processo.numeroAcordao,
+          orgaoJulgador: processo.orgaoJulgador,
+          dataSessao: iso(processo.dataSessao),
+          dataTransito: iso(processo.dataTransito),
+        }}
+        desfechoFinal={{
+          resultadoFinal: processo.resultadoFinal,
+          dataTransito: iso(processo.dataTransito),
+          recursos: recursosDesfecho,
+        }}
         julgamento={{
           julgado: processo.julgado,
           dataJulgamento: processo.dataJulgamento

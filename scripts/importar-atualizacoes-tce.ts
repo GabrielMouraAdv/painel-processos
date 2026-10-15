@@ -17,7 +17,7 @@
  * - Nao altera a fase atual do processo e nao gera prazos.
  * - Com --gravar: arquivo de desfazer + registro no Log de Auditoria.
  */
-import { PrismaClient, type TipoProcessoTce } from "@prisma/client";
+import { PrismaClient, type CamaraTce, type ResultadoRecursoTce, type TipoProcessoTce } from "@prisma/client";
 import { readFileSync, writeFileSync } from "fs";
 
 import { PENALIDADES_TCE, RESULTADOS_POR_TIPO_TCE } from "../lib/julgamento-config";
@@ -37,6 +37,12 @@ type LinhaJulgamento = Base & {
   valor_multa: number | null;
   valor_devolucao: number | null;
   observacoes: string | null;
+  // Colunas opcionais (recurso): desfecho proprio, acordao, orgao, sessao, transito.
+  resultado_recurso?: string | null;
+  numero_acordao?: string | null;
+  orgao_julgador?: string | null;
+  data_sessao?: string | null;
+  data_transito?: string | null;
 };
 type LinhaDispensa = Base & { tipo: string; advogado: string; motivo: string | null };
 type Entrada = {
@@ -64,6 +70,21 @@ function diaDe(d: Date): string {
   const meiaNoiteUtc = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
   return meiaNoiteUtc ? d.toISOString().slice(0, 10) : fmtRecife.format(d);
 }
+
+const DESFECHOS: Record<string, ResultadoRecursoTce> = {
+  "provido": "PROVIDO",
+  "provido em parte": "PROVIDO_EM_PARTE",
+  "parcialmente provido": "PROVIDO_EM_PARTE",
+  "nao provido": "NAO_PROVIDO",
+  "desprovido": "NAO_PROVIDO",
+  "nao conhecido": "NAO_CONHECIDO",
+  "prejudicado": "PREJUDICADO",
+};
+const ORGAOS: Record<string, CamaraTce> = {
+  "pleno": "PLENO",
+  "1a camara": "PRIMEIRA", "1ª camara": "PRIMEIRA", "primeira camara": "PRIMEIRA",
+  "2a camara": "SEGUNDA", "2ª camara": "SEGUNDA", "segunda camara": "SEGUNDA",
+};
 
 const CAMPOS_DISPENSA = {
   NT: {
@@ -97,7 +118,8 @@ async function main() {
   const processos = await prisma.processoTce.findMany({
     where: { numero: { in: numeros } },
     select: {
-      id: true, numero: true, tipo: true, julgado: true,
+      id: true, numero: true, tipo: true, julgado: true, ehRecurso: true,
+      resultadoRecurso: true, numeroAcordao: true, orgaoJulgador: true, dataSessao: true, dataTransito: true,
       dataJulgamento: true, resultadoJulgamento: true, penalidade: true,
       valorMulta: true, valorDevolucao: true, observacoesJulgamento: true,
       contrarrazoesNtDispensadas: true, contrarrazoesNtDispensadoPor: true, contrarrazoesNtDispensadoEm: true, contrarrazoesNtDispensadoMotivo: true,
@@ -148,6 +170,11 @@ async function main() {
     const validos = RESULTADOS_POR_TIPO_TCE[p.tipo as TipoProcessoTce];
     if (!validos.includes(l.resultado)) { add("Julgamentos", l, "erro", `resultado '${l.resultado}' nao vale para ${p.tipo}. Validos: ${validos.join(" | ")}`); continue; }
     if (l.penalidade && !PENALIDADES_TCE.includes(l.penalidade)) { add("Julgamentos", l, "erro", `penalidade '${l.penalidade}' invalida`); continue; }
+    const recurso = l.resultado_recurso ? DESFECHOS[norm(l.resultado_recurso)] : null;
+    if (l.resultado_recurso && !recurso) { add("Julgamentos", l, "erro", `resultado_recurso '${l.resultado_recurso}' invalido. Validos: provido | provido em parte | nao provido | nao conhecido | prejudicado`); continue; }
+    if (recurso && !p.ehRecurso) { add("Julgamentos", l, "erro", "resultado_recurso so vale para recurso (numero com ED, RO, AG...)"); continue; }
+    const orgao = l.orgao_julgador ? ORGAOS[norm(l.orgao_julgador)] : null;
+    if (l.orgao_julgador && !orgao) { add("Julgamentos", l, "erro", `orgao_julgador '${l.orgao_julgador}' invalido. Validos: Pleno | 1a Camara | 2a Camara`); continue; }
 
     const novo: Record<string, { atual: unknown; novo: unknown; igual: boolean; vazio: boolean; rotulo: string }> = {
       dataJulgamento: {
@@ -160,6 +187,15 @@ async function main() {
       valorDevolucao: { atual: p.valorDevolucao, novo: l.valor_devolucao, rotulo: "valor da devolucao", igual: Number(p.valorDevolucao ?? 0) === Number(l.valor_devolucao ?? 0), vazio: p.valorDevolucao === null },
       observacoesJulgamento: { atual: p.observacoesJulgamento, novo: l.observacoes, rotulo: "observacoes", igual: norm(p.observacoesJulgamento) === norm(l.observacoes), vazio: !p.observacoesJulgamento },
     };
+    // Colunas opcionais: so entram quando vierem preenchidas na planilha.
+    const dia = (atual: Date | null, iso: string | null | undefined) => ({
+      atual, novo: iso ? meioDia(iso) : null, igual: !!atual && !!iso && diaDe(atual) === iso, vazio: !atual,
+    });
+    if (recurso) novo.resultadoRecurso = { atual: p.resultadoRecurso, novo: recurso, rotulo: "desfecho do recurso", igual: p.resultadoRecurso === recurso, vazio: !p.resultadoRecurso };
+    if (l.numero_acordao) novo.numeroAcordao = { atual: p.numeroAcordao, novo: l.numero_acordao, rotulo: "acordao", igual: p.numeroAcordao === l.numero_acordao, vazio: !p.numeroAcordao };
+    if (orgao) novo.orgaoJulgador = { atual: p.orgaoJulgador, novo: orgao, rotulo: "orgao julgador", igual: p.orgaoJulgador === orgao, vazio: !p.orgaoJulgador };
+    if (l.data_sessao) novo.dataSessao = { ...dia(p.dataSessao, l.data_sessao), rotulo: "data da sessao" };
+    if (l.data_transito) novo.dataTransito = { ...dia(p.dataTransito, l.data_transito), rotulo: "transito" };
     // Observacoes divergentes nao travam a linha: o texto do painel e mantido.
     const obsDiverge = !novo.observacoesJulgamento.igual && !novo.observacoesJulgamento.vazio && !!l.observacoes;
     if (obsDiverge) novo.observacoesJulgamento.igual = true;

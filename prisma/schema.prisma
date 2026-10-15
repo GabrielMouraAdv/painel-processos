@@ -580,6 +580,15 @@ model ProcessoTce {
   ehRecurso             Boolean         @default(false)
   tipoRecurso           TipoRecursoTce?
   processoOrigemId      String?
+  // Desfecho proprio do recurso (o resultadoJulgamento herdado do pai fica guardado).
+  resultadoRecurso      ResultadoRecursoTce?
+  numeroAcordao         String?
+  orgaoJulgador         CamaraTce?
+  dataSessao            DateTime?
+  // Trânsito em julgado (processo ou recurso).
+  dataTransito          DateTime?
+  // Processo de origem: desfecho apos os recursos, quando difere do resultado inicial.
+  resultadoFinal        String?
   escritorioId          String
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
@@ -808,6 +817,14 @@ model MonitoramentoConfig {
   totalVerificacoes  Int       @default(0)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+}
+
+enum ResultadoRecursoTce {
+  PROVIDO
+  PROVIDO_EM_PARTE
+  NAO_PROVIDO
+  NAO_CONHECIDO
+  PREJUDICADO
 }
 
 enum TipoRecursoTce {

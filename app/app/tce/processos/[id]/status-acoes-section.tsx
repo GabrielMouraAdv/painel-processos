@@ -31,6 +31,12 @@ import { cn } from "@/lib/utils";
 import { formatarDia } from "@/lib/datas";
 
 import { CriarPrazoDialog } from "../../pendencias/criar-prazo-dialog";
+import {
+  CardDesfechoAposRecursos,
+  CardDesfechoRecurso,
+  type DesfechoRecurso,
+  type RecursoResumo,
+} from "./desfecho-cards";
 import { DespachoFeitoDialog } from "../../pendencias/despacho-feito-dialog";
 import { DispensarPendenciaDialog } from "../../pendencias/dispensar-dialog";
 import { MemorialProntoDialog } from "../../pendencias/memorial-pronto-dialog";
@@ -54,6 +60,13 @@ type MemorialDoc = {
 type Props = {
   processoId: string;
   tipo: TipoProcessoTce;
+  ehRecurso: boolean;
+  desfechoRecurso: DesfechoRecurso;
+  desfechoFinal: {
+    resultadoFinal: string | null;
+    dataTransito: string | null;
+    recursos: RecursoResumo[];
+  };
   notaTecnica: boolean;
   parecerMpco: boolean;
   contrarrazoesNtApresentadas: boolean;
@@ -102,7 +115,31 @@ export function StatusAcoesSection(props: Props) {
         <CardMemorial {...props} />
         <CardDespacho {...props} />
       </div>
-      <CardResultadoJulgamento {...props} />
+      {props.ehRecurso ? (
+        // Recurso: desfecho proprio (provido, nao provido...), nao o resultado herdado do pai.
+        <CardDesfechoRecurso
+          processoId={props.processoId}
+          desfecho={props.desfechoRecurso}
+          observacoes={props.julgamento.observacoesJulgamento}
+        />
+      ) : (
+        <>
+          <CardResultadoJulgamento
+            {...props}
+            titulo={props.desfechoFinal.recursos.length ? "Resultado inicial" : "Resultado do Julgamento"}
+          />
+          {props.desfechoFinal.recursos.length > 0 && (
+            <CardDesfechoAposRecursos
+              processoId={props.processoId}
+              tipo={props.tipo}
+              resultadoInicial={props.julgamento.resultadoJulgamento}
+              resultadoFinal={props.desfechoFinal.resultadoFinal}
+              dataTransito={props.desfechoFinal.dataTransito}
+              recursos={props.desfechoFinal.recursos}
+            />
+          )}
+        </>
+      )}
     </section>
   );
 }
@@ -118,7 +155,7 @@ function fmtBRL(v: number | null | undefined): string {
   }).format(v);
 }
 
-function CardResultadoJulgamento(props: Props) {
+function CardResultadoJulgamento(props: Props & { titulo: string }) {
   const { busy, call } = useAcao();
   const [open, setOpen] = React.useState(false);
 
@@ -144,7 +181,7 @@ function CardResultadoJulgamento(props: Props) {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Gavel className="h-4 w-4" />
-          Resultado do Julgamento
+          {props.titulo}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">

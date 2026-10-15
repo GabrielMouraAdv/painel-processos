@@ -310,10 +310,11 @@ export const TCE_RECURSO_LABELS: Record<TipoRecursoTce, string> = {
 export const TCE_RECURSO_CODE: Record<TipoRecursoTce, string> = {
   RECURSO_ORDINARIO: "RO",
   EMBARGOS_DECLARACAO: "ED",
+  // Sufixos usados pelo e-TCEPE (ex.: 22100291-1AG001, 25100001-1AR002, 23100857-0PS001).
   AGRAVO: "AG",
-  AGRAVO_REGIMENTAL: "AGR",
+  AGRAVO_REGIMENTAL: "AR",
   PEDIDO_RESCISAO_RECURSO: "PR",
-  PEDIDO_SUSPENSAO_CAUTELAR: "PSC",
+  PEDIDO_SUSPENSAO_CAUTELAR: "PS",
 };
 
 // Fases iniciais por tipo de recurso (apos interposicao)

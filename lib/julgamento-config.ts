@@ -1,4 +1,8 @@
-import type { TipoProcesso, TipoProcessoTce } from "@prisma/client";
+import type {
+  ResultadoRecursoTce,
+  TipoProcesso,
+  TipoProcessoTce,
+} from "@prisma/client";
 
 export type ClassificacaoResultado =
   | "favoravel"
@@ -64,6 +68,32 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
     "Em Andamento",
   ],
 };
+
+// Desfecho proprio do recurso (RO, ED, AG, AR, PS, PR).
+export const RESULTADO_RECURSO_LABELS: Record<ResultadoRecursoTce, string> = {
+  PROVIDO: "Provido",
+  PROVIDO_EM_PARTE: "Provido em parte",
+  NAO_PROVIDO: "Nao provido",
+  NAO_CONHECIDO: "Nao conhecido",
+  PREJUDICADO: "Prejudicado",
+};
+
+// Perspectiva da defesa: o recurso e, em regra, do cliente.
+export function classificarResultadoRecurso(
+  r: ResultadoRecursoTce | null | undefined,
+): ClassificacaoResultado {
+  if (r === "PROVIDO") return "favoravel";
+  if (r === "PROVIDO_EM_PARTE") return "parcial";
+  if (r === "NAO_PROVIDO" || r === "NAO_CONHECIDO") return "desfavoravel";
+  return "neutro";
+}
+
+// Desfecho que mantem o resultado inicial do processo de origem.
+export const RECURSO_MANTEM_RESULTADO: ResultadoRecursoTce[] = [
+  "NAO_PROVIDO",
+  "NAO_CONHECIDO",
+  "PREJUDICADO",
+];
 
 export const PENALIDADES_TCE: string[] = [
   "Sem Penalidade",

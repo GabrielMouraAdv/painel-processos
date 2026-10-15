@@ -67,6 +67,34 @@ const julgamentoSchema = baseProcessoSchema.extend({
 
 const desfazerJulgamentoSchema = baseProcessoSchema;
 
+const dataDiaOpcional = z
+  .union([z.string(), z.date(), z.null()])
+  .optional()
+  .transform((v) => (v ? dataDia(v) : null));
+
+// Desfecho proprio do recurso (o resultadoJulgamento herdado do pai nao e tocado).
+const desfechoRecursoSchema = baseProcessoSchema.extend({
+  resultadoRecurso: z.enum([
+    "PROVIDO",
+    "PROVIDO_EM_PARTE",
+    "NAO_PROVIDO",
+    "NAO_CONHECIDO",
+    "PREJUDICADO",
+  ]),
+  dataSessao: z.union([z.string().min(1), z.date()]).transform((v) => dataDia(v)),
+  numeroAcordao: z.string().trim().nullish(),
+  orgaoJulgador: z.enum(["PRIMEIRA", "SEGUNDA", "PLENO"]).nullish(),
+  dataTransito: dataDiaOpcional,
+  observacoes: z.string().trim().nullish(),
+});
+
+// Processo de origem: desfecho apos recursos (null = resultado inicial mantido / automatico)
+// e data do transito.
+const desfechoFinalSchema = baseProcessoSchema.extend({
+  resultadoFinal: z.string().trim().nullish(),
+  dataTransito: dataDiaOpcional,
+});
+
 const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_nt") }),
   baseProcessoSchema.extend({ acao: z.literal("contrarrazoes_mpco") }),
@@ -91,6 +119,9 @@ const inputSchema = z.discriminatedUnion("acao", [
   baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_contrarrazoes_nt") }),
   baseProcessoSchema.extend({ acao: z.literal("reverter_dispensa_contrarrazoes_mpco") }),
   julgamentoSchema.extend({ acao: z.literal("registrar_julgamento") }),
+  desfechoRecursoSchema.extend({ acao: z.literal("registrar_desfecho_recurso") }),
+  baseProcessoSchema.extend({ acao: z.literal("desfazer_desfecho_recurso") }),
+  desfechoFinalSchema.extend({ acao: z.literal("registrar_desfecho_final") }),
   desfazerJulgamentoSchema.extend({ acao: z.literal("desfazer_julgamento") }),
 ]);
 
@@ -750,6 +781,75 @@ export async function POST(req: Request) {
         },
       }),
     ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "registrar_desfecho_recurso") {
+    const rotulos: Record<string, string> = {
+      PROVIDO: "Provido",
+      PROVIDO_EM_PARTE: "Provido em parte",
+      NAO_PROVIDO: "Nao provido",
+      NAO_CONHECIDO: "Nao conhecido",
+      PREJUDICADO: "Prejudicado",
+    };
+    const orgaos: Record<string, string> = { PRIMEIRA: "1a Camara", SEGUNDA: "2a Camara", PLENO: "Pleno" };
+    const partes = [
+      data.numeroAcordao ? `Ac. ${data.numeroAcordao}` : null,
+      data.orgaoJulgador ? orgaos[data.orgaoJulgador] : null,
+      data.dataTransito ? `transito em ${data.dataTransito.toLocaleDateString("pt-BR")}` : null,
+    ].filter(Boolean);
+    const obs = data.observacoes || null;
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: {
+          julgado: true,
+          dataJulgamento: data.dataSessao,
+          dataSessao: data.dataSessao,
+          resultadoRecurso: data.resultadoRecurso,
+          numeroAcordao: data.numeroAcordao || null,
+          orgaoJulgador: data.orgaoJulgador ?? null,
+          dataTransito: data.dataTransito,
+          ...(obs !== null && { observacoesJulgamento: obs }),
+        },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: data.dataSessao,
+          fase: "julgamento",
+          descricao: `Recurso julgado em ${data.dataSessao.toLocaleDateString("pt-BR")}: ${rotulos[data.resultadoRecurso]}.${partes.length ? ` ${partes.join(" • ")}.` : ""}${obs ? ` Observacoes: ${obs}` : ""}`,
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "desfazer_desfecho_recurso") {
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: { resultadoRecurso: null, numeroAcordao: null, orgaoJulgador: null, dataSessao: null, dataTransito: null },
+      }),
+      prisma.andamentoTce.create({
+        data: {
+          processoId: data.processoId,
+          data: new Date(),
+          fase: "julgamento_desfeito",
+          descricao: "Desfecho do recurso desfeito.",
+          autorId: userId,
+        },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.acao === "registrar_desfecho_final") {
+    await prisma.processoTce.update({
+      where: { id: data.processoId },
+      data: { resultadoFinal: data.resultadoFinal || null, dataTransito: data.dataTransito },
+    });
     return NextResponse.json({ ok: true });
   }
 
