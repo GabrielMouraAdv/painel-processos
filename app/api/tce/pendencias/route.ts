@@ -605,6 +605,19 @@ export async function POST(req: Request) {
     data.acao === "dispensar_contrarrazoes_mpco"
   ) {
     const ehNt = data.acao === "dispensar_contrarrazoes_nt";
+    // Ja dispensada: nao grava de novo (evita andamentos repetidos por clique duplo).
+    const jaDispensada = await prisma.processoTce.findFirst({
+      where: { id: data.processoId, escritorioId },
+      select: { contrarrazoesNtDispensadas: true, contrarrazoesMpcoDispensadas: true },
+    });
+    if (
+      jaDispensada &&
+      (ehNt
+        ? jaDispensada.contrarrazoesNtDispensadas
+        : jaDispensada.contrarrazoesMpcoDispensadas)
+    ) {
+      return NextResponse.json({ ok: true, alreadySet: true });
+    }
     const adv = await prisma.user.findFirst({
       where: { id: data.advogadoId, escritorioId },
       select: { id: true, nome: true },

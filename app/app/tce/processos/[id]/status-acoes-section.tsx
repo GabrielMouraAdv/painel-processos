@@ -628,6 +628,13 @@ function CardMemorial(props: Props) {
   const pronto = props.memorialPronto;
   const tone = pronto ? "green" : dispensado ? "slate" : "amber";
 
+  // Processo julgado: memorial nao e mais cobrado (registro historico, se houver, continua visivel).
+  if (props.julgamento.julgado && !pronto && !dispensado) {
+    return (
+      <CardNaoSeAplica id="card-memorial" titulo="Memorial" icon={<StickyNote className="h-4 w-4" />} />
+    );
+  }
+
   return (
     <Card id="card-memorial" className={cardToneClass(tone)}>
       <CardHeader className="pb-2">
@@ -778,6 +785,17 @@ function CardDespacho(props: Props) {
         ? "amber"
         : "neutral";
 
+  // Processo julgado: despacho com relator nao e mais cobrado.
+  if (props.julgamento.julgado && !despachado && !dispensado) {
+    return (
+      <CardNaoSeAplica
+        id="card-despacho"
+        titulo="Despacho com Relator"
+        icon={<ClipboardCheck className="h-4 w-4" />}
+      />
+    );
+  }
+
   return (
     <Card id="card-despacho" className={cardToneClass(tone)}>
       <CardHeader className="pb-2">
@@ -910,6 +928,33 @@ function CardDespacho(props: Props) {
 // ============================== UI HELPERS ==============================
 
 type Tone = "neutral" | "amber" | "green" | "slate";
+
+function CardNaoSeAplica({
+  id,
+  titulo,
+  icon,
+}: {
+  id: string;
+  titulo: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <Card id={id} className={cardToneClass("neutral")}>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          {icon}
+          {titulo}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <StatusLine
+          icon={<Clock className="h-4 w-4 text-slate-500" />}
+          text="Nao se aplica: processo julgado"
+        />
+      </CardContent>
+    </Card>
+  );
+}
 
 function cardToneClass(tone: Tone): string {
   return cn(
