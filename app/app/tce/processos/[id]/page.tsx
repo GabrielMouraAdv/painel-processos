@@ -41,7 +41,7 @@ import {
 } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 import { formatarDia } from "@/lib/datas";
-import { RESULTADOS_POR_TIPO_TCE } from "@/lib/julgamento-config";
+import { RESULTADO_RECURSO_LABELS, RESULTADOS_POR_TIPO_TCE } from "@/lib/julgamento-config";
 
 import { AndamentoTceAcoes } from "./andamento-tce-acoes";
 import { AndamentoTceForm } from "./andamento-tce-form";
@@ -322,6 +322,75 @@ export default async function ProcessoTceDetailPage({
   const canEditarAndamentos =
     session!.user.role === Role.ADMIN || session!.user.role === Role.ADVOGADO;
 
+  const recursosPendentes = recursosDesfecho.filter((r) => !r.julgado).length;
+  const situacaoAtual = situacaoTce({
+    julgado: processo.julgado,
+    faseAtual: processo.faseAtual,
+    dataTransito: processo.dataTransito,
+    recursosPendentes,
+    notaTecnica: processo.notaTecnica,
+    parecerMpco: processo.parecerMpco,
+  });
+  // Faixa-resumo do topo: situacao, julgamento, penalidade e recursos (ou origem).
+  const multa = processo.valorMulta !== null ? Number(processo.valorMulta) : null;
+  const devolucao = processo.valorDevolucao !== null ? Number(processo.valorDevolucao) : null;
+  const faixa: { rotulo: string; valor: string; detalhe: string | null }[] = [
+    {
+      rotulo: "Situação",
+      valor: SITUACAO_TCE_LABELS[situacaoAtual],
+      detalhe: processo.dataTransito
+        ? `trânsito em ${formatarDia(processo.dataTransito)}`
+        : faseTceLabel(processo.tipo, processo.faseAtual),
+    },
+    processo.ehRecurso
+      ? {
+          rotulo: "Desfecho do recurso",
+          valor: processo.resultadoRecurso
+            ? RESULTADO_RECURSO_LABELS[processo.resultadoRecurso]
+            : processo.julgado ? "Julgado" : "Não julgado",
+          detalhe: processo.dataSessao
+            ? `sessão de ${formatarDia(processo.dataSessao)}${processo.numeroAcordao ? ` · Acórdão ${processo.numeroAcordao}` : ""}`
+            : null,
+        }
+      : {
+          rotulo: "Julgamento",
+          valor: processo.julgado
+            ? processo.resultadoFinal ?? processo.resultadoJulgamento ?? "Julgado"
+            : "Não julgado",
+          detalhe: processo.julgado
+            ? [
+                processo.dataJulgamento && `em ${formatarDia(processo.dataJulgamento)}`,
+                processo.resultadoFinal && processo.resultadoJulgamento && `inicial: ${processo.resultadoJulgamento}`,
+              ].filter(Boolean).join(" · ") || null
+            : null,
+        },
+    {
+      rotulo: "Penalidade",
+      valor: processo.penalidade ?? (processo.julgado ? "Sem registro" : "—"),
+      detalhe:
+        [multa !== null && `multa ${formatCurrency(multa)}`, devolucao !== null && `devolução ${formatCurrency(devolucao)}`]
+          .filter(Boolean)
+          .join(" · ") || null,
+    },
+    processo.ehRecurso
+      ? {
+          rotulo: "Processo de origem",
+          valor: processo.processoOrigem?.numero ?? "—",
+          detalhe: null,
+        }
+      : {
+          rotulo: "Recursos",
+          valor: recursosDesfecho.length === 0
+            ? "Nenhum"
+            : `${recursosDesfecho.length} ${recursosDesfecho.length === 1 ? "interposto" : "interpostos"}`,
+          detalhe: recursosDesfecho.length === 0
+            ? null
+            : recursosPendentes > 0
+              ? `${recursosPendentes} ${recursosPendentes === 1 ? "pendente" : "pendentes"} de julgamento`
+              : "todos julgados",
+        },
+  ];
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
@@ -398,6 +467,17 @@ export default async function ProcessoTceDetailPage({
         </div>
       </header>
 
+      {/* Faixa-resumo (Direcao A): o essencial do processo numa linha */}
+      <div className="grid grid-cols-2 overflow-hidden rounded-xl border bg-white md:grid-cols-4">
+        {faixa.map((c, i) => (
+          <div key={c.rotulo} className={cn("px-5 py-3.5", i > 0 && "border-l", i === 2 && "max-md:border-l-0 max-md:border-t", i === 3 && "max-md:border-t")}>
+            <div className="text-xs text-muted-foreground">{c.rotulo}</div>
+            <div className="mt-0.5 font-semibold text-brand-tinta">{c.valor}</div>
+            {c.detalhe && <div className="text-[13px] text-muted-foreground">{c.detalhe}</div>}
+          </div>
+        ))}
+      </div>
+
       {alertas.length > 0 && (
         <Card className="border-amber-300 bg-amber-50">
           <CardHeader className="pb-3">
@@ -448,18 +528,7 @@ export default async function ProcessoTceDetailPage({
             <Info label="Tipo" value={TCE_TIPO_LABELS[processo.tipo]} />
             <Info
               label="Situação"
-              value={
-                SITUACAO_TCE_LABELS[
-                  situacaoTce({
-                    julgado: processo.julgado,
-                    faseAtual: processo.faseAtual,
-                    dataTransito: processo.dataTransito,
-                    recursosPendentes: recursosDesfecho.filter((r) => !r.julgado).length,
-                    notaTecnica: processo.notaTecnica,
-                    parecerMpco: processo.parecerMpco,
-                  })
-                ]
-              }
+              value={SITUACAO_TCE_LABELS[situacaoAtual]}
             />
             <Info label="Fase atual" value={faseTceLabel(processo.tipo, processo.faseAtual)} />
             <Info label="Câmara" value={TCE_CAMARA_LABELS[processo.camara]} />
