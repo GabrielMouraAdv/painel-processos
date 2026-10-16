@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { authOptions } from "@/lib/auth";
 import { calcularDataVencimento, diasUteisEntre } from "@/lib/dias-uteis";
-import { dataDia } from "@/lib/datas";
+import { dataDia, diaDe } from "@/lib/datas";
 import { prisma } from "@/lib/prisma";
 
 const baseProcessoSchema = z.object({
@@ -122,6 +122,12 @@ const inputSchema = z.discriminatedUnion("acao", [
   desfechoRecursoSchema.extend({ acao: z.literal("registrar_desfecho_recurso") }),
   baseProcessoSchema.extend({ acao: z.literal("desfazer_desfecho_recurso") }),
   desfechoFinalSchema.extend({ acao: z.literal("registrar_desfecho_final") }),
+  baseProcessoSchema
+    .extend({ dataTransito: z.union([z.string().min(1), z.date()]).transform((v) => dataDia(v)) })
+    .extend({ acao: z.literal("marcar_transitado") }),
+  baseProcessoSchema
+    .extend({ advogadoId: z.string().min(1), motivo: z.string().trim().nullish() })
+    .extend({ acao: z.literal("dispensar_cascata") }),
   desfazerJulgamentoSchema.extend({ acao: z.literal("desfazer_julgamento") }),
 ]);
 
@@ -850,6 +856,99 @@ export async function POST(req: Request) {
       where: { id: data.processoId },
       data: { resultadoFinal: data.resultadoFinal || null, dataTransito: data.dataTransito },
     });
+    return NextResponse.json({ ok: true });
+  }
+
+  // Dispensa em cascata: processo (se julgado) + recursos ja julgados; so o que esta pendente.
+  if (data.acao === "dispensar_cascata") {
+    const adv = await prisma.user.findFirst({
+      where: { id: data.advogadoId, escritorioId },
+      select: { nome: true },
+    });
+    if (!adv) {
+      return NextResponse.json({ error: "Advogado nao encontrado" }, { status: 400 });
+    }
+    const pai = await prisma.processoTce.findFirst({
+      where: { id: data.processoId, escritorioId },
+      select: { numero: true },
+    });
+    const alvos = await prisma.processoTce.findMany({
+      where: {
+        escritorioId,
+        julgado: true,
+        OR: [{ id: data.processoId }, { ehRecurso: true, numero: { startsWith: pai!.numero } }],
+      },
+      select: {
+        id: true, ehRecurso: true, dataTransito: true, faseAtual: true,
+        contrarrazoesNtApresentadas: true, contrarrazoesNtDispensadas: true,
+        contrarrazoesMpcoApresentadas: true, contrarrazoesMpcoDispensadas: true,
+      },
+    });
+    const agora = new Date();
+    const hoje = agora.toLocaleDateString("pt-BR");
+    const ops = [];
+    for (const a of alvos) {
+      const transitado =
+        !!a.dataTransito || a.faseAtual === "transitado" || a.faseAtual === "transitado_cautelar";
+      const motivo =
+        data.motivo ||
+        `${a.ehRecurso ? "Recurso" : "Processo"} ja julgado${transitado ? " e transitado em julgado" : ""}; contrarrazoes desnecessarias.`;
+      for (const ehNt of [true, false]) {
+        const pendente = ehNt
+          ? !a.contrarrazoesNtApresentadas && !a.contrarrazoesNtDispensadas
+          : !a.contrarrazoesMpcoApresentadas && !a.contrarrazoesMpcoDispensadas;
+        if (!pendente) continue;
+        ops.push(
+          prisma.processoTce.update({
+            where: { id: a.id },
+            data: ehNt
+              ? { contrarrazoesNtDispensadas: true, contrarrazoesNtDispensadoPor: adv.nome, contrarrazoesNtDispensadoEm: agora, contrarrazoesNtDispensadoMotivo: motivo }
+              : { contrarrazoesMpcoDispensadas: true, contrarrazoesMpcoDispensadoPor: adv.nome, contrarrazoesMpcoDispensadoEm: agora, contrarrazoesMpcoDispensadoMotivo: motivo },
+          }),
+          prisma.andamentoTce.create({
+            data: {
+              processoId: a.id,
+              data: agora,
+              fase: ehNt ? "contrarrazoes_nt_dispensadas" : "contrarrazoes_mpco_dispensadas",
+              descricao: `${ehNt ? "Contrarrazoes a Nota Tecnica" : "Contrarrazoes ao Parecer MPCO"} dispensadas por ${adv.nome} em ${hoje} (dispensa em cascata). Motivo: ${motivo}`,
+              autorId: userId,
+            },
+          }),
+        );
+      }
+    }
+    await prisma.$transaction(ops);
+    return NextResponse.json({ ok: true, dispensadas: ops.length / 2 });
+  }
+
+  // Processo de origem: todos os recursos transitaram -> marca o processo como transitado.
+  if (data.acao === "marcar_transitado") {
+    const p = await prisma.processoTce.findFirst({
+      where: { id: data.processoId, escritorioId },
+      select: { tipo: true, andamentos: { where: { fase: { in: ["transitado", "transitado_cautelar"] } }, select: { data: true } } },
+    });
+    const fase = p?.tipo === "MEDIDA_CAUTELAR" ? "transitado_cautelar" : "transitado";
+    const dia = diaDe(data.dataTransito);
+    const jaTemAndamento = (p?.andamentos ?? []).some((a) => diaDe(a.data) === dia);
+    await prisma.$transaction([
+      prisma.processoTce.update({
+        where: { id: data.processoId },
+        data: { dataTransito: data.dataTransito, faseAtual: fase },
+      }),
+      ...(jaTemAndamento
+        ? []
+        : [
+            prisma.andamentoTce.create({
+              data: {
+                processoId: data.processoId,
+                data: data.dataTransito,
+                fase,
+                descricao: `Transito em julgado em ${data.dataTransito.toLocaleDateString("pt-BR")} (ultimo recurso transitado).`,
+                autorId: userId,
+              },
+            }),
+          ]),
+    ]);
     return NextResponse.json({ ok: true });
   }
 

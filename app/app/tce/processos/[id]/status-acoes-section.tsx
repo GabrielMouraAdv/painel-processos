@@ -63,6 +63,7 @@ type Props = {
   ehRecurso: boolean;
   desfechoRecurso: DesfechoRecurso;
   desfechoFinal: {
+    faseAtual: string;
     resultadoFinal: string | null;
     dataTransito: string | null;
     recursos: RecursoResumo[];
@@ -132,6 +133,13 @@ export function StatusAcoesSection(props: Props) {
             <CardDesfechoAposRecursos
               processoId={props.processoId}
               tipo={props.tipo}
+              faseAtual={props.desfechoFinal.faseAtual}
+              cascata={{
+                julgado: props.julgamento.julgado,
+                ntPendente: !props.contrarrazoesNtApresentadas && !props.contrarrazoesNtDispensado,
+                mpcoPendente: !props.contrarrazoesMpcoApresentadas && !props.contrarrazoesMpcoDispensado,
+                advogados: props.advogados,
+              }}
               resultadoInicial={props.julgamento.resultadoJulgamento}
               resultadoFinal={props.desfechoFinal.resultadoFinal}
               dataTransito={props.desfechoFinal.dataTransito}

@@ -51,6 +51,15 @@ export type RecursoResumo = DesfechoRecurso & {
   id: string;
   numero: string;
   julgado: boolean;
+  ntPendente: boolean;
+  mpcoPendente: boolean;
+};
+
+type Cascata = {
+  julgado: boolean;
+  ntPendente: boolean;
+  mpcoPendente: boolean;
+  advogados: { id: string; nome: string }[];
 };
 
 const API = "/api/tce/pendencias";
@@ -306,6 +315,8 @@ function DialogDesfechoRecurso({
 export function CardDesfechoAposRecursos({
   processoId,
   tipo,
+  faseAtual,
+  cascata,
   resultadoInicial,
   resultadoFinal,
   dataTransito,
@@ -313,12 +324,28 @@ export function CardDesfechoAposRecursos({
 }: {
   processoId: string;
   tipo: TipoProcessoTce;
+  faseAtual: string;
+  cascata: Cascata;
   resultadoInicial: string | null;
   resultadoFinal: string | null;
   dataTransito: string | null;
   recursos: RecursoResumo[];
 }) {
+  const router = useRouter();
+  const { toast } = useToast();
   const [aberto, setAberto] = React.useState(false);
+  const [marcando, setMarcando] = React.useState(false);
+  const [cascataAberta, setCascataAberta] = React.useState(false);
+
+  // Dispensa em cascata: o processo (se julgado) e os recursos ja julgados com contrarrazoes pendentes.
+  const alvosCascata = [
+    ...(cascata.julgado && (cascata.ntPendente || cascata.mpcoPendente)
+      ? [{ numero: "este processo", nt: cascata.ntPendente, mpco: cascata.mpcoPendente }]
+      : []),
+    ...recursos
+      .filter((r) => r.julgado && (r.ntPendente || r.mpcoPendente))
+      .map((r) => ({ numero: r.numero, nt: r.ntPendente, mpco: r.mpcoPendente })),
+  ];
 
   const comDesfecho = recursos.filter((r) => r.resultadoRecurso);
   const pendentes = recursos.filter((r) => !r.resultadoRecurso);
@@ -329,6 +356,26 @@ export function CardDesfechoAposRecursos({
   const ultimoTransito = transitos.length
     ? transitos.reduce((a, b) => (diaDe(a) >= diaDe(b) ? a : b))
     : null;
+
+  // Todos os recursos transitaram e o processo ainda nao esta marcado como transitado.
+  const todosTransitaram = recursos.length > 0 && recursos.every((r) => r.dataTransito);
+  const ultimoDosRecursos = todosTransitaram
+    ? recursos.map((r) => diaDe(r.dataTransito!)).sort().at(-1)!
+    : null;
+  const jaTransitado = faseAtual === "transitado" || faseAtual === "transitado_cautelar";
+  const oferecerTransito = !!ultimoDosRecursos && !jaTransitado;
+
+  async function marcarTransitado() {
+    const dia = dataTransito && diaDe(dataTransito) > ultimoDosRecursos! ? diaDe(dataTransito) : ultimoDosRecursos!;
+    const br = dia.split("-").reverse().join("/");
+    if (!window.confirm(`Marcar o processo como transitado em julgado em ${br}? A fase atual passa a "Transitado em Julgado".`)) return;
+    setMarcando(true);
+    const r = await enviar({ acao: "marcar_transitado", processoId, dataTransito: dia });
+    setMarcando(false);
+    if (!r.ok) return toast({ variant: "destructive", title: "Erro", description: r.erro });
+    toast({ title: "Processo marcado como transitado" });
+    router.refresh();
+  }
 
   let situacao: { texto: string; classe: Parameters<typeof classeBadgeResultado>[0] | null; dica?: string };
   if (resultadoFinal) {
@@ -377,6 +424,35 @@ export function CardDesfechoAposRecursos({
           )}
         </div>
 
+        {cascata.julgado && alvosCascata.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
+            <span>
+              Contrarrazoes pendentes em {alvosCascata.length}{" "}
+              {alvosCascata.length === 1 ? "registro" : "registros"} (processo e recursos ja julgados).
+            </span>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCascataAberta(true)}>
+              Dispensar em cascata
+            </Button>
+          </div>
+        )}
+
+        <DialogCascata
+          aberto={cascataAberta}
+          onAberto={setCascataAberta}
+          processoId={processoId}
+          alvos={alvosCascata}
+          advogados={cascata.advogados}
+        />
+
+        {oferecerTransito && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-navy/20 bg-brand-navy/5 px-3 py-2 text-xs">
+            <span>Todos os recursos transitaram (ultimo em {formatarDia(ultimoDosRecursos!)}).</span>
+            <Button size="sm" className="h-7 bg-brand-navy px-2 text-xs hover:bg-brand-navy/90" onClick={marcarTransitado} disabled={marcando}>
+              {marcando ? "Marcando..." : "Marcar processo como transitado"}
+            </Button>
+          </div>
+        )}
+
         <ol className="space-y-1 rounded-md border bg-white px-3 py-2 text-xs">
           {recursos.map((r) => (
             <li key={r.id} className="flex flex-wrap items-baseline gap-x-2">
@@ -404,6 +480,130 @@ export function CardDesfechoAposRecursos({
         />
       </CardContent>
     </Card>
+  );
+}
+
+const MOTIVOS_PADRAO = [
+  "Processo ja julgado e transitado em julgado; contrarrazoes desnecessarias.",
+  "Processo ja julgado; contrarrazoes desnecessarias.",
+  "Recurso ja julgado e transitado em julgado; contrarrazoes desnecessarias.",
+  "Recurso ja julgado; contrarrazoes desnecessarias.",
+];
+const AUTOMATICO = "__automatico__";
+const OUTRO = "__outro__";
+
+function DialogCascata({
+  aberto,
+  onAberto,
+  processoId,
+  alvos,
+  advogados,
+}: {
+  aberto: boolean;
+  onAberto: (v: boolean) => void;
+  processoId: string;
+  alvos: { numero: string; nt: boolean; mpco: boolean }[];
+  advogados: { id: string; nome: string }[];
+}) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [advogadoId, setAdvogadoId] = React.useState("");
+  const [motivo, setMotivo] = React.useState(AUTOMATICO);
+  const [texto, setTexto] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!aberto) return;
+    setMotivo(AUTOMATICO);
+    setTexto("");
+  }, [aberto]);
+
+  async function confirmar() {
+    if (!advogadoId) {
+      toast({ variant: "destructive", title: "Selecione o advogado" });
+      return;
+    }
+    setBusy(true);
+    const motivoFinal = motivo === AUTOMATICO ? null : motivo === OUTRO ? texto.trim() || null : motivo;
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ acao: "dispensar_cascata", processoId, advogadoId, motivo: motivoFinal }),
+    });
+    const json = (await res.json().catch(() => ({}))) as { error?: string; dispensadas?: number };
+    setBusy(false);
+    if (!res.ok) {
+      toast({ variant: "destructive", title: "Erro", description: json.error });
+      return;
+    }
+    toast({ title: `${json.dispensadas ?? 0} dispensas registradas` });
+    onAberto(false);
+    router.refresh();
+  }
+
+  return (
+    <Dialog open={aberto} onOpenChange={onAberto}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Dispensar contrarrazoes em cascata</DialogTitle>
+          <DialogDescription>
+            Dispensa as contrarrazoes a NT e ao MPCO ainda pendentes neste processo e nos recursos ja
+            julgados. Cada dispensa vira um andamento e pode ser revertida na ficha de cada processo.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <ul className="max-h-40 space-y-0.5 overflow-y-auto rounded-md border bg-slate-50 px-3 py-2 text-xs">
+            {alvos.map((a) => (
+              <li key={a.numero}>
+                <span className="font-mono font-semibold">{a.numero}</span>{" "}
+                <span className="text-slate-600">{[a.nt && "NT", a.mpco && "MPCO"].filter(Boolean).join(" e ")}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="space-y-1.5">
+            <Label>Advogado responsavel *</Label>
+            <Select value={advogadoId} onValueChange={setAdvogadoId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {advogados.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Motivo</Label>
+            <Select value={motivo} onValueChange={setMotivo}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={AUTOMATICO}>Automatico (processo ou recurso, transitado ou nao)</SelectItem>
+                {MOTIVOS_PADRAO.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+                <SelectItem value={OUTRO}>Outro (escrever)</SelectItem>
+              </SelectContent>
+            </Select>
+            {motivo === OUTRO && <Textarea rows={2} value={texto} onChange={(e) => setTexto(e.target.value)} />}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onAberto(false)}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={confirmar} disabled={busy} className="bg-brand-navy hover:bg-brand-navy/90">
+            {busy ? "Dispensando..." : "Dispensar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

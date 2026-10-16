@@ -8,10 +8,16 @@ import {
   ChevronRight,
   Plus,
 } from "lucide-react";
-import { TipoRecursoTce } from "@prisma/client";
+import type { ResultadoRecursoTce, TipoRecursoTce } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatarDia } from "@/lib/datas";
+import {
+  RESULTADO_RECURSO_LABELS,
+  classeBadgeResultado,
+  classificarResultadoRecurso,
+} from "@/lib/julgamento-config";
 import { TCE_RECURSO_CODE, TCE_RECURSO_LABELS } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 
@@ -31,8 +37,30 @@ export type RecursoNode = {
   processoOrigemId: string | null;
   prazosAbertos: number;
   prazoMaisProximo: { tipo: string; data: string } | null;
+  resultadoRecurso: ResultadoRecursoTce | null;
+  numeroAcordao: string | null;
+  dataTransito: string | null;
+  contrarrazoesNt: SituacaoContrarrazoes;
+  contrarrazoesMpco: SituacaoContrarrazoes;
   filhos: RecursoNode[];
 };
+
+type SituacaoContrarrazoes = "sem_peca" | "apresentadas" | "dispensadas" | "pendentes";
+
+const SITUACAO_LABEL: Record<SituacaoContrarrazoes, string> = {
+  sem_peca: "sem peca",
+  apresentadas: "apresentadas",
+  dispensadas: "dispensadas",
+  pendentes: "pendentes",
+};
+
+function Contrarrazoes({ rotulo, s }: { rotulo: string; s: SituacaoContrarrazoes }) {
+  return (
+    <span className={cn(s === "pendentes" ? "font-semibold text-amber-800" : "text-slate-600")}>
+      {rotulo}: {SITUACAO_LABEL[s]}
+    </span>
+  );
+}
 
 type Props = {
   processoId: string;
@@ -42,9 +70,7 @@ type Props = {
 };
 
 function formatDate(d: string | null): string {
-  if (!d) return "—";
-  const date = new Date(d);
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(date);
+  return d ? formatarDia(d) : "—";
 }
 
 function montarArvore(
@@ -230,8 +256,28 @@ function NoRecurso({
             : ""}
           {node.relator ? ` • Rel. ${node.relator}` : ""}
         </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Fase: {node.faseAtual}
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          {node.resultadoRecurso ? (
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                classeBadgeResultado(classificarResultadoRecurso(node.resultadoRecurso)),
+              )}
+            >
+              {RESULTADO_RECURSO_LABELS[node.resultadoRecurso]}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Desfecho nao registrado</span>
+          )}
+          {node.numeroAcordao && <span className="text-slate-600">Ac. {node.numeroAcordao}</span>}
+          <span className="text-slate-600">
+            {node.dataTransito ? `Transito ${formatDate(node.dataTransito)}` : "Sem transito registrado"}
+          </span>
+        </p>
+        <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs">
+          <span className="text-muted-foreground">Contrarrazoes</span>
+          <Contrarrazoes rotulo="NT" s={node.contrarrazoesNt} />
+          <Contrarrazoes rotulo="MPCO" s={node.contrarrazoesMpco} />
         </p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
           <StatusPill label="NT" ativo={node.notaTecnica} />

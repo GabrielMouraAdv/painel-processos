@@ -124,7 +124,15 @@ export default async function ProcessoTceDetailPage({
     processoOrigemId: string | null;
     prazosAbertos: number;
     prazoMaisProximo: { tipo: string; data: string } | null;
+    resultadoRecurso: NonNullable<typeof processo.resultadoRecurso> | null;
+    numeroAcordao: string | null;
+    dataTransito: string | null;
+    contrarrazoesNt: SituacaoContrarrazoes;
+    contrarrazoesMpco: SituacaoContrarrazoes;
   };
+  type SituacaoContrarrazoes = "sem_peca" | "apresentadas" | "dispensadas" | "pendentes";
+  const situacao = (peca: boolean, apresentadas: boolean, dispensadas: boolean): SituacaoContrarrazoes =>
+    !peca ? "sem_peca" : apresentadas ? "apresentadas" : dispensadas ? "dispensadas" : "pendentes";
 
   // Pega TODOS os recursos descendentes (recursivo) via uma busca por toda a
   // arvore: comeca pelos filhos diretos, depois filhos dos filhos.
@@ -178,6 +186,11 @@ export default async function ProcessoTceDetailPage({
                 data: primeiro.dataVencimento.toISOString(),
               }
             : null,
+          resultadoRecurso: f.resultadoRecurso,
+          numeroAcordao: f.numeroAcordao,
+          dataTransito: f.dataTransito ? f.dataTransito.toISOString() : null,
+          contrarrazoesNt: situacao(f.notaTecnica, f.contrarrazoesNtApresentadas, f.contrarrazoesNtDispensadas),
+          contrarrazoesMpco: situacao(f.parecerMpco, f.contrarrazoesMpcoApresentadas, f.contrarrazoesMpcoDispensadas),
         });
         fila.push(f.id);
       }
@@ -218,9 +231,17 @@ export default async function ProcessoTceDetailPage({
           select: {
             id: true, numero: true, julgado: true, resultadoRecurso: true, numeroAcordao: true,
             orgaoJulgador: true, dataSessao: true, dataTransito: true,
+            contrarrazoesNtApresentadas: true, contrarrazoesNtDispensadas: true,
+            contrarrazoesMpcoApresentadas: true, contrarrazoesMpcoDispensadas: true,
           },
         })
-      ).map((r) => ({ ...r, dataSessao: iso(r.dataSessao), dataTransito: iso(r.dataTransito) }));
+      ).map((r) => ({
+        id: r.id, numero: r.numero, julgado: r.julgado, resultadoRecurso: r.resultadoRecurso,
+        numeroAcordao: r.numeroAcordao, orgaoJulgador: r.orgaoJulgador,
+        dataSessao: iso(r.dataSessao), dataTransito: iso(r.dataTransito),
+        ntPendente: !r.contrarrazoesNtApresentadas && !r.contrarrazoesNtDispensadas,
+        mpcoPendente: !r.contrarrazoesMpcoApresentadas && !r.contrarrazoesMpcoDispensadas,
+      }));
 
   const interessados: InteressadoItem[] = processo.interessados.map((i) => ({
     id: i.id,
@@ -482,6 +503,7 @@ export default async function ProcessoTceDetailPage({
           dataTransito: iso(processo.dataTransito),
         }}
         desfechoFinal={{
+          faseAtual: processo.faseAtual,
           resultadoFinal: processo.resultadoFinal,
           dataTransito: iso(processo.dataTransito),
           recursos: recursosDesfecho,
