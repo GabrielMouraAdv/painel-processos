@@ -25,7 +25,7 @@ export function ExcluirDocumentoButton({ documentoId, nome }: Props) {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Falha ao excluir a peca");
-      toast({ title: "Peca excluida" });
+      toast({ title: "Peça excluída" });
       router.refresh();
     } catch (err) {
       toast({
@@ -45,7 +45,7 @@ export function ExcluirDocumentoButton({ documentoId, nome }: Props) {
       variant="outline"
       onClick={excluir}
       disabled={busy}
-      title="Excluir peca"
+      title="Excluir peça"
     >
       <Trash2 className="h-3.5 w-3.5" />
     </Button>

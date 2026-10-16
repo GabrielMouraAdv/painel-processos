@@ -54,7 +54,7 @@ export function UploadRelatorioDialog() {
       if (!res.ok) {
         throw new Error(json?.error ?? "Falha no upload do relatorio");
       }
-      toast({ title: "Relatorio enviado" });
+      toast({ title: "Relatório enviado" });
       setOpen(false);
       setTitulo("");
       setObservacoes("");
@@ -76,27 +76,27 @@ export function UploadRelatorioDialog() {
       <DialogTrigger asChild>
         <Button>
           <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
-          Enviar relatorio
+          Enviar relatório
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Enviar relatorio</DialogTitle>
+          <DialogTitle>Enviar relatório</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="titulo">Titulo</Label>
+            <Label htmlFor="titulo">Título</Label>
             <Input
               id="titulo"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Ex.: Monitoramento PDPJ — 03/08 (manha)"
+              placeholder="Ex.: Monitoramento PDPJ — 03/08 (manhã)"
               required
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="dataRef">Data de referencia</Label>
+              <Label htmlFor="dataRef">Data de referência</Label>
               <Input
                 id="dataRef"
                 type="date"
@@ -117,7 +117,7 @@ export function UploadRelatorioDialog() {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="obsRel">Observacoes</Label>
+            <Label htmlFor="obsRel">Observações</Label>
             <Textarea
               id="obsRel"
               value={observacoes}

@@ -172,7 +172,7 @@ export function MunicipiosFinanceiroView({
         });
         return;
       }
-      toast({ title: "Contrato excluido" });
+      toast({ title: "Contrato excluído" });
       router.refresh();
     } finally {
       setExcluindo(false);
@@ -190,10 +190,10 @@ export function MunicipiosFinanceiroView({
             Financeiro
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Honorarios Municipais
+            Honorários Municipais
           </h1>
           <p className="text-sm text-muted-foreground">
-            Calendario anual de notas fiscais por contrato municipal.
+            Calendário anual de notas fiscais por contrato municipal.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -412,7 +412,7 @@ function ContratoCardView({
           </h3>
           <p className="text-[11px] text-muted-foreground">
             {card.municipio ? `${card.municipio.uf} • ` : ""}
-            {formatBRL(card.valorMensal)}/mes
+            {formatBRL(card.valorMensal)}/mês
             {card.numeroContrato ? ` • Contrato ${card.numeroContrato}` : ""}
           </p>
           {card.objetoDoContrato && (
@@ -453,7 +453,7 @@ function ContratoCardView({
       {renov.tipo === "PROXIMA" && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-800 ring-1 ring-orange-200">
-            Renovacao proxima — {renov.diasAteRenovacao}d
+            Renovação próxima — {renov.diasAteRenovacao}d
           </span>
           <Button
             variant="outline"
@@ -462,7 +462,7 @@ function ContratoCardView({
             onClick={onAditivar}
           >
             <FileText className="mr-1 h-3 w-3" />
-            Emitir Solicitacao de Aditivo
+            Emitir Solicitação de Aditivo
           </Button>
           <Button
             variant="outline"
@@ -478,7 +478,7 @@ function ContratoCardView({
       {renov.tipo === "VENCIDA" && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex animate-pulse items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-            Renovacao vencida — {renov.diasDesdeVencimento}d
+            Renovação vencida — {renov.diasDesdeVencimento}d
           </span>
           <Button
             variant="outline"
@@ -487,7 +487,7 @@ function ContratoCardView({
             onClick={onAditivar}
           >
             <FileText className="mr-1 h-3 w-3" />
-            Emitir Solicitacao de Aditivo
+            Emitir Solicitação de Aditivo
           </Button>
           <Button
             variant="outline"

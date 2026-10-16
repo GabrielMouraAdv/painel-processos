@@ -139,7 +139,7 @@ export function NovoProcessoTceButton({
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao criar municipio",
+          title: "Erro ao criar município",
           description: json.error ?? "Tente novamente.",
         });
         return;
@@ -147,7 +147,7 @@ export function NovoProcessoTceButton({
       const novo: MunicipioOption = { id: json.id, nome, uf };
       setMunicipios((prev) => [...prev, novo].sort((a, b) => a.nome.localeCompare(b.nome)));
       setMunicipioId(json.id);
-      toast({ title: "Municipio criado" });
+      toast({ title: "Município criado" });
       router.refresh();
     } else {
       setMunicipioId(v);
@@ -200,8 +200,8 @@ export function NovoProcessoTceButton({
     if (!payload.numero || !payload.objeto || !payload.faseAtual) {
       toast({
         variant: "destructive",
-        title: "Preencha os campos obrigatorios",
-        description: "Numero, objeto e fase sao obrigatorios.",
+        title: "Preencha os campos obrigatórios",
+        description: "Número, objeto e fase são obrigatórios.",
       });
       return;
     }
@@ -258,7 +258,7 @@ export function NovoProcessoTceButton({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Numero</Label>
+              <Label>Número</Label>
               <Input
                 value={numero}
                 onChange={(e) => setNumero(e.target.value)}
@@ -284,16 +284,16 @@ export function NovoProcessoTceButton({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Municipio</Label>
+              <Label>Município</Label>
               <Select value={municipioId || ""} onValueChange={handleMunicipioChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o municipio" />
+                  <SelectValue placeholder="Selecione o município" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NEW_MUNICIPIO}>
                     <span className="flex items-center gap-2 text-brand-navy">
                       <PlusIcon className="h-3.5 w-3.5" />
-                      Criar novo municipio
+                      Criar novo município
                     </span>
                   </SelectItem>
                   {municipios.map((m) => (
@@ -305,7 +305,7 @@ export function NovoProcessoTceButton({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Camara</Label>
+              <Label>Câmara</Label>
               <Select value={camara} onValueChange={(v) => setCamara(v as CamaraTce)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -342,7 +342,7 @@ export function NovoProcessoTceButton({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="space-y-1.5">
-              <Label>Exercicio</Label>
+              <Label>Exercício</Label>
               <Input
                 value={exercicio}
                 onChange={(e) => setExercicio(e.target.value)}
@@ -376,7 +376,7 @@ export function NovoProcessoTceButton({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Data de autuacao</Label>
+              <Label>Data de autuação</Label>
               <Input
                 type="date"
                 value={dataAutuacao}
@@ -384,15 +384,15 @@ export function NovoProcessoTceButton({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Data de intimacao</Label>
+              <Label>Data de intimação</Label>
               <Input
                 type="date"
                 value={dataIntimacao}
                 onChange={(e) => setDataIntimacao(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground">
-                Se preenchida e a fase for &quot;Defesa Previa&quot; ou
-                &quot;Manifestacao Previa&quot;, um prazo e gerado automaticamente.
+                Se preenchida e a fase for &quot;Defesa Prévia&quot; ou
+                &quot;Manifestação Prévia&quot;, um prazo e gerado automaticamente.
               </p>
             </div>
           </div>
@@ -415,7 +415,7 @@ export function NovoProcessoTceButton({
                   setNotaTecnica((e.target as HTMLInputElement).checked)
                 }
               />
-              <span>Nota Tecnica</span>
+              <span>Nota Técnica</span>
             </label>
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
@@ -475,7 +475,7 @@ export function NovoProcessoTceButton({
                     Interessados
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Adicione um ou mais gestores como interessados, com cargo editavel.
+                    Adicione um ou mais gestores como interessados, com cargo editável.
                   </p>
                 </div>
                 <Button

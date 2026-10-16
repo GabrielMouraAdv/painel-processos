@@ -115,7 +115,7 @@ export function PrazosTceCardActions({
         toast({ variant: "destructive", title: "Erro ao excluir" });
         return;
       }
-      toast({ title: "Prazo excluido" });
+      toast({ title: "Prazo excluído" });
       router.refresh();
     } finally {
       setBusy(null);
@@ -134,12 +134,12 @@ export function PrazosTceCardActions({
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao pedir prorrogacao",
+          title: "Erro ao pedir prorrogação",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
-      toast({ title: "Prorrogacao pedida — +15 dias uteis adicionados" });
+      toast({ title: "Prorrogação pedida — +15 dias úteis adicionados" });
       setProrrogarConfirm(null);
       router.refresh();
     } finally {
@@ -217,7 +217,7 @@ export function PrazosTceCardActions({
                       </span>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-                        sem responsavel
+                        sem responsável
                       </span>
                     )}
                     <span
@@ -230,18 +230,18 @@ export function PrazosTceCardActions({
                     </span>
                     {(isCautelar || !p.prorrogavel) && (
                       <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-800">
-                        improrrogavel
+                        improrrogável
                       </span>
                     )}
                     {p.prorrogacaoPedida && (
                       <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-800">
-                        prorrogacao pedida
+                        prorrogação pedida
                       </span>
                     )}
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    Intimacao {formatDate(p.dataIntimacao)} • vencimento{" "}
-                    {formatDate(p.dataVencimento)} • {p.diasUteis} dias uteis
+                    Intimação {formatDate(p.dataIntimacao)} • vencimento{" "}
+                    {formatDate(p.dataVencimento)} • {p.diasUteis} dias úteis
                   </span>
                   {p.observacoes && (
                     <span className="text-xs text-slate-600">{p.observacoes}</span>
@@ -257,7 +257,7 @@ export function PrazosTceCardActions({
                       disabled={busy === p.id}
                       onClick={() => setProrrogarConfirm(p)}
                     >
-                      Pedir prorrogacao
+                      Pedir prorrogação
                     </Button>
                   )}
                   <Button
@@ -298,7 +298,7 @@ export function PrazosTceCardActions({
           <DialogHeader>
             <DialogTitle>Novo prazo TCE</DialogTitle>
             <DialogDescription>
-              Informe a intimacao e o prazo em dias uteis.
+              Informe a intimação e o prazo em dias úteis.
             </DialogDescription>
           </DialogHeader>
           <PrazoTceForm
@@ -327,10 +327,10 @@ export function PrazosTceCardActions({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Pedir prorrogacao?</DialogTitle>
+            <DialogTitle>Pedir prorrogação?</DialogTitle>
             <DialogDescription>
               {prorrogarConfirm
-                ? `Serao adicionados 15 dias uteis ao vencimento do prazo "${prorrogarConfirm.tipo}". Esta acao so pode ser realizada uma vez.`
+                ? `Serão adicionados 15 dias úteis ao vencimento do prazo "${prorrogarConfirm.tipo}". Esta ação so pode ser realizada uma vez.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -349,7 +349,7 @@ export function PrazosTceCardActions({
             >
               {prorrogarConfirm && busy === prorrogarConfirm.id
                 ? "Salvando..."
-                : "Confirmar prorrogacao"}
+                : "Confirmar prorrogação"}
             </Button>
           </DialogFooter>
         </DialogContent>

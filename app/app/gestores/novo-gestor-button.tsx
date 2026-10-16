@@ -101,14 +101,14 @@ export function NovoGestorButton() {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Municipio</Label>
+            <Label>Município</Label>
             <Input {...register("municipio")} />
             {errors.municipio && (
               <p className="text-xs text-red-600">{errors.municipio.message}</p>
             )}
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes</Label>
+            <Label>Observações</Label>
             <Textarea rows={2} {...register("observacoes")} />
           </div>
           <DialogFooter>

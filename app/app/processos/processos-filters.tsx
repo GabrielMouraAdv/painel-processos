@@ -22,28 +22,28 @@ const tipos = [
   { value: "IMPROBIDADE", label: "Improbidade" },
   { value: "ACP", label: "ACP" },
   { value: "CRIMINAL", label: "Criminal" },
-  { value: "ACAO_POPULAR", label: "Acao Popular" },
-  { value: "MANDADO_SEGURANCA", label: "Mandado de Seguranca" },
+  { value: "ACAO_POPULAR", label: "Ação Popular" },
+  { value: "MANDADO_SEGURANCA", label: "Mandado de Segurança" },
   {
     value: "MANDADO_SEGURANCA_COLETIVO",
-    label: "Mandado de Seguranca Coletivo",
+    label: "Mandado de Segurança Coletivo",
   },
   { value: "HABEAS_CORPUS", label: "Habeas Corpus" },
   { value: "HABEAS_DATA", label: "Habeas Data" },
-  { value: "ACAO_RESCISORIA", label: "Acao Rescisoria" },
-  { value: "EXECUCAO_FISCAL", label: "Acao de Execucao Fiscal" },
+  { value: "ACAO_RESCISORIA", label: "Ação Rescisória" },
+  { value: "EXECUCAO_FISCAL", label: "Ação de Execução Fiscal" },
   {
     value: "EXECUCAO_TITULO_EXTRAJUDICIAL",
-    label: "Execucao de Titulo Extrajudicial",
+    label: "Execução de Título Extrajudicial",
   },
-  { value: "CUMPRIMENTO_SENTENCA", label: "Cumprimento de Sentenca" },
-  { value: "ACAO_ORDINARIA", label: "Acao Ordinaria" },
-  { value: "ACAO_DECLARATORIA", label: "Acao Declaratoria" },
-  { value: "ACAO_ANULATORIA", label: "Acao Anulatoria" },
-  { value: "EMBARGOS_EXECUCAO", label: "Embargos a Execucao" },
+  { value: "CUMPRIMENTO_SENTENCA", label: "Cumprimento de Sentença" },
+  { value: "ACAO_ORDINARIA", label: "Ação Ordinária" },
+  { value: "ACAO_DECLARATORIA", label: "Ação Declaratória" },
+  { value: "ACAO_ANULATORIA", label: "Ação Anulatória" },
+  { value: "EMBARGOS_EXECUCAO", label: "Embargos a Execução" },
   { value: "EMBARGOS_TERCEIRO", label: "Embargos de Terceiro" },
-  { value: "RECLAMACAO", label: "Reclamacao" },
-  { value: "CONFLITO_COMPETENCIA", label: "Conflito de Competencia" },
+  { value: "RECLAMACAO", label: "Reclamação" },
+  { value: "CONFLITO_COMPETENCIA", label: "Conflito de Competência" },
   { value: "MEDIDA_CAUTELAR", label: "Medida Cautelar" },
   {
     value: "TUTELA_CAUTELAR_ANTECEDENTE",
@@ -55,7 +55,7 @@ const tipos = [
 ];
 const riscos = [
   { value: "ALTO", label: "Alto" },
-  { value: "MEDIO", label: "Medio" },
+  { value: "MEDIO", label: "Médio" },
   { value: "BAIXO", label: "Baixo" },
 ];
 const graus = [
@@ -104,7 +104,7 @@ export function ProcessosFilters() {
           <Input
             value={buscaLocal}
             onChange={(e) => setBuscaLocal(e.target.value)}
-            placeholder="Buscar por numero, gestor ou entidade..."
+            placeholder="Buscar por número, gestor ou entidade..."
             className="pl-9"
           />
         </div>
@@ -192,7 +192,7 @@ export function ProcessosFilters() {
           <SelectContent>
             <SelectItem value={ALL}>Todos</SelectItem>
             <SelectItem value="julgados">Julgados</SelectItem>
-            <SelectItem value="nao_julgados">Nao Julgados</SelectItem>
+            <SelectItem value="nao_julgados">Não Julgados</SelectItem>
           </SelectContent>
         </Select>
 

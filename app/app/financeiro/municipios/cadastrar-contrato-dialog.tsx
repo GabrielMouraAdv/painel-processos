@@ -149,7 +149,7 @@ export function CadastrarContratoDialog({
 
   async function salvar() {
     if (!municipioId) {
-      toast({ variant: "destructive", title: "Selecione o municipio" });
+      toast({ variant: "destructive", title: "Selecione o município" });
       return;
     }
     if (bancas.size === 0) {
@@ -161,7 +161,7 @@ export function CadastrarContratoDialog({
     }
     const valorTrim = valorMensal.trim();
     if (!valorTrim) {
-      toast({ variant: "destructive", title: "Valor mensal obrigatorio" });
+      toast({ variant: "destructive", title: "Valor mensal obrigatório" });
       return;
     }
     const limpo = valorTrim
@@ -173,19 +173,19 @@ export function CadastrarContratoDialog({
     if (!Number.isFinite(valor) || valor <= 0) {
       toast({
         variant: "destructive",
-        title: "Valor mensal invalido",
-        description: `Nao foi possivel interpretar "${valorMensal}". Use formato como 1500 ou 1.500,50.`,
+        title: "Valor mensal inválido",
+        description: `Não foi possível interpretar "${valorMensal}". Use formato como 1500 ou 1.500,50.`,
       });
       return;
     }
     if (!dataInicio) {
-      toast({ variant: "destructive", title: "Data de inicio obrigatoria" });
+      toast({ variant: "destructive", title: "Data de início obrigatória" });
       return;
     }
     if (dataFim && dataFim < dataInicio) {
       toast({
         variant: "destructive",
-        title: "Data fim nao pode ser anterior a data de inicio",
+        title: "Data fim não pode ser anterior a data de início",
       });
       return;
     }
@@ -193,9 +193,9 @@ export function CadastrarContratoDialog({
     if (objeto.length < 20) {
       toast({
         variant: "destructive",
-        title: "Objeto do contrato obrigatorio",
+        title: "Objeto do contrato obrigatório",
         description:
-          "Descreva com pelo menos 20 caracteres. Use 'Sugerir Texto Padrao' para preencher.",
+          "Descreva com pelo menos 20 caracteres. Use 'Sugerir Texto Padrão' para preencher.",
       });
       return;
     }
@@ -235,9 +235,9 @@ export function CadastrarContratoDialog({
         console.error("[CadastrarContrato] erro de rede:", errFetch);
         toast({
           variant: "destructive",
-          title: "Erro de conexao",
+          title: "Erro de conexão",
           description:
-            "Nao foi possivel conectar ao servidor. Verifique sua internet e tente novamente.",
+            "Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.",
         });
         return;
       }
@@ -303,17 +303,17 @@ export function CadastrarContratoDialog({
           <DialogDescription>
             {editing
               ? "Atualize os dados do contrato. Para gerar notas adicionais, use 'Renovar'."
-              : "Honorario contratual mensal. As notas serao geradas automaticamente desde a data de inicio ate dezembro do ano corrente."}
+              : "Honorário contratual mensal. As notas serão geradas automaticamente desde a data de início até dezembro do ano corrente."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-3">
           <div className="space-y-1.5">
             <Label>
-              Municipio <span className="text-red-600">*</span>
+              Município <span className="text-red-600">*</span>
             </Label>
             <Input
-              placeholder="Buscar municipio por nome..."
+              placeholder="Buscar município por nome..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -334,7 +334,7 @@ export function CadastrarContratoDialog({
               ))}
               {municipiosFiltrados.length === 0 && (
                 <p className="p-3 text-xs text-muted-foreground">
-                  Nenhum municipio encontrado.
+                  Nenhum município encontrado.
                 </p>
               )}
             </div>
@@ -379,7 +379,7 @@ export function CadastrarContratoDialog({
             </div>
             <div className="space-y-1.5">
               <Label>
-                Data inicio <span className="text-red-600">*</span>
+                Data início <span className="text-red-600">*</span>
               </Label>
               <Input
                 type="date"
@@ -399,11 +399,11 @@ export function CadastrarContratoDialog({
 
           <div className="rounded-md border border-slate-200 bg-slate-50/40 p-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-700">
-              Dados do contrato (formalizacao)
+              Dados do contrato (formalização)
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Numero do contrato</Label>
+                <Label className="text-xs">Número do contrato</Label>
                 <Input
                   placeholder="Ex.: 015/2025"
                   value={numeroContrato}
@@ -420,7 +420,7 @@ export function CadastrarContratoDialog({
               </div>
             </div>
             <div className="mt-2 space-y-1.5">
-              <Label className="text-xs">Orgao contratante</Label>
+              <Label className="text-xs">Órgão contratante</Label>
               <Input
                 placeholder="Ex.: Prefeitura Municipal de Recife"
                 value={orgaoContratante}
@@ -460,24 +460,24 @@ export function CadastrarContratoDialog({
                 onClick={() => setObjetoDoContrato(OBJETO_CONTRATO_PADRAO)}
               >
                 <Sparkles className="h-3 w-3" />
-                Sugerir Texto Padrao
+                Sugerir Texto Padrão
               </Button>
             </div>
             <Textarea
               rows={6}
               value={objetoDoContrato}
               onChange={(e) => setObjetoDoContrato(e.target.value)}
-              placeholder="Descreva o objeto do contrato (servicos prestados, escopo de atuacao). Clique em 'Sugerir Texto Padrao' para preencher com o texto padrao do escritorio."
+              placeholder="Descreva o objeto do contrato (serviços prestados, escopo de atuação). Clique em 'Sugerir Texto Padrão' para preencher com o texto padrão do escritório."
               className="min-h-[120px] border-brand-navy/20 bg-white"
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Aparece no resumo do contrato e na secao &quot;I - DO CONTRATO
+              Aparece no resumo do contrato e na seção &quot;I - DO CONTRATO
               ORIGINAL&quot; do .docx de aditivo.
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Observacoes</Label>
+            <Label>Observações</Label>
             <Textarea
               rows={2}
               value={observacoes}
@@ -493,7 +493,7 @@ export function CadastrarContratoDialog({
                 onChange={(e) => setGerarNotas(e.target.checked)}
               />
               <span>
-                Gerar notas automaticamente desde a data de inicio ate dezembro
+                Gerar notas automaticamente desde a data de início até dezembro
                 do ano corrente
               </span>
             </label>
@@ -501,11 +501,11 @@ export function CadastrarContratoDialog({
 
           <div className="rounded-md border border-amber-200 bg-amber-50/40 p-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-900">
-              Renovacao (opcional)
+              Renovação (opcional)
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Data de renovacao</Label>
+                <Label className="text-xs">Data de renovação</Label>
                 <Input
                   type="date"
                   value={dataRenovacao}
@@ -513,7 +513,7 @@ export function CadastrarContratoDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Avisar com (dias de antecedencia)</Label>
+                <Label className="text-xs">Avisar com (dias de antecedência)</Label>
                 <Input
                   type="number"
                   min="0"
@@ -524,7 +524,7 @@ export function CadastrarContratoDialog({
               </div>
             </div>
             <div className="mt-2 space-y-1.5">
-              <Label className="text-xs">Observacoes de renovacao</Label>
+              <Label className="text-xs">Observações de renovação</Label>
               <Textarea
                 rows={2}
                 value={obsRenovacao}

@@ -53,7 +53,7 @@ export function MunicipiosAtuacaoManager({
         });
         return;
       }
-      toast({ title: "Municipio vinculado" });
+      toast({ title: "Município vinculado" });
       setAdicionando("");
       router.refresh();
     } finally {
@@ -77,7 +77,7 @@ export function MunicipiosAtuacaoManager({
         });
         return;
       }
-      toast({ title: "Municipio desvinculado" });
+      toast({ title: "Município desvinculado" });
       router.refresh();
     } finally {
       setBusy(false);
@@ -88,7 +88,7 @@ export function MunicipiosAtuacaoManager({
     <div className="space-y-3">
       {vinculados.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Nenhum municipio vinculado.
+          Nenhum município vinculado.
         </p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">
@@ -123,7 +123,7 @@ export function MunicipiosAtuacaoManager({
               disabled={busy}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Adicionar municipio..." />
+                <SelectValue placeholder="Adicionar município..." />
               </SelectTrigger>
               <SelectContent>
                 {disponiveis.map((m) => (

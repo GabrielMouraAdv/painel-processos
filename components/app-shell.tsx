@@ -81,7 +81,7 @@ export function AppShell({
 
       {/* Sidebar: drawer em mobile, fixa em desktop */}
       <aside
-        aria-label="Navegacao principal"
+        aria-label="Navegação principal"
         className={cn(
           "fixed inset-y-0 left-0 z-40 h-screen w-[280px] transform transition-transform duration-200 ease-out",
           "md:static md:w-64 md:translate-x-0 md:transition-none",
@@ -127,7 +127,7 @@ export function AppShell({
             <Menu className="h-5 w-5" />
           </button>
           <p className="truncate text-sm font-semibold text-brand-navy">
-            {modoEleitoral ? "Eleitoral 2026" : "Gestao Processual"}
+            {modoEleitoral ? "Eleitoral 2026" : "Gestão Processual"}
           </p>
           <div className="flex items-center gap-1">
             {!modoEleitoral && (

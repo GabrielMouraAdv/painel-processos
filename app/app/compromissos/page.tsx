@@ -51,7 +51,7 @@ export default async function CompromissosPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <CompromissosView
-        usuario={{ id: userId, nome: session!.user.name ?? "Usuario" }}
+        usuario={{ id: userId, nome: session!.user.name ?? "Usuário" }}
         isAdmin={isAdmin}
         podeUsarPrivadas={podePrivado}
         advogados={advogados}

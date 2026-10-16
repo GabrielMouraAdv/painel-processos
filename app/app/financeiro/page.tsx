@@ -137,7 +137,7 @@ export default async function FinanceiroEscolhaPage() {
             Financeiro
           </h1>
           <p className="mt-2 text-base text-muted-foreground">
-            Gestao financeira do escritorio
+            Gestão financeira do escritório
           </p>
         </header>
 
@@ -157,7 +157,7 @@ export default async function FinanceiroEscolhaPage() {
                 Dashboard Financeiro
               </h2>
               <p className="text-sm text-muted-foreground">
-                Visao consolidada de receitas, atrasos e contratos
+                Visão consolidada de receitas, atrasos e contratos
               </p>
             </div>
             <dl className="grid grid-cols-3 gap-2 border-t pt-4">
@@ -189,10 +189,10 @@ export default async function FinanceiroEscolhaPage() {
             </div>
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
-                Honorarios Municipais
+                Honorários Municipais
               </h2>
               <p className="text-sm text-muted-foreground">
-                Contratos mensais com municipios e orgaos publicos
+                Contratos mensais com municípios e órgãos públicos
               </p>
             </div>
             <dl className="grid grid-cols-3 gap-2 border-t pt-4">
@@ -222,10 +222,10 @@ export default async function FinanceiroEscolhaPage() {
             </div>
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">
-                Honorarios Pessoais
+                Honorários Pessoais
               </h2>
               <p className="text-sm text-muted-foreground">
-                Honorarios por causa, sucumbencia e avulsos
+                Honorários por causa, sucumbência e avulsos
               </p>
             </div>
             <dl className="grid grid-cols-3 gap-2 border-t pt-4">

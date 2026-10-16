@@ -84,7 +84,7 @@ export function AlertaMonitoramentoDialog({ detalhe, onOpenChange }: Props) {
                 >
                   <Icone className="h-4 w-4" />
                 </span>
-                {isMov ? "Movimentacao Datajud" : "Publicacao DJEN"}
+                {isMov ? "Movimentação Datajud" : "Publicação DJEN"}
               </DialogTitle>
               <DialogDescription>
                 {formatDateTime(detalhe.data)}
@@ -104,13 +104,13 @@ export function AlertaMonitoramentoDialog({ detalhe, onOpenChange }: Props) {
               {isMov ? (
                 <>
                   <MetaLinha
-                    label="Codigo movimento"
+                    label="Código movimento"
                     value={detalhe.codigoMovimento}
                   />
                   {detalhe.ehDecisao && (
                     <div className="col-span-2">
                       <span className="inline-block rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-                        Decisao detectada — verificar necessidade de recurso
+                        Decisão detectada — verificar necessidade de recurso
                       </span>
                     </div>
                   )}
@@ -118,15 +118,15 @@ export function AlertaMonitoramentoDialog({ detalhe, onOpenChange }: Props) {
               ) : (
                 <>
                   <MetaLinha
-                    label="Disponibilizacao"
+                    label="Disponibilização"
                     value={formatDateTime(detalhe.dataDisponibilizacao)}
                   />
                   <MetaLinha label="Caderno" value={detalhe.caderno} />
-                  <MetaLinha label="Pagina" value={detalhe.pagina} />
+                  <MetaLinha label="Página" value={detalhe.pagina} />
                   {detalhe.geraIntimacao && (
                     <div className="col-span-2">
                       <span className="inline-block rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-                        Intimacao detectada — pode gerar prazo
+                        Intimação detectada — pode gerar prazo
                       </span>
                     </div>
                   )}
@@ -136,7 +136,7 @@ export function AlertaMonitoramentoDialog({ detalhe, onOpenChange }: Props) {
 
             <div className="border-t pt-3">
               <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {isMov ? "Movimentacao" : "Extrato da publicacao"}
+                {isMov ? "Movimentação" : "Extrato da publicação"}
               </h4>
               {isMov ? (
                 <div className="space-y-3 text-sm">
@@ -163,7 +163,7 @@ export function AlertaMonitoramentoDialog({ detalhe, onOpenChange }: Props) {
                 <p className="whitespace-pre-wrap text-sm text-slate-800">
                   {detalhe.conteudo && detalhe.conteudo.trim().length > 0
                     ? detalhe.conteudo
-                    : "Sem texto disponivel — apenas o registro da publicacao foi capturado."}
+                    : "Sem texto disponível — apenas o registro da publicação foi capturado."}
                 </p>
               )}
             </div>

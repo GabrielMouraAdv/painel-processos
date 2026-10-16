@@ -80,7 +80,7 @@ export function KpiCardsTce({
       tone: "slate",
     },
     {
-      label: "Contrarrazoes pendentes",
+      label: "Contrarrazões pendentes",
       value: contrarrazoesPendentes,
       href: "/app/tce/processos?contrarrazoes=pendentes",
       icon: Scale,

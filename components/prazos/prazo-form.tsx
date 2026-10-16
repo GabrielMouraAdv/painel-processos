@@ -203,7 +203,7 @@ export function PrazoForm({
         <div className="space-y-1.5">
           <Label>Descreva o tipo</Label>
           <Input
-            placeholder="Ex.: Sustentacao oral"
+            placeholder="Ex.: Sustentação oral"
             {...register("tipoCustom")}
           />
         </div>
@@ -216,14 +216,14 @@ export function PrazoForm({
           {errors.data && <p className="text-xs text-red-600">{errors.data.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label>Horario (opcional)</Label>
+          <Label>Horário (opcional)</Label>
           <Input type="time" {...register("hora")} />
         </div>
       </div>
 
       <div className="space-y-1.5">
         <Label>
-          Advogado responsavel <span className="text-red-600">*</span>
+          Advogado responsável <span className="text-red-600">*</span>
         </Label>
         <Controller
           control={control}
@@ -249,7 +249,7 @@ export function PrazoForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Observacoes</Label>
+        <Label>Observações</Label>
         <Textarea rows={2} {...register("observacoes")} />
       </div>
 
@@ -266,7 +266,7 @@ export function PrazoForm({
         >
           {isSubmitting
             ? "Salvando..."
-            : submitLabel ?? (mode === "edit" ? "Salvar alteracoes" : "Cadastrar prazo")}
+            : submitLabel ?? (mode === "edit" ? "Salvar alterações" : "Cadastrar prazo")}
         </Button>
       </DialogFooter>
     </form>

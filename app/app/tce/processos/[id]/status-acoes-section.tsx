@@ -108,7 +108,7 @@ export function StatusAcoesSection(props: Props) {
   return (
     <section className="space-y-3">
       <h2 className="text-lg font-semibold tracking-tight text-brand-navy">
-        Status e Acoes
+        Status e Ações
       </h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <CardNotaTecnica {...props} />
@@ -195,7 +195,7 @@ function CardResultadoJulgamento(props: Props & { titulo: string }) {
       <CardContent className="space-y-3">
         {!j.julgado && (
           <>
-            <p className="text-sm text-slate-600">Processo ainda nao julgado</p>
+            <p className="text-sm text-slate-600">Processo ainda não julgado</p>
             <Button
               size="sm"
               className="bg-brand-navy hover:bg-brand-navy/90"
@@ -293,7 +293,7 @@ function CardResultadoJulgamento(props: Props & { titulo: string }) {
                 {j.valorDevolucao != null && (
                   <p>
                     <span className="font-semibold text-slate-700">
-                      Devolucao ao erario:
+                      Devolução ao erário:
                     </span>{" "}
                     {fmtBRL(j.valorDevolucao)}
                   </p>
@@ -304,7 +304,7 @@ function CardResultadoJulgamento(props: Props & { titulo: string }) {
             {j.observacoesJulgamento && (
               <div className="rounded-md border bg-white px-3 py-2 text-xs">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Observacoes
+                  Observações
                 </p>
                 <p className="mt-1 whitespace-pre-wrap text-slate-700">
                   {j.observacoesJulgamento}
@@ -400,7 +400,7 @@ function CardNotaTecnica(props: Props) {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <FileText className="h-4 w-4" />
-          Nota Tecnica
+          Nota Técnica
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -408,7 +408,7 @@ function CardNotaTecnica(props: Props) {
           <>
             <StatusLine
               icon={<X className="h-4 w-4 text-red-500" />}
-              text="Sem Nota Tecnica"
+              text="Sem Nota Técnica"
             />
             <Button
               size="sm"
@@ -431,7 +431,7 @@ function CardNotaTecnica(props: Props) {
           <>
             <StatusLine
               icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}
-              text="NT juntada — contrarrazoes pendentes"
+              text="NT juntada — contrarrazões pendentes"
             />
             <div className="flex flex-wrap gap-2">
               <Button
@@ -476,14 +476,14 @@ function CardNotaTecnica(props: Props) {
         {concluido && !dispensado && (
           <StatusLine
             icon={<Check className="h-4 w-4 text-emerald-600" />}
-            text="Contrarrazoes a NT apresentadas"
+            text="Contrarrazões a NT apresentadas"
           />
         )}
 
         {dispensado && (
           <DispensaInfoBlock
             info={dispensado}
-            label="Contrarrazoes NT dispensadas"
+            label="Contrarrazões NT dispensadas"
             disabled={busy}
             onReverter={() =>
               call(
@@ -573,7 +573,7 @@ function CardParecerMpco(props: Props) {
           <>
             <StatusLine
               icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}
-              text="Parecer MPCO juntado — contrarrazoes pendentes"
+              text="Parecer MPCO juntado — contrarrazões pendentes"
             />
             <div className="flex flex-wrap gap-2">
               <Button
@@ -618,14 +618,14 @@ function CardParecerMpco(props: Props) {
         {concluido && !dispensado && (
           <StatusLine
             icon={<Check className="h-4 w-4 text-emerald-600" />}
-            text="Contrarrazoes ao MPCO apresentadas"
+            text="Contrarrazões ao MPCO apresentadas"
           />
         )}
 
         {dispensado && (
           <DispensaInfoBlock
             info={dispensado}
-            label="Contrarrazoes MPCO dispensadas"
+            label="Contrarrazões MPCO dispensadas"
             disabled={busy}
             onReverter={() =>
               call(
@@ -693,7 +693,7 @@ function CardMemorial(props: Props) {
           <>
             <StatusLine
               icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}
-              text="Memorial pendente de elaboracao"
+              text="Memorial pendente de elaboração"
             />
             {props.memorialAgendadoData && props.memorialAgendadoAdvogadoNome && (
               <p className="text-xs text-blue-700">
@@ -994,7 +994,7 @@ function CardNaoSeAplica({
       <CardContent>
         <StatusLine
           icon={<Clock className="h-4 w-4 text-slate-500" />}
-          text="Nao se aplica: processo julgado"
+          text="Não se aplica: processo julgado"
         />
       </CardContent>
     </Card>

@@ -49,7 +49,7 @@ export function PrazoAcoes({ prazoId, cumprido }: Props) {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Falha ao excluir o prazo");
-      toast({ title: "Prazo excluido" });
+      toast({ title: "Prazo excluído" });
       router.refresh();
     } catch (err) {
       toast({

@@ -25,9 +25,9 @@ import type {
 } from "./compromissos-view";
 
 const TIPOS: { value: string; label: string }[] = [
-  { value: "REUNIAO", label: "Reuniao" },
+  { value: "REUNIAO", label: "Reunião" },
   { value: "AUDIENCIA", label: "Audiencia" },
-  { value: "SUSTENTACAO", label: "Sustentacao Oral" },
+  { value: "SUSTENTACAO", label: "Sustentação Oral" },
   { value: "DESPACHO_PRESENCIAL", label: "Despacho Presencial" },
   { value: "VIAGEM", label: "Viagem" },
   { value: "PESSOAL", label: "Pessoal" },
@@ -183,11 +183,11 @@ export function CompromissoForm({
 
   async function salvar() {
     if (!titulo.trim()) {
-      toast({ variant: "destructive", title: "Informe o titulo" });
+      toast({ variant: "destructive", title: "Informe o título" });
       return;
     }
     if (!dateInicio) {
-      toast({ variant: "destructive", title: "Informe a data de inicio" });
+      toast({ variant: "destructive", title: "Informe a data de início" });
       return;
     }
     const dataInicio = combineDateTime(
@@ -259,7 +259,7 @@ export function CompromissoForm({
   }[] = [
     {
       value: "ESCRITORIO",
-      label: "Escritorio",
+      label: "Escritório",
       flag: "PRC",
       flagClass: "bg-blue-600 text-white",
     },
@@ -313,8 +313,8 @@ export function CompromissoForm({
           </div>
           {categoria !== "ESCRITORIO" && (
             <p className="text-[11px] text-amber-700">
-              Compromisso privado: visivel apenas para voce e nao entra em
-              relatorios do escritorio.
+              Compromisso privado: visível apenas para você e não entra em
+              relatórios do escritório.
             </p>
           )}
         </div>
@@ -322,12 +322,12 @@ export function CompromissoForm({
 
       <div className="space-y-1.5">
         <Label>
-          Titulo <span className="text-red-600">*</span>
+          Título <span className="text-red-600">*</span>
         </Label>
         <Input
           value={titulo}
           onChange={(e) => setTitulo(e.target.value)}
-          placeholder="Ex.: Reuniao com cliente"
+          placeholder="Ex.: Reunião com cliente"
           autoFocus={mode === "create"}
         />
       </div>
@@ -351,7 +351,7 @@ export function CompromissoForm({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label>
-            Data inicio <span className="text-red-600">*</span>
+            Data início <span className="text-red-600">*</span>
           </Label>
           <Input
             type="date"
@@ -360,7 +360,7 @@ export function CompromissoForm({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Hora inicio</Label>
+          <Label>Hora início</Label>
           <Input
             type="time"
             value={horaInicio}
@@ -420,7 +420,7 @@ export function CompromissoForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Descricao</Label>
+        <Label>Descrição</Label>
         <Textarea
           rows={2}
           value={descricao}
@@ -486,7 +486,7 @@ export function CompromissoForm({
       )}
 
       <div className="space-y-1.5">
-        <Label>Escritorio responsavel</Label>
+        <Label>Escritório responsável</Label>
         <Select
           value={escritorioResponsavelSlug || "__nenhum__"}
           onValueChange={(v) =>
@@ -494,11 +494,11 @@ export function CompromissoForm({
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Sem escritorio responsavel" />
+            <SelectValue placeholder="Sem escritório responsável" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__nenhum__">
-              <span className="text-slate-500">Sem escritorio</span>
+              <span className="text-slate-500">Sem escritório</span>
             </SelectItem>
             {(bancasDoProcesso.length > 0
               ? BANCAS.filter((b) => bancasDoProcesso.includes(b.slug))
@@ -524,14 +524,14 @@ export function CompromissoForm({
         {escritorioResponsavelSlug &&
           getBanca(escritorioResponsavelSlug) === null && (
             <p className="text-[11px] text-amber-700">
-              Escritorio invalido para esse processo. Selecione outro.
+              Escritório inválido para esse processo. Selecione outro.
             </p>
           )}
       </div>
 
       <div className="space-y-1.5">
         <Label>
-          Advogado responsavel <span className="text-red-600">*</span>
+          Advogado responsável <span className="text-red-600">*</span>
         </Label>
         <Select
           value={advogadoId}

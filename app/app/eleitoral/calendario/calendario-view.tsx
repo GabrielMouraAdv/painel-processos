@@ -278,7 +278,7 @@ export function CalendarioEleitoralView({
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Calendario de prazos</h1>
+            <h1 className="text-2xl font-semibold">Calendário de prazos</h1>
             <p className="text-sm text-muted-foreground">
               {visiveis.length}
               {visiveis.length !== itens.length ? ` de ${itens.length}` : ""}{" "}
@@ -357,7 +357,7 @@ export function CalendarioEleitoralView({
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Dica: clique no numero do dia (ou no + ) para cadastrar um prazo
+          Dica: clique no número do dia (ou no + ) para cadastrar um prazo
           naquela data; arraste um prazo de um dia para outro para remarcar.
         </p>
       </div>
@@ -377,7 +377,7 @@ export function CalendarioEleitoralView({
             <DialogTitle>Gerenciar agendas</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Escolha de quem voce quer ver os prazos no calendario. A selecao
+            Escolha de quem você quer ver os prazos no calendário. A seleção
             fica salva neste navegador.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -429,13 +429,13 @@ export function CalendarioEleitoralView({
                       {u.nome}
                       {u.id === usuarioAtualId && (
                         <span className="ml-1 text-xs text-muted-foreground">
-                          (voce)
+                          (você)
                         </span>
                       )}
                     </span>
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {qtd} no mes
+                    {qtd} no mês
                   </span>
                 </label>
               );
@@ -449,10 +449,10 @@ export function CalendarioEleitoralView({
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-[10px] font-bold text-slate-700">
                   ?
                 </span>
-                <span className="text-sm font-medium">Sem responsavel</span>
+                <span className="text-sm font-medium">Sem responsável</span>
               </span>
               <span className="shrink-0 text-xs text-muted-foreground">
-                {itens.filter((p) => !p.responsavel).length} no mes
+                {itens.filter((p) => !p.responsavel).length} no mês
               </span>
             </label>
           </div>
@@ -601,7 +601,7 @@ function PrazoBadge({
             ? "bg-brand-navy text-white"
             : "bg-slate-300 text-slate-700",
         )}
-        title={prazo.responsavel?.nome ?? "Sem responsavel"}
+        title={prazo.responsavel?.nome ?? "Sem responsável"}
       >
         {prazo.responsavel ? iniciais(prazo.responsavel.nome) : "?"}
       </span>
@@ -695,7 +695,7 @@ function PrazoDialog({
         title: modo === "create" ? "Prazo criado" : "Prazo atualizado",
         description:
           json?.revisoesCriadas > 0
-            ? `${json.revisoesCriadas} prazo(s) de revisao criados no processo.`
+            ? `${json.revisoesCriadas} prazo(s) de revisão criados no processo.`
             : undefined,
       });
       onOpenChange(false);
@@ -720,7 +720,7 @@ function PrazoDialog({
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Falha ao excluir o prazo");
-      toast({ title: "Prazo excluido" });
+      toast({ title: "Prazo excluído" });
       onOpenChange(false);
       router.refresh();
     } catch (err) {
@@ -826,10 +826,10 @@ function PrazoDialog({
 
           {status === "ENVIADO_REVISAO" && (
             <div className="space-y-1.5 rounded-md border border-cyan-200 bg-cyan-50/60 p-3">
-              <Label>Quem esta responsavel pela revisao?</Label>
+              <Label>Quem esta responsável pela revisão?</Label>
               <p className="text-xs text-muted-foreground">
-                Cada pessoa marcada recebe automaticamente um prazo de revisao
-                neste processo, com a mesma data da peca.
+                Cada pessoa marcada recebe automaticamente um prazo de revisão
+                neste processo, com a mesma data da peça.
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 {usuarios.map((u) => (
@@ -848,13 +848,13 @@ function PrazoDialog({
             </div>
           )}
           <div className="space-y-1.5">
-            <Label>Responsavel</Label>
+            <Label>Responsável</Label>
             <Select value={responsavelId} onValueChange={setResponsavelId}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecionar" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NENHUM}>— Sem responsavel —</SelectItem>
+                <SelectItem value={NENHUM}>— Sem responsável —</SelectItem>
                 {usuarios.map((u) => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.nome}
@@ -865,7 +865,7 @@ function PrazoDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="obsCal">Observacoes</Label>
+            <Label htmlFor="obsCal">Observações</Label>
             <Textarea
               id="obsCal"
               value={observacoes}

@@ -25,7 +25,7 @@ export function ExcluirRelatorioButton({ relatorioId, titulo }: Props) {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Falha ao excluir o relatorio");
-      toast({ title: "Relatorio excluido" });
+      toast({ title: "Relatório excluído" });
       router.refresh();
     } catch (err) {
       toast({
@@ -45,7 +45,7 @@ export function ExcluirRelatorioButton({ relatorioId, titulo }: Props) {
       variant="outline"
       onClick={excluir}
       disabled={busy}
-      title="Excluir relatorio"
+      title="Excluir relatório"
     >
       <Trash2 className="h-3.5 w-3.5" />
     </Button>

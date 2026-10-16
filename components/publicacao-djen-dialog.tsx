@@ -70,7 +70,7 @@ export function PublicacaoDjenDialog({ detalhe, onOpenChange }: Props) {
                 >
                   <Newspaper className="h-4 w-4" />
                 </span>
-                Publicacao no DJEN
+                Publicação no DJEN
               </DialogTitle>
               <DialogDescription>
                 <span className="font-mono">{detalhe.numeroProcesso}</span>
@@ -94,10 +94,10 @@ export function PublicacaoDjenDialog({ detalhe, onOpenChange }: Props) {
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              O texto completo das publicacoes vem do DJEN (Diario Eletronico
-              Nacional). Nem todas as publicacoes estao disponiveis: tribunais
-              que ainda nao migraram para o DJEN ou publicacoes muito antigas
-              podem nao ter texto integral.
+              O texto completo das publicações vem do DJEN (Diário Eletrônico
+              Nacional). Nem todas as publicações estão disponíveis: tribunais
+              que ainda não migraram para o DJEN ou publicações muito antigas
+              podem não ter texto integral.
             </p>
 
             <DialogFooter className="gap-2 sm:gap-2">
@@ -114,7 +114,7 @@ export function PublicacaoDjenDialog({ detalhe, onOpenChange }: Props) {
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="mr-1.5 h-4 w-4" />
-                    Abrir no diario oficial
+                    Abrir no diário oficial
                   </a>
                 </Button>
               )}

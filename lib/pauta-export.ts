@@ -43,7 +43,7 @@ export type SessaoExport = {
 const TIPO_SESSAO_LABEL: Record<string, string> = {
   presencial: "Presencial",
   virtual: "Virtual",
-  plenario_virtual: "Plenario Virtual",
+  plenario_virtual: "Plenário Virtual",
 };
 
 function flagsInline(it: ItemExport): string[] {

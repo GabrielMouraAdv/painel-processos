@@ -155,7 +155,7 @@ export default async function EleitoralProcessoPage({
           </div>
           <div>
             <p className="text-xs uppercase text-muted-foreground">
-              Advogado responsavel
+              Advogado responsável
             </p>
             <p className="font-medium">{processo.advogadoResp?.nome ?? "—"}</p>
           </div>
@@ -173,7 +173,7 @@ export default async function EleitoralProcessoPage({
           {processo.observacoes && (
             <div className="sm:col-span-2 lg:col-span-3">
               <p className="text-xs uppercase text-muted-foreground">
-                Observacoes
+                Observações
               </p>
               <p>{processo.observacoes}</p>
             </div>
@@ -181,11 +181,11 @@ export default async function EleitoralProcessoPage({
           {(processo.datajudOrgao || processo.ultimaConsultaDatajud) && (
             <div className="sm:col-span-2 lg:col-span-3 text-xs text-muted-foreground">
               {processo.datajudOrgao && (
-                <span>Orgao julgador (Datajud): {processo.datajudOrgao}. </span>
+                <span>Órgão julgador (Datajud): {processo.datajudOrgao}. </span>
               )}
               {processo.ultimaConsultaDatajud && (
                 <span>
-                  Ultima consulta ao Datajud:{" "}
+                  Última consulta ao Datajud:{" "}
                   {formatarDataHoraRecife(processo.ultimaConsultaDatajud)}.
                 </span>
               )}
@@ -198,15 +198,15 @@ export default async function EleitoralProcessoPage({
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <FolderOpen className="h-4 w-4" />
-            Pecas do processo ({processo.documentos.length})
+            Peças do processo ({processo.documentos.length})
           </CardTitle>
           <UploadDocumentoDialog processoId={processo.id} />
         </CardHeader>
         <CardContent className="space-y-3">
           {processo.documentos.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Nenhuma peca enviada. Use &quot;Enviar peca&quot; para anexar
-              iniciais, defesas, decisoes, provas e demais arquivos.
+              Nenhuma peça enviada. Use &quot;Enviar peça&quot; para anexar
+              iniciais, defesas, decisões, provas e demais arquivos.
             </p>
           )}
           {processo.documentos.map((d) => (
@@ -305,7 +305,7 @@ export default async function EleitoralProcessoPage({
                           : dias === 0
                             ? " · e hoje"
                             : dias === 1
-                              ? " · amanha"
+                              ? " · amanhã"
                               : ` · em ${dias} dias`)}
                       {p.cumprido && " · cumprido"}
                     </p>

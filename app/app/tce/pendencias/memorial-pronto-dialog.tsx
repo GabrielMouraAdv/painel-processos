@@ -113,7 +113,7 @@ export function MemorialProntoDialog({
           <DialogTitle>Memorial Pronto</DialogTitle>
           <DialogDescription>
             Anexe o arquivo do memorial elaborado para concluir esta
-            pendencia.
+            pendência.
           </DialogDescription>
         </DialogHeader>
 
@@ -141,7 +141,7 @@ export function MemorialProntoDialog({
             </Button>
           </div>
           <div className="space-y-1.5">
-            <Label>Data de conclusao</Label>
+            <Label>Data de conclusão</Label>
             <Input
               type="date"
               value={dataConclusao}

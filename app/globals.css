@@ -3,33 +3,35 @@
 @tailwind utilities;
 
 @layer base {
+  /* Direcao A "Pauta": papel frio #F4F6F8, tinta #14233B, marinho #1E3A5F,
+     linha #DDE3EA, cinza de apoio #5B6878, vermelho so para vencido #B42318. */
   :root {
-    --background: 36 33% 94%;
-    --foreground: 215 50% 15%;
+    --background: 210 22% 96%;
+    --foreground: 217 49% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 50% 15%;
+    --card-foreground: 217 49% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 50% 15%;
+    --popover-foreground: 217 49% 15%;
 
     --primary: 214 52% 25%;
-    --primary-foreground: 36 33% 96%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 36 20% 88%;
-    --secondary-foreground: 215 50% 15%;
+    --secondary: 214 24% 94%;
+    --secondary-foreground: 217 49% 15%;
 
-    --muted: 36 20% 90%;
-    --muted-foreground: 215 20% 40%;
+    --muted: 214 24% 94%;
+    --muted-foreground: 213 14% 41%;
 
-    --accent: 214 35% 90%;
-    --accent-foreground: 215 50% 15%;
+    --accent: 212 39% 94%;
+    --accent-foreground: 214 52% 25%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 4 76% 40%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 85%;
-    --input: 215 20% 85%;
+    --border: 212 24% 89%;
+    --input: 212 24% 89%;
     --ring: 214 52% 25%;
 
     --radius: 0.5rem;
@@ -63,7 +65,11 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground;
+  }
+  h1,
+  h2 {
+    @apply font-serif tracking-tight;
   }
 }
 

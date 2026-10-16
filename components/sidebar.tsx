@@ -85,7 +85,7 @@ export function Sidebar({
           badgeTone: "navy",
         },
         {
-          label: "Calendario",
+          label: "Calendário",
           href: "/app/eleitoral/calendario",
           icon: CalendarRange,
           badge:
@@ -103,7 +103,7 @@ export function Sidebar({
           badgeTone: "red",
         },
         {
-          label: "Relatorios",
+          label: "Relatórios",
           href: "/app/eleitoral/relatorios",
           icon: FileText,
         },
@@ -113,7 +113,7 @@ export function Sidebar({
           icon: Wand2,
         },
         {
-          label: "Links uteis",
+          label: "Links úteis",
           href: "/app/eleitoral/links",
           icon: LinkIcon,
         },
@@ -134,7 +134,7 @@ export function Sidebar({
           badgeTone: "navy",
         },
         { label: "Pauta", href: "/app/tce/pauta", icon: CalendarRange },
-        { label: "Municipios", href: "/app/tce/municipios", icon: Building2 },
+        { label: "Municípios", href: "/app/tce/municipios", icon: Building2 },
         { label: "Interessados", href: "/app/tce/interessados", icon: UserCheck },
         {
           label: "Prazos TCE",
@@ -206,7 +206,7 @@ export function Sidebar({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold leading-tight">
-            {modoEleitoral ? "Eleitoral" : "Gestao"}
+            {modoEleitoral ? "Eleitoral" : "Gestão"}
           </p>
           <p className="text-xs leading-tight text-slate-300">
             {modoEleitoral ? "TRE-PE 2026" : "Processual"}
@@ -238,7 +238,7 @@ export function Sidebar({
             )}
           >
             <Home className="h-4 w-4" aria-hidden="true" />
-            <span>Inicio</span>
+            <span>Início</span>
           </Link>
           <Link
             href="/app/compromissos"
@@ -265,7 +265,7 @@ export function Sidebar({
             )}
           >
             <BarChart3 className="h-4 w-4" aria-hidden="true" />
-            <span>Relatorios</span>
+            <span>Relatórios</span>
           </Link>
           {podeFinanceiro && (
             <Link
@@ -339,7 +339,7 @@ export function Sidebar({
         )}
         <LogoutButton />
         <div>
-          <p className="font-semibold text-slate-100">Painel Juridico</p>
+          <p className="font-semibold text-slate-100">Painel Jurídico</p>
           <p>v0.1.0</p>
         </div>
       </div>

@@ -53,7 +53,7 @@ export function RenovarContratoDialog({
     if (!novaDataFim) {
       toast({
         variant: "destructive",
-        title: "Nova data de fim obrigatoria",
+        title: "Nova data de fim obrigatória",
       });
       return;
     }
@@ -67,7 +67,7 @@ export function RenovarContratoDialog({
         .replace(",", ".");
       const n = Number(limpo);
       if (!Number.isFinite(n) || n <= 0) {
-        toast({ variant: "destructive", title: "Novo valor mensal invalido" });
+        toast({ variant: "destructive", title: "Novo valor mensal inválido" });
         return;
       }
       valorNum = n;
@@ -100,7 +100,7 @@ export function RenovarContratoDialog({
         title: "Contrato renovado",
         description:
           json.notasGeradas > 0
-            ? `${json.notasGeradas} nota(s) geradas para o novo periodo.`
+            ? `${json.notasGeradas} nota(s) geradas para o novo período.`
             : "Nenhuma nota nova gerada.",
       });
       onOpenChange(false);
@@ -109,7 +109,7 @@ export function RenovarContratoDialog({
       console.error("[renovar contrato] erro:", e);
       toast({
         variant: "destructive",
-        title: "Erro de conexao",
+        title: "Erro de conexão",
       });
     } finally {
       setPending(false);
@@ -122,7 +122,7 @@ export function RenovarContratoDialog({
         <DialogHeader>
           <DialogTitle>Renovar contrato — {municipioNome}</DialogTitle>
           <DialogDescription>
-            Estende o prazo do contrato e gera as notas mensais ate a nova data
+            Estende o prazo do contrato e gera as notas mensais até a nova data
             de fim.
           </DialogDescription>
         </DialogHeader>
@@ -164,12 +164,12 @@ export function RenovarContratoDialog({
               placeholder={String(valorMensalAtual)}
             />
             <p className="text-[11px] text-muted-foreground">
-              Deixe igual ao atual se nao houver reajuste.
+              Deixe igual ao atual se não houver reajuste.
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Proxima data de renovacao (opcional)</Label>
+            <Label>Próxima data de renovação (opcional)</Label>
             <Input
               type="date"
               value={novaDataRenovacao}

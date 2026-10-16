@@ -94,8 +94,8 @@ type ProcessoLite = {
 const COR_PENDENTE = "#92400e";
 const COR_DESPACHADO = "#065f46";
 const CAMARA_LABEL: Record<CamaraTce, string> = {
-  PRIMEIRA: "1a Camara",
-  SEGUNDA: "2a Camara",
+  PRIMEIRA: "1a Câmara",
+  SEGUNDA: "2a Câmara",
   PLENO: "Pleno",
 };
 
@@ -258,20 +258,20 @@ export function DespachosView({
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por numero do processo..."
+              placeholder="Buscar por número do processo..."
               className="pl-9"
             />
           </div>
           <div className="flex min-w-[160px] flex-col gap-1">
-            <Label className="text-xs">Camara</Label>
+            <Label className="text-xs">Câmara</Label>
             <Select value={filtroCamara} onValueChange={setFiltroCamara}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={TODOS}>Todas</SelectItem>
-                <SelectItem value={CamaraTce.PRIMEIRA}>1a Camara</SelectItem>
-                <SelectItem value={CamaraTce.SEGUNDA}>2a Camara</SelectItem>
+                <SelectItem value={CamaraTce.PRIMEIRA}>1a Câmara</SelectItem>
+                <SelectItem value={CamaraTce.SEGUNDA}>2a Câmara</SelectItem>
                 <SelectItem value={CamaraTce.PLENO}>Pleno</SelectItem>
               </SelectContent>
             </Select>
@@ -583,7 +583,7 @@ function DespachoCardComponent({
             {card.municipio
               ? ` • ${card.municipio.nome}/${card.municipio.uf}`
               : ""}
-            {card.exercicio ? ` • exercicio ${card.exercicio}` : ""}
+            {card.exercicio ? ` • exercício ${card.exercicio}` : ""}
           </p>
           {card.recurso && (
             <p className="text-[11px] italic opacity-80">
@@ -655,7 +655,7 @@ function DespachoCardComponent({
       <div className="grid grid-cols-1 gap-4 border-b border-slate-100 bg-white px-5 py-4 md:grid-cols-3">
         <div>
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Situacao atual
+            Situação atual
           </p>
           <span className="inline-flex items-center rounded-md border border-brand-navy/30 bg-brand-navy/10 px-2 py-1 text-xs font-medium text-brand-navy">
             {faseTceLabel(card.tipo, card.faseAtual)}
@@ -681,7 +681,7 @@ function DespachoCardComponent({
 
         <div>
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Localizacao
+            Localização
           </p>
           <ul className="space-y-1 text-xs text-slate-800">
             <li>
@@ -692,7 +692,7 @@ function DespachoCardComponent({
             </li>
             <li>
               <span className="font-medium text-muted-foreground">
-                Camara:
+                Câmara:
               </span>{" "}
               {CAMARA_LABEL[card.camara]}
             </li>
@@ -709,7 +709,7 @@ function DespachoCardComponent({
 
         <div>
           <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Prognostico
+            Prognóstico
             {savingPg && (
               <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />
             )}
@@ -719,7 +719,7 @@ function DespachoCardComponent({
             onChange={(e) => setPrognostico(e.target.value)}
             onBlur={salvarPrognostico}
             rows={4}
-            placeholder="Anote o prognostico para este despacho..."
+            placeholder="Anote o prognóstico para este despacho..."
             className="mt-1 text-xs"
           />
         </div>
@@ -940,7 +940,7 @@ function AdicionarProcessoDialog({
         <DialogHeader>
           <DialogTitle>Adicionar processo a lista de despachos</DialogTitle>
           <DialogDescription>
-            Escolha um processo TCE pelo numero. O processo aparecera na lista
+            Escolha um processo TCE pelo número. O processo aparecerá na lista
             mesmo sem memorial pronto ou despacho.
           </DialogDescription>
         </DialogHeader>
@@ -950,7 +950,7 @@ function AdicionarProcessoDialog({
           <Input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar pelo numero do processo..."
+            placeholder="Buscar pelo número do processo..."
             className="pl-9"
           />
         </div>
@@ -959,7 +959,7 @@ function AdicionarProcessoDialog({
           {lista.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
               {processos.length === 0
-                ? "Todos os processos ja estao na lista."
+                ? "Todos os processos já estão na lista."
                 : "Nenhum processo encontrado."}
             </p>
           ) : (

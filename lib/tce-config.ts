@@ -8,11 +8,11 @@ export type CamaraConfig = {
 
 export const TCE_CAMARAS: Record<CamaraTce, CamaraConfig> = {
   PRIMEIRA: {
-    label: "Primeira Camara",
+    label: "Primeira Câmara",
     titulares: ["Ranilson Ramos", "Rodrigo Novaes", "Dirceu Rodolfo"],
   },
   SEGUNDA: {
-    label: "Segunda Camara",
+    label: "Segunda Câmara",
     titulares: ["Eduardo Porto", "Marcos Loreto", "Valdecir Pascoal"],
   },
   PLENO: {
@@ -43,16 +43,16 @@ export const CONSELHEIROS_SUBSTITUTOS: string[] = [
 ];
 
 export const TCE_TIPO_LABELS: Record<TipoProcessoTce, string> = {
-  PRESTACAO_CONTAS_GOVERNO: "Prestacao de Contas de Governo",
-  PRESTACAO_CONTAS_GESTAO: "Prestacao de Contas de Gestao",
+  PRESTACAO_CONTAS_GOVERNO: "Prestação de Contas de Governo",
+  PRESTACAO_CONTAS_GESTAO: "Prestação de Contas de Gestão",
   AUDITORIA_ESPECIAL: "Auditoria Especial",
-  RGF: "Relatorio de Gestao Fiscal (RGF)",
+  RGF: "Relatório de Gestão Fiscal (RGF)",
   AUTO_INFRACAO: "Auto de Infracao",
   MEDIDA_CAUTELAR: "Medida Cautelar",
   TOMADA_CONTAS_ESPECIAL: "Tomada de Contas Especial",
   DESTAQUE: "Destaque",
   DENUNCIA: "Denuncia",
-  TERMO_AJUSTE_GESTAO: "Termo de Ajuste de Gestao",
+  TERMO_AJUSTE_GESTAO: "Termo de Ajuste de Gestão",
   PEDIDO_RESCISAO: "Pedido de Rescisao",
   CONSULTA: "Consulta",
 };
@@ -133,8 +133,8 @@ export function getPrazoDefesaPorTipo(
 }
 
 export const TCE_CAMARA_LABELS: Record<CamaraTce, string> = {
-  PRIMEIRA: "Primeira Camara",
-  SEGUNDA: "Segunda Camara",
+  PRIMEIRA: "Primeira Câmara",
+  SEGUNDA: "Segunda Câmara",
   PLENO: "Pleno",
 };
 
@@ -153,66 +153,66 @@ export type FaseTce = {
 export const FLUXO_PADRAO: FaseTce[] = [
   {
     key: "defesa_previa",
-    label: "Aguardando Defesa Previa",
+    label: "Aguardando Defesa Prévia",
     prazo: { tipo: "Defesa Previa", diasUteis: 30, prorrogavel: true },
   },
   { key: "defesa_apresentada", label: "Defesa Apresentada" },
   {
     key: "acordao_1",
-    label: "Acordao publicado",
+    label: "Acórdão publicado",
     prazo: {
       tipo: "Embargos de Declaracao / Recurso Ordinario",
       diasUteis: 30,
       prorrogavel: false,
     },
   },
-  { key: "embargos_1", label: "Embargos de Declaracao interpostos" },
+  { key: "embargos_1", label: "Embargos de Declaração interpostos" },
   {
     key: "acordao_embargos_1",
-    label: "Acordao dos Embargos",
+    label: "Acórdão dos Embargos",
     prazo: {
       tipo: "Recurso Ordinario",
       diasUteis: 30,
       prorrogavel: false,
     },
   },
-  { key: "recurso_ordinario", label: "Recurso Ordinario interposto" },
+  { key: "recurso_ordinario", label: "Recurso Ordinário interposto" },
   {
     key: "acordao_ro",
-    label: "Acordao do Recurso Ordinario",
+    label: "Acórdão do Recurso Ordinário",
     prazo: {
       tipo: "Embargos de Declaracao",
       diasUteis: 30,
       prorrogavel: false,
     },
   },
-  { key: "embargos_ro", label: "Embargos de Declaracao apos RO" },
-  { key: "acordao_embargos_ro", label: "Acordao dos Embargos pos RO" },
+  { key: "embargos_ro", label: "Embargos de Declaração após RO" },
+  { key: "acordao_embargos_ro", label: "Acórdão dos Embargos pos RO" },
   { key: "transitado", label: "Transitado em Julgado" },
 ];
 
 export const FLUXO_CAUTELAR: FaseTce[] = [
   {
     key: "manifestacao_previa",
-    label: "Aguardando Manifestacao Previa",
+    label: "Aguardando Manifestação Prévia",
     prazo: { tipo: "Manifestacao Previa", diasUteis: 5, prorrogavel: false },
   },
-  { key: "manifestacao_apresentada", label: "Manifestacao Apresentada" },
-  { key: "decisao_monocratica", label: "Decisao Monocratica proferida" },
+  { key: "manifestacao_apresentada", label: "Manifestação Apresentada" },
+  { key: "decisao_monocratica", label: "Decisão Monocrática proferida" },
   { key: "referendo_pleno", label: "Em Referendo do Pleno" },
   {
     key: "decisao_referendo",
-    label: "Decisao do Referendo",
+    label: "Decisão do Referendo",
     prazo: { tipo: "Agravo Regimental", diasUteis: 15, prorrogavel: false },
   },
   { key: "agravo_regimental", label: "Agravo Regimental interposto" },
   {
     key: "acordao_agravo",
-    label: "Acordao do Agravo",
+    label: "Acórdão do Agravo",
     prazo: { tipo: "Embargos de Declaracao", diasUteis: 10, prorrogavel: false },
   },
-  { key: "embargos_cautelar", label: "Embargos de Declaracao" },
-  { key: "acordao_embargos_cautelar", label: "Acordao dos Embargos" },
+  { key: "embargos_cautelar", label: "Embargos de Declaração" },
+  { key: "acordao_embargos_cautelar", label: "Acórdão dos Embargos" },
   { key: "transitado_cautelar", label: "Transitado em Julgado" },
 ];
 
@@ -299,8 +299,8 @@ export function getPrazoRecursoPorTipo(
 }
 
 export const TCE_RECURSO_LABELS: Record<TipoRecursoTce, string> = {
-  RECURSO_ORDINARIO: "Recurso Ordinario",
-  EMBARGOS_DECLARACAO: "Embargos de Declaracao",
+  RECURSO_ORDINARIO: "Recurso Ordinário",
+  EMBARGOS_DECLARACAO: "Embargos de Declaração",
   AGRAVO: "Agravo",
   AGRAVO_REGIMENTAL: "Agravo Regimental",
   PEDIDO_RESCISAO_RECURSO: "Pedido de Rescisao",

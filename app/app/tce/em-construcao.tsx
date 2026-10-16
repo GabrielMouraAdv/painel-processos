@@ -16,18 +16,18 @@ export function EmConstrucao({ titulo }: Props) {
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
           {titulo}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Em construcao</p>
+        <p className="mt-1 text-sm text-muted-foreground">Em construção</p>
       </header>
 
       <Card>
         <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <Construction className="h-10 w-10 text-slate-400" aria-hidden="true" />
           <p className="text-sm font-medium text-slate-700">
-            Modulo em construcao
+            Módulo em construção
           </p>
           <p className="max-w-md text-xs text-muted-foreground">
-            Esta area do Tribunal de Contas ainda esta sendo desenvolvida. Em
-            breve voce podera acessar as funcionalidades aqui.
+            Esta área do Tribunal de Contas ainda esta sendo desenvolvida. Em
+            breve você poderá acessar as funcionalidades aqui.
           </p>
         </CardContent>
       </Card>

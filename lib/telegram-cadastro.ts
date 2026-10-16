@@ -200,7 +200,7 @@ export async function executarIntencao(
     select: { id: true, nome: true, email: true, escritorioId: true },
   });
   if (!user) {
-    return { ok: false, mensagem: "Usuario nao encontrado." };
+    return { ok: false, mensagem: "Usuário não encontrado." };
   }
 
   if (
@@ -209,7 +209,7 @@ export async function executarIntencao(
   ) {
     return {
       ok: false,
-      mensagem: "Acao nao suportada para execucao automatica.",
+      mensagem: "Ação não suportada para execução automática.",
     };
   }
 
@@ -217,7 +217,7 @@ export async function executarIntencao(
   if (!dadosIA.titulo || !dadosIA.dataInicio) {
     return {
       ok: false,
-      mensagem: "Dados insuficientes (titulo ou data faltando).",
+      mensagem: "Dados insuficientes (título ou data faltando).",
     };
   }
   const dataPrincipal = new Date(dadosIA.dataInicio);
@@ -290,7 +290,7 @@ export async function executarIntencao(
       return {
         ok: false,
         mensagem:
-          "Prazo precisa de processo vinculado. Cadastre pelo painel ou indique o processo na proxima tentativa.",
+          "Prazo precisa de processo vinculado. Cadastre pelo painel ou indique o processo na próxima tentativa.",
       };
     }
 
@@ -301,7 +301,7 @@ export async function executarIntencao(
         select: { id: true },
       });
       if (!pTce) {
-        return { ok: false, mensagem: "Processo TCE nao encontrado." };
+        return { ok: false, mensagem: "Processo TCE não encontrado." };
       }
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
@@ -339,7 +339,7 @@ export async function executarIntencao(
       select: { id: true },
     });
     if (!pJud) {
-      return { ok: false, mensagem: "Processo judicial nao encontrado." };
+      return { ok: false, mensagem: "Processo judicial não encontrado." };
     }
     const horaStr = dadosIA.diaInteiro ? null : formatHora(dadosIA.dataInicio);
     const novoJud: Pick<Prazo, "id"> = await prisma.prazo.create({

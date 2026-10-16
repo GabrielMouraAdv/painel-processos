@@ -196,21 +196,21 @@ export function InterporRecursoDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Numero do recurso</Label>
+              <Label>Número do recurso</Label>
               <Input
                 value={numero || numeroSugerido}
                 onChange={(e) => setNumero(e.target.value)}
                 className="font-mono"
               />
               <p className="text-[11px] text-muted-foreground">
-                Sugestao: <code>{numeroSugerido}</code>
+                Sugestão: <code>{numeroSugerido}</code>
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Data de interposicao</Label>
+              <Label>Data de interposição</Label>
               <Input
                 type="date"
                 value={dataInterposicao}
@@ -218,7 +218,7 @@ export function InterporRecursoDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Data de intimacao (opcional)</Label>
+              <Label>Data de intimação (opcional)</Label>
               <Input
                 type="date"
                 value={dataIntimacao}
@@ -229,12 +229,12 @@ export function InterporRecursoDialog({
 
           {prazoCfg && (
             <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              <strong>{prazoCfg.tipo}</strong>: {prazoCfg.diasUteis} dias uteis,{" "}
-              {prazoCfg.prorrogavel ? "prorrogavel" : "improrrogavel"}
+              <strong>{prazoCfg.tipo}</strong>: {prazoCfg.diasUteis} dias úteis,{" "}
+              {prazoCfg.prorrogavel ? "prorrogável" : "improrrogável"}
               {prazoCfg.observacao ? ` — ${prazoCfg.observacao}` : ""}.
               {dataIntimacao
-                ? " Prazo automatico sera criado."
-                : " Informe a data de intimacao para gerar o prazo."}
+                ? " Prazo automático será criado."
+                : " Informe a data de intimação para gerar o prazo."}
             </div>
           )}
 
@@ -248,7 +248,7 @@ export function InterporRecursoDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Camara</Label>
+              <Label>Câmara</Label>
               <Select
                 value={camara}
                 onValueChange={(v) => setCamara(v as CamaraTce)}
@@ -269,7 +269,7 @@ export function InterporRecursoDialog({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Exercicio (opcional)</Label>
+              <Label>Exercício (opcional)</Label>
               <Input
                 value={exercicio}
                 onChange={(e) => setExercicio(e.target.value)}
@@ -277,7 +277,7 @@ export function InterporRecursoDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Fase / Estagio</Label>
+              <Label>Fase / Estágio</Label>
               <Input
                 value={faseAtual}
                 onChange={(e) => setFaseAtual(e.target.value)}
@@ -316,7 +316,7 @@ export function InterporRecursoDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Observacoes / Objeto (opcional)</Label>
+            <Label>Observações / Objeto (opcional)</Label>
             <Textarea
               rows={3}
               value={observacoes}

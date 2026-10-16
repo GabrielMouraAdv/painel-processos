@@ -117,7 +117,7 @@ export function PrazoFormDialog({
         title: mode === "create" ? "Prazo cadastrado" : "Prazo atualizado",
         description:
           json?.revisoesCriadas > 0
-            ? `${json.revisoesCriadas} prazo(s) de revisao criados no processo.`
+            ? `${json.revisoesCriadas} prazo(s) de revisão criados no processo.`
             : undefined,
       });
       setOpen(false);
@@ -191,10 +191,10 @@ export function PrazoFormDialog({
           </div>
           {status === "ENVIADO_REVISAO" && (
             <div className="space-y-1.5 rounded-md border border-cyan-200 bg-cyan-50/60 p-3">
-              <Label>Quem esta responsavel pela revisao?</Label>
+              <Label>Quem esta responsável pela revisão?</Label>
               <p className="text-xs text-muted-foreground">
-                Cada pessoa marcada recebe automaticamente um prazo de revisao
-                neste processo, com a mesma data da peca.
+                Cada pessoa marcada recebe automaticamente um prazo de revisão
+                neste processo, com a mesma data da peça.
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 {usuarios.map((u) => (
@@ -213,13 +213,13 @@ export function PrazoFormDialog({
             </div>
           )}
           <div className="space-y-1.5">
-            <Label>Responsavel</Label>
+            <Label>Responsável</Label>
             <Select value={responsavelId} onValueChange={setResponsavelId}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecionar" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NENHUM}>— Sem responsavel —</SelectItem>
+                <SelectItem value={NENHUM}>— Sem responsável —</SelectItem>
                 {usuarios.map((u) => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.nome}
@@ -229,7 +229,7 @@ export function PrazoFormDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="obs">Observacoes</Label>
+            <Label htmlFor="obs">Observações</Label>
             <Textarea
               id="obs"
               value={observacoes}

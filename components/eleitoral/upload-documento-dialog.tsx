@@ -64,7 +64,7 @@ export function UploadDocumentoDialog({ processoId }: Props) {
       if (!res.ok) {
         throw new Error(json?.error ?? "Falha no upload da peca");
       }
-      toast({ title: "Peca enviada" });
+      toast({ title: "Peça enviada" });
       setOpen(false);
       setNome("");
       setObservacoes("");
@@ -87,12 +87,12 @@ export function UploadDocumentoDialog({ processoId }: Props) {
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
           <Upload className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-          Enviar peca
+          Enviar peça
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Enviar peca</DialogTitle>
+          <DialogTitle>Enviar peça</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -105,12 +105,12 @@ export function UploadDocumentoDialog({ processoId }: Props) {
               required
             />
             <p className="text-xs text-muted-foreground">
-              Ate 20MB. PDF, Word, texto, imagem, video, audio ou ZIP.
+              Até 20MB. PDF, Word, texto, imagem, video, áudio ou ZIP.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="nomePeca">Nome / descricao</Label>
+              <Label htmlFor="nomePeca">Nome / descrição</Label>
               <Input
                 id="nomePeca"
                 value={nome}
@@ -135,7 +135,7 @@ export function UploadDocumentoDialog({ processoId }: Props) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="obsPeca">Observacoes</Label>
+            <Label htmlFor="obsPeca">Observações</Label>
             <Textarea
               id="obsPeca"
               value={observacoes}

@@ -92,7 +92,7 @@ export function AndamentoTceForm({
       toast({
         variant: "destructive",
         title: "Preencha os campos",
-        description: "Fase e descricao sao obrigatorios.",
+        description: "Fase e descrição são obrigatórios.",
       });
       return;
     }
@@ -100,14 +100,14 @@ export function AndamentoTceForm({
       if (!dataIntimacao) {
         toast({
           variant: "destructive",
-          title: "Informe a data de intimacao",
+          title: "Informe a data de intimação",
         });
         return;
       }
       if (!advogadoRespId) {
         toast({
           variant: "destructive",
-          title: "Selecione o advogado responsavel",
+          title: "Selecione o advogado responsável",
         });
         return;
       }
@@ -140,7 +140,7 @@ export function AndamentoTceForm({
       }
       toast({
         title: json.prazoId
-          ? "Andamento registrado e prazo automatico criado"
+          ? "Andamento registrado e prazo automático criado"
           : "Andamento registrado",
       });
       setDescricao("");
@@ -179,12 +179,12 @@ export function AndamentoTceForm({
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label>Descricao</Label>
+        <Label>Descrição</Label>
         <Textarea
           rows={3}
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
-          placeholder="Descreva a movimentacao do processo"
+          placeholder="Descreva a movimentação do processo"
         />
       </div>
       <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -197,8 +197,8 @@ export function AndamentoTceForm({
       </label>
       {historico && (
         <p className="text-xs text-muted-foreground">
-          Data anterior ao ultimo andamento ({ultimoDia!.split("-").reverse().join("/")}):
-          registro historico, a fase atual e os prazos nao mudam.
+          Data anterior ao último andamento ({ultimoDia!.split("-").reverse().join("/")}):
+          registro histórico, a fase atual e os prazos não mudam.
         </p>
       )}
 
@@ -213,11 +213,11 @@ export function AndamentoTceForm({
             />
             <span className="flex-1">
               <span className="font-medium text-brand-navy">
-                Gerar prazo automatico: {prazoConfig.tipo}
+                Gerar prazo automático: {prazoConfig.tipo}
               </span>
               <span className="ml-1 text-xs text-muted-foreground">
-                ({prazoConfig.diasUteis} dias uteis
-                {prazoConfig.prorrogavel ? " • prorrogavel" : " • improrrogavel"})
+                ({prazoConfig.diasUteis} dias úteis
+                {prazoConfig.prorrogavel ? " • prorrogável" : " • improrrogável"})
               </span>
             </span>
           </label>
@@ -226,7 +226,7 @@ export function AndamentoTceForm({
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs">
-                    Data de intimacao <span className="text-red-600">*</span>
+                    Data de intimação <span className="text-red-600">*</span>
                   </Label>
                   <Input
                     type="date"
@@ -246,7 +246,7 @@ export function AndamentoTceForm({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">
-                  Advogado responsavel <span className="text-red-600">*</span>
+                  Advogado responsável <span className="text-red-600">*</span>
                 </Label>
                 <Select
                   value={advogadoRespId}

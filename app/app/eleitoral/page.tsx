@@ -85,7 +85,7 @@ export default async function EleitoralDashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold">Eleitoral 2026</h1>
         <p className="text-sm text-muted-foreground">
-          Contencioso eleitoral TRE-PE — processos, prazos e relatorios.
+          Contencioso eleitoral TRE-PE — processos, prazos e relatórios.
         </p>
       </div>
 
@@ -94,7 +94,7 @@ export default async function EleitoralDashboardPage() {
           <Card className="transition-colors hover:bg-muted/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Processos em tramitacao
+                Processos em tramitação
               </CardTitle>
               <Gavel className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -120,7 +120,7 @@ export default async function EleitoralDashboardPage() {
           <Card className="transition-colors hover:bg-muted/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Ultimo relatorio
+                Último relatório
               </CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -136,7 +136,7 @@ export default async function EleitoralDashboardPage() {
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Nenhum relatorio enviado
+                  Nenhum relatório enviado
                 </p>
               )}
             </CardContent>
@@ -149,13 +149,13 @@ export default async function EleitoralDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <CalendarClock className="h-4 w-4" />
-              Proximos prazos (7 dias)
+              Próximos prazos (7 dias)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {proximosPrazos.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Nenhum prazo pendente nos proximos 7 dias.
+                Nenhum prazo pendente nos próximos 7 dias.
               </p>
             )}
             {proximosPrazos.map((p) => {
@@ -192,7 +192,7 @@ export default async function EleitoralDashboardPage() {
                         : dias === 0
                           ? "e hoje"
                           : dias === 1
-                            ? "amanha"
+                            ? "amanhã"
                             : `em ${dias} dias`}
                     </p>
                   </div>
@@ -206,7 +206,7 @@ export default async function EleitoralDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-4 w-4" />
-              Ultimos movimentos (TRE-PE)
+              Últimos movimentos (TRE-PE)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">

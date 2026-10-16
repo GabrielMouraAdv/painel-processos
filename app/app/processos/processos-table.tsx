@@ -25,6 +25,7 @@ import {
 } from "@/lib/julgamento-config";
 import { faseLabel } from "@/lib/processo-labels";
 import { cn } from "@/lib/utils";
+import { NumeroProcesso } from "@/components/numero-processo";
 
 export type ProcessoRow = {
   id: string;
@@ -58,11 +59,11 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
   return (
     <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <Table className="md:table-fixed">
+        <Table className="min-w-[1080px] md:table-fixed">
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
               <TableHead className={cn(headBase, "md:w-[140px]")}>
-                Numero
+                Número
               </TableHead>
               <TableHead className={cn(headBase, "md:w-[200px]")}>
                 Gestor
@@ -83,7 +84,7 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                 Risco
               </TableHead>
               <TableHead className={cn(headBase, "md:w-[200px]")}>
-                Situacao
+                Situação
               </TableHead>
               <TableHead className={cn(headBase, "md:w-[120px]")}>
                 Resultado
@@ -100,10 +101,10 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                 <TableCell
                   className={cn(
                     cellBase,
-                    "font-mono font-medium text-brand-navy",
+                    "font-medium",
                   )}
                 >
-                  {p.numero}
+                  <NumeroProcesso numero={p.numero} />
                 </TableCell>
                 <TableCell className={cellBase}>
                   <div className="break-words font-medium">
@@ -163,7 +164,7 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                         classeBadgeNaoJulgado(),
                       )}
                     >
-                      Nao julgado
+                      Não julgado
                     </span>
                   )}
                 </TableCell>

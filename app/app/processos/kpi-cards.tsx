@@ -36,7 +36,7 @@ export function KpiCards({
   const kpis: Kpi[] = [
     { label: "Total de processos", value: total, href: "/app/processos", icon: FileText, tone: "navy" },
     { label: "Risco alto", value: riscoAlto, href: "/app/processos?risco=ALTO", icon: AlertTriangle, tone: "red" },
-    { label: "Risco medio", value: riscoMedio, href: "/app/processos?risco=MEDIO", icon: Gauge, tone: "orange" },
+    { label: "Risco médio", value: riscoMedio, href: "/app/processos?risco=MEDIO", icon: Gauge, tone: "orange" },
     { label: "Parados (+60 dias)", value: parados, href: "/app/processos?status=parados", icon: Clock, tone: "slate" },
     { label: "Em pauta", value: emPauta, href: "/app/processos?status=em-pauta", icon: Gavel, tone: "violet" },
   ];

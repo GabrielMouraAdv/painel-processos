@@ -64,7 +64,7 @@ export function EditPrazosDialog({
         });
         return;
       }
-      toast({ title: "Prazo excluido" });
+      toast({ title: "Prazo excluído" });
       setDeleteId(null);
       setExpandedId((current) => (current === deleteId ? null : current));
       router.refresh();
@@ -80,7 +80,7 @@ export function EditPrazosDialog({
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              Edite ou remova prazos ja cadastrados. As alteracoes sao salvas individualmente.
+              Edite ou remova prazos já cadastrados. As alterações são salvas individualmente.
             </DialogDescription>
           </DialogHeader>
 
@@ -171,7 +171,7 @@ export function EditPrazosDialog({
           <DialogHeader>
             <DialogTitle>Excluir prazo?</DialogTitle>
             <DialogDescription>
-              Esta acao nao pode ser desfeita.
+              Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -187,7 +187,7 @@ export function EditPrazosDialog({
               onClick={handleDelete}
               disabled={deleting}
             >
-              {deleting ? "Excluindo..." : "Confirmar exclusao"}
+              {deleting ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>

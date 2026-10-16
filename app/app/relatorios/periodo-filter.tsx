@@ -75,7 +75,7 @@ export function PeriodoFilter({ de: initialDe, ate: initialAte }: Props) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex min-w-[140px] flex-col gap-1">
-          <Label className="text-xs">Inicio</Label>
+          <Label className="text-xs">Início</Label>
           <Input
             type="date"
             value={de}
@@ -112,12 +112,12 @@ export function PeriodoFilter({ de: initialDe, ate: initialAte }: Props) {
       <div className="flex flex-wrap items-end gap-3 border-t pt-3">
         <div className="flex min-w-[260px] flex-col gap-1">
           <Label className="text-xs">
-            Escritorio responsavel (PDF){" "}
+            Escritório responsável (PDF){" "}
             <span className="text-red-600">*</span>
           </Label>
           <Select value={emissorSlug} onValueChange={trocarEmissor}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecione o escritorio emissor" />
+              <SelectValue placeholder="Selecione o escritório emissor" />
             </SelectTrigger>
             <SelectContent>
               {ESCRITORIOS_EMISSORES.map((e) => (

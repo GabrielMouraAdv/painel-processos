@@ -119,7 +119,7 @@ export function PendenciasView({
             Judicial
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Pendencias Judiciais
+            Pendências Judiciais
           </h1>
           <p className="text-sm text-muted-foreground">
             Memoriais, despachos e prazos pendentes.
@@ -157,7 +157,7 @@ export function PendenciasView({
           onClick={() => setFiltroKpi("prazo")}
         />
         <KpiBox
-          label="Total Pendencias"
+          label="Total Pendências"
           value={agregado.total}
           tone="slate"
           ativo={filtroKpi === "todas"}
@@ -173,7 +173,7 @@ export function PendenciasView({
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por numero do processo..."
+              placeholder="Buscar por número do processo..."
               className="pl-9"
             />
           </div>
@@ -195,7 +195,7 @@ export function PendenciasView({
             </Select>
           </div>
           <div className="flex min-w-[200px] flex-col gap-1">
-            <Label className="text-xs">Advogado responsavel</Label>
+            <Label className="text-xs">Advogado responsável</Label>
             <Select value={filtroAdvogado} onValueChange={setFiltroAdvogado}>
               <SelectTrigger>
                 <SelectValue />
@@ -221,7 +221,7 @@ export function PendenciasView({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pendentes">Pendentes</SelectItem>
-                <SelectItem value="concluidas">Concluidas</SelectItem>
+                <SelectItem value="concluidas">Concluídas</SelectItem>
                 <SelectItem value="dispensados">Dispensados</SelectItem>
                 <SelectItem value="todas">Todas</SelectItem>
               </SelectContent>
@@ -256,7 +256,7 @@ export function PendenciasView({
       {cardsFiltrados.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            Nenhuma pendencia no recorte selecionado.
+            Nenhuma pendência no recorte selecionado.
           </CardContent>
         </Card>
       ) : (
@@ -500,8 +500,8 @@ function ProcessoCardComponent({
                       : "text-xs font-semibold text-orange-800"
                   }
                 >
-                  Responsavel:{" "}
-                  {pd.advogadoResp ? `Dr. ${pd.advogadoResp}` : "nao vinculado"}
+                  Responsável:{" "}
+                  {pd.advogadoResp ? `Dr. ${pd.advogadoResp}` : "não vinculado"}
                 </p>
               )}
             </div>
@@ -528,7 +528,7 @@ function ProcessoCardComponent({
             ) : pd.concluida ? (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-700">
                 <Check className="h-3 w-3" />
-                Concluida
+                Concluída
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-red-700">

@@ -114,7 +114,7 @@ export default async function MonitoramentoPage() {
         ? p.conteudo.length > 200
           ? p.conteudo.slice(0, 200) + "..."
           : p.conteudo
-        : "Publicacao DJEN",
+        : "Publicação DJEN",
       detalhe:
         [p.caderno, p.pagina].filter(Boolean).join(" - ") || null,
       ehDecisao: false,
@@ -151,7 +151,7 @@ export default async function MonitoramentoPage() {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-brand-navy md:text-3xl">
-          Monitoramento Automatico
+          Monitoramento Automático
         </h1>
         <p className="text-sm text-muted-foreground">Datajud + DJEN</p>
       </div>

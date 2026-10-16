@@ -77,7 +77,7 @@ export default async function EleitoralProcessosPage() {
               <TableHead>Processo</TableHead>
               <TableHead>Partes</TableHead>
               <TableHead>Coordenador</TableHead>
-              <TableHead>Proximo prazo</TableHead>
+              <TableHead>Próximo prazo</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>

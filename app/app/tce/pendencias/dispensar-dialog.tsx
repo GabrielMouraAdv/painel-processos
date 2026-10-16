@@ -108,8 +108,8 @@ export function DispensarPendenciaDialog({
               : modo === "prazo"
                 ? "Prazo dispensado"
                 : modo === "contrarrazoes_nt"
-                  ? "Contrarrazoes NT dispensadas"
-                  : "Contrarrazoes MPCO dispensadas",
+                  ? "Contrarrazões NT dispensadas"
+                  : "Contrarrazões MPCO dispensadas",
       });
       onOpenChange(false);
       onSuccess?.();
@@ -131,17 +131,17 @@ export function DispensarPendenciaDialog({
                 : modo === "prazo"
                   ? `Dispensar Prazo${prazoTipo ? `: ${prazoTipo}` : ""}`
                   : modo === "contrarrazoes_nt"
-                    ? "Dispensar Contrarrazoes a Nota Tecnica"
-                    : "Dispensar Contrarrazoes ao Parecer MPCO"}
+                    ? "Dispensar Contrarrazões a Nota Técnica"
+                    : "Dispensar Contrarrazões ao Parecer MPCO"}
           </DialogTitle>
           <DialogDescription>
             {modo === "memorial"
-              ? "Marque o memorial como dispensado neste processo. A pendencia sai da lista."
+              ? "Marque o memorial como dispensado neste processo. A pendência sai da lista."
               : modo === "despacho"
-                ? "Marque o despacho como dispensado neste processo. A pendencia sai da lista."
+                ? "Marque o despacho como dispensado neste processo. A pendência sai da lista."
                 : modo === "prazo"
-                  ? "Marque o prazo como dispensado. O alerta sai da lista de pendencias e o prazo nao conta nos KPIs."
-                  : "Marque as contrarrazoes como dispensadas. A pendencia sai da lista."}
+                  ? "Marque o prazo como dispensado. O alerta sai da lista de pendências e o prazo não conta nos KPIs."
+                  : "Marque as contrarrazões como dispensadas. A pendência sai da lista."}
           </DialogDescription>
         </DialogHeader>
 
@@ -169,7 +169,7 @@ export function DispensarPendenciaDialog({
               rows={4}
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Ex: tese ja consolidada em julgamento anterior..."
+              placeholder="Ex: tese já consolidada em julgamento anterior..."
             />
           </div>
           {erro && (

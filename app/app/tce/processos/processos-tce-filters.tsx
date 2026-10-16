@@ -78,7 +78,7 @@ export function ProcessosTceFilters({
           <Input
             value={buscaLocal}
             onChange={(e) => setBuscaLocal(e.target.value)}
-            placeholder="Buscar por numero, relator ou objeto..."
+            placeholder="Buscar por número, relator ou objeto..."
             className="pl-9"
           />
         </div>
@@ -110,10 +110,10 @@ export function ProcessosTceFilters({
           onValueChange={(v) => pushWith("camara", v)}
         >
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Camara" />
+            <SelectValue placeholder="Câmara" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todas as camaras</SelectItem>
+            <SelectItem value={ALL}>Todas as câmaras</SelectItem>
             {Object.entries(TCE_CAMARA_LABELS).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
@@ -144,10 +144,10 @@ export function ProcessosTceFilters({
           onValueChange={(v) => pushWith("municipioId", v)}
         >
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Municipio" />
+            <SelectValue placeholder="Município" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todos os municipios</SelectItem>
+            <SelectItem value={ALL}>Todos os municípios</SelectItem>
             {municipios.map((m) => (
               <SelectItem key={m.id} value={m.id}>
                 {m.label}
@@ -200,7 +200,7 @@ export function ProcessosTceFilters({
           <SelectContent>
             <SelectItem value={ALL}>Todos</SelectItem>
             <SelectItem value="julgados">Julgados</SelectItem>
-            <SelectItem value="nao_julgados">Nao Julgados</SelectItem>
+            <SelectItem value="nao_julgados">Não Julgados</SelectItem>
           </SelectContent>
         </Select>
 

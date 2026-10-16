@@ -363,7 +363,7 @@ export default async function TceDashboardPage({
     tone: "navy" | "red" | "orange" | "slate" | "violet" | "emerald" | "rose";
   }[] = [
     {
-      label: "Pendencias",
+      label: "Pendências",
       value: totalPendencias,
       href: "/app/tce/pendencias",
       icon: AlertTriangle,
@@ -398,14 +398,14 @@ export default async function TceDashboardPage({
       tone: "slate",
     },
     {
-      label: "Contrarrazoes NT",
+      label: "Contrarrazões NT",
       value: contrarrazoesNt,
       href: "/app/tce/processos?contrarrazoes=pendentes",
       icon: Scale,
       tone: "emerald",
     },
     {
-      label: "Contrarrazoes MPCO",
+      label: "Contrarrazões MPCO",
       value: contrarrazoesMpco,
       href: "/app/tce/processos?contrarrazoes=pendentes",
       icon: Scale,
@@ -440,7 +440,7 @@ export default async function TceDashboardPage({
           Dashboard TCE
         </h1>
         <p className="text-sm text-muted-foreground">
-          Visao consolidada dos processos do Tribunal de Contas.
+          Visão consolidada dos processos do Tribunal de Contas.
         </p>
       </header>
 
@@ -539,7 +539,7 @@ export default async function TceDashboardPage({
                       </span>
                     </div>
                     <p className="flex flex-1 items-center justify-center py-4 text-center text-xs italic text-muted-foreground">
-                      Sem sessao nesta semana
+                      Sem sessão nesta semana
                     </p>
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-navy">
                       <Plus className="h-3 w-3" />
@@ -615,7 +615,7 @@ export default async function TceDashboardPage({
                 Meus Prazos TCE
               </CardTitle>
               <CardDescription>
-                Prazos TCE atribuidos a voce, ordenados por urgencia.
+                Prazos TCE atribuidos a você, ordenados por urgência.
               </CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm" className="-mr-2">
@@ -630,7 +630,7 @@ export default async function TceDashboardPage({
           <CardContent>
             {meusPrazos.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Voce nao tem prazos TCE atribuidos no momento.
+                Você não tem prazos TCE atribuidos no momento.
               </p>
             ) : (
               <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
@@ -662,7 +662,7 @@ export default async function TceDashboardPage({
                             {p.tipo}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {p.processo.municipio?.nome ?? "sem municipio"} —{" "}
+                            {p.processo.municipio?.nome ?? "sem município"} —{" "}
                             {p.processo.numero}
                           </p>
                         </div>
@@ -692,9 +692,9 @@ export default async function TceDashboardPage({
         <Card>
           <CardHeader className="flex flex-row items-start justify-between space-y-0">
             <div>
-              <CardTitle className="text-base">Proximos prazos TCE</CardTitle>
+              <CardTitle className="text-base">Próximos prazos TCE</CardTitle>
               <CardDescription>
-                5 prazos pendentes mais urgentes em dias uteis.
+                5 prazos pendentes mais urgentes em dias úteis.
               </CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm" className="-mr-2">
@@ -744,7 +744,7 @@ export default async function TceDashboardPage({
                             )}
                           </div>
                           <p className="truncate text-xs text-muted-foreground">
-                            {p.processo.municipio?.nome ?? "sem municipio"} —{" "}
+                            {p.processo.municipio?.nome ?? "sem município"} —{" "}
                             {p.processo.numero}
                           </p>
                         </div>
@@ -771,9 +771,9 @@ export default async function TceDashboardPage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Ultimos andamentos TCE</CardTitle>
+            <CardTitle className="text-base">Últimos andamentos TCE</CardTitle>
             <CardDescription>
-              5 movimentacoes mais recentes dos processos TCE.
+              5 movimentações mais recentes dos processos TCE.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -58,7 +58,7 @@ export default async function EleitoralMonitoramentoPage() {
         <p className="text-sm text-muted-foreground">
           Processos novos detectados pela rotina de monitoramento (PDPJ).
           Cadastre no acervo, dispense ou marque como responsabilidade de
-          outro escritorio.
+          outro escritório.
         </p>
       </div>
 
@@ -75,7 +75,7 @@ export default async function EleitoralMonitoramentoPage() {
         <CardContent className="space-y-3">
           {pendentes.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Nenhuma deteccao pendente. Quando a rotina encontrar um processo
+              Nenhuma detecção pendente. Quando a rotina encontrar um processo
               novo, ele aparece aqui.
             </p>
           )}
@@ -144,13 +144,13 @@ export default async function EleitoralMonitoramentoPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <CheckCircle2 className="h-4 w-4" />
-            Ultimas triagens
+            Últimas triagens
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {resolvidas.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Nenhuma deteccao triada ainda.
+              Nenhuma detecção triada ainda.
             </p>
           )}
           {resolvidas.map((d) => (
@@ -177,7 +177,7 @@ export default async function EleitoralMonitoramentoPage() {
                     ? ` em ${formatarDataHoraRecife(d.resolvidoEm)}`
                     : ""}
                   {d.status === "OUTRO_ESCRITORIO" && d.escritorioResponsavel
-                    ? ` · Responsavel: ${d.escritorioResponsavel}`
+                    ? ` · Responsável: ${d.escritorioResponsavel}`
                     : ""}
                   {d.status === "DISPENSADO" && d.motivoDispensa
                     ? ` · ${d.motivoDispensa}`

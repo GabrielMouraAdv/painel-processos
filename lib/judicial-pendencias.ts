@@ -132,7 +132,7 @@ export function detectarPendenciasJud(
           ? "Memorial pronto"
           : memAgendado
             ? `Memorial agendado para ${new Date(memAgendado.data).toLocaleDateString("pt-BR")} com ${memAgendado.advogadoNome}`
-            : "Memorial pendente de elaboracao",
+            : "Memorial pendente de elaboração",
       agendado: memAgendado,
       dispensado: memDispensado,
     });

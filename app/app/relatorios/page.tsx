@@ -117,11 +117,11 @@ export default async function RelatoriosPage({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-            Relatorios
+            Relatórios
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gere relatorios de cliente para reuniao e veja agrupamentos do
-            escritorio.
+            Gere relatórios de cliente para reunião e veja agrupamentos do
+            escritório.
           </p>
         </div>
       </header>
@@ -131,11 +131,11 @@ export default async function RelatoriosPage({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg text-brand-navy">
             <FileText className="h-5 w-5" />
-            Relatorio de Cliente para Reuniao
+            Relatório de Cliente para Reunião
           </CardTitle>
           <CardDescription>
-            Gere um relatorio completo dos processos de um gestor ou municipio
-            para apresentar em reuniao.
+            Gere um relatório completo dos processos de um gestor ou município
+            para apresentar em reunião.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -147,11 +147,11 @@ export default async function RelatoriosPage({
       <div className="flex flex-col gap-3">
         <div>
           <h2 className="text-lg font-semibold text-brand-navy">
-            Relatorios gerenciais
+            Relatórios gerenciais
           </h2>
           <p className="text-sm text-muted-foreground">
-            Agrupamentos do escritorio
-            {de || ate ? " no periodo selecionado" : ""}. Total no recorte:{" "}
+            Agrupamentos do escritório
+            {de || ate ? " no período selecionado" : ""}. Total no recorte:{" "}
             <span className="font-medium text-brand-navy">{totalFiltrado}</span>
             .
           </p>
@@ -167,7 +167,7 @@ export default async function RelatoriosPage({
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Por tribunal</CardTitle>
-              <CardDescription>Distribuicao entre cortes.</CardDescription>
+              <CardDescription>Distribuição entre cortes.</CardDescription>
             </CardHeader>
             <CardContent>
               <SimpleTable
@@ -180,7 +180,7 @@ export default async function RelatoriosPage({
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Por risco</CardTitle>
-              <CardDescription>Classificacao de risco.</CardDescription>
+              <CardDescription>Classificação de risco.</CardDescription>
             </CardHeader>
             <CardContent>
               <SimpleTable

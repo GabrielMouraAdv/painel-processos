@@ -494,7 +494,7 @@ function ProcessoJudicialCard({ p }: { p: ProcessoJudicialItem }) {
 
         {p.proximaSessao && (
           <>
-            <Text style={styles.subTitulo}>Próxima sessao</Text>
+            <Text style={styles.subTitulo}>Próxima sessão</Text>
             <Text style={styles.bullet}>
               <Text style={styles.bulletData}>
                 {formatDate(p.proximaSessao.data)}
@@ -780,7 +780,7 @@ function ProcessosJulgadosSection({
               )}
               {l.julgamento.valorCondenacao != null && (
                 <Text style={{ fontSize: 8, color: COLOR_MUTED, marginTop: 1 }}>
-                  Condenacao: {fmtBRL(l.julgamento.valorCondenacao)}
+                  Condenação: {fmtBRL(l.julgamento.valorCondenacao)}
                 </Text>
               )}
             </View>
@@ -865,7 +865,7 @@ export function RelatorioClienteDocument({
           ) : null}
           {cliente.tipo === "gestor" && cliente.municipio ? (
             <Text style={styles.clienteLinha}>
-              <Text style={styles.metaLabel}>Município de atuacao: </Text>
+              <Text style={styles.metaLabel}>Município de atuação: </Text>
               {cliente.municipio}
             </Text>
           ) : null}

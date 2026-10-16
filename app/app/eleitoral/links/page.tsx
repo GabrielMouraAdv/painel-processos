@@ -24,9 +24,9 @@ export default async function EleitoralLinksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Links uteis</h1>
+        <h1 className="text-2xl font-semibold">Links úteis</h1>
         <p className="text-sm text-muted-foreground">
-          Jurisprudencia, resolucoes do TSE para 2026 e acesso ao PJe. Todos
+          Jurisprudência, resoluções do TSE para 2026 e acesso ao PJe. Todos
           abrem em nova aba.
         </p>
       </div>

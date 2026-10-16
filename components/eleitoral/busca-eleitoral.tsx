@@ -164,7 +164,7 @@ export function BuscaEleitoral({
       }}
       role="dialog"
       aria-modal="true"
-      aria-label="Busca no modulo eleitoral"
+      aria-label="Busca no módulo eleitoral"
     >
       <div
         className="flex w-full max-w-[600px] flex-col overflow-hidden rounded-xl border bg-white shadow-2xl"
@@ -177,7 +177,7 @@ export function BuscaEleitoral({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por numero do processo, parte, relator, prazo..."
+            placeholder="Buscar por número do processo, parte, relator, prazo..."
             className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
             autoComplete="off"
             spellCheck={false}
@@ -205,7 +205,7 @@ export function BuscaEleitoral({
             <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
               <Search className="mb-2 h-6 w-6 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                Digite o numero do processo (com ou sem pontos), o nome de uma
+                Digite o número do processo (com ou sem pontos), o nome de uma
                 parte, o relator ou uma tarefa.
               </p>
             </div>

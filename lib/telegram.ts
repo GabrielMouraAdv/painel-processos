@@ -138,13 +138,13 @@ export async function enviarMensagemTelegram(
     },
   });
   if (!user || !user.telegramAtivo || !user.telegramBotToken || !user.telegramChatId) {
-    return { ok: false, error: "Telegram nao configurado" };
+    return { ok: false, error: "Telegram não configurado" };
   }
   let token: string;
   try {
     token = decrypt(user.telegramBotToken);
   } catch {
-    return { ok: false, error: "Token invalido (falha ao decriptar)" };
+    return { ok: false, error: "Token inválido (falha ao decriptar)" };
   }
   const res = await telegramSendMessage(token, user.telegramChatId, mensagem);
   if (!res.ok) {

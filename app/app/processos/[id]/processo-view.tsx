@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/dialog";
 import { EditPrazosDialog } from "@/components/prazos/edit-prazos-dialog";
 import { PrazoForm, type PrazoInitial } from "@/components/prazos/prazo-form";
+import { NumeroProcesso } from "@/components/numero-processo";
 import { useToast } from "@/hooks/use-toast";
 import { TIPOS_DOCUMENTO_JUDICIAL } from "@/lib/documento-config";
 import { diasAte } from "@/lib/prazos";
@@ -246,11 +247,11 @@ export function ProcessoView({
         toast({
           variant: "destructive",
           title: "Erro ao excluir",
-          description: json.error ?? "Nao foi possivel excluir o processo.",
+          description: json.error ?? "Não foi possível excluir o processo.",
         });
         return;
       }
-      toast({ title: "Processo excluido" });
+      toast({ title: "Processo excluído" });
       router.push("/app/processos");
       router.refresh();
     } finally {
@@ -285,16 +286,14 @@ export function ProcessoView({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-mono text-xs text-muted-foreground">
-              {processo.numero}
-            </p>
+            <NumeroProcesso numero={processo.numero} tamanho="grande" />
             <BancaBadgeList slugs={processo.bancasSlug} size="sm" />
           </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-brand-navy md:text-3xl">
             {processo.gestor.observacoes ?? processo.gestor.nome}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gestor responsavel: {processo.gestor.nome} ({processo.gestor.cargo})
+            Gestor responsável: {processo.gestor.nome} ({processo.gestor.cargo})
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -343,12 +342,12 @@ export function ProcessoView({
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Situacao</CardTitle>
+            <CardTitle className="text-base">Situação</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Info label="Fase atual" value={faseLabel(processo.fase)} />
             <Info label="Resultado" value={processo.resultado ?? "-"} />
-            <Info label="Juizo" value={processo.juizo} />
+            <Info label="Juízo" value={processo.juizo} />
           </CardContent>
         </Card>
 
@@ -357,7 +356,7 @@ export function ProcessoView({
             <CardTitle className="text-base">Datas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Info label="Distribuicao" value={formatDate(processo.dataDistribuicao)} />
+            <Info label="Distribuição" value={formatDate(processo.dataDistribuicao)} />
             <Info label="Criado em" value={formatDate(processo.createdAt)} />
             <Info label="Atualizado em" value={formatDate(processo.updatedAt)} />
           </CardContent>
@@ -369,7 +368,7 @@ export function ProcessoView({
           </CardHeader>
           <CardContent className="space-y-3">
             <Info label="Valor envolvido" value={formatCurrency(processo.valor)} />
-            <Info label="Advogado responsavel" value={processo.advogado.nome} />
+            <Info label="Advogado responsável" value={processo.advogado.nome} />
             <Info label="Contato" value={processo.advogado.email} />
           </CardContent>
         </Card>
@@ -378,7 +377,7 @@ export function ProcessoView({
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Objeto</CardTitle>
-          <CardDescription>Descricao do objeto da acao.</CardDescription>
+          <CardDescription>Descrição do objeto da ação.</CardDescription>
         </CardHeader>
         <CardContent className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
           {processo.objeto}
@@ -389,7 +388,7 @@ export function ProcessoView({
         <CardHeader>
           <CardTitle className="text-base">Novo andamento</CardTitle>
           <CardDescription>
-            Registre uma movimentacao e, se houver, gere prazos automaticamente.
+            Registre uma movimentação e, se houver, gere prazos automaticamente.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -526,12 +525,12 @@ export function ProcessoView({
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
                 <CalendarRange className="h-4 w-4 text-brand-navy" />
-                Historico de Pauta
+                Histórico de Pauta
               </CardTitle>
               <CardDescription>
                 {processo.historicoPauta.length === 0
                   ? "Este processo nunca foi pautado."
-                  : `${processo.historicoPauta.length} sessao${processo.historicoPauta.length === 1 ? "" : "oes"} em que este processo foi pautado.`}
+                  : `${processo.historicoPauta.length} sessão${processo.historicoPauta.length === 1 ? "" : "oes"} em que este processo foi pautado.`}
               </CardDescription>
             </div>
           </div>
@@ -539,7 +538,7 @@ export function ProcessoView({
         <CardContent>
           {processo.historicoPauta.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Vincule um item de pauta a este processo para acompanhar o historico.
+              Vincule um item de pauta a este processo para acompanhar o histórico.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -548,9 +547,9 @@ export function ProcessoView({
                   <tr className="border-b bg-slate-50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                     <th className="px-3 py-2">Data</th>
                     <th className="px-3 py-2">Tribunal</th>
-                    <th className="px-3 py-2">Orgao julgador</th>
+                    <th className="px-3 py-2">Órgão julgador</th>
                     <th className="px-3 py-2">Relator</th>
-                    <th className="px-3 py-2">Situacao</th>
+                    <th className="px-3 py-2">Situação</th>
                     <th className="px-3 py-2">Status</th>
                   </tr>
                 </thead>
@@ -643,7 +642,7 @@ export function ProcessoView({
           <DialogHeader>
             <DialogTitle>Excluir processo?</DialogTitle>
             <DialogDescription>
-              Esta acao e irreversivel. Todos os andamentos, prazos e documentos vinculados serao removidos.
+              Esta ação e irreversível. Todos os andamentos, prazos e documentos vinculados serão removidos.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -651,7 +650,7 @@ export function ProcessoView({
               Cancelar
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? "Excluindo..." : "Confirmar exclusao"}
+              {deleting ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>

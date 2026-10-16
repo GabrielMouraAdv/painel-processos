@@ -41,7 +41,7 @@ export function DispensarDeteccaoDialog({ deteccaoId, numero }: Props) {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Falha ao dispensar");
-      toast({ title: "Deteccao dispensada" });
+      toast({ title: "Detecção dispensada" });
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -65,11 +65,11 @@ export function DispensarDeteccaoDialog({ deteccaoId, numero }: Props) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Dispensar deteccao</DialogTitle>
+          <DialogTitle>Dispensar detecção</DialogTitle>
         </DialogHeader>
         <form onSubmit={dispensar} className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            O processo {numero} nao sera cadastrado e sai da fila. Ele nao
+            O processo {numero} não será cadastrado e sai da fila. Ele não
             volta a ser detectado pela rotina.
           </p>
           <div className="space-y-1.5">
@@ -78,7 +78,7 @@ export function DispensarDeteccaoDialog({ deteccaoId, numero }: Props) {
               id="motivoDispensa"
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Ex.: nao envolve nossos representados"
+              placeholder="Ex.: não envolve nossos representados"
               rows={2}
             />
           </div>
@@ -141,25 +141,25 @@ export function OutroEscritorioDialog({ deteccaoId, numero }: Props) {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Building2 className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-          Outro escritorio
+          Outro escritório
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Responsabilidade de outro escritorio</DialogTitle>
+          <DialogTitle>Responsabilidade de outro escritório</DialogTitle>
         </DialogHeader>
         <form onSubmit={salvar} className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            O processo {numero} fica registrado no historico como conduzido por
-            outro escritorio do grupo, sem entrar no nosso acervo.
+            O processo {numero} fica registrado no histórico como conduzido por
+            outro escritório do grupo, sem entrar no nosso acervo.
           </p>
           <div className="space-y-1.5">
-            <Label htmlFor="nomeEscritorio">Qual escritorio?</Label>
+            <Label htmlFor="nomeEscritorio">Qual escritório?</Label>
             <Input
               id="nomeEscritorio"
               value={escritorio}
               onChange={(e) => setEscritorio(e.target.value)}
-              placeholder="Nome do escritorio responsavel"
+              placeholder="Nome do escritório responsável"
               required
             />
           </div>
@@ -199,7 +199,7 @@ export function ReabrirDeteccaoButton({ deteccaoId, numero }: Props) {
         body: JSON.stringify({ acao: "reabrir" }),
       });
       if (!res.ok) throw new Error("Falha ao reabrir");
-      toast({ title: "Deteccao reaberta" });
+      toast({ title: "Detecção reaberta" });
       router.refresh();
     } catch (err) {
       toast({

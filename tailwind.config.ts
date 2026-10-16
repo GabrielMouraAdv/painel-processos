@@ -16,6 +16,11 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -52,7 +57,9 @@ const config: Config = {
         },
         brand: {
           navy: "#1e3a5f",
-          beige: "#f5f2ec",
+          // Fundo "papel frio" da Direcao A (antes bege #f5f2ec).
+          beige: "#f4f6f8",
+          tinta: "#14233b",
         },
       },
       borderRadius: {

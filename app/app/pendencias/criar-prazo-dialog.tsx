@@ -117,7 +117,7 @@ export function CriarPrazoDialog({
           </div>
           <div className="space-y-1.5">
             <Label>
-              Advogado responsavel <span className="text-red-600">*</span>
+              Advogado responsável <span className="text-red-600">*</span>
             </Label>
             <Select value={advogadoId} onValueChange={setAdvogadoId}>
               <SelectTrigger>
@@ -143,7 +143,7 @@ export function CriarPrazoDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes (opcional)</Label>
+            <Label>Observações (opcional)</Label>
             <Textarea
               rows={3}
               value={observacoes}

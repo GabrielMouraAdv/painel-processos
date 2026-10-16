@@ -24,7 +24,7 @@ export default async function FinanceiroLayout({
           Acesso restrito
         </h1>
         <p className="text-sm text-muted-foreground">
-          Voce nao tem permissao para acessar o modulo financeiro. Caso precise
+          Você não tem permissão para acessar o módulo financeiro. Caso precise
           de acesso, fale com o administrador do sistema.
         </p>
       </div>

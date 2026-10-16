@@ -123,7 +123,7 @@ export function HonorarioPessoalDialog({
 
   async function salvar() {
     if (!clienteNome.trim()) {
-      toast({ variant: "destructive", title: "Nome do cliente obrigatorio" });
+      toast({ variant: "destructive", title: "Nome do cliente obrigatório" });
       return;
     }
     if (bancas.size === 0) {
@@ -139,17 +139,17 @@ export function HonorarioPessoalDialog({
     }
     const valorNum = Number(String(valor).replace(/\./g, "").replace(",", "."));
     if (!Number.isFinite(valorNum) || valorNum <= 0) {
-      toast({ variant: "destructive", title: "Valor invalido" });
+      toast({ variant: "destructive", title: "Valor inválido" });
       return;
     }
     if (!dataContrato) {
-      toast({ variant: "destructive", title: "Data do contrato obrigatoria" });
+      toast({ variant: "destructive", title: "Data do contrato obrigatória" });
       return;
     }
     if (pago && !dataPag) {
       toast({
         variant: "destructive",
-        title: "Data de pagamento obrigatoria quando pago",
+        title: "Data de pagamento obrigatória quando pago",
       });
       return;
     }
@@ -193,7 +193,7 @@ export function HonorarioPessoalDialog({
         });
         return;
       }
-      toast({ title: editing ? "Honorario atualizado" : "Honorario cadastrado" });
+      toast({ title: editing ? "Honorário atualizado" : "Honorário cadastrado" });
       onSuccess();
     } finally {
       setPending(false);
@@ -205,10 +205,10 @@ export function HonorarioPessoalDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>
-            {editing ? "Editar honorario pessoal" : "Cadastrar honorario pessoal"}
+            {editing ? "Editar honorário pessoal" : "Cadastrar honorário pessoal"}
           </DialogTitle>
           <DialogDescription>
-            Honorario contratado por cliente pessoa fisica.
+            Honorário contratado por cliente pessoa física.
           </DialogDescription>
         </DialogHeader>
 
@@ -261,7 +261,7 @@ export function HonorarioPessoalDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>
-                Tipo de honorario <span className="text-red-600">*</span>
+                Tipo de honorário <span className="text-red-600">*</span>
               </Label>
               <Select
                 value={tipo}
@@ -289,7 +289,7 @@ export function HonorarioPessoalDialog({
 
           <div className="space-y-1.5">
             <Label>
-              Descricao da causa <span className="text-red-600">*</span>
+              Descrição da causa <span className="text-red-600">*</span>
             </Label>
             <Textarea
               rows={2}
@@ -352,7 +352,7 @@ export function HonorarioPessoalDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label>Observacoes</Label>
+            <Label>Observações</Label>
             <Textarea
               rows={2}
               value={observacoes}

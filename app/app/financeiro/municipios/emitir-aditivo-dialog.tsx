@@ -111,7 +111,7 @@ export function EmitirAditivoDialog({
 
   async function gerar() {
     if (!TIPOS_VALIDOS.has(tipo)) {
-      toast({ variant: "destructive", title: "Tipo invalido" });
+      toast({ variant: "destructive", title: "Tipo inválido" });
       return;
     }
     if (justificativa.trim().length < 10) {
@@ -133,7 +133,7 @@ export function EmitirAditivoDialog({
     if (!escritorioSlug) {
       toast({
         variant: "destructive",
-        title: "Selecione o escritorio emissor",
+        title: "Selecione o escritório emissor",
       });
       return;
     }
@@ -192,12 +192,12 @@ export function EmitirAditivoDialog({
         title: "Aditivo gerado",
         description: json.url
           ? "Documento salvo no Storage e baixado."
-          : "Storage indisponivel — documento baixado direto.",
+          : "Storage indisponível — documento baixado direto.",
       });
       onOpenChange(false);
     } catch (e) {
       console.error("[emitir-aditivo] erro:", e);
-      toast({ variant: "destructive", title: "Erro de conexao" });
+      toast({ variant: "destructive", title: "Erro de conexão" });
     } finally {
       setPending(false);
     }
@@ -209,10 +209,10 @@ export function EmitirAditivoDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Emitir Solicitacao de Aditivo — {municipioNome}
+            Emitir Solicitação de Aditivo — {municipioNome}
           </DialogTitle>
           <DialogDescription>
-            Gera o documento .docx com timbre do escritorio emissor e ja faz
+            Gera o documento .docx com timbre do escritório emissor e já faz
             o download.
           </DialogDescription>
         </DialogHeader>
@@ -220,7 +220,7 @@ export function EmitirAditivoDialog({
         <div className="grid gap-3">
           <div className="space-y-1.5">
             <Label>
-              Escritorio emissor <span className="text-red-600">*</span>
+              Escritório emissor <span className="text-red-600">*</span>
             </Label>
             <Select
               value={escritorioSlug}
@@ -230,7 +230,7 @@ export function EmitirAditivoDialog({
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o escritorio emissor" />
+                <SelectValue placeholder="Selecione o escritório emissor" />
               </SelectTrigger>
               <SelectContent>
                 {escritoriosDisponiveis.map((e) => (
@@ -242,7 +242,7 @@ export function EmitirAditivoDialog({
             </Select>
             {escritoriosDisponiveis.length > 1 && !escritorioSlug && (
               <p className="text-[11px] text-amber-700">
-                O contrato tem mais de uma banca vinculada. Selecione qual sera
+                O contrato tem mais de uma banca vinculada. Selecione qual será
                 o emissor do aditivo.
               </p>
             )}
@@ -295,7 +295,7 @@ export function EmitirAditivoDialog({
               rows={4}
               value={justificativa}
               onChange={(e) => setJustificativa(e.target.value)}
-              placeholder="Descreva o motivo do aditivo (continuidade dos servicos, atualizacao monetaria, ampliacao de escopo, etc.)."
+              placeholder="Descreva o motivo do aditivo (continuidade dos serviços, atualização monetária, ampliação de escopo, etc.)."
             />
           </div>
 
@@ -309,8 +309,8 @@ export function EmitirAditivoDialog({
               onChange={(e) => setFundamento(e.target.value)}
             />
             <p className="text-[11px] text-muted-foreground">
-              Sugestao automatica conforme o tipo. Edite livremente se
-              necessario.
+              Sugestão automática conforme o tipo. Edite livremente se
+              necessário.
             </p>
           </div>
         </div>

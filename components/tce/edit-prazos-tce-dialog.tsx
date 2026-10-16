@@ -72,7 +72,7 @@ export function EditPrazosTceDialog({
         });
         return;
       }
-      toast({ title: "Prazo excluido" });
+      toast({ title: "Prazo excluído" });
       setDeleteId(null);
       setExpandedId((current) => (current === deleteId ? null : current));
       router.refresh();
@@ -88,7 +88,7 @@ export function EditPrazosTceDialog({
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              Edite ou remova prazos TCE cadastrados. As alteracoes sao salvas
+              Edite ou remova prazos TCE cadastrados. As alterações são salvas
               individualmente.
             </DialogDescription>
           </DialogHeader>
@@ -109,7 +109,7 @@ export function EditPrazosTceDialog({
                           {p.tipo}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          Venc. {formatDate(p.dataVencimento)} • {p.diasUteis} dias uteis
+                          Venc. {formatDate(p.dataVencimento)} • {p.diasUteis} dias úteis
                           {p.advogadoResp ? ` — ${p.advogadoResp.nome}` : ""}
                         </span>
                       </div>
@@ -175,7 +175,7 @@ export function EditPrazosTceDialog({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Excluir prazo?</DialogTitle>
-            <DialogDescription>Esta acao nao pode ser desfeita.</DialogDescription>
+            <DialogDescription>Esta ação não pode ser desfeita.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
@@ -190,7 +190,7 @@ export function EditPrazosTceDialog({
               onClick={handleDelete}
               disabled={deleting}
             >
-              {deleting ? "Excluindo..." : "Confirmar exclusao"}
+              {deleting ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>

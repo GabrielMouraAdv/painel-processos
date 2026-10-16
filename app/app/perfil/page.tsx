@@ -91,7 +91,7 @@ export default async function PerfilPage() {
 
           {user.escritorio?.nome && (
             <div className="border-t pt-4 text-xs text-slate-500">
-              Escritorio: {user.escritorio.nome}
+              Escritório: {user.escritorio.nome}
             </div>
           )}
         </CardContent>
@@ -102,7 +102,7 @@ export default async function PerfilPage() {
           <div>
             <p className="text-sm font-semibold text-brand-navy">Senha</p>
             <p className="text-xs text-slate-500">
-              Recomendamos trocar a senha periodicamente. Minimo de 6 caracteres.
+              Recomendamos trocar a senha periodicamente. Mínimo de 6 caracteres.
             </p>
           </div>
           <AlterarSenhaButton />

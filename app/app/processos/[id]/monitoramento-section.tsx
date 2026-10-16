@@ -142,7 +142,7 @@ export function MonitoramentoSection({
         return;
       }
       if (json.status === "DISPONIVEL") {
-        toast({ title: "Texto integral ja disponivel" });
+        toast({ title: "Texto integral já disponível" });
       } else {
         toast({
           title: "Adicionado a fila",
@@ -200,7 +200,7 @@ export function MonitoramentoSection({
         toast({
           variant: "destructive",
           title: "Erro",
-          description: json.error ?? "Nao foi possivel atualizar.",
+          description: json.error ?? "Não foi possível atualizar.",
         });
         return;
       }
@@ -231,7 +231,7 @@ export function MonitoramentoSection({
         return;
       }
       toast({
-        title: "Verificacao concluida",
+        title: "Verificação concluída",
         description: `${json.novasMovimentacoes} mov. + ${json.novasPublicacoes} pub. novas.`,
       });
       router.refresh();
@@ -247,10 +247,10 @@ export function MonitoramentoSection({
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-4 w-4 text-brand-navy" />
-              Monitoramento Automatico
+              Monitoramento Automático
             </CardTitle>
             <CardDescription>
-              Datajud e DJEN — acompanhamento automatico das movimentacoes
+              Datajud e DJEN — acompanhamento automático das movimentações
               deste processo.
             </CardDescription>
           </div>
@@ -271,7 +271,7 @@ export function MonitoramentoSection({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Ultima verificacao
+                  Última verificação
                 </p>
                 <p className="mt-0.5 text-sm text-slate-800">
                   {formatDateTime(ultimaVerificacao)}
@@ -301,11 +301,11 @@ export function MonitoramentoSection({
             <section>
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-brand-navy">
                 <FileText className="h-4 w-4 text-blue-600" />
-                Ultimas movimentacoes (Datajud)
+                Últimas movimentações (Datajud)
               </h3>
               {movimentacoes.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma movimentacao detectada ainda.
+                  Nenhuma movimentação detectada ainda.
                 </p>
               ) : (
                 <ul className="space-y-2">
@@ -327,7 +327,7 @@ export function MonitoramentoSection({
                           )}
                           {m.ehDecisao && (
                             <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                              Decisao detectada — verificar necessidade de recurso
+                              Decisão detectada — verificar necessidade de recurso
                             </span>
                           )}
                         </div>
@@ -353,12 +353,12 @@ export function MonitoramentoSection({
                               onClick={() => abrirPubDjen(m)}
                             >
                               <FileText className="mr-1 h-3.5 w-3.5" />
-                              Ver publicacao completa
+                              Ver publicação completa
                             </Button>
                           ) : ehTrabalhista ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-muted-foreground">
                               <Info className="h-3 w-3" />
-                              DJEN nao suportado (Just. do Trabalho)
+                              DJEN não suportado (Just. do Trabalho)
                             </span>
                           ) : m.conteudoIntegralStatus === "PENDENTE" ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] text-amber-800">
@@ -373,7 +373,7 @@ export function MonitoramentoSection({
                               className="h-7 px-2 text-[11px]"
                               disabled={buscandoMovIds.has(m.id)}
                               onClick={() => buscarDjen(m.id)}
-                              title="Adiciona a fila. O texto sera buscado na proxima sincronizacao (cron diario ou clique em 'Verificar agora')."
+                              title="Adiciona a fila. O texto será buscado na próxima sincronização (cron diário ou clique em 'Verificar agora')."
                             >
                               <FileSearch
                                 className={cn(
@@ -388,12 +388,12 @@ export function MonitoramentoSection({
                           )}
                           {m.conteudoIntegralStatus === "INDISPONIVEL" && (
                             <span className="text-[10px] text-muted-foreground">
-                              Texto nao disponivel no DJEN
+                              Texto não disponível no DJEN
                             </span>
                           )}
                           {m.conteudoIntegralStatus === "ERRO_BUSCA" && (
                             <span className="text-[10px] text-amber-700">
-                              Sera retentado na proxima sincronizacao
+                              Será retentado na próxima sincronização
                             </span>
                           )}
                         </div>
@@ -421,11 +421,11 @@ export function MonitoramentoSection({
             <section>
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-brand-navy">
                 <Newspaper className="h-4 w-4 text-orange-600" />
-                Ultimas publicacoes (DJEN)
+                Últimas publicações (DJEN)
               </h3>
               {publicacoes.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma publicacao detectada ainda.
+                  Nenhuma publicação detectada ainda.
                 </p>
               ) : (
                 <ul className="space-y-2">
@@ -447,7 +447,7 @@ export function MonitoramentoSection({
                           )}
                           {p.geraIntimacao && (
                             <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                              Intimacao detectada — pode gerar prazo
+                              Intimação detectada — pode gerar prazo
                             </span>
                           )}
                           {p.caderno && (
@@ -461,7 +461,7 @@ export function MonitoramentoSection({
                           onClick={() => abrirPub(p)}
                           className="text-left text-sm text-slate-800 hover:text-brand-navy hover:underline"
                         >
-                          {p.conteudo ?? "Publicacao DJEN"}
+                          {p.conteudo ?? "Publicação DJEN"}
                         </button>
                       </div>
                       <Button
@@ -470,7 +470,7 @@ export function MonitoramentoSection({
                         onClick={() =>
                           onCriarAndamento({
                             data: isoToInputDate(p.data),
-                            texto: p.conteudo ?? "Publicacao DJEN",
+                            texto: p.conteudo ?? "Publicação DJEN",
                           })
                         }
                       >
@@ -485,7 +485,7 @@ export function MonitoramentoSection({
         ) : (
           <p className="text-sm text-muted-foreground">
             Ative o monitoramento para acompanhar automaticamente novas
-            movimentacoes do Datajud e publicacoes do DJEN para este processo.
+            movimentações do Datajud e publicações do DJEN para este processo.
           </p>
         )}
       </CardContent>

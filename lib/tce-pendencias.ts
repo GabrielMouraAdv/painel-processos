@@ -148,7 +148,7 @@ export function detectarPendencias(
         ? `Dispensadas por ${ntDispensado.por} em ${new Date(ntDispensado.em).toLocaleDateString("pt-BR")}${ntDispensado.motivo ? `. Motivo: ${ntDispensado.motivo}` : ""}`
         : concluida
           ? null
-          : "Aguardando apresentacao das contrarrazoes",
+          : "Aguardando apresentação das contrarrazões",
       dispensado: ntDispensado,
     });
   }
@@ -177,7 +177,7 @@ export function detectarPendencias(
         ? `Dispensadas por ${mpcoDispensado.por} em ${new Date(mpcoDispensado.em).toLocaleDateString("pt-BR")}${mpcoDispensado.motivo ? `. Motivo: ${mpcoDispensado.motivo}` : ""}`
         : concluida
           ? null
-          : "Aguardando apresentacao das contrarrazoes",
+          : "Aguardando apresentação das contrarrazões",
       dispensado: mpcoDispensado,
     });
   }
@@ -240,7 +240,7 @@ export function detectarPendencias(
           ? "Memorial pronto"
           : memAgendado
             ? `Memorial agendado para ${new Date(memAgendado.data).toLocaleDateString("pt-BR")} com ${memAgendado.advogadoNome}`
-            : "Memorial pendente de elaboracao",
+            : "Memorial pendente de elaboração",
       agendado: memAgendado,
       dispensado: memDispensado,
     });

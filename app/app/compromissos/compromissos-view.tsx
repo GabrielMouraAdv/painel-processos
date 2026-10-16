@@ -79,7 +79,7 @@ type FlagCategoria = {
 const FLAGS_CATEGORIA: Record<CompromissoCategoriaEvento, FlagCategoria> = {
   ESCRITORIO: {
     flag: "PRC",
-    label: "Escritorio",
+    label: "Escritório",
     badgeClass: "bg-blue-600 text-white",
   },
   PROFISSIONAL_PRIVADO: {
@@ -449,7 +449,7 @@ export function CompromissosView({
       toast({ variant: "destructive", title: "Erro ao excluir" });
       return;
     }
-    toast({ title: "Compromisso excluido" });
+    toast({ title: "Compromisso excluído" });
     setVisualizando(null);
     carregar();
   }
@@ -513,7 +513,7 @@ export function CompromissosView({
               Meus Compromissos
             </h1>
             <p className="text-sm text-muted-foreground">
-              Visao unificada de prazos TCE, judiciais e compromissos pessoais.
+              Visão unificada de prazos TCE, judiciais e compromissos pessoais.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -546,7 +546,7 @@ export function CompromissosView({
                   )}
                 >
                   {v === "mes"
-                    ? "Mes"
+                    ? "Mês"
                     : v === "semana"
                       ? "Semana"
                       : v === "dia"
@@ -615,7 +615,7 @@ export function CompromissosView({
             )}
 
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Escritorio</Label>
+              <Label className="text-xs">Escritório</Label>
               <div className="flex flex-wrap items-center gap-1.5">
                 {BANCAS.map((b) => {
                   const ativa = filtroEscritorios.includes(b.slug);
@@ -691,7 +691,7 @@ export function CompromissosView({
                 variant="ghost"
                 size="icon"
                 onClick={() => navegar(1)}
-                aria-label="Proximo"
+                aria-label="Próximo"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -1324,7 +1324,7 @@ function ListaEventos({
     return (
       <Card>
         <CardContent className="py-12 text-center text-sm text-muted-foreground">
-          Nenhum evento nos proximos 30 dias.
+          Nenhum evento nos próximos 30 dias.
         </CardContent>
       </Card>
     );
@@ -1412,7 +1412,7 @@ function ListaEventos({
                       </span>
                     </span>
                     <span className="text-xs text-slate-500">
-                      {ev.advogado?.nome ?? "Sem responsavel"}
+                      {ev.advogado?.nome ?? "Sem responsável"}
                     </span>
                   </button>
                 ))}
@@ -1513,15 +1513,15 @@ function VisualizarEvento({
         )}
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Responsavel
+            Responsável
           </dt>
-          <dd>{evento.advogado?.nome ?? "Sem responsavel"}</dd>
+          <dd>{evento.advogado?.nome ?? "Sem responsável"}</dd>
         </div>
         {evento.escritorioResponsavelSlug &&
           getBanca(evento.escritorioResponsavelSlug) && (
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Escritorio responsavel
+                Escritório responsável
               </dt>
               <dd>{getBanca(evento.escritorioResponsavelSlug)!.nome}</dd>
             </div>
@@ -1529,7 +1529,7 @@ function VisualizarEvento({
         {evento.descricao && (
           <div>
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Descricao
+              Descrição
             </dt>
             <dd className="whitespace-pre-wrap">{evento.descricao}</dd>
           </div>

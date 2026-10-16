@@ -2,11 +2,11 @@
 // servidor quanto em componentes client (sem imports de next-auth/prisma).
 
 export const CLASSES_ELEITORAIS = [
-  { value: "REPRESENTACAO", label: "Representacao (Rp)" },
+  { value: "REPRESENTACAO", label: "Representação (Rp)" },
   { value: "AIJE", label: "AIJE" },
   { value: "AIME", label: "AIME" },
-  { value: "PETICAO", label: "Peticao" },
-  { value: "MANDADO_SEGURANCA", label: "Mandado de Seguranca" },
+  { value: "PETICAO", label: "Petição" },
+  { value: "MANDADO_SEGURANCA", label: "Mandado de Segurança" },
   { value: "RECURSO", label: "Recurso" },
   { value: "OUTRO", label: "Outro" },
 ] as const;
@@ -17,7 +17,7 @@ export const POLOS_ELEITORAIS = [
 ] as const;
 
 export const STATUS_ELEITORAIS = [
-  { value: "EM_TRAMITACAO", label: "Em tramitacao" },
+  { value: "EM_TRAMITACAO", label: "Em tramitação" },
   { value: "JULGADO", label: "Julgado" },
   { value: "ARQUIVADO", label: "Arquivado" },
 ] as const;
@@ -61,14 +61,14 @@ export const STATUS_PRAZO_ELEITORAL: Array<{
   },
   {
     value: "EM_ELABORACAO",
-    label: "Em elaboracao",
+    label: "Em elaboração",
     cor: "#ea580c",
     badge: "bg-orange-50 text-orange-800 border-orange-600",
     legenda: "bg-orange-600",
   },
   {
     value: "ENVIADO_REVISAO",
-    label: "Enviado para revisao",
+    label: "Enviado para revisão",
     cor: "#0891b2",
     badge: "bg-cyan-50 text-cyan-800 border-cyan-600",
     legenda: "bg-cyan-600",
@@ -115,13 +115,13 @@ export const STATUS_ENCERRADOS: StatusPrazo[] = [
 ];
 
 export const CATEGORIAS_DOCUMENTO_ELEITORAL = [
-  { value: "INICIAL", label: "Inicial / Representacao" },
-  { value: "DEFESA", label: "Defesa / Contestacao" },
-  { value: "DECISAO", label: "Decisao / Sentenca / Acordao" },
+  { value: "INICIAL", label: "Inicial / Representação" },
+  { value: "DEFESA", label: "Defesa / Contestação" },
+  { value: "DECISAO", label: "Decisão / Sentença / Acórdão" },
   { value: "RECURSO", label: "Recurso" },
-  { value: "PROVA", label: "Prova (video, print, midia)" },
-  { value: "PARECER", label: "Parecer / Nota tecnica" },
-  { value: "PROCURACAO", label: "Procuracao / Documentos da parte" },
+  { value: "PROVA", label: "Prova (video, print, mídia)" },
+  { value: "PARECER", label: "Parecer / Nota técnica" },
+  { value: "PROCURACAO", label: "Procuração / Documentos da parte" },
   { value: "OUTRO", label: "Outro" },
 ] as const;
 

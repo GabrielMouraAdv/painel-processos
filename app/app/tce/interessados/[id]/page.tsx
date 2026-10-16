@@ -119,13 +119,13 @@ export default async function InteressadoDetailPage({
                   : "bg-blue-100 text-blue-700",
               )}
             >
-              {isPj ? "Pessoa Juridica" : "Pessoa Fisica"}
+              {isPj ? "Pessoa Jurídica" : "Pessoa Física"}
             </span>
           </div>
           {isPj ? (
             <p className="text-sm text-muted-foreground">
               {gestor.nomeFantasia ? `${gestor.nomeFantasia} • ` : ""}
-              {gestor.ramoAtividade ?? "Pessoa juridica"}
+              {gestor.ramoAtividade ?? "Pessoa jurídica"}
               {gestor.cnpj ? ` • CNPJ ${gestor.cnpj}` : ""}
             </p>
           ) : (
@@ -147,7 +147,7 @@ export default async function InteressadoDetailPage({
       {gestor.observacoes && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Observacoes</CardTitle>
+            <CardTitle className="text-base">Observações</CardTitle>
           </CardHeader>
           <CardContent className="whitespace-pre-wrap text-sm text-slate-700">
             {gestor.observacoes}
@@ -159,11 +159,11 @@ export default async function InteressadoDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              {isPj ? "Municipios de atuacao" : "Historico de cargos"}
+              {isPj ? "Municípios de atuação" : "Histórico de cargos"}
             </CardTitle>
             <CardDescription>
               {isPj
-                ? `${municipiosPj.length} municipio${municipiosPj.length === 1 ? "" : "s"} vinculado${municipiosPj.length === 1 ? "" : "s"}.`
+                ? `${municipiosPj.length} município${municipiosPj.length === 1 ? "" : "s"} vinculado${municipiosPj.length === 1 ? "" : "s"}.`
                 : `${gestor.historicoGestoes.length} registro${gestor.historicoGestoes.length === 1 ? "" : "s"}.`}
             </CardDescription>
           </CardHeader>
@@ -176,7 +176,7 @@ export default async function InteressadoDetailPage({
               />
             ) : gestor.historicoGestoes.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Sem historico de cargos em municipios.
+                Sem histórico de cargos em municípios.
               </p>
             ) : (
               <ol className="relative space-y-4 border-l border-slate-200 pl-5">
@@ -238,7 +238,7 @@ export default async function InteressadoDetailPage({
                           ? ` • ${i.processo.municipio.nome}`
                           : ""}
                         {i.processo.exercicio
-                          ? ` • exercicio ${i.processo.exercicio}`
+                          ? ` • exercício ${i.processo.exercicio}`
                           : ""}
                       </div>
                       <div className="text-xs text-muted-foreground">

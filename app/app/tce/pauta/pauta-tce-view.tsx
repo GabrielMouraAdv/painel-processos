@@ -232,10 +232,10 @@ export function PautaTceView({
         method: "DELETE",
       });
       if (!res.ok) {
-        toast({ variant: "destructive", title: "Erro ao excluir sessao" });
+        toast({ variant: "destructive", title: "Erro ao excluir sessão" });
         return;
       }
-      toast({ title: "Sessao excluida" });
+      toast({ title: "Sessão excluída" });
       setExcluirSessao(null);
       router.refresh();
     } finally {
@@ -254,7 +254,7 @@ export function PautaTceView({
         toast({ variant: "destructive", title: "Erro ao excluir item" });
         return;
       }
-      toast({ title: "Item excluido" });
+      toast({ title: "Item excluído" });
       setExcluirItem(null);
       router.refresh();
     } finally {
@@ -307,11 +307,11 @@ export function PautaTceView({
     if (!whatsappTexto) return;
     try {
       await navigator.clipboard.writeText(whatsappTexto);
-      toast({ title: "Texto copiado para a area de transferencia" });
+      toast({ title: "Texto copiado para a área de transferência" });
     } catch {
       toast({
         variant: "destructive",
-        title: "Nao foi possivel copiar",
+        title: "Não foi possível copiar",
         description: "Selecione manualmente o texto e copie.",
       });
     }
@@ -334,7 +334,7 @@ export function PautaTceView({
             Monitoramento de Pauta TCE
           </h1>
           <p className="text-sm text-muted-foreground">
-            Acompanhamento semanal das sessoes das Camaras e Pleno.
+            Acompanhamento semanal das sessões das Câmaras e Pleno.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -359,7 +359,7 @@ export function PautaTceView({
             className="bg-brand-navy hover:bg-brand-navy/90"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Nova Sessao de Pauta
+            Nova Sessão de Pauta
           </Button>
         </div>
       </header>
@@ -405,7 +405,7 @@ export function PautaTceView({
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
           <div className="flex min-w-[160px] flex-col gap-1">
-            <Label className="text-xs">Camara</Label>
+            <Label className="text-xs">Câmara</Label>
             <Select
               value={filters.camara || "__all__"}
               onValueChange={(v) =>
@@ -441,7 +441,7 @@ export function PautaTceView({
             />
           </div>
           <div className="flex min-w-[180px] flex-1 flex-col gap-1">
-            <Label className="text-xs">Advogado responsavel</Label>
+            <Label className="text-xs">Advogado responsável</Label>
             <Input
               value={advDraft}
               onChange={(e) => setAdvDraft(e.target.value)}
@@ -456,7 +456,7 @@ export function PautaTceView({
             />
           </div>
           <div className="flex min-w-[200px] flex-1 flex-col gap-1">
-            <Label className="text-xs">Busca (numero/municipio)</Label>
+            <Label className="text-xs">Busca (número/município)</Label>
             <Input
               value={qDraft}
               onChange={(e) => setQDraft(e.target.value)}
@@ -487,12 +487,12 @@ export function PautaTceView({
             <CalendarRange className="h-10 w-10 text-slate-400" aria-hidden="true" />
             <div>
               <p className="text-sm font-medium text-slate-700">
-                Nenhuma sessao registrada nesta semana
+                Nenhuma sessão registrada nesta semana
               </p>
               <p className="text-xs text-muted-foreground">
                 {temFiltroAtivo
-                  ? "Ajuste os filtros ou cadastre uma nova sessao."
-                  : "Lance a primeira sessao da semana para comecar o acompanhamento."}
+                  ? "Ajuste os filtros ou cadastre uma nova sessão."
+                  : "Lance a primeira sessão da semana para comecar o acompanhamento."}
               </p>
             </div>
             <Button
@@ -500,7 +500,7 @@ export function PautaTceView({
               className="bg-brand-navy hover:bg-brand-navy/90"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Nova Sessao de Pauta
+              Nova Sessão de Pauta
             </Button>
           </CardContent>
         </Card>
@@ -543,10 +543,10 @@ export function PautaTceView({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir sessao?</DialogTitle>
+            <DialogTitle>Excluir sessão?</DialogTitle>
             <DialogDescription>
               {excluirSessao
-                ? `A sessao de ${TCE_CAMARA_LABELS[excluirSessao.camara]} em ${formatDateShort(excluirSessao.data)} sera removida junto com todos os seus ${excluirSessao.itens.length} itens.`
+                ? `A sessão de ${TCE_CAMARA_LABELS[excluirSessao.camara]} em ${formatDateShort(excluirSessao.data)} será removida junto com todos os seus ${excluirSessao.itens.length} itens.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -563,7 +563,7 @@ export function PautaTceView({
               onClick={excluirSessaoConfirm}
               disabled={sessaoPending}
             >
-              {sessaoPending ? "Excluindo..." : "Confirmar exclusao"}
+              {sessaoPending ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -578,7 +578,7 @@ export function PautaTceView({
             <DialogTitle>Excluir item da pauta?</DialogTitle>
             <DialogDescription>
               {excluirItem
-                ? `O item do processo ${excluirItem.numero} sera removido da sessao.`
+                ? `O item do processo ${excluirItem.numero} será removido da sessão.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -595,7 +595,7 @@ export function PautaTceView({
               onClick={excluirItemConfirm}
               disabled={itemPending}
             >
-              {itemPending ? "Excluindo..." : "Confirmar exclusao"}
+              {itemPending ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -709,7 +709,7 @@ function SessaoCard({
               size="icon"
               className="h-7 w-7"
               onClick={onEditar}
-              title="Editar sessao"
+              title="Editar sessão"
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
@@ -719,7 +719,7 @@ function SessaoCard({
               size="icon"
               className="h-7 w-7 text-red-700 hover:bg-red-50"
               onClick={onExcluir}
-              title="Excluir sessao"
+              title="Excluir sessão"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -734,7 +734,7 @@ function SessaoCard({
       <CardContent className="p-0">
         {sessao.itens.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
-            <p>Nenhum item cadastrado nesta sessao.</p>
+            <p>Nenhum item cadastrado nesta sessão.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -743,14 +743,14 @@ function SessaoCard({
                 <tr className="border-b bg-slate-50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                   <th className="w-8 px-3 py-2">#</th>
                   <th className="px-3 py-2">Processo</th>
-                  <th className="px-3 py-2">Municipio/Exerc.</th>
+                  <th className="px-3 py-2">Município/Exerc.</th>
                   <th className="px-3 py-2">Relator</th>
                   <th className="px-3 py-2">Adv.</th>
-                  <th className="px-3 py-2">Situacao</th>
-                  <th className="px-3 py-2">Obs./Prognostico</th>
-                  <th className="px-3 py-2">Providencia</th>
+                  <th className="px-3 py-2">Situação</th>
+                  <th className="px-3 py-2">Obs./Prognóstico</th>
+                  <th className="px-3 py-2">Providência</th>
                   <th className="w-16 px-3 py-2">Flags</th>
-                  <th className="w-20 px-3 py-2 text-right">Acoes</th>
+                  <th className="w-20 px-3 py-2 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -799,7 +799,7 @@ function SessaoCard({
                         <p className="font-medium text-slate-700">{item.municipio}</p>
                         {item.exercicio && (
                           <p className="text-[11px] text-muted-foreground">
-                            exercicio {item.exercicio}
+                            exercício {item.exercicio}
                           </p>
                         )}
                       </td>
@@ -917,7 +917,7 @@ function NovaSessaoDialog({
     if (!data || !camara) {
       toast({
         variant: "destructive",
-        title: "Preencha data e camara",
+        title: "Preencha data e câmara",
       });
       return;
     }
@@ -936,12 +936,12 @@ function NovaSessaoDialog({
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao criar sessao",
+          title: "Erro ao criar sessão",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
-      toast({ title: "Sessao criada" });
+      toast({ title: "Sessão criada" });
       onOpenChange(false);
       router.refresh();
     } finally {
@@ -953,9 +953,9 @@ function NovaSessaoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nova sessao de pauta</DialogTitle>
+          <DialogTitle>Nova sessão de pauta</DialogTitle>
           <DialogDescription>
-            Cadastre uma nova sessao para iniciar o lancamento dos itens.
+            Cadastre uma nova sessão para iniciar o lançamento dos itens.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
@@ -972,7 +972,7 @@ function NovaSessaoDialog({
             </div>
             <div className="space-y-1.5">
               <Label>
-                Camara <span className="text-red-600">*</span>
+                Câmara <span className="text-red-600">*</span>
               </Label>
               <Select
                 value={camara}
@@ -992,12 +992,12 @@ function NovaSessaoDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes gerais (opcional)</Label>
+            <Label>Observações gerais (opcional)</Label>
             <Textarea
               rows={2}
               value={observacoesGerais}
               onChange={(e) => setObservacoesGerais(e.target.value)}
-              placeholder="Ex.: Sessao extensa, prioridade para processos de prestacao de contas."
+              placeholder="Ex.: Sessão extensa, prioridade para processos de prestação de contas."
             />
           </div>
           <DialogFooter>
@@ -1014,7 +1014,7 @@ function NovaSessaoDialog({
               disabled={submitting}
               className="bg-brand-navy hover:bg-brand-navy/90"
             >
-              {submitting ? "Salvando..." : "Criar Sessao"}
+              {submitting ? "Salvando..." : "Criar Sessão"}
             </Button>
           </DialogFooter>
         </form>
@@ -1063,12 +1063,12 @@ function EditarSessaoDialog({
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao atualizar sessao",
+          title: "Erro ao atualizar sessão",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
-      toast({ title: "Sessao atualizada" });
+      toast({ title: "Sessão atualizada" });
       onOpenChange(false);
       router.refresh();
     } finally {
@@ -1080,9 +1080,9 @@ function EditarSessaoDialog({
     <Dialog open={!!sessao} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Editar sessao</DialogTitle>
+          <DialogTitle>Editar sessão</DialogTitle>
           <DialogDescription>
-            Atualize data, camara ou observacoes gerais.
+            Atualize data, câmara ou observações gerais.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
@@ -1096,7 +1096,7 @@ function EditarSessaoDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Camara</Label>
+              <Label>Câmara</Label>
               <Select
                 value={camara}
                 onValueChange={(v) => setCamara(v as CamaraTce)}
@@ -1115,7 +1115,7 @@ function EditarSessaoDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes gerais</Label>
+            <Label>Observações gerais</Label>
             <Textarea
               rows={2}
               value={observacoesGerais}
@@ -1136,7 +1136,7 @@ function EditarSessaoDialog({
               disabled={submitting}
               className="bg-brand-navy hover:bg-brand-navy/90"
             >
-              {submitting ? "Salvando..." : "Salvar alteracoes"}
+              {submitting ? "Salvando..." : "Salvar alterações"}
             </Button>
           </DialogFooter>
         </form>

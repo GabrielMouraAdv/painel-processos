@@ -166,7 +166,7 @@ export function PrazosTceView({
         });
         return;
       }
-      toast({ title: "Prazo excluido" });
+      toast({ title: "Prazo excluído" });
       setDeleting(null);
       router.refresh();
     } finally {
@@ -252,12 +252,12 @@ export function PrazosTceView({
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao pedir prorrogacao",
+          title: "Erro ao pedir prorrogação",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
-      toast({ title: "Prorrogacao pedida — +15 dias uteis adicionados" });
+      toast({ title: "Prorrogação pedida — +15 dias úteis adicionados" });
       setProrrogarConfirm(null);
       router.refresh();
     } finally {
@@ -305,9 +305,9 @@ export function PrazosTceView({
     <div className="flex flex-col gap-6">
       {emRecesso && (
         <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span className="font-bold">ATENCAO:</span>
+          <span className="font-bold">ATENÇÃO:</span>
           <span>
-            Periodo de Recesso Forense (20/12 a 20/01). Os prazos estao
+            Período de Recesso Forense (20/12 a 20/01). Os prazos estão
             suspensos.
           </span>
         </div>
@@ -321,7 +321,7 @@ export function PrazosTceView({
             Prazos TCE
           </h1>
           <p className="text-sm text-muted-foreground">
-            Contagem em dias uteis considerando feriados nacionais e recesso
+            Contagem em dias úteis considerando feriados nacionais e recesso
             forense (20/12 a 20/01).
           </p>
         </div>
@@ -375,7 +375,7 @@ export function PrazosTceView({
           <DialogHeader>
             <DialogTitle>Excluir prazo?</DialogTitle>
             <DialogDescription>
-              Esta acao nao pode ser desfeita.
+              Esta ação não pode ser desfeita.
               {deleting ? ` Prazo: ${deleting.tipo}.` : ""}
             </DialogDescription>
           </DialogHeader>
@@ -392,7 +392,7 @@ export function PrazosTceView({
               onClick={handleDelete}
               disabled={deletePending}
             >
-              {deletePending ? "Excluindo..." : "Confirmar exclusao"}
+              {deletePending ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -404,10 +404,10 @@ export function PrazosTceView({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Pedir prorrogacao?</DialogTitle>
+            <DialogTitle>Pedir prorrogação?</DialogTitle>
             <DialogDescription>
               {prorrogarConfirm
-                ? `Serao adicionados 15 dias uteis ao vencimento do prazo "${prorrogarConfirm.tipo}". Esta acao so pode ser realizada uma vez.`
+                ? `Serão adicionados 15 dias úteis ao vencimento do prazo "${prorrogarConfirm.tipo}". Esta ação so pode ser realizada uma vez.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -430,7 +430,7 @@ export function PrazosTceView({
             >
               {prorrogarConfirm && prorrogando[prorrogarConfirm.id]
                 ? "Salvando..."
-                : "Confirmar prorrogacao"}
+                : "Confirmar prorrogação"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -439,7 +439,7 @@ export function PrazosTceView({
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
           <div className="flex min-w-[220px] flex-1 flex-col gap-1">
-            <Label className="text-xs">Numero do processo</Label>
+            <Label className="text-xs">Número do processo</Label>
             <Input
               value={numeroDraft}
               onChange={(e) => setNumeroDraft(e.target.value)}
@@ -450,11 +450,11 @@ export function PrazosTceView({
                   applyNumeroFilter();
                 }
               }}
-              placeholder="Buscar por numero do processo"
+              placeholder="Buscar por número do processo"
             />
           </div>
           <div className="flex min-w-[180px] flex-col gap-1">
-            <Label className="text-xs">Advogado responsavel</Label>
+            <Label className="text-xs">Advogado responsável</Label>
             <Select
               value={filters.advogadoRespId || "__all__"}
               onValueChange={(v) =>
@@ -496,7 +496,7 @@ export function PrazosTceView({
             </Select>
           </div>
           <div className="flex min-w-[180px] flex-col gap-1">
-            <Label className="text-xs">Municipio</Label>
+            <Label className="text-xs">Município</Label>
             <Select
               value={filters.municipioId || "__all__"}
               onValueChange={(v) =>
@@ -517,7 +517,7 @@ export function PrazosTceView({
             </Select>
           </div>
           <div className="flex min-w-[140px] flex-col gap-1">
-            <Label className="text-xs">Camara</Label>
+            <Label className="text-xs">Câmara</Label>
             <Select
               value={filters.camara || "__all__"}
               onValueChange={(v) =>
@@ -591,7 +591,7 @@ export function PrazosTceView({
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Calendario</CardTitle>
+              <CardTitle className="text-base">Calendário</CardTitle>
             </CardHeader>
             <CardContent>
               <Calendar
@@ -609,13 +609,13 @@ export function PrazosTceView({
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-2 w-2 rounded-full bg-red-600" />
                   <span className="text-muted-foreground">
-                    Vence em ate 3 dias uteis
+                    Vence em até 3 dias úteis
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-2 w-2 rounded-full bg-yellow-500" />
                   <span className="text-muted-foreground">
-                    Vence em ate 7 dias uteis
+                    Vence em até 7 dias úteis
                   </span>
                 </div>
               </div>
@@ -713,12 +713,12 @@ function PrazoTceCard({
             </span>
           ) : (
             <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-              sem responsavel
+              sem responsável
             </span>
           )}
           {(isCautelar || !prazo.prorrogavel) && (
             <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-orange-800">
-              improrrogavel
+              improrrogável
             </span>
           )}
           {prazo.dispensado && (
@@ -732,13 +732,13 @@ function PrazoTceCard({
           )}
           {prazo.prorrogacaoPedida && (
             <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800">
-              prorrogacao pedida
+              prorrogação pedida
             </span>
           )}
           {periodoIncluiRecesso(prazo.dataIntimacao, prazo.dataVencimento) && (
             <span
               className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
-              title="A contagem deste prazo passa pelo recesso forense (20/12 a 20/01) e foi suspensa nesse periodo."
+              title="A contagem deste prazo passa pelo recesso forense (20/12 a 20/01) e foi suspensa nesse período."
             >
               Inclui recesso
             </span>
@@ -787,7 +787,7 @@ function PrazoTceCard({
           </p>
         )}
         <p className="text-xs text-muted-foreground capitalize">
-          {formatDateFull(venc)} • {prazo.diasUteis} dias uteis totais
+          {formatDateFull(venc)} • {prazo.diasUteis} dias úteis totais
         </p>
         {prazo.processo.interessados.length > 0 && (
           <p className="text-xs text-slate-600">
@@ -817,9 +817,9 @@ function PrazoTceCard({
               className="h-7 text-xs"
               disabled={prorrogando}
               onClick={onPedirProrrogacao}
-              title="Pedir prorrogacao de 15 dias uteis"
+              title="Pedir prorrogação de 15 dias úteis"
             >
-              {prorrogando ? "..." : "Pedir prorrogacao"}
+              {prorrogando ? "..." : "Pedir prorrogação"}
             </Button>
           )}
           <Button

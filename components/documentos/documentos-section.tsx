@@ -164,7 +164,7 @@ export function DocumentosSection({
         });
         return;
       }
-      toast({ title: "Documento excluido" });
+      toast({ title: "Documento excluído" });
       setExcluir(null);
       router.refresh();
     } finally {
@@ -206,7 +206,7 @@ export function DocumentosSection({
       <CardContent>
         {documentos.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Anexe peticoes, acordaos, procuracoes e outros arquivos relevantes.
+            Anexe petições, acórdãos, procurações e outros arquivos relevantes.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -299,7 +299,7 @@ export function DocumentosSection({
             <DialogTitle>Excluir documento?</DialogTitle>
             <DialogDescription>
               {excluir
-                ? `"${excluir.nome}" sera removido do storage e do banco.`
+                ? `"${excluir.nome}" será removido do storage e do banco.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -316,7 +316,7 @@ export function DocumentosSection({
               onClick={handleDelete}
               disabled={excluindo}
             >
-              {excluindo ? "Excluindo..." : "Confirmar exclusao"}
+              {excluindo ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -371,7 +371,7 @@ function UploadDialog({
     if (!ACCEPTED_MIMES.has(f.type)) {
       toast({
         variant: "destructive",
-        title: "Tipo de arquivo nao permitido",
+        title: "Tipo de arquivo não permitido",
         description: "Envie PDF, DOC, DOCX, JPG ou PNG.",
       });
       return;

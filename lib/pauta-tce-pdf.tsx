@@ -634,7 +634,7 @@ export function PautaTceDocument({ data }: { data: PautaTcePdfData }) {
 
         {sessoes.length === 0 ? (
           <Text style={styles.empty}>
-            Nenhuma sessao cadastrada nesta semana.
+            Nenhuma sessão cadastrada nesta semana.
           </Text>
         ) : (
           <>

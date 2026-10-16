@@ -166,7 +166,7 @@ export function InteressadosList({
         setExcluindoMsg(json.error ?? "Erro ao excluir.");
         return;
       }
-      toast({ title: "Interessado excluido" });
+      toast({ title: "Interessado excluído" });
       setExcluindo(null);
       router.refresh();
     } finally {
@@ -200,7 +200,7 @@ export function InteressadosList({
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por nome, razao social, CPF/CNPJ..."
+              placeholder="Buscar por nome, razão social, CPF/CNPJ..."
               className="pl-9"
             />
           </div>
@@ -212,15 +212,15 @@ export function InteressadosList({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={TODOS}>Todos</SelectItem>
-                <SelectItem value="PESSOA_FISICA">Pessoa Fisica</SelectItem>
+                <SelectItem value="PESSOA_FISICA">Pessoa Física</SelectItem>
                 <SelectItem value="PESSOA_JURIDICA">
-                  Pessoa Juridica
+                  Pessoa Jurídica
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex min-w-[220px] flex-col gap-1">
-            <Label className="text-xs">Municipio</Label>
+            <Label className="text-xs">Município</Label>
             <Select
               value={filtroMunicipio}
               onValueChange={setFiltroMunicipio}
@@ -259,7 +259,7 @@ export function InteressadosList({
         <Card>
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
             {interessados.length === 0
-              ? "Nenhum interessado cadastrado ainda. Use o botao acima para comecar."
+              ? "Nenhum interessado cadastrado ainda. Use o botão acima para comecar."
               : "Nenhum interessado bate com o filtro."}
           </CardContent>
         </Card>
@@ -299,7 +299,7 @@ export function InteressadosList({
                           </div>
                           <p className="truncate text-xs text-muted-foreground">
                             {isPj
-                              ? g.ramoAtividade || "Pessoa juridica"
+                              ? g.ramoAtividade || "Pessoa jurídica"
                               : g.cargo}
                           </p>
                         </div>
@@ -308,7 +308,7 @@ export function InteressadosList({
                       <div className="grid grid-cols-2 gap-2 rounded-md border border-slate-100 bg-slate-50 p-2 text-center">
                         <Stat
                           icon={<Building2 className="h-3.5 w-3.5" />}
-                          label="Municipios"
+                          label="Municípios"
                           value={
                             isPj ? g.municipiosLista.length : g.municipio ? 1 : 0
                           }
@@ -323,7 +323,7 @@ export function InteressadosList({
                       {municipiosTexto && (
                         <div>
                           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            {isPj ? "Atua em" : "Municipio"}
+                            {isPj ? "Atua em" : "Município"}
                           </p>
                           <p className="line-clamp-2 text-xs text-slate-700">
                             {municipiosTexto}
@@ -389,7 +389,7 @@ export function InteressadosList({
             <DialogTitle>Excluir interessado</DialogTitle>
             <DialogDescription>
               {excluindo
-                ? `Confirma a exclusao de ${excluindo.nome}? Essa acao nao pode ser desfeita.`
+                ? `Confirma a exclusão de ${excluindo.nome}? Essa ação não pode ser desfeita.`
                 : ""}
             </DialogDescription>
           </DialogHeader>

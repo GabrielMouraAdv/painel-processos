@@ -227,7 +227,7 @@ export function AndamentoForm({
         <div className="flex gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-medium">Atencao — lembretes para esta fase:</p>
+            <p className="font-medium">Atenção — lembretes para esta fase:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
               {faseConfig.alertas.map((a) => (
                 <li key={a}>{a}</li>
@@ -262,7 +262,7 @@ export function AndamentoForm({
       {acoes.length > 0 && (
         <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3">
           <p className="text-sm font-medium text-brand-navy">
-            Acoes sugeridas — prazos gerados automaticamente
+            Ações sugeridas — prazos gerados automaticamente
           </p>
           <ul className="space-y-1.5">
             {acoes.map((a) => {
@@ -292,7 +292,7 @@ export function AndamentoForm({
       )}
 
       <div className="space-y-1.5">
-        <Label>Descricao do andamento</Label>
+        <Label>Descrição do andamento</Label>
         <Textarea rows={3} placeholder="O que aconteceu nesse andamento?" {...register("texto")} />
         {errors.texto && <p className="text-xs text-red-600">{errors.texto.message}</p>}
       </div>

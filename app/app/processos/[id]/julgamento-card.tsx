@@ -94,7 +94,7 @@ export function JulgamentoCardJud({
       <CardContent className="space-y-3">
         {!j.julgado && (
           <>
-            <p className="text-sm text-slate-600">Processo ainda nao julgado</p>
+            <p className="text-sm text-slate-600">Processo ainda não julgado</p>
             <Button
               size="sm"
               className="bg-brand-navy hover:bg-brand-navy/90"
@@ -164,7 +164,7 @@ export function JulgamentoCardJud({
                 {j.valorCondenacao != null && (
                   <p>
                     <span className="font-semibold text-slate-700">
-                      Valor da condenacao:
+                      Valor da condenação:
                     </span>{" "}
                     {fmtBRL(j.valorCondenacao)}
                   </p>
@@ -175,7 +175,7 @@ export function JulgamentoCardJud({
             {j.observacoesJulgamento && (
               <div className="rounded-md border bg-white px-3 py-2 text-xs">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Observacoes
+                  Observações
                 </p>
                 <p className="mt-1 whitespace-pre-wrap text-slate-700">
                   {j.observacoesJulgamento}

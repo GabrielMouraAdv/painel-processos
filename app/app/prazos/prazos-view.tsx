@@ -146,7 +146,7 @@ export function PrazosView({
         });
         return;
       }
-      toast({ title: "Prazo excluido" });
+      toast({ title: "Prazo excluído" });
       setDeleting(null);
       router.refresh();
     } finally {
@@ -243,7 +243,7 @@ export function PrazosView({
             Prazos
           </h1>
           <p className="text-sm text-muted-foreground">
-            Acompanhe os prazos processuais e gere-os manualmente quando necessario.
+            Acompanhe os prazos processuais e gere-os manualmente quando necessário.
           </p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -317,7 +317,7 @@ export function PrazosView({
           <DialogHeader>
             <DialogTitle>Excluir prazo?</DialogTitle>
             <DialogDescription>
-              Esta acao nao pode ser desfeita.
+              Esta ação não pode ser desfeita.
               {deleting ? ` Prazo: ${deleting.tipo}.` : ""}
             </DialogDescription>
           </DialogHeader>
@@ -334,7 +334,7 @@ export function PrazosView({
               onClick={handleDelete}
               disabled={deletePending}
             >
-              {deletePending ? "Excluindo..." : "Confirmar exclusao"}
+              {deletePending ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -343,7 +343,7 @@ export function PrazosView({
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
           <div className="flex min-w-[220px] flex-1 flex-col gap-1">
-            <Label className="text-xs">Numero do processo</Label>
+            <Label className="text-xs">Número do processo</Label>
             <Input
               value={numeroDraft}
               onChange={(e) => setNumeroDraft(e.target.value)}
@@ -354,7 +354,7 @@ export function PrazosView({
                   applyNumeroFilter();
                 }
               }}
-              placeholder="Buscar por numero do processo"
+              placeholder="Buscar por número do processo"
             />
           </div>
           <div className="flex min-w-[160px] flex-col gap-1">
@@ -400,7 +400,7 @@ export function PrazosView({
             </Select>
           </div>
           <div className="flex min-w-[180px] flex-col gap-1">
-            <Label className="text-xs">Advogado Responsavel</Label>
+            <Label className="text-xs">Advogado Responsável</Label>
             <Select
               value={filters.advogadoRespId || "__all__"}
               onValueChange={(v) =>
@@ -429,7 +429,7 @@ export function PrazosView({
             />
           </div>
           <div className="flex min-w-[140px] flex-col gap-1">
-            <Label className="text-xs">Ate</Label>
+            <Label className="text-xs">Até</Label>
             <Input
               type="date"
               value={filters.ate}
@@ -488,7 +488,7 @@ export function PrazosView({
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Calendario</CardTitle>
+              <CardTitle className="text-base">Calendário</CardTitle>
             </CardHeader>
             <CardContent>
               <Calendar
@@ -505,11 +505,11 @@ export function PrazosView({
               <div className="mt-3 space-y-1.5 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-2 w-2 rounded-full bg-red-600" />
-                  <span className="text-muted-foreground">Vence em ate 7 dias</span>
+                  <span className="text-muted-foreground">Vence em até 7 dias</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-2 w-2 rounded-full bg-yellow-500" />
-                  <span className="text-muted-foreground">Vence em ate 14 dias</span>
+                  <span className="text-muted-foreground">Vence em até 14 dias</span>
                 </div>
               </div>
             </CardContent>
@@ -593,7 +593,7 @@ function PrazoCard({
             </span>
           ) : (
             <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-              sem responsavel
+              sem responsável
             </span>
           )}
           {prazo.hora && (

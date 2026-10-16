@@ -142,7 +142,7 @@ export default async function GestorDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Dados pessoais</CardTitle>
-            <CardDescription>Informacoes cadastrais do gestor.</CardDescription>
+            <CardDescription>Informações cadastrais do gestor.</CardDescription>
           </CardHeader>
           <CardContent>
             <GestorForm
@@ -162,7 +162,7 @@ export default async function GestorDetailPage({
           <CardHeader>
             <CardTitle className="text-base">Processos por risco</CardTitle>
             <CardDescription>
-              Distribuicao dos {totalProcessos} processo{totalProcessos === 1 ? "" : "s"}.
+              Distribuição dos {totalProcessos} processo{totalProcessos === 1 ? "" : "s"}.
             </CardDescription>
           </CardHeader>
           <CardContent>

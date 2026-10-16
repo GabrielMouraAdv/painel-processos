@@ -140,7 +140,7 @@ export function MonitoramentoClient({
         return;
       }
       toast({
-        title: "Verificacao concluida",
+        title: "Verificação concluída",
         description: `${json.processosVerificados} processo(s). ${json.novasMovimentacoes} mov. + ${json.novasPublicacoes} pub. novas.${
           json.erros?.length ? ` ${json.erros.length} erro(s).` : ""
         }`,
@@ -164,7 +164,7 @@ export function MonitoramentoClient({
         toast({
           variant: "destructive",
           title: "Erro",
-          description: json.error ?? "Nao foi possivel atualizar.",
+          description: json.error ?? "Não foi possível atualizar.",
         });
         return;
       }
@@ -191,7 +191,7 @@ export function MonitoramentoClient({
       toast({
         variant: "destructive",
         title: "Erro",
-        description: json.error ?? "Nao foi possivel marcar como lida.",
+        description: json.error ?? "Não foi possível marcar como lida.",
       });
       return;
     }
@@ -231,7 +231,7 @@ export function MonitoramentoClient({
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Ultima verificacao
+                Última verificação
               </p>
               <p className="mt-1 text-sm text-slate-700">
                 {formatDateTime(ultimaVerificacao)}
@@ -239,7 +239,7 @@ export function MonitoramentoClient({
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Alertas nao lidos
+                Alertas não lidos
               </p>
               <p className="mt-1 flex items-center gap-2 text-2xl font-semibold text-red-600">
                 <Bell className="h-5 w-5" />
@@ -266,11 +266,11 @@ export function MonitoramentoClient({
       <Card>
         <CardHeader className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle className="text-base">Alertas nao lidos</CardTitle>
+            <CardTitle className="text-base">Alertas não lidos</CardTitle>
             <CardDescription>
               {alertas.length === 0
                 ? "Nenhum alerta pendente."
-                : `${alertas.length} alerta${alertas.length === 1 ? "" : "s"} aguardando revisao.`}
+                : `${alertas.length} alerta${alertas.length === 1 ? "" : "s"} aguardando revisão.`}
             </CardDescription>
           </div>
           {alertas.length > 0 && (
@@ -332,12 +332,12 @@ export function MonitoramentoClient({
                       </span>
                       {a.geraIntimacao && (
                         <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                          Intimacao detectada
+                          Intimação detectada
                         </span>
                       )}
                       {a.ehDecisao && (
                         <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                          Decisao detectada
+                          Decisão detectada
                         </span>
                       )}
                     </div>
@@ -403,7 +403,7 @@ export function MonitoramentoClient({
                     <th className="px-3 py-2">Tribunal</th>
                     <th className="px-3 py-2">Gestor</th>
                     <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Ultima verificacao</th>
+                    <th className="px-3 py-2">Última verificação</th>
                     <th className="px-3 py-2">Novos alertas</th>
                   </tr>
                 </thead>

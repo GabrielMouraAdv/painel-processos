@@ -24,6 +24,7 @@ import {
   faseTceLabel,
 } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
+import { NumeroProcesso } from "@/components/numero-processo";
 
 type DispensaInfo = {
   por: string;
@@ -62,7 +63,7 @@ function StatusIcon({ active }: { active: boolean }) {
   return active ? (
     <Check className="h-4 w-4 text-emerald-600" aria-label="sim" />
   ) : (
-    <X className="h-4 w-4 text-red-500" aria-label="nao" />
+    <X className="h-4 w-4 text-red-500" aria-label="não" />
   );
 }
 
@@ -141,14 +142,14 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
   return (
     <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <Table className="md:table-fixed">
+        <Table className="min-w-[1080px] md:table-fixed">
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
               <TableHead className={cn(headBase, "md:w-[110px]")}>
-                Numero
+                Número
               </TableHead>
               <TableHead className={cn(headBase, "md:w-[130px]")}>
-                Municipio
+                Município
               </TableHead>
               <TableHead
                 className={cn(headBase, "hidden md:table-cell md:w-[180px]")}
@@ -161,7 +162,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
               <TableHead
                 className={cn(headBase, "hidden md:table-cell md:w-[90px]")}
               >
-                Camara
+                Câmara
               </TableHead>
               <TableHead
                 className={cn(headBase, "hidden md:table-cell md:w-[110px]")}
@@ -179,7 +180,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                   headBase,
                   "hidden text-center md:table-cell md:w-[40px]",
                 )}
-                title="Nota Tecnica"
+                title="Nota Técnica"
               >
                 NT
               </TableHead>
@@ -225,10 +226,10 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                 <TableCell
                   className={cn(
                     cellBase,
-                    "font-mono font-medium text-brand-navy",
+                    "font-medium",
                   )}
                 >
-                  {p.numero}
+                  <NumeroProcesso numero={p.numero} />
                 </TableCell>
                 <TableCell className={cellBase}>
                   {p.municipio?.nome ?? (
@@ -300,7 +301,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                         classeBadgeNaoJulgado(),
                       )}
                     >
-                      Nao julgado
+                      Não julgado
                     </span>
                   )}
                 </TableCell>

@@ -124,14 +124,14 @@ export default async function ProcessosPage({
             Processos
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie e acompanhe todos os processos do escritorio.
+            Gerencie e acompanhe todos os processos do escritório.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline">
             <Link href="/app/pendencias">
               <AlertTriangle className="mr-2 h-4 w-4 text-rose-600" />
-              Ver Pendencias
+              Ver Pendências
             </Link>
           </Button>
           <Button asChild className="bg-brand-navy hover:bg-brand-navy/90">

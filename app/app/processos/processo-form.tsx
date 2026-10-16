@@ -181,7 +181,7 @@ export function ProcessoForm({
         toast({
           variant: "destructive",
           title: "Erro ao salvar",
-          description: json.error ?? "Nao foi possivel salvar o processo.",
+          description: json.error ?? "Não foi possível salvar o processo.",
         });
         return;
       }
@@ -189,7 +189,7 @@ export function ProcessoForm({
         title: mode === "edit" ? "Processo atualizado" : "Processo criado",
         description:
           mode === "edit"
-            ? "As alteracoes foram salvas."
+            ? "As alterações foram salvas."
             : "Novo processo registrado com sucesso.",
       });
       const targetId = mode === "edit" ? processoId : (json.id as string);
@@ -211,7 +211,7 @@ export function ProcessoForm({
       toast({
         variant: "destructive",
         title: "Erro ao criar gestor",
-        description: json.error ?? "Nao foi possivel criar o gestor.",
+        description: json.error ?? "Não foi possível criar o gestor.",
       });
       return;
     }
@@ -230,10 +230,10 @@ export function ProcessoForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Field label="Numero do processo" error={errors.numero?.message}>
+        <Field label="Número do processo" error={errors.numero?.message}>
           <Input placeholder="0000000-00.0000.0.00.0000" {...register("numero")} />
         </Field>
-        <Field label="Data de distribuicao" error={errors.dataDistribuicao?.message}>
+        <Field label="Data de distribuição" error={errors.dataDistribuicao?.message}>
           <Input type="date" {...register("dataDistribuicao")} />
         </Field>
 
@@ -257,11 +257,11 @@ export function ProcessoForm({
         </Field>
         {watch("tipo") === TipoProcesso.OUTRO && (
           <Field
-            label="Descreva o tipo da acao"
+            label="Descreva o tipo da ação"
             error={errors.tipoLivre?.message}
           >
             <Input
-              placeholder="Ex.: Acao Civil de Improbidade Administrativa"
+              placeholder="Ex.: Ação Civil de Improbidade Administrativa"
               {...register("tipoLivre")}
             />
           </Field>
@@ -285,7 +285,7 @@ export function ProcessoForm({
           />
         </Field>
 
-        <Field label="Juizo / Vara" error={errors.juizo?.message}>
+        <Field label="Juízo / Vara" error={errors.juizo?.message}>
           <Input placeholder="Ex.: 2a Vara da Fazenda Publica" {...register("juizo")} />
         </Field>
         <Field label="Risco" error={errors.risco?.message}>
@@ -429,7 +429,7 @@ export function ProcessoForm({
           </div>
         </Field>
 
-        <Field label="Advogado responsavel" error={errors.advogadoId?.message}>
+        <Field label="Advogado responsável" error={errors.advogadoId?.message}>
           <Controller
             control={control}
             name="advogadoId"
@@ -451,8 +451,8 @@ export function ProcessoForm({
         </Field>
       </div>
 
-      <Field label="Objeto da acao" error={errors.objeto?.message}>
-        <Textarea rows={4} placeholder="Descreva o objeto da acao" {...register("objeto")} />
+      <Field label="Objeto da ação" error={errors.objeto?.message}>
+        <Textarea rows={4} placeholder="Descreva o objeto da ação" {...register("objeto")} />
       </Field>
 
       <div className="flex items-center justify-end gap-2">
@@ -466,7 +466,7 @@ export function ProcessoForm({
           disabled={submitting}
           className="bg-brand-navy hover:bg-brand-navy/90"
         >
-          {submitting ? "Salvando..." : mode === "edit" ? "Salvar alteracoes" : "Criar processo"}
+          {submitting ? "Salvando..." : mode === "edit" ? "Salvar alterações" : "Criar processo"}
         </Button>
       </div>
     </form>
@@ -521,10 +521,10 @@ function InlineGestorForm({
           <Input {...register("cargo")} />
         </Field>
       </div>
-      <Field label="Municipio" error={errors.municipio?.message}>
+      <Field label="Município" error={errors.municipio?.message}>
         <Input {...register("municipio")} />
       </Field>
-      <Field label="Observacoes">
+      <Field label="Observações">
         <Textarea rows={2} {...register("observacoes")} />
       </Field>
       <DialogFooter>

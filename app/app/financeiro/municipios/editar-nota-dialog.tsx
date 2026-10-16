@@ -146,7 +146,7 @@ export function EditarNotaDialog({
       console.error("[upload nota] erro:", e);
       toast({
         variant: "destructive",
-        title: "Erro de conexao no upload",
+        title: "Erro de conexão no upload",
       });
     } finally {
       setUploading(false);
@@ -182,17 +182,17 @@ export function EditarNotaDialog({
   async function salvar() {
     const valorNum = Number(String(valor).replace(/\./g, "").replace(",", "."));
     if (!Number.isFinite(valorNum) || valorNum <= 0) {
-      toast({ variant: "destructive", title: "Valor invalido" });
+      toast({ variant: "destructive", title: "Valor inválido" });
       return;
     }
     if (!dataVenc) {
-      toast({ variant: "destructive", title: "Data de vencimento obrigatoria" });
+      toast({ variant: "destructive", title: "Data de vencimento obrigatória" });
       return;
     }
     if (pago && !dataPag) {
       toast({
         variant: "destructive",
-        title: "Data de pagamento obrigatoria quando marcado como pago",
+        title: "Data de pagamento obrigatória quando marcado como pago",
       });
       return;
     }
@@ -262,7 +262,7 @@ export function EditarNotaDialog({
         });
         return;
       }
-      toast({ title: "Nota excluida" });
+      toast({ title: "Nota excluída" });
       onSuccess();
     } finally {
       setPending(false);
@@ -277,7 +277,7 @@ export function EditarNotaDialog({
             Nota fiscal — {NOMES_MESES_COMPLETO[mes - 1]}/{ano}
           </DialogTitle>
           <DialogDescription>
-            {nota ? "Editar dados da nota" : "Cadastrar nota deste mes"}.
+            {nota ? "Editar dados da nota" : "Cadastrar nota deste mês"}.
           </DialogDescription>
         </DialogHeader>
 
@@ -294,14 +294,14 @@ export function EditarNotaDialog({
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Numero da nota</Label>
+              <Label>Número da nota</Label>
               <Input
                 value={numeroNota}
                 onChange={(e) => setNumeroNota(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Data de emissao</Label>
+              <Label>Data de emissão</Label>
               <Input
                 type="date"
                 value={dataEmissao}
@@ -362,7 +362,7 @@ export function EditarNotaDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label>Observacoes</Label>
+            <Label>Observações</Label>
             <Input
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
@@ -372,7 +372,7 @@ export function EditarNotaDialog({
           {/* Anexo de arquivo */}
           <div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
             <Label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-700">
-              Anexar nota fiscal (PDF, JPG, PNG, XML — ate 10 MB)
+              Anexar nota fiscal (PDF, JPG, PNG, XML — até 10 MB)
             </Label>
             {arquivo.url ? (
               <div className="flex flex-wrap items-center gap-2">

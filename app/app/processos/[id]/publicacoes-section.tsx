@@ -85,8 +85,8 @@ export function PublicacoesSection({
         return;
       }
       toast({
-        title: "Busca concluida",
-        description: `${json.encontrados ?? 0} encontradas, ${json.indisponiveis ?? 0} indisponiveis, ${json.erros ?? 0} erros (de ${json.buscados ?? 0}).`,
+        title: "Busca concluída",
+        description: `${json.encontrados ?? 0} encontradas, ${json.indisponiveis ?? 0} indisponíveis, ${json.erros ?? 0} erros (de ${json.buscados ?? 0}).`,
       });
       router.refresh();
     } finally {
@@ -101,12 +101,12 @@ export function PublicacoesSection({
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <Newspaper className="h-4 w-4 text-orange-600" />
-              Publicacoes (DJEN — Inteiro Teor)
+              Publicações (DJEN — Inteiro Teor)
             </CardTitle>
             <CardDescription>
               {publicacoes.length === 0
-                ? "Nenhuma publicacao com texto integral disponivel ainda."
-                : `${publicacoes.length} publicacao${publicacoes.length === 1 ? "" : "oes"} com texto integral.`}
+                ? "Nenhuma publicação com texto integral disponível ainda."
+                : `${publicacoes.length} publicação${publicacoes.length === 1 ? "" : "oes"} com texto integral.`}
               {totalPendentes > 0 && (
                 <>
                   {" "}
@@ -124,12 +124,12 @@ export function PublicacoesSection({
               variant="outline"
               onClick={buscarPendentes}
               disabled={buscando}
-              title="Tenta recuperar via DJEN o texto das movimentacoes ainda sem inteiro teor."
+              title="Tenta recuperar via DJEN o texto das movimentações ainda sem inteiro teor."
             >
               <RefreshCw
                 className={`mr-1.5 h-4 w-4 ${buscando ? "animate-spin" : ""}`}
               />
-              {buscando ? "Buscando..." : "Buscar publicacoes faltantes"}
+              {buscando ? "Buscando..." : "Buscar publicações faltantes"}
             </Button>
           )}
         </div>
@@ -138,13 +138,13 @@ export function PublicacoesSection({
         {ehTrabalhista ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Info className="h-4 w-4" />
-            Processos da Justica do Trabalho nao sao integrados ao DJEN por este
+            Processos da Justiça do Trabalho não são integrados ao DJEN por este
             painel.
           </p>
         ) : publicacoes.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Quando o sistema detectar uma movimentacao com publicacao no DJEN, o
-            texto completo aparecera aqui automaticamente. Voce tambem pode
+            Quando o sistema detectar uma movimentação com publicação no DJEN, o
+            texto completo aparecerá aqui automaticamente. Você também pode
             disparar a busca manualmente acima.
           </p>
         ) : (
@@ -166,7 +166,7 @@ export function PublicacoesSection({
                       className="ml-auto inline-flex items-center gap-1 text-[11px] text-blue-700 hover:underline"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      diario oficial
+                      diário oficial
                     </a>
                   )}
                 </div>
@@ -202,7 +202,7 @@ export function PublicacoesSection({
                     }
                     className="text-[11px] font-medium text-emerald-700 hover:underline"
                   >
-                    Ver publicacao completa
+                    Ver publicação completa
                   </button>
                 </div>
               </li>
@@ -210,9 +210,9 @@ export function PublicacoesSection({
           </ul>
         )}
         <p className="mt-3 text-[11px] text-muted-foreground">
-          O texto completo das publicacoes vem do DJEN (Diario Eletronico
-          Nacional). Nem todas as publicacoes estao disponiveis: tribunais que
-          ainda nao migraram para o DJEN ou publicacoes muito antigas podem nao
+          O texto completo das publicações vem do DJEN (Diário Eletrônico
+          Nacional). Nem todas as publicações estão disponíveis: tribunais que
+          ainda não migraram para o DJEN ou publicações muito antigas podem não
           ter texto integral.
         </p>
       </CardContent>

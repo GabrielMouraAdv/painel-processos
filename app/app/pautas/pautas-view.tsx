@@ -172,7 +172,7 @@ const TIPO_SESSAO_BADGE: Record<
     className: "bg-orange-100 text-orange-800",
   },
   plenario_virtual: {
-    label: "Plenario Virtual",
+    label: "Plenário Virtual",
     className: "bg-orange-100 text-orange-800",
   },
 };
@@ -273,20 +273,20 @@ function SustentacaoOralBadge({
     return (
       <span
         className="inline-flex animate-pulse items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
-        title="Prazo para inscricao de sustentacao oral vencendo"
+        title="Prazo para inscrição de sustentação oral vencendo"
       >
         <AlertTriangle className="h-2.5 w-2.5" />
-        ATENCAO: Prazo sustentacao oral vencendo!
+        ATENÇÃO: Prazo sustentação oral vencendo!
       </span>
     );
   }
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-900"
-      title="Prazo para inscricao de sustentacao oral"
+      title="Prazo para inscrição de sustentação oral"
     >
       <Mic className="h-2.5 w-2.5" />
-      Sustentacao oral agendada — prazo ate {formatDateTimeBR(prazo48h)}
+      Sustentação oral agendada — prazo até {formatDateTimeBR(prazo48h)}
     </span>
   );
 }
@@ -410,10 +410,10 @@ export function PautasJudiciaisView({
         method: "DELETE",
       });
       if (!res.ok) {
-        toast({ variant: "destructive", title: "Erro ao excluir sessao" });
+        toast({ variant: "destructive", title: "Erro ao excluir sessão" });
         return;
       }
-      toast({ title: "Sessao excluida" });
+      toast({ title: "Sessão excluída" });
       setExcluirSessao(null);
       router.refresh();
     } finally {
@@ -432,7 +432,7 @@ export function PautasJudiciaisView({
         toast({ variant: "destructive", title: "Erro ao excluir item" });
         return;
       }
-      toast({ title: "Item excluido" });
+      toast({ title: "Item excluído" });
       setExcluirItem(null);
       router.refresh();
     } finally {
@@ -450,14 +450,14 @@ export function PautasJudiciaisView({
         const json = await res.json().catch(() => ({}));
         toast({
           variant: "destructive",
-          title: "Erro ao duplicar sessao",
+          title: "Erro ao duplicar sessão",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
       toast({
-        title: "Sessao duplicada",
-        description: "Nova sessao criada na semana seguinte com os itens.",
+        title: "Sessão duplicada",
+        description: "Nova sessão criada na semana seguinte com os itens.",
       });
       router.refresh();
     } finally {
@@ -510,11 +510,11 @@ export function PautasJudiciaisView({
     if (!whatsappTexto) return;
     try {
       await navigator.clipboard.writeText(whatsappTexto);
-      toast({ title: "Texto copiado para a area de transferencia" });
+      toast({ title: "Texto copiado para a área de transferência" });
     } catch {
       toast({
         variant: "destructive",
-        title: "Nao foi possivel copiar",
+        title: "Não foi possível copiar",
         description: "Selecione manualmente o texto e copie.",
       });
     }
@@ -538,7 +538,7 @@ export function PautasJudiciaisView({
             Pautas Judiciais
           </h1>
           <p className="text-sm text-muted-foreground">
-            Acompanhamento semanal das sessoes do Tribunal.
+            Acompanhamento semanal das sessões do Tribunal.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -564,7 +564,7 @@ export function PautasJudiciaisView({
               className="bg-brand-navy hover:bg-brand-navy/90"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Nova Sessao
+              Nova Sessão
             </Button>
           )}
         </div>
@@ -638,7 +638,7 @@ export function PautasJudiciaisView({
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
           <div className="flex min-w-[240px] flex-1 flex-col gap-1">
-            <Label className="text-xs">Orgao julgador</Label>
+            <Label className="text-xs">Órgão julgador</Label>
             <Select
               value={filters.orgaoJulgador || "__all__"}
               onValueChange={(v) =>
@@ -659,7 +659,7 @@ export function PautasJudiciaisView({
             </Select>
           </div>
           <div className="flex min-w-[160px] flex-col gap-1">
-            <Label className="text-xs">Tipo de sessao</Label>
+            <Label className="text-xs">Tipo de sessão</Label>
             <Select
               value={filters.tipoSessao || "__all__"}
               onValueChange={(v) =>
@@ -695,7 +695,7 @@ export function PautasJudiciaisView({
             />
           </div>
           <div className="flex min-w-[180px] flex-1 flex-col gap-1">
-            <Label className="text-xs">Advogado responsavel</Label>
+            <Label className="text-xs">Advogado responsável</Label>
             <Input
               value={advDraft}
               onChange={(e) => setAdvDraft(e.target.value)}
@@ -710,7 +710,7 @@ export function PautasJudiciaisView({
             />
           </div>
           <div className="flex min-w-[200px] flex-1 flex-col gap-1">
-            <Label className="text-xs">Busca (numero/partes)</Label>
+            <Label className="text-xs">Busca (número/partes)</Label>
             <Input
               value={qDraft}
               onChange={(e) => setQDraft(e.target.value)}
@@ -721,7 +721,7 @@ export function PautasJudiciaisView({
                   applyTextFilters();
                 }
               }}
-              placeholder="Ex.: 0001542 ou Municipio"
+              placeholder="Ex.: 0001542 ou Município"
             />
           </div>
           {temFiltroAtivo && (
@@ -741,12 +741,12 @@ export function PautasJudiciaisView({
             <CalendarRange className="h-10 w-10 text-slate-400" aria-hidden="true" />
             <div>
               <p className="text-sm font-medium text-slate-700">
-                Nenhuma sessao registrada nesta semana
+                Nenhuma sessão registrada nesta semana
               </p>
               <p className="text-xs text-muted-foreground">
                 {temFiltroAtivo
-                  ? "Ajuste os filtros ou cadastre uma nova sessao."
-                  : "Lance a primeira sessao da semana para comecar o acompanhamento."}
+                  ? "Ajuste os filtros ou cadastre uma nova sessão."
+                  : "Lance a primeira sessão da semana para comecar o acompanhamento."}
               </p>
             </div>
             {canEdit && (
@@ -755,7 +755,7 @@ export function PautasJudiciaisView({
                 className="bg-brand-navy hover:bg-brand-navy/90"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Nova Sessao
+                Nova Sessão
               </Button>
             )}
           </CardContent>
@@ -809,10 +809,10 @@ export function PautasJudiciaisView({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir sessao?</DialogTitle>
+            <DialogTitle>Excluir sessão?</DialogTitle>
             <DialogDescription>
               {excluirSessao
-                ? `A sessao de ${excluirSessao.orgaoJulgador} em ${formatDateShort(excluirSessao.data)} sera removida com os ${excluirSessao.itens.length} itens.`
+                ? `A sessão de ${excluirSessao.orgaoJulgador} em ${formatDateShort(excluirSessao.data)} será removida com os ${excluirSessao.itens.length} itens.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -829,7 +829,7 @@ export function PautasJudiciaisView({
               onClick={excluirSessaoConfirm}
               disabled={sessaoPending}
             >
-              {sessaoPending ? "Excluindo..." : "Confirmar exclusao"}
+              {sessaoPending ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -844,7 +844,7 @@ export function PautasJudiciaisView({
             <DialogTitle>Excluir item da pauta?</DialogTitle>
             <DialogDescription>
               {excluirItem
-                ? `O item do processo ${excluirItem.numero} sera removido.`
+                ? `O item do processo ${excluirItem.numero} será removido.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -861,7 +861,7 @@ export function PautasJudiciaisView({
               onClick={excluirItemConfirm}
               disabled={itemPending}
             >
-              {itemPending ? "Excluindo..." : "Confirmar exclusao"}
+              {itemPending ? "Excluindo..." : "Confirmar exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1007,7 +1007,7 @@ function SessaoCard({
                 className="h-7 w-7"
                 onClick={onDuplicar}
                 disabled={duplicando}
-                title="Duplicar sessao para a semana seguinte"
+                title="Duplicar sessão para a semana seguinte"
               >
                 <Copy className="h-3.5 w-3.5" />
               </Button>
@@ -1017,7 +1017,7 @@ function SessaoCard({
                 size="icon"
                 className="h-7 w-7"
                 onClick={onEditar}
-                title="Editar sessao"
+                title="Editar sessão"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
@@ -1027,7 +1027,7 @@ function SessaoCard({
                 size="icon"
                 className="h-7 w-7 text-red-700 hover:bg-red-50"
                 onClick={onExcluir}
-                title="Excluir sessao"
+                title="Excluir sessão"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -1051,7 +1051,7 @@ function SessaoCard({
               ) : (
                 <ChevronDown className="h-3 w-3" />
               )}
-              {composicaoAberta ? "Ocultar composicao" : "Ver composicao"}
+              {composicaoAberta ? "Ocultar composição" : "Ver composição"}
             </button>
             {composicaoAberta && (
               <ul className="mt-2 grid grid-cols-1 gap-1 text-xs md:grid-cols-2">
@@ -1095,7 +1095,7 @@ function SessaoCard({
       <CardContent className="p-0">
         {sessao.itens.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
-            <p>Nenhum item cadastrado nesta sessao.</p>
+            <p>Nenhum item cadastrado nesta sessão.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -1107,11 +1107,11 @@ function SessaoCard({
                   <th className="px-3 py-2">Tipo</th>
                   <th className="px-3 py-2">Relator</th>
                   <th className="px-3 py-2">Adv.</th>
-                  <th className="px-3 py-2">Situacao</th>
-                  <th className="px-3 py-2">Prognostico</th>
+                  <th className="px-3 py-2">Situação</th>
+                  <th className="px-3 py-2">Prognóstico</th>
                   <th className="px-3 py-2">Flags</th>
                   <th className="w-16 px-3 py-2 text-right">
-                    {canEdit ? "Acoes" : ""}
+                    {canEdit ? "Ações" : ""}
                   </th>
                 </tr>
               </thead>
@@ -1191,11 +1191,11 @@ function SessaoCard({
                           <span
                             className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800"
                             title={
-                              item.advogadoSustentacao ?? "Sustentacao oral"
+                              item.advogadoSustentacao ?? "Sustentação oral"
                             }
                           >
                             <Mic className="h-2.5 w-2.5" />
-                            Sustentacao
+                            Sustentação
                             {item.advogadoSustentacao
                               ? ` (${item.advogadoSustentacao.split(" ")[0]})`
                               : ""}
@@ -1210,7 +1210,7 @@ function SessaoCard({
                         {item.sessaoVirtual && (
                           <span
                             className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-800"
-                            title="Sessao virtual"
+                            title="Sessão virtual"
                           >
                             <MonitorCheck className="h-2.5 w-2.5" />
                             Virtual
@@ -1335,7 +1335,7 @@ function NovaSessaoDialog({
     if (!data || !orgaoJulgador) {
       toast({
         variant: "destructive",
-        title: "Preencha data e orgao julgador",
+        title: "Preencha data e órgão julgador",
       });
       return;
     }
@@ -1356,12 +1356,12 @@ function NovaSessaoDialog({
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao criar sessao",
+          title: "Erro ao criar sessão",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
-      toast({ title: "Sessao criada" });
+      toast({ title: "Sessão criada" });
       onOpenChange(false);
       router.refresh();
     } finally {
@@ -1373,9 +1373,9 @@ function NovaSessaoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Nova sessao</DialogTitle>
+          <DialogTitle>Nova sessão</DialogTitle>
           <DialogDescription>
-            Cadastre uma sessao para lancar os itens da pauta.
+            Cadastre uma sessão para lançar os itens da pauta.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
@@ -1396,7 +1396,7 @@ function NovaSessaoDialog({
             </div>
             <div className="space-y-1.5">
               <Label>
-                Orgao julgador <span className="text-red-600">*</span>
+                Órgão julgador <span className="text-red-600">*</span>
               </Label>
               <Select value={orgaoJulgador} onValueChange={setOrgaoJulgador}>
                 <SelectTrigger>
@@ -1413,13 +1413,13 @@ function NovaSessaoDialog({
               </Select>
               {horarioPadrao && (
                 <p className="text-[11px] text-muted-foreground">
-                  Horario padrao: {horarioPadrao}
+                  Horário padrão: {horarioPadrao}
                 </p>
               )}
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Tipo de sessao</Label>
+            <Label>Tipo de sessão</Label>
             <Select value={tipoSessao} onValueChange={setTipoSessao}>
               <SelectTrigger>
                 <SelectValue />
@@ -1434,12 +1434,12 @@ function NovaSessaoDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes gerais (opcional)</Label>
+            <Label>Observações gerais (opcional)</Label>
             <Textarea
               rows={2}
               value={observacoesGerais}
               onChange={(e) => setObservacoesGerais(e.target.value)}
-              placeholder="Ex.: Sessao ordinaria terca-feira 14h."
+              placeholder="Ex.: Sessão ordinária terça-feira 14h."
             />
           </div>
           <DialogFooter>
@@ -1456,7 +1456,7 @@ function NovaSessaoDialog({
               disabled={submitting}
               className="bg-brand-navy hover:bg-brand-navy/90"
             >
-              {submitting ? "Salvando..." : "Criar Sessao"}
+              {submitting ? "Salvando..." : "Criar Sessão"}
             </Button>
           </DialogFooter>
         </form>
@@ -1511,12 +1511,12 @@ function EditarSessaoDialog({
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao atualizar sessao",
+          title: "Erro ao atualizar sessão",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
-      toast({ title: "Sessao atualizada" });
+      toast({ title: "Sessão atualizada" });
       onOpenChange(false);
       router.refresh();
     } finally {
@@ -1528,9 +1528,9 @@ function EditarSessaoDialog({
     <Dialog open={!!sessao} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Editar sessao</DialogTitle>
+          <DialogTitle>Editar sessão</DialogTitle>
           <DialogDescription>
-            Atualize data, orgao, tipo de sessao ou observacoes.
+            Atualize data, órgão, tipo de sessão ou observações.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
@@ -1544,7 +1544,7 @@ function EditarSessaoDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Orgao julgador</Label>
+              <Label>Órgão julgador</Label>
               <Select value={orgaoJulgador} onValueChange={setOrgaoJulgador}>
                 <SelectTrigger>
                   <SelectValue />
@@ -1560,7 +1560,7 @@ function EditarSessaoDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Tipo de sessao</Label>
+            <Label>Tipo de sessão</Label>
             <Select value={tipoSessao} onValueChange={setTipoSessao}>
               <SelectTrigger>
                 <SelectValue />
@@ -1575,7 +1575,7 @@ function EditarSessaoDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes gerais</Label>
+            <Label>Observações gerais</Label>
             <Textarea
               rows={2}
               value={observacoesGerais}
@@ -1596,7 +1596,7 @@ function EditarSessaoDialog({
               disabled={submitting}
               className="bg-brand-navy hover:bg-brand-navy/90"
             >
-              {submitting ? "Salvando..." : "Salvar alteracoes"}
+              {submitting ? "Salvando..." : "Salvar alterações"}
             </Button>
           </DialogFooter>
         </form>

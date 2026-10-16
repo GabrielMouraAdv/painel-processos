@@ -114,7 +114,7 @@ export function ClienteForm({ gestores, municipios }: Props) {
     if (!m) return null;
     return {
       nome: `${m.nome}/${m.uf}`,
-      detalhe: "Municipio",
+      detalhe: "Município",
     };
   }, [clienteId, tipo, gestores, municipios]);
 
@@ -215,7 +215,7 @@ export function ClienteForm({ gestores, municipios }: Props) {
             )}
           >
             <Building2 className="h-4 w-4" />
-            Municipio
+            Município
           </button>
         </div>
       </div>
@@ -253,8 +253,8 @@ export function ClienteForm({ gestores, municipios }: Props) {
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder={
                   tipo === "gestor"
-                    ? "Buscar gestor por nome, cargo ou municipio..."
-                    : "Buscar municipio..."
+                    ? "Buscar gestor por nome, cargo ou município..."
+                    : "Buscar município..."
                 }
                 className="pl-9"
               />
@@ -264,7 +264,7 @@ export function ClienteForm({ gestores, municipios }: Props) {
                 <p className="px-3 py-6 text-center text-sm text-muted-foreground">
                   {tipo === "gestor"
                     ? "Nenhum gestor encontrado."
-                    : "Nenhum municipio encontrado."}
+                    : "Nenhum município encontrado."}
                 </p>
               ) : (
                 <ul className="divide-y">
@@ -316,7 +316,7 @@ export function ClienteForm({ gestores, municipios }: Props) {
       {/* Modulos */}
       <div className="flex flex-col gap-2">
         <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-          Modulos
+          Módulos
         </Label>
         <div className="flex flex-wrap gap-4">
           <label className="flex cursor-pointer items-center gap-2 text-sm">
@@ -396,7 +396,7 @@ export function ClienteForm({ gestores, municipios }: Props) {
           })}
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Sem selecao = todas as bancas. Util quando o cliente tem processos
+          Sem seleção = todas as bancas. Útil quando o cliente tem processos
           patrocinados por mais de uma banca.
         </p>
       </div>
@@ -404,11 +404,11 @@ export function ClienteForm({ gestores, municipios }: Props) {
       {/* Escritorio responsavel */}
       <div className="flex flex-col gap-2">
         <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-          Escritorio responsavel <span className="text-red-600">*</span>
+          Escritório responsável <span className="text-red-600">*</span>
         </Label>
         <Select value={emissorSlug} onValueChange={trocarEmissor}>
           <SelectTrigger>
-            <SelectValue placeholder="Selecione o escritorio emissor" />
+            <SelectValue placeholder="Selecione o escritório emissor" />
           </SelectTrigger>
           <SelectContent>
             {ESCRITORIOS_EMISSORES.map((e) => (
@@ -469,7 +469,7 @@ export function ClienteForm({ gestores, municipios }: Props) {
           ) : (
             <>
               <FileDown className="mr-2 h-4 w-4" />
-              Gerar Relatorio em PDF
+              Gerar Relatório em PDF
             </>
           )}
         </Button>

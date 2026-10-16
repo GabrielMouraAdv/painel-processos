@@ -421,7 +421,7 @@ function ItemFlags({ item }: { item: ItemPautaJudicialPdf }) {
     <View style={styles.badgeFlagsBox}>
       {item.sustentacaoOral && (
         <Text style={[styles.badge, styles.badgeSusten]}>
-          Sustentacao
+          Sustentação
           {item.advogadoSustentacao ? ` (${item.advogadoSustentacao})` : ""}
         </Text>
       )}
@@ -690,7 +690,7 @@ export function PautaJudicialDocument({
 
         {sessoes.length === 0 ? (
           <Text style={styles.empty}>
-            Nenhuma sessao cadastrada nesta semana.
+            Nenhuma sessão cadastrada nesta semana.
           </Text>
         ) : (
           <>

@@ -49,9 +49,9 @@ export default async function EleitoralRelatoriosPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Relatorios</h1>
+          <h1 className="text-2xl font-semibold">Relatórios</h1>
           <p className="text-sm text-muted-foreground">
-            Relatorios de monitoramento do contencioso eleitoral.
+            Relatórios de monitoramento do contencioso eleitoral.
           </p>
         </div>
         <UploadRelatorioDialog />
@@ -60,8 +60,8 @@ export default async function EleitoralRelatoriosPage() {
       {!ultimo && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            Nenhum relatorio enviado ainda. Use o botao &quot;Enviar
-            relatorio&quot; para subir o primeiro.
+            Nenhum relatório enviado ainda. Use o botão &quot;Enviar
+            relatório&quot; para subir o primeiro.
           </CardContent>
         </Card>
       )}
@@ -71,7 +71,7 @@ export default async function EleitoralRelatoriosPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <FileText className="h-4 w-4" />
-              Ultimo relatorio
+              Último relatório
               <Badge>{formatarDataUTC(ultimo.dataReferencia)}</Badge>
             </CardTitle>
           </CardHeader>
@@ -110,11 +110,11 @@ export default async function EleitoralRelatoriosPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Titulo</TableHead>
-                <TableHead>Referencia</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead>Referência</TableHead>
                 <TableHead>Enviado por</TableHead>
                 <TableHead>Arquivo</TableHead>
-                <TableHead className="w-[120px]">Acoes</TableHead>
+                <TableHead className="w-[120px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

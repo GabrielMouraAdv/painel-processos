@@ -527,8 +527,8 @@ export async function gerarAditivoDocx(
 
   const doc = new Document({
     creator: escritorio.nome,
-    title: `Solicitacao de Aditivo - ${tipoLabel}`,
-    description: "Solicitacao de aditivo contratual",
+    title: `Solicitação de Aditivo - ${tipoLabel}`,
+    description: "Solicitação de aditivo contratual",
     styles: {
       default: {
         document: {

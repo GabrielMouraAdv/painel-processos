@@ -166,7 +166,7 @@ export function ItemPautaJudicialDialog({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!numeroProcesso.trim()) {
-      toast({ variant: "destructive", title: "Informe o numero do processo" });
+      toast({ variant: "destructive", title: "Informe o número do processo" });
       return;
     }
     if (!relator.trim()) {
@@ -176,7 +176,7 @@ export function ItemPautaJudicialDialog({
     if (!advogadoResp.trim()) {
       toast({
         variant: "destructive",
-        title: "Informe o advogado responsavel",
+        title: "Informe o advogado responsável",
       });
       return;
     }
@@ -247,7 +247,7 @@ export function ItemPautaJudicialDialog({
     if (!numero) {
       toast({
         variant: "destructive",
-        title: "Informe o numero do processo primeiro",
+        title: "Informe o número do processo primeiro",
       });
       return;
     }
@@ -269,7 +269,7 @@ export function ItemPautaJudicialDialog({
       if (!json.found) {
         toast({
           title: "Nenhum item anterior encontrado",
-          description: "Nao foi achada sessao anterior com este numero.",
+          description: "Não foi achada sessão anterior com este número.",
         });
         return;
       }
@@ -310,7 +310,7 @@ export function ItemPautaJudicialDialog({
       const dataFmt = s.data.slice(0, 10).split("-").reverse().join("/");
       toast({
         title: "Dados copiados",
-        description: `Copiado de sessao de ${s.orgaoJulgador} (${dataFmt}).`,
+        description: `Copiado de sessão de ${s.orgaoJulgador} (${dataFmt}).`,
       });
     } finally {
       setCopiando(false);
@@ -326,14 +326,14 @@ export function ItemPautaJudicialDialog({
               {mode === "edit" ? "Editar item da pauta" : "Novo item da pauta"}
             </DialogTitle>
             <DialogDescription>
-              Dados do processo que sera julgado na sessao do TJPE.
+              Dados do processo que será julgado na sessão do TJPE.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.5fr_1fr]">
               <div className="space-y-1.5">
                 <Label>
-                  Numero do processo <span className="text-red-600">*</span>
+                  Número do processo <span className="text-red-600">*</span>
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -348,7 +348,7 @@ export function ItemPautaJudicialDialog({
                       variant="outline"
                       onClick={copiarDePautaAnterior}
                       disabled={copiando || !numeroProcesso.trim()}
-                      title="Buscar dados deste processo em sessoes anteriores"
+                      title="Buscar dados deste processo em sessões anteriores"
                     >
                       <Copy className="mr-1.5 h-3.5 w-3.5" />
                       {copiando ? "Buscando..." : "Copiar de pauta anterior"}
@@ -379,11 +379,11 @@ export function ItemPautaJudicialDialog({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Titulo/Descricao curta</Label>
+              <Label>Título/Descrição curta</Label>
               <Input
                 value={tituloProcesso}
                 onChange={(e) => setTituloProcesso(e.target.value)}
-                placeholder="Ex.: Apelacao contra Municipio de Arco Verde"
+                placeholder="Ex.: Apelação contra Município de Arco Verde"
               />
             </div>
             <div className="space-y-1.5">
@@ -392,11 +392,11 @@ export function ItemPautaJudicialDialog({
                 list={LIST_IDS.processos}
                 value={processoNumero}
                 onChange={(e) => setProcessoNumero(e.target.value)}
-                placeholder="Digite o numero para buscar entre os processos judiciais"
+                placeholder="Digite o número para buscar entre os processos judiciais"
               />
               <p className="text-[11px] text-muted-foreground">
-                Apenas vincula quando o numero bater exatamente com um processo
-                ja cadastrado.
+                Apenas vincula quando o número bater exatamente com um processo
+                já cadastrado.
               </p>
             </div>
             <div className="space-y-1.5">
@@ -405,7 +405,7 @@ export function ItemPautaJudicialDialog({
                 rows={2}
                 value={partes}
                 onChange={(e) => setPartes(e.target.value)}
-                placeholder="Ex.: Municipio de Arco Verde x Ministerio Publico Estadual"
+                placeholder="Ex.: Município de Arco Verde x Ministério Público Estadual"
               />
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -422,7 +422,7 @@ export function ItemPautaJudicialDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>
-                  Advogado responsavel <span className="text-red-600">*</span>
+                  Advogado responsável <span className="text-red-600">*</span>
                 </Label>
                 <Input
                   list={LIST_IDS.advogados}
@@ -433,16 +433,16 @@ export function ItemPautaJudicialDialog({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Situacao</Label>
+              <Label>Situação</Label>
               <Textarea
                 rows={2}
                 value={situacao}
                 onChange={(e) => setSituacao(e.target.value)}
-                placeholder="Ex.: Preliminares de merito em discussao"
+                placeholder="Ex.: Preliminares de mérito em discussão"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Prognostico</Label>
+              <Label>Prognóstico</Label>
               <Textarea
                 rows={2}
                 value={prognostico}
@@ -451,21 +451,21 @@ export function ItemPautaJudicialDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Providencia</Label>
+              <Label>Providência</Label>
               <Textarea
                 rows={2}
                 value={providencia}
                 onChange={(e) => setProvidencia(e.target.value)}
-                placeholder="Ex.: Sustentacao oral"
+                placeholder="Ex.: Sustentação oral"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Observacoes</Label>
+              <Label>Observações</Label>
               <Textarea
                 rows={2}
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Outras anotacoes"
+                placeholder="Outras anotações"
               />
             </div>
             <div className="flex flex-col gap-2 rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -476,7 +476,7 @@ export function ItemPautaJudicialDialog({
                     checked={sustentacaoOral}
                     onChange={(e) => setSustentacaoOral(e.target.checked)}
                   />
-                  Sustentacao oral
+                  Sustentação oral
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input
@@ -484,7 +484,7 @@ export function ItemPautaJudicialDialog({
                     checked={sessaoVirtual}
                     onChange={(e) => setSessaoVirtual(e.target.checked)}
                   />
-                  Sessao virtual
+                  Sessão virtual
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input
@@ -565,7 +565,7 @@ export function ItemPautaJudicialDialog({
                 {submitting
                   ? "Salvando..."
                   : mode === "edit"
-                    ? "Salvar alteracoes"
+                    ? "Salvar alterações"
                     : "Adicionar item"}
               </Button>
             </DialogFooter>

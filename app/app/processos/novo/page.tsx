@@ -39,7 +39,7 @@ export default async function NovoProcessoPage() {
           Novo processo
         </h1>
         <p className="text-sm text-muted-foreground">
-          Preencha os dados para registrar um novo processo no escritorio.
+          Preencha os dados para registrar um novo processo no escritório.
         </p>
       </div>
 

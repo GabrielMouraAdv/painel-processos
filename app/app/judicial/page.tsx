@@ -113,7 +113,7 @@ const TIPO_SESSAO_TJPE: Record<string, { label: string; className: string }> = {
     className: "bg-orange-100 text-orange-800",
   },
   plenario_virtual: {
-    label: "Plenario Virtual",
+    label: "Plenário Virtual",
     className: "bg-orange-100 text-orange-800",
   },
 };
@@ -485,7 +485,7 @@ export default async function AppHome({
 
   const kpis = [
     {
-      label: "Pendencias",
+      label: "Pendências",
       value: totalPendenciasJud,
       icon: TriangleAlert,
       href: "/app/pendencias",
@@ -506,7 +506,7 @@ export default async function AppHome({
       tone: "red" as const,
     },
     {
-      label: "Risco medio",
+      label: "Risco médio",
       value: riscoMedio,
       icon: TriangleAlert,
       href: "/app/processos?risco=MEDIO",
@@ -539,13 +539,13 @@ export default async function AppHome({
     <div className="mx-auto flex max-w-7xl flex-col gap-8 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
       <header className="flex flex-col gap-3">
         <Badge className="w-fit bg-brand-navy text-white hover:bg-brand-navy/90">
-          Painel Juridico
+          Painel Jurídico
         </Badge>
         <h1 className="text-3xl font-semibold tracking-tight text-brand-navy sm:text-4xl">
-          Ola, {nome}
+          Olá, {nome}
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Visao geral do escritorio — clique nos indicadores para filtrar rapidamente.
+          Visão geral do escritório — clique nos indicadores para filtrar rapidamente.
         </p>
       </header>
 
@@ -599,7 +599,7 @@ export default async function AppHome({
             </div>
             {pautaSessoesTjpeOrdenadas.length === 0 ? (
               <p className="py-2 text-sm text-muted-foreground">
-                Nenhuma sessao TJPE nesta semana.
+                Nenhuma sessão TJPE nesta semana.
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5">
@@ -696,7 +696,7 @@ export default async function AppHome({
             </div>
             {pautaSessoesTrf5Ordenadas.length === 0 ? (
               <p className="py-2 text-sm text-muted-foreground">
-                Nenhuma sessao TRF5 nesta semana.
+                Nenhuma sessão TRF5 nesta semana.
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5">
@@ -794,7 +794,7 @@ export default async function AppHome({
                 Meus Prazos
               </CardTitle>
               <CardDescription>
-                Prazos judiciais e TCE atribuidos a voce, ordenados por urgencia.
+                Prazos judiciais e TCE atribuidos a você, ordenados por urgência.
               </CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm" className="-mr-2">
@@ -807,7 +807,7 @@ export default async function AppHome({
           <CardContent>
             {meusPrazos.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Voce nao tem prazos atribuidos no momento.
+                Você não tem prazos atribuidos no momento.
               </p>
             ) : (
               <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
@@ -969,7 +969,7 @@ export default async function AppHome({
         <Card>
           <CardHeader className="flex flex-row items-start justify-between space-y-0">
             <div>
-              <CardTitle className="text-base">Proximos prazos</CardTitle>
+              <CardTitle className="text-base">Próximos prazos</CardTitle>
               <CardDescription>5 prazos pendentes mais urgentes.</CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm" className="-mr-2">
@@ -982,7 +982,7 @@ export default async function AppHome({
           <CardContent>
             {prazosProximos.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nenhum prazo nos proximos 30 dias.
+                Nenhum prazo nos próximos 30 dias.
               </p>
             ) : (
               <ul className="space-y-2">
@@ -1033,9 +1033,9 @@ export default async function AppHome({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Ultimos andamentos</CardTitle>
+            <CardTitle className="text-base">Últimos andamentos</CardTitle>
             <CardDescription>
-              5 movimentacoes mais recentes do escritorio.
+              5 movimentações mais recentes do escritório.
             </CardDescription>
           </CardHeader>
           <CardContent>

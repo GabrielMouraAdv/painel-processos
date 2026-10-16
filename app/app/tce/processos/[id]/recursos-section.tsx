@@ -48,7 +48,7 @@ export type RecursoNode = {
 type SituacaoContrarrazoes = "sem_peca" | "apresentadas" | "dispensadas" | "pendentes";
 
 const SITUACAO_LABEL: Record<SituacaoContrarrazoes, string> = {
-  sem_peca: "sem peca",
+  sem_peca: "sem peça",
   apresentadas: "apresentadas",
   dispensadas: "dispensadas",
   pendentes: "pendentes",
@@ -267,7 +267,7 @@ function NoRecurso({
               {RESULTADO_RECURSO_LABELS[node.resultadoRecurso]}
             </span>
           ) : (
-            <span className="text-muted-foreground">Desfecho nao registrado</span>
+            <span className="text-muted-foreground">Desfecho não registrado</span>
           )}
           {node.numeroAcordao && <span className="text-slate-600">Ac. {node.numeroAcordao}</span>}
           <span className="text-slate-600">
@@ -275,7 +275,7 @@ function NoRecurso({
           </span>
         </p>
         <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs">
-          <span className="text-muted-foreground">Contrarrazoes</span>
+          <span className="text-muted-foreground">Contrarrazões</span>
           <Contrarrazoes rotulo="NT" s={node.contrarrazoesNt} />
           <Contrarrazoes rotulo="MPCO" s={node.contrarrazoesMpco} />
         </p>

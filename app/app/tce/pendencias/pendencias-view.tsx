@@ -45,8 +45,8 @@ import { DispensarPendenciaDialog } from "./dispensar-dialog";
 import { MemorialProntoDialog } from "./memorial-pronto-dialog";
 
 const CAMARA_LABEL: Record<CamaraTce, string> = {
-  PRIMEIRA: "1a Camara",
-  SEGUNDA: "2a Camara",
+  PRIMEIRA: "1a Câmara",
+  SEGUNDA: "2a Câmara",
   PLENO: "Pleno",
 };
 
@@ -94,10 +94,10 @@ export function PendenciasView({
             Tribunal de Contas
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Pendencias TCE
+            Pendências TCE
           </h1>
           <p className="text-sm text-muted-foreground">
-            Contrarrazoes, memoriais, despachos e prazos pendentes.
+            Contrarrazões, memoriais, despachos e prazos pendentes.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -111,14 +111,14 @@ export function PendenciasView({
       {/* KPIs clicaveis */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <KpiBox
-          label="Contrarrazoes NT"
+          label="Contrarrazões NT"
           value={agregado.contrarrazoesNt}
           tone="red"
           ativo={filtroKpi === "contrarrazoes_nt"}
           onClick={() => setFiltroKpi("contrarrazoes_nt")}
         />
         <KpiBox
-          label="Contrarrazoes MPCO"
+          label="Contrarrazões MPCO"
           value={agregado.contrarrazoesMpco}
           tone="red"
           ativo={filtroKpi === "contrarrazoes_mpco"}
@@ -146,7 +146,7 @@ export function PendenciasView({
           onClick={() => setFiltroKpi("prazo")}
         />
         <KpiBox
-          label="Total Pendencias"
+          label="Total Pendências"
           value={agregado.total}
           tone="slate"
           ativo={filtroKpi === "todas"}
@@ -168,7 +168,7 @@ export function PendenciasView({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pendentes">Pendentes</SelectItem>
-                <SelectItem value="concluidas">Concluidas</SelectItem>
+                <SelectItem value="concluidas">Concluídas</SelectItem>
                 <SelectItem value="dispensados">Dispensados</SelectItem>
                 <SelectItem value="todas">Todas</SelectItem>
               </SelectContent>
@@ -199,7 +199,7 @@ export function PendenciasView({
       {cardsFiltrados.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            Nenhuma pendencia no recorte selecionado.
+            Nenhuma pendência no recorte selecionado.
           </CardContent>
         </Card>
       ) : (
@@ -419,7 +419,7 @@ function ProcessoCardComponent({
             {processo.municipio
               ? ` • ${processo.municipio.nome}/${processo.municipio.uf}`
               : ""}
-            {processo.exercicio ? ` • exercicio ${processo.exercicio}` : ""}
+            {processo.exercicio ? ` • exercício ${processo.exercicio}` : ""}
             {processo.relator ? ` • ${processo.relator}` : ""}
           </p>
           <p className="mt-0.5 text-xs text-slate-700">
@@ -469,8 +469,8 @@ function ProcessoCardComponent({
                       : "text-xs font-semibold text-orange-800"
                   }
                 >
-                  Responsavel:{" "}
-                  {pd.advogadoResp ? `Dr. ${pd.advogadoResp}` : "nao vinculado"}
+                  Responsável:{" "}
+                  {pd.advogadoResp ? `Dr. ${pd.advogadoResp}` : "não vinculado"}
                 </p>
               )}
             </div>
@@ -497,7 +497,7 @@ function ProcessoCardComponent({
             ) : pd.concluida ? (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-700">
                 <Check className="h-3 w-3" />
-                Concluida
+                Concluída
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-red-700">

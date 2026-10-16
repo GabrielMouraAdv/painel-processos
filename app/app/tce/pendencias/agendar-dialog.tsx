@@ -116,13 +116,13 @@ export function AgendarPendenciaDialog({
         <DialogHeader>
           <DialogTitle>
             {modo === "memorial"
-              ? "Agendar Elaboracao do Memorial"
-              : "Agendar Marcacao do Despacho"}
+              ? "Agendar Elaboração do Memorial"
+              : "Agendar Marcação do Despacho"}
           </DialogTitle>
           <DialogDescription>
             {modo === "memorial"
-              ? "Informe quando o memorial sera elaborado e por qual advogado."
-              : "Informe quando o despacho com o relator sera realizado e por qual advogado."}
+              ? "Informe quando o memorial será elaborado e por qual advogado."
+              : "Informe quando o despacho com o relator será realizado e por qual advogado."}
           </DialogDescription>
         </DialogHeader>
 
@@ -130,7 +130,7 @@ export function AgendarPendenciaDialog({
           <div className="space-y-1.5">
             <Label>
               {modo === "memorial"
-                ? "Data prevista de elaboracao"
+                ? "Data prevista de elaboração"
                 : "Data agendada do despacho"}{" "}
               <span className="text-red-600">*</span>
             </Label>
@@ -142,7 +142,7 @@ export function AgendarPendenciaDialog({
           </div>
           <div className="space-y-1.5">
             <Label>
-              Advogado responsavel <span className="text-red-600">*</span>
+              Advogado responsável <span className="text-red-600">*</span>
             </Label>
             <Select value={advogadoId} onValueChange={setAdvogadoId}>
               <SelectTrigger>

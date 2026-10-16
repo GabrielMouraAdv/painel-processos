@@ -203,7 +203,7 @@ export function JulgamentoDialog(props: Props) {
             {initial ? "Editar Julgamento" : "Registrar Julgamento"}
           </DialogTitle>
           <DialogDescription>
-            Informe a data, o resultado e os detalhes da decisao.
+            Informe a data, o resultado e os detalhes da decisão.
           </DialogDescription>
         </DialogHeader>
 
@@ -270,7 +270,7 @@ export function JulgamentoDialog(props: Props) {
           )}
           {incluiDevolucao && (
             <div className="space-y-1.5">
-              <Label>Valor da devolucao ao erario (R$)</Label>
+              <Label>Valor da devolução ao erário (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -283,7 +283,7 @@ export function JulgamentoDialog(props: Props) {
           )}
           {incluiCondenacao && (
             <div className="space-y-1.5">
-              <Label>Valor da condenacao (R$)</Label>
+              <Label>Valor da condenação (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -296,12 +296,12 @@ export function JulgamentoDialog(props: Props) {
           )}
 
           <div className="space-y-1.5">
-            <Label>Observacoes do julgamento</Label>
+            <Label>Observações do julgamento</Label>
             <Textarea
               rows={3}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
-              placeholder="Ementa, voto vencido, fundamentacao relevante..."
+              placeholder="Ementa, voto vencido, fundamentação relevante..."
             />
           </div>
 

@@ -95,7 +95,7 @@ export function MunicipioDialog({
         return;
       }
       toast({
-        title: isEdit ? "Municipio atualizado" : "Municipio cadastrado",
+        title: isEdit ? "Município atualizado" : "Município cadastrado",
       });
       onOpenChange(false);
       router.refresh();
@@ -109,12 +109,12 @@ export function MunicipioDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Editar municipio" : "Novo municipio"}
+            {isEdit ? "Editar município" : "Novo município"}
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Atualize os dados do municipio."
-              : "Cadastre um municipio para vincular a processos do TCE."}
+              ? "Atualize os dados do município."
+              : "Cadastre um município para vincular a processos do TCE."}
           </DialogDescription>
         </DialogHeader>
 
@@ -142,7 +142,7 @@ export function MunicipioDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes</Label>
+            <Label>Observações</Label>
             <Textarea
               rows={2}
               value={observacoes}

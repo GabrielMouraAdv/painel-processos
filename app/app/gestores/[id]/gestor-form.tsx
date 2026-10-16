@@ -82,8 +82,8 @@ export function GestorForm({ gestorId, initial }: Props) {
           <Info label="CPF" value={initial.cpf ?? "-"} />
           <Info label="Cargo" value={initial.cargo} />
         </div>
-        <Info label="Municipio" value={initial.municipio} />
-        <Info label="Observacoes" value={initial.observacoes ?? "-"} />
+        <Info label="Município" value={initial.municipio} />
+        <Info label="Observações" value={initial.observacoes ?? "-"} />
         <div className="flex justify-end">
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
             <Pencil className="mr-1.5 h-4 w-4" />
@@ -114,14 +114,14 @@ export function GestorForm({ gestorId, initial }: Props) {
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label>Municipio</Label>
+        <Label>Município</Label>
         <Input {...register("municipio")} />
         {errors.municipio && (
           <p className="text-xs text-red-600">{errors.municipio.message}</p>
         )}
       </div>
       <div className="space-y-1.5">
-        <Label>Observacoes</Label>
+        <Label>Observações</Label>
         <Textarea rows={2} {...register("observacoes")} />
       </div>
       <div className="flex justify-end gap-2">

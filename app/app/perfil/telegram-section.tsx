@@ -137,12 +137,12 @@ export function TelegramSection({ initial }: Props) {
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Erro ao salvar preferencias",
+          title: "Erro ao salvar preferências",
           description: json.error ?? "Tente novamente.",
         });
         return;
       }
-      toast({ title: "Preferencias salvas" });
+      toast({ title: "Preferências salvas" });
     } finally {
       setLoadingPref(false);
     }
@@ -161,7 +161,7 @@ export function TelegramSection({ initial }: Props) {
             </p>
             <p className="text-xs text-slate-500">
               Receba lembretes de compromissos e prazos diretamente no Telegram
-              atraves do seu proprio bot.
+              através do seu próprio bot.
             </p>
           </div>
           {ativo ? (
@@ -204,7 +204,7 @@ export function TelegramSection({ initial }: Props) {
                   <code>123456789:ABC...</code>).
                 </li>
                 <li>
-                  Abra o bot recem-criado (link enviado pelo BotFather) e mande{" "}
+                  Abra o bot recém-criado (link enviado pelo BotFather) e mande{" "}
                   <code>/start</code> para ele.
                 </li>
                 <li>
@@ -277,11 +277,11 @@ export function TelegramSection({ initial }: Props) {
 
             <div className="space-y-3 rounded-md border bg-slate-50 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Lembretes automaticos
+                Lembretes automáticos
               </p>
               <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
                 <span>
-                  Receber agenda do dia pela manha
+                  Receber agenda do dia pela manhã
                   <span className="ml-2 text-xs text-slate-500">
                     (segunda a sexta, ~7h)
                   </span>
@@ -294,7 +294,7 @@ export function TelegramSection({ initial }: Props) {
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Horario manha (referencia)</Label>
+                  <Label className="text-xs">Horário manhã (referência)</Label>
                   <Input
                     type="time"
                     value={horarioManha}
@@ -302,7 +302,7 @@ export function TelegramSection({ initial }: Props) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Horario tarde (referencia)</Label>
+                  <Label className="text-xs">Horário tarde (referência)</Label>
                   <Input
                     type="time"
                     value={horarioTarde}
@@ -311,8 +311,8 @@ export function TelegramSection({ initial }: Props) {
                 </div>
               </div>
               <p className="text-[11px] text-slate-500">
-                Os horarios sao referencia para sua agenda. Os cron jobs rodam
-                em horarios fixos definidos no servidor.
+                Os horários são referência para sua agenda. Os cron jobs rodam
+                em horários fixos definidos no servidor.
               </p>
               <Button
                 type="button"
@@ -324,7 +324,7 @@ export function TelegramSection({ initial }: Props) {
                 {loadingPref ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                Salvar preferencias
+                Salvar preferências
               </Button>
             </div>
           </div>

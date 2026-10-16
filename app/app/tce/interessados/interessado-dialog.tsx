@@ -131,7 +131,7 @@ function MunicipioMultiSelect({
     <div className="flex flex-col gap-2">
       <Select value="" onValueChange={adicionar}>
         <SelectTrigger>
-          <SelectValue placeholder="Adicionar municipio" />
+          <SelectValue placeholder="Adicionar município" />
         </SelectTrigger>
         <SelectContent>
           {disponiveis.map((m) => (
@@ -139,7 +139,7 @@ function MunicipioMultiSelect({
               {m.nome}/{m.uf}
             </SelectItem>
           ))}
-          <SelectItem value="__novo__">+ Cadastrar novo municipio</SelectItem>
+          <SelectItem value="__novo__">+ Cadastrar novo município</SelectItem>
         </SelectContent>
       </Select>
       {selecionados.length > 0 ? (
@@ -162,7 +162,7 @@ function MunicipioMultiSelect({
         </ul>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Nenhum municipio selecionado.
+          Nenhum município selecionado.
         </p>
       )}
     </div>
@@ -380,7 +380,7 @@ export function InteressadoDialog({
                   )}
                 >
                   <User className="h-4 w-4" />
-                  Pessoa Fisica
+                  Pessoa Física
                 </button>
                 <button
                   type="button"
@@ -393,7 +393,7 @@ export function InteressadoDialog({
                   )}
                 >
                   <Building2 className="h-4 w-4" />
-                  Pessoa Juridica
+                  Pessoa Jurídica
                 </button>
               </div>
             </div>
@@ -457,7 +457,7 @@ export function InteressadoDialog({
                 )}
                 <div className="space-y-1.5">
                   <Label>
-                    Municipio de atuacao atual{" "}
+                    Município de atuação atual{" "}
                     <span className="text-red-600">*</span>
                   </Label>
                   <Select
@@ -465,7 +465,7 @@ export function InteressadoDialog({
                     onValueChange={municipioPfChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o municipio" />
+                      <SelectValue placeholder="Selecione o município" />
                     </SelectTrigger>
                     <SelectContent>
                       {municipios.map((m) => (
@@ -474,7 +474,7 @@ export function InteressadoDialog({
                         </SelectItem>
                       ))}
                       <SelectItem value="__novo__">
-                        + Cadastrar novo municipio
+                        + Cadastrar novo município
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -484,12 +484,12 @@ export function InteressadoDialog({
               <>
                 <div className="space-y-1.5">
                   <Label>
-                    Razao Social <span className="text-red-600">*</span>
+                    Razão Social <span className="text-red-600">*</span>
                   </Label>
                   <Input
                     value={razaoSocial}
                     onChange={(e) => setRazaoSocial(e.target.value)}
-                    placeholder="Razao social da empresa"
+                    placeholder="Razão social da empresa"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -515,12 +515,12 @@ export function InteressadoDialog({
                     <Input
                       value={ramoAtividade}
                       onChange={(e) => setRamoAtividade(e.target.value)}
-                      placeholder="Ex: construcao civil"
+                      placeholder="Ex: construção civil"
                     />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Municipios de atuacao</Label>
+                  <Label>Municípios de atuação</Label>
                   <MunicipioMultiSelect
                     municipios={municipios}
                     selecionadosIds={municipioIds}
@@ -538,7 +538,7 @@ export function InteressadoDialog({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email@dominio.com"
+                  placeholder="email@domínio.com"
                 />
               </div>
               <div className="space-y-1.5">
@@ -553,7 +553,7 @@ export function InteressadoDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Observacoes (opcional)</Label>
+              <Label>Observações (opcional)</Label>
               <Textarea
                 rows={3}
                 value={observacoes}

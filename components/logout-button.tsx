@@ -24,7 +24,7 @@ export function LogoutButton() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Menu do usuario"
+          aria-label="Menu do usuário"
           className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-white">

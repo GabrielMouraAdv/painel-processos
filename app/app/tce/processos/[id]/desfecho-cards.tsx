@@ -123,7 +123,7 @@ export function CardDesfechoRecurso({
       <CardContent className="space-y-3">
         {!d.resultadoRecurso ? (
           <>
-            <p className="text-sm text-slate-600">Desfecho do recurso ainda nao registrado.</p>
+            <p className="text-sm text-slate-600">Desfecho do recurso ainda não registrado.</p>
             <Button size="sm" className="bg-brand-navy hover:bg-brand-navy/90" onClick={() => setAberto(true)}>
               <Gavel className="mr-1 h-3.5 w-3.5" />
               Registrar desfecho
@@ -166,7 +166,7 @@ export function CardDesfechoRecurso({
         )}
         {observacoes && (
           <div className="rounded-md border bg-white px-3 py-2 text-xs">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Observacoes</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Observações</p>
             <p className="mt-1 whitespace-pre-wrap text-slate-700">{observacoes}</p>
           </div>
         )}
@@ -217,7 +217,7 @@ function DialogDesfechoRecurso({
 
   async function salvar() {
     if (!resultado || !sessao) {
-      toast({ variant: "destructive", title: "Informe o desfecho e a data da sessao" });
+      toast({ variant: "destructive", title: "Informe o desfecho e a data da sessão" });
       return;
     }
     setBusy(true);
@@ -244,7 +244,7 @@ function DialogDesfechoRecurso({
         <DialogHeader>
           <DialogTitle>Desfecho do recurso</DialogTitle>
           <DialogDescription>
-            O resultado do processo de origem nao e alterado aqui.
+            O resultado do processo de origem não e alterado aqui.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -265,15 +265,15 @@ function DialogDesfechoRecurso({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Data da sessao *</Label>
+              <Label>Data da sessão *</Label>
               <Input type="date" value={sessao} onChange={(e) => setSessao(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Numero do acordao</Label>
+              <Label>Número do acórdão</Label>
               <Input value={acordao} onChange={(e) => setAcordao(e.target.value)} placeholder="Ex.: 1596/2021" />
             </div>
             <div className="space-y-1.5">
-              <Label>Orgao julgador</Label>
+              <Label>Órgão julgador</Label>
               <Select value={orgao} onValueChange={setOrgao}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
@@ -293,7 +293,7 @@ function DialogDesfechoRecurso({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes</Label>
+            <Label>Observações</Label>
             <Textarea rows={3} value={obs} onChange={(e) => setObs(e.target.value)} />
           </div>
         </div>
@@ -385,7 +385,7 @@ export function CardDesfechoAposRecursos({
   } else if (alterou) {
     situacao = { texto: "Alterado em recurso", classe: "parcial", dica: "Algum recurso foi provido: defina o desfecho final." };
   } else if (pendentes.length) {
-    situacao = { texto: "Resultado inicial mantido ate aqui", classe: null, dica: `${pendentes.length} recurso(s) sem desfecho registrado.` };
+    situacao = { texto: "Resultado inicial mantido até aqui", classe: null, dica: `${pendentes.length} recurso(s) sem desfecho registrado.` };
   } else {
     situacao = {
       texto: resultadoInicial ? `${resultadoInicial} (mantido)` : "Resultado inicial mantido",
@@ -400,7 +400,7 @@ export function CardDesfechoAposRecursos({
         <CardTitle className="flex items-center justify-between gap-2 text-base">
           <span className="flex items-center gap-2">
             <Scale className="h-4 w-4" />
-            Desfecho apos recursos
+            Desfecho após recursos
           </span>
           <Button variant="outline" size="sm" onClick={() => setAberto(true)}>
             <Pencil className="mr-1 h-3.5 w-3.5" />
@@ -427,8 +427,8 @@ export function CardDesfechoAposRecursos({
         {cascata.julgado && alvosCascata.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
             <span>
-              Contrarrazoes pendentes em {alvosCascata.length}{" "}
-              {alvosCascata.length === 1 ? "registro" : "registros"} (processo e recursos ja julgados).
+              Contrarrazões pendentes em {alvosCascata.length}{" "}
+              {alvosCascata.length === 1 ? "registro" : "registros"} (processo e recursos já julgados).
             </span>
             <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCascataAberta(true)}>
               Dispensar em cascata
@@ -446,7 +446,7 @@ export function CardDesfechoAposRecursos({
 
         {oferecerTransito && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-navy/20 bg-brand-navy/5 px-3 py-2 text-xs">
-            <span>Todos os recursos transitaram (ultimo em {formatarDia(ultimoDosRecursos!)}).</span>
+            <span>Todos os recursos transitaram (último em {formatarDia(ultimoDosRecursos!)}).</span>
             <Button size="sm" className="h-7 bg-brand-navy px-2 text-xs hover:bg-brand-navy/90" onClick={marcarTransitado} disabled={marcando}>
               {marcando ? "Marcando..." : "Marcar processo como transitado"}
             </Button>
@@ -464,7 +464,7 @@ export function CardDesfechoAposRecursos({
               </span>
               {r.numeroAcordao && <span className="text-slate-500">Ac. {r.numeroAcordao}</span>}
               {r.orgaoJulgador && <span className="text-slate-500">{TCE_CAMARA_LABELS[r.orgaoJulgador]}</span>}
-              {r.dataSessao && <span className="text-slate-500">sessao {formatarDia(r.dataSessao)}</span>}
+              {r.dataSessao && <span className="text-slate-500">sessão {formatarDia(r.dataSessao)}</span>}
               {r.dataTransito && <span className="text-slate-500">transito {formatarDia(r.dataTransito)}</span>}
             </li>
           ))}
@@ -545,9 +545,9 @@ function DialogCascata({
     <Dialog open={aberto} onOpenChange={onAberto}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Dispensar contrarrazoes em cascata</DialogTitle>
+          <DialogTitle>Dispensar contrarrazões em cascata</DialogTitle>
           <DialogDescription>
-            Dispensa as contrarrazoes a NT e ao MPCO ainda pendentes neste processo e nos recursos ja
+            Dispensa as contrarrazões a NT e ao MPCO ainda pendentes neste processo e nos recursos já
             julgados. Cada dispensa vira um andamento e pode ser revertida na ficha de cada processo.
           </DialogDescription>
         </DialogHeader>
@@ -561,7 +561,7 @@ function DialogCascata({
             ))}
           </ul>
           <div className="space-y-1.5">
-            <Label>Advogado responsavel *</Label>
+            <Label>Advogado responsável *</Label>
             <Select value={advogadoId} onValueChange={setAdvogadoId}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
@@ -582,7 +582,7 @@ function DialogCascata({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={AUTOMATICO}>Automatico (processo ou recurso, transitado ou nao)</SelectItem>
+                <SelectItem value={AUTOMATICO}>Automático (processo ou recurso, transitado ou não)</SelectItem>
                 {MOTIVOS_PADRAO.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
@@ -644,7 +644,7 @@ function DialogDesfechoFinal({
     });
     setBusy(false);
     if (!r.ok) return toast({ variant: "destructive", title: "Erro ao salvar", description: r.erro });
-    toast({ title: "Desfecho apos recursos atualizado" });
+    toast({ title: "Desfecho após recursos atualizado" });
     onAberto(false);
     router.refresh();
   }
@@ -653,7 +653,7 @@ function DialogDesfechoFinal({
     <Dialog open={aberto} onOpenChange={onAberto}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Desfecho apos recursos</DialogTitle>
+          <DialogTitle>Desfecho após recursos</DialogTitle>
           <DialogDescription>
             Use quando um recurso alterou o resultado inicial. O resultado inicial continua guardado.
           </DialogDescription>
@@ -666,7 +666,7 @@ function DialogDesfechoFinal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={MANTIDO}>Automatico (pelos recursos)</SelectItem>
+                <SelectItem value={MANTIDO}>Automático (pelos recursos)</SelectItem>
                 {RESULTADOS_POR_TIPO_TCE[tipo].map((r) => (
                   <SelectItem key={r} value={r}>
                     {r}

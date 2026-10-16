@@ -80,7 +80,7 @@ export default async function GestoresPage() {
       {gestores.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            Nenhum gestor cadastrado ainda. Use o botao acima para comecar.
+            Nenhum gestor cadastrado ainda. Use o botão acima para comecar.
           </CardContent>
         </Card>
       ) : (

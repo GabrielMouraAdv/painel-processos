@@ -31,7 +31,7 @@ export function ExcluirProcessoButton({ processoId, numero }: Props) {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Falha ao excluir o processo");
-      toast({ title: "Processo excluido" });
+      toast({ title: "Processo excluído" });
       router.push("/app/eleitoral/processos");
       router.refresh();
     } catch (err) {

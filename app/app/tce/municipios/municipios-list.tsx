@@ -72,7 +72,7 @@ export function MunicipiosList({
         setExcluindoMsg(json.error ?? "Erro ao excluir.");
         return;
       }
-      toast({ title: "Municipio excluido" });
+      toast({ title: "Município excluído" });
       setExcluindo(null);
       router.refresh();
     } finally {
@@ -88,10 +88,10 @@ export function MunicipiosList({
             Tribunal de Contas
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Municipios
+            Municípios
           </h1>
           <p className="text-sm text-muted-foreground">
-            {municipios.length} municipio
+            {municipios.length} município
             {municipios.length === 1 ? "" : "s"} cadastrado
             {municipios.length === 1 ? "" : "s"}.
           </p>
@@ -102,7 +102,7 @@ export function MunicipiosList({
       {municipios.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            Nenhum municipio cadastrado ainda. Use o botao acima para comecar.
+            Nenhum município cadastrado ainda. Use o botão acima para comecar.
           </CardContent>
         </Card>
       ) : (
@@ -135,7 +135,7 @@ export function MunicipiosList({
                       />
                       <Stat
                         icon={<Users className="h-3.5 w-3.5" />}
-                        label="Gestoes"
+                        label="Gestões"
                         value={m.totalGestoes}
                       />
                     </div>
@@ -199,10 +199,10 @@ export function MunicipiosList({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir municipio</DialogTitle>
+            <DialogTitle>Excluir município</DialogTitle>
             <DialogDescription>
               {excluindo
-                ? `Confirma a exclusao de ${excluindo.nome}/${excluindo.uf}? Essa acao nao pode ser desfeita.`
+                ? `Confirma a exclusão de ${excluindo.nome}/${excluindo.uf}? Essa ação não pode ser desfeita.`
                 : ""}
             </DialogDescription>
           </DialogHeader>

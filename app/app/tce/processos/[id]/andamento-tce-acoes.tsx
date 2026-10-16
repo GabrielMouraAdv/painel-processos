@@ -62,7 +62,7 @@ export function AndamentoTceAcoes({ andamento, tipo }: Props) {
 
   async function salvar() {
     if (!data || !descricao.trim()) {
-      toast({ variant: "destructive", title: "Data e descricao sao obrigatorias" });
+      toast({ variant: "destructive", title: "Data e descrição são obrigatórias" });
       return;
     }
     setSalvando(true);
@@ -93,7 +93,7 @@ export function AndamentoTceAcoes({ andamento, tipo }: Props) {
       toast({ variant: "destructive", title: "Erro ao excluir", description: json.error ?? "Tente novamente." });
       return;
     }
-    toast({ title: "Andamento excluido" });
+    toast({ title: "Andamento excluído" });
     router.refresh();
   }
 
@@ -120,7 +120,7 @@ export function AndamentoTceAcoes({ andamento, tipo }: Props) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar andamento</DialogTitle>
-            <DialogDescription>A fase atual do processo nao muda ao editar um andamento.</DialogDescription>
+            <DialogDescription>A fase atual do processo não muda ao editar um andamento.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -145,7 +145,7 @@ export function AndamentoTceAcoes({ andamento, tipo }: Props) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Descricao</Label>
+              <Label>Descrição</Label>
               <Textarea rows={4} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
             </div>
           </div>

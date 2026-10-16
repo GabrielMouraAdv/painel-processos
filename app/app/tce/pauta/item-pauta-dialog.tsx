@@ -132,11 +132,11 @@ export function ItemPautaDialog({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!numeroProcesso.trim()) {
-      toast({ variant: "destructive", title: "Informe o numero do processo" });
+      toast({ variant: "destructive", title: "Informe o número do processo" });
       return;
     }
     if (!municipio.trim()) {
-      toast({ variant: "destructive", title: "Informe o municipio" });
+      toast({ variant: "destructive", title: "Informe o município" });
       return;
     }
     if (!relator.trim()) {
@@ -146,7 +146,7 @@ export function ItemPautaDialog({
     if (!advogadoResp.trim()) {
       toast({
         variant: "destructive",
-        title: "Informe o advogado responsavel",
+        title: "Informe o advogado responsável",
       });
       return;
     }
@@ -217,14 +217,14 @@ export function ItemPautaDialog({
               {mode === "edit" ? "Editar item da pauta" : "Novo item da pauta"}
             </DialogTitle>
             <DialogDescription>
-              Dados do processo que sera julgado nesta sessao.
+              Dados do processo que será julgado nesta sessão.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_120px]">
               <div className="space-y-1.5">
                 <Label>
-                  Numero do processo <span className="text-red-600">*</span>
+                  Número do processo <span className="text-red-600">*</span>
                 </Label>
                 <Input
                   value={numeroProcesso}
@@ -233,7 +233,7 @@ export function ItemPautaDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Titulo/Descricao curta</Label>
+                <Label>Título/Descrição curta</Label>
                 <Input
                   value={tituloProcesso}
                   onChange={(e) => setTituloProcesso(e.target.value)}
@@ -241,7 +241,7 @@ export function ItemPautaDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Exercicio</Label>
+                <Label>Exercício</Label>
                 <Input
                   value={exercicio}
                   onChange={(e) => setExercicio(e.target.value)}
@@ -255,17 +255,17 @@ export function ItemPautaDialog({
                 list={LIST_IDS.processos}
                 value={processoTceNumero}
                 onChange={(e) => setProcessoTceNumero(e.target.value)}
-                placeholder="Digite o numero para buscar entre os processos TCE"
+                placeholder="Digite o número para buscar entre os processos TCE"
               />
               <p className="text-[11px] text-muted-foreground">
-                Apenas vincula quando o numero bater exatamente com um processo
-                TCE ja cadastrado no sistema.
+                Apenas vincula quando o número bater exatamente com um processo
+                TCE já cadastrado no sistema.
               </p>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>
-                  Municipio <span className="text-red-600">*</span>
+                  Município <span className="text-red-600">*</span>
                 </Label>
                 <Input
                   list={LIST_IDS.municipios}
@@ -288,7 +288,7 @@ export function ItemPautaDialog({
             </div>
             <div className="space-y-1.5">
               <Label>
-                Advogado responsavel <span className="text-red-600">*</span>
+                Advogado responsável <span className="text-red-600">*</span>
               </Label>
               <Input
                 list={LIST_IDS.advogados}
@@ -301,7 +301,7 @@ export function ItemPautaDialog({
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label>Situacao</Label>
+              <Label>Situação</Label>
               <Textarea
                 rows={2}
                 value={situacao}
@@ -310,30 +310,30 @@ export function ItemPautaDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Observacoes / Prognostico</Label>
+              <Label>Observações / Prognóstico</Label>
               <Textarea
                 rows={2}
                 value={prognostico}
                 onChange={(e) => setPrognostico(e.target.value)}
-                placeholder="Ex.: Cenario fechado para rejeicao dos embargos"
+                placeholder="Ex.: Cenário fechado para rejeição dos embargos"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Providencia</Label>
+              <Label>Providência</Label>
               <Textarea
                 rows={2}
                 value={providencia}
                 onChange={(e) => setProvidencia(e.target.value)}
-                placeholder="Ex.: Despacho / Memorial / Sustentacao oral"
+                placeholder="Ex.: Despacho / Memorial / Sustentação oral"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Observacoes internas</Label>
+              <Label>Observações internas</Label>
               <Textarea
                 rows={2}
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Outras anotacoes sobre o item"
+                placeholder="Outras anotações sobre o item"
               />
             </div>
             <div className="flex flex-wrap gap-4 rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -383,7 +383,7 @@ export function ItemPautaDialog({
                 {submitting
                   ? "Salvando..."
                   : mode === "edit"
-                    ? "Salvar alteracoes"
+                    ? "Salvar alterações"
                     : "Adicionar item"}
               </Button>
             </DialogFooter>

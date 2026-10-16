@@ -150,7 +150,7 @@ export function LogsView({
             Log de Auditoria
           </h1>
           <p className="text-sm text-slate-500">
-            Registro de todas as movimentacoes do sistema
+            Registro de todas as movimentações do sistema
           </p>
         </div>
       </header>
@@ -164,7 +164,7 @@ export function LogsView({
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-                Disponivel
+                Disponível
               </p>
               <p className="mt-1 text-2xl font-semibold text-emerald-900">
                 {djenStats.disponivel}
@@ -172,7 +172,7 @@ export function LogsView({
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                Indisponivel
+                Indisponível
               </p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">
                 {djenStats.indisponivel}
@@ -208,7 +208,7 @@ export function LogsView({
             <div className="mt-4">
               <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-red-700">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                Ultimos erros de busca DJEN
+                Últimos erros de busca DJEN
               </p>
               <ul className="space-y-1 text-xs">
                 {djenStats.errosRecentes.map((e) => (
@@ -234,7 +234,7 @@ export function LogsView({
       <Card>
         <CardContent className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 lg:grid-cols-5">
           <div>
-            <Label className="text-xs">Usuario</Label>
+            <Label className="text-xs">Usuário</Label>
             <select
               value={usuario}
               onChange={(e) => setUsuario(e.target.value)}
@@ -249,7 +249,7 @@ export function LogsView({
             </select>
           </div>
           <div>
-            <Label className="text-xs">Tipo de acao</Label>
+            <Label className="text-xs">Tipo de ação</Label>
             <select
               value={acao}
               onChange={(e) => setAcao(e.target.value)}
@@ -288,7 +288,7 @@ export function LogsView({
             />
           </div>
           <div>
-            <Label className="text-xs">Ate</Label>
+            <Label className="text-xs">Até</Label>
             <Input
               type="date"
               value={ate}
@@ -310,7 +310,7 @@ export function LogsView({
       <div className="text-xs text-slate-500">
         {total === 0
           ? "Nenhum registro encontrado"
-          : `${total} registro${total === 1 ? "" : "s"} - pagina ${page} de ${totalPages}`}
+          : `${total} registro${total === 1 ? "" : "s"} - página ${page} de ${totalPages}`}
       </div>
 
       <Card>
@@ -322,13 +322,13 @@ export function LogsView({
                   Data/Hora
                 </th>
                 <th className="px-3 py-2 font-semibold text-slate-700">
-                  Usuario
+                  Usuário
                 </th>
                 <th className="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">
-                  Acao
+                  Ação
                 </th>
                 <th className="px-3 py-2 font-semibold text-slate-700">
-                  Descricao
+                  Descrição
                 </th>
                 <th className="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">
                   Entidade
@@ -394,7 +394,7 @@ export function LogsView({
             disabled={page >= totalPages}
             onClick={() => irParaPagina(page + 1)}
           >
-            Proxima <ChevronRight className="ml-1 h-4 w-4" />
+            Próxima <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       )}

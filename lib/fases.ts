@@ -23,23 +23,23 @@ export type FaseConfig = {
 
 export const fasesPorGrau: Record<Grau, FaseConfig[]> = {
   PRIMEIRO: [
-    { value: "aguardando_contestacao", label: "Aguardando contestacao" },
-    { value: "contestacao_apresentada", label: "Contestacao apresentada" },
+    { value: "aguardando_contestacao", label: "Aguardando contestação" },
+    { value: "contestacao_apresentada", label: "Contestação apresentada" },
     { value: "prazo_provas", label: "Prazo de provas" },
     { value: "audiencia_agendada", label: "Audiencia agendada" },
-    { value: "ag_alegacoes_finais", label: "Aguardando alegacoes finais" },
-    { value: "alegacoes_finais_apres", label: "Alegacoes finais apresentadas" },
+    { value: "ag_alegacoes_finais", label: "Aguardando alegações finais" },
+    { value: "alegacoes_finais_apres", label: "Alegações finais apresentadas" },
     { value: "concluso_julgamento", label: "Concluso para julgamento" },
     {
       value: "sentenca",
-      label: "Sentenca",
+      label: "Sentença",
       resultados: [
         {
           value: "procedente",
           label: "Procedente",
           acoes: [
-            { id: "embargos_5d", label: "Opor embargos de declaracao (5 dias)", tipoPrazo: "Embargos de declaracao", dias: 5 },
-            { id: "apelacao_15d", label: "Interpor apelacao (15 dias)", tipoPrazo: "Apelacao", dias: 15 },
+            { id: "embargos_5d", label: "Opor embargos de declaração (5 dias)", tipoPrazo: "Embargos de declaracao", dias: 5 },
+            { id: "apelacao_15d", label: "Interpor apelação (15 dias)", tipoPrazo: "Apelacao", dias: 15 },
           ],
         },
         {
@@ -55,7 +55,7 @@ export const fasesPorGrau: Record<Grau, FaseConfig[]> = {
 
   SEGUNDO: [
     { value: "recurso_interposto", label: "Recurso interposto" },
-    { value: "contrarrazoes_apres", label: "Contrarrazoes apresentadas" },
+    { value: "contrarrazoes_apres", label: "Contrarrazões apresentadas" },
     {
       value: "pauta_julgamento",
       label: "Pauta de julgamento",
@@ -68,8 +68,8 @@ export const fasesPorGrau: Record<Grau, FaseConfig[]> = {
       value: "julgamento",
       label: "Julgamento (2o grau)",
       resultados: [
-        { value: "favoravel", label: "Favoravel" },
-        { value: "desfavoravel", label: "Desfavoravel" },
+        { value: "favoravel", label: "Favorável" },
+        { value: "desfavoravel", label: "Desfavorável" },
       ],
     },
     {
@@ -78,7 +78,7 @@ export const fasesPorGrau: Record<Grau, FaseConfig[]> = {
       resultados: [
         {
           value: "favoravel",
-          label: "Favoravel",
+          label: "Favorável",
           acoes: [
             { id: "resp_15d", label: "Interpor REsp (15 dias)", tipoPrazo: "Recurso especial (REsp)", dias: 15 },
             { id: "re_15d", label: "Interpor RE (15 dias)", tipoPrazo: "Recurso extraordinario (RE)", dias: 15 },
@@ -86,7 +86,7 @@ export const fasesPorGrau: Record<Grau, FaseConfig[]> = {
         },
         {
           value: "desfavoravel",
-          label: "Desfavoravel",
+          label: "Desfavorável",
           acoes: [
             { id: "resp_15d", label: "Interpor REsp (15 dias)", tipoPrazo: "Recurso especial (REsp)", dias: 15 },
             { id: "re_15d", label: "Interpor RE (15 dias)", tipoPrazo: "Recurso extraordinario (RE)", dias: 15 },
@@ -96,12 +96,12 @@ export const fasesPorGrau: Record<Grau, FaseConfig[]> = {
     },
     {
       value: "admissibilidade",
-      label: "Juizo de admissibilidade",
+      label: "Juízo de admissibilidade",
       resultados: [
         { value: "admitido", label: "Admitido" },
         {
           value: "nao_admitido",
-          label: "Nao admitido",
+          label: "Não admitido",
           acoes: [
             { id: "agravo_15d", label: "Interpor agravo (15 dias)", tipoPrazo: "Agravo em recurso especial/extraordinario", dias: 15 },
           ],

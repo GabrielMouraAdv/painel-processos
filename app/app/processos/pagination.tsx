@@ -35,7 +35,7 @@ export function Pagination({
   return (
     <div className="flex items-center justify-between gap-4">
       <p className="text-sm text-muted-foreground">
-        Pagina {page} de {totalPages} — {total} processo{total === 1 ? "" : "s"}
+        Página {page} de {totalPages} — {total} processo{total === 1 ? "" : "s"}
       </p>
       <div className="flex items-center gap-2">
         <Button
@@ -66,12 +66,12 @@ export function Pagination({
         >
           {page < totalPages ? (
             <Link href={hrefFor(page + 1)}>
-              Proxima
+              Próxima
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           ) : (
             <span>
-              Proxima
+              Próxima
               <ChevronRight className="ml-1 h-4 w-4" />
             </span>
           )}

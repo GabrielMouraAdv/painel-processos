@@ -26,7 +26,7 @@ export function computeTceAlertas(p: ProcessoFlags): TceAlerta[] {
   ) {
     lista.push({
       key: "contrarrazoes_nt",
-      titulo: "Elaborar contrarrazoes a Nota Tecnica",
+      titulo: "Elaborar contrarrazões a Nota Técnica",
       descricao:
         "O processo teve Nota Tecnica juntada. Elabore contrarrazoes antes da apreciacao.",
     });
@@ -38,7 +38,7 @@ export function computeTceAlertas(p: ProcessoFlags): TceAlerta[] {
   ) {
     lista.push({
       key: "contrarrazoes_mpco",
-      titulo: "Elaborar contrarrazoes ao Parecer MPCO",
+      titulo: "Elaborar contrarrazões ao Parecer MPCO",
       descricao:
         "Parecer do Ministerio Publico de Contas juntado. Avaliar contrarrazoes.",
     });

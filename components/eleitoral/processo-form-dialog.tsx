@@ -176,7 +176,7 @@ export function ProcessoFormDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="numero">Numero do processo (CNJ)</Label>
+              <Label htmlFor="numero">Número do processo (CNJ)</Label>
               <Input
                 id="numero"
                 value={numero}
@@ -270,13 +270,13 @@ export function ProcessoFormDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Advogado(a) responsavel</Label>
+              <Label>Advogado(a) responsável</Label>
               <Select value={advogadoRespId} onValueChange={setAdvogadoRespId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NENHUM}>— Sem responsavel —</SelectItem>
+                  <SelectItem value={NENHUM}>— Sem responsável —</SelectItem>
                   {usuarios.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
                       {u.nome}
@@ -319,13 +319,13 @@ export function ProcessoFormDialog({
                 id="objeto"
                 value={objeto}
                 onChange={(e) => setObjeto(e.target.value)}
-                placeholder="Ex.: Propaganda negativa - Desinformacao - Video ..."
+                placeholder="Ex.: Propaganda negativa - Desinformação - Video ..."
                 rows={3}
                 required
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="observacoes">Observacoes</Label>
+              <Label htmlFor="observacoes">Observações</Label>
               <Textarea
                 id="observacoes"
                 value={observacoes}
@@ -348,7 +348,7 @@ export function ProcessoFormDialog({
                 ? "Salvando..."
                 : mode === "create"
                   ? "Cadastrar processo"
-                  : "Salvar alteracoes"}
+                  : "Salvar alterações"}
             </Button>
           </DialogFooter>
         </form>

@@ -296,7 +296,7 @@ export default async function FinanceiroDashboardPage({
           Dashboard Financeiro
         </h1>
         <p className="text-sm text-muted-foreground">
-          Honorarios contratuais municipais e honorarios pessoais por causa.
+          Honorários contratuais municipais e honorários pessoais por causa.
         </p>
       </header>
 
@@ -378,16 +378,16 @@ export default async function FinanceiroDashboardPage({
         <section className="rounded-lg border border-orange-200 bg-orange-50/40 p-4 shadow-sm">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-orange-900">
             <RefreshCw className="h-4 w-4" />
-            Renovacoes proximas ({renovacoesAtivas.length})
+            Renovações próximas ({renovacoesAtivas.length})
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-orange-200 text-left text-xs uppercase tracking-wide text-orange-900">
-                  <th className="py-2">Municipio</th>
+                  <th className="py-2">Município</th>
                   <th className="py-2">Banca(s)</th>
                   <th className="py-2 text-right">Valor mensal</th>
-                  <th className="py-2 text-right">Renovacao</th>
+                  <th className="py-2 text-right">Renovação</th>
                   <th className="py-2 text-right">Status</th>
                 </tr>
               </thead>
@@ -448,8 +448,8 @@ export default async function FinanceiroDashboardPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-red-300 text-left text-xs uppercase tracking-wide text-red-900">
-                  <th className="py-2">Municipio</th>
-                  <th className="py-2">Mes/Ano</th>
+                  <th className="py-2">Município</th>
+                  <th className="py-2">Mês/Ano</th>
                   <th className="py-2 text-right">Valor</th>
                   <th className="py-2 text-right">Vencimento</th>
                   <th className="py-2 text-right">Atraso</th>
@@ -492,7 +492,7 @@ export default async function FinanceiroDashboardPage({
                   href="/app/financeiro/municipios"
                   className="underline hover:text-red-900"
                 >
-                  Honorarios Municipais
+                  Honorários Municipais
                 </Link>
                 .
               </p>

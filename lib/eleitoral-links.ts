@@ -14,29 +14,29 @@ export type GrupoLinks = {
 
 export const LINKS_ELEITORAIS: GrupoLinks[] = [
   {
-    titulo: "Jurisprudencia",
+    titulo: "Jurisprudência",
     descricao: "Pesquisa de acordaos e precedentes.",
     icone: "search",
     links: [
       {
-        titulo: "Jurisprudencia TRE-PE",
+        titulo: "Jurisprudência TRE-PE",
         descricao: "Busca de acordaos e decisoes do Tribunal Regional de PE",
         url: "https://jurisprudencia.tre-pe.jus.br/#/jurisprudencia/pesquisa",
       },
       {
-        titulo: "Jurisprudencia TSE",
+        titulo: "Jurisprudência TSE",
         descricao: "Busca de acordaos e decisoes do Tribunal Superior",
         url: "https://jurisprudencia.tse.jus.br/#/jurisprudencia/pesquisa",
       },
     ],
   },
   {
-    titulo: "Legislacao e resolucoes",
+    titulo: "Legislação e resoluções",
     descricao: "Lei das Eleicoes e resolucoes do TSE para 2026.",
     icone: "scale",
     links: [
       {
-        titulo: "Lei 9.504/1997 — Lei das Eleicoes",
+        titulo: "Lei 9.504/1997 — Lei das Eleições",
         descricao: "Texto compilado no Planalto",
         url: "https://www.planalto.gov.br/ccivil_03/leis/l9504.htm",
       },
@@ -61,7 +61,7 @@ export const LINKS_ELEITORAIS: GrupoLinks[] = [
         url: "https://www.tse.jus.br/legislacao/compilada/res/2026/resolucao-no-23-747-de-26-de-fevereiro-de-2026",
       },
       {
-        titulo: "Res. 23.760/2026 — Calendario eleitoral",
+        titulo: "Res. 23.760/2026 — Calendário eleitoral",
         descricao: "Datas e prazos do pleito de 2026",
         url: "https://www.tse.jus.br/legislacao/compilada/res/2026/resolucao-no-23-760-de-2-de-marco-de-2026",
       },

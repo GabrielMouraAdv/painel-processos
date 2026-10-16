@@ -15,6 +15,7 @@ import {
 
 import { BancaBadgeList } from "@/components/bancas/banca-badge";
 import { Button } from "@/components/ui/button";
+import { NumeroProcesso } from "@/components/numero-processo";
 import {
   Card,
   CardContent,
@@ -327,9 +328,7 @@ export default async function ProcessoTceDetailPage({
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-mono text-xs text-muted-foreground">
-              {processo.numero}
-            </p>
+            <NumeroProcesso numero={processo.numero} tamanho="grande" />
             {processo.ehRecurso && processo.tipoRecurso && (
               <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-purple-800">
                 {TCE_RECURSO_LABELS[processo.tipoRecurso]}
@@ -355,7 +354,7 @@ export default async function ProcessoTceDetailPage({
           <p className="text-sm text-muted-foreground">
             {processo.municipio ? (
               <>
-                Municipio:{" "}
+                Município:{" "}
                 <Link
                   href={`/app/tce/municipios/${processo.municipio.id}`}
                   className="text-brand-navy hover:underline"
@@ -366,12 +365,12 @@ export default async function ProcessoTceDetailPage({
             ) : (
               "Sem municipio vinculado"
             )}
-            {processo.exercicio && ` • Exercicio ${processo.exercicio}`}
+            {processo.exercicio && ` • Exercício ${processo.exercicio}`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <BoolBadge
-            label="Nota Tecnica"
+            label="Nota Técnica"
             value={processo.notaTecnica}
             href="#card-nt"
           />
@@ -398,10 +397,10 @@ export default async function ProcessoTceDetailPage({
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base text-amber-900">
               <AlertTriangle className="h-4 w-4" />
-              Alertas automaticos
+              Alertas automáticos
             </CardTitle>
             <CardDescription className="text-amber-800">
-              Acoes sugeridas com base nos marcadores do processo.
+              Ações sugeridas com base nos marcadores do processo.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -434,7 +433,7 @@ export default async function ProcessoTceDetailPage({
           <CardContent className="space-y-3 text-sm">
             <Info label="Tipo" value={TCE_TIPO_LABELS[processo.tipo]} />
             <Info label="Fase atual" value={faseTceLabel(processo.tipo, processo.faseAtual)} />
-            <Info label="Camara" value={TCE_CAMARA_LABELS[processo.camara]} />
+            <Info label="Câmara" value={TCE_CAMARA_LABELS[processo.camara]} />
             <Info label="Relator" value={processo.relator ?? "-"} />
             <Info
               label="Conselheiro substituto"
@@ -448,8 +447,8 @@ export default async function ProcessoTceDetailPage({
             <CardTitle className="text-base">Datas e valor</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <Info label="Autuacao" value={formatDate(processo.dataAutuacao)} />
-            <Info label="Intimacao" value={formatDate(processo.dataIntimacao)} />
+            <Info label="Autuação" value={formatDate(processo.dataAutuacao)} />
+            <Info label="Intimação" value={formatDate(processo.dataIntimacao)} />
             <Info label="Atualizado em" value={formatDate(processo.updatedAt)} />
             <Info label="Valor autuado" value={formatCurrency(processo.valorAutuado ? Number(processo.valorAutuado) : null)} />
           </CardContent>
@@ -461,7 +460,7 @@ export default async function ProcessoTceDetailPage({
               <Gavel className="h-4 w-4" />
               {camara.label}
             </CardTitle>
-            <CardDescription>Composicao atual</CardDescription>
+            <CardDescription>Composição atual</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {camara.presidente && (
@@ -623,7 +622,7 @@ export default async function ProcessoTceDetailPage({
           <CardHeader>
             <CardTitle className="text-base">Prazos</CardTitle>
             <CardDescription>
-              Contagem em dias uteis e status de cumprimento.
+              Contagem em dias úteis e status de cumprimento.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -641,7 +640,7 @@ export default async function ProcessoTceDetailPage({
         <CardHeader>
           <CardTitle className="text-base">Registrar andamento</CardTitle>
           <CardDescription>
-            Registre uma movimentacao e, se quiser, atualize a fase do processo.
+            Registre uma movimentação e, se quiser, atualize a fase do processo.
           </CardDescription>
         </CardHeader>
         <CardContent>

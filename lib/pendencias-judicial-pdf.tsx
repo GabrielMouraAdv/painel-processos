@@ -297,7 +297,7 @@ export function PendenciasJudicialDocument({
   return (
     <Document title="Pendências Judiciais" author="Painel Jurídico">
       <Page size="A4" style={styles.page}>
-        <Text style={styles.capaTitulo}>PENDENCIAS JUDICIAIS</Text>
+        <Text style={styles.capaTitulo}>PENDÊNCIAS JUDICIAIS</Text>
         <Text style={styles.capaSubtitulo}>
           Gerado em {formatDateBR(geradoEm)}
         </Text>
@@ -305,7 +305,7 @@ export function PendenciasJudicialDocument({
 
         {cards.length === 0 ? (
           <Text style={styles.empty}>
-            Nenhuma pendencia ativa neste recorte.
+            Nenhuma pendência ativa neste recorte.
           </Text>
         ) : (
           cards.map((c, idx) => (
@@ -315,7 +315,7 @@ export function PendenciasJudicialDocument({
 
         {cards.length > 0 && (
           <View style={styles.resumoBox} wrap={false}>
-            <Text style={styles.resumoTitulo}>Resumo de pendencias</Text>
+            <Text style={styles.resumoTitulo}>Resumo de pendências</Text>
             <View style={styles.resumoRow}>
               <Text style={styles.resumoLabel}>Memoriais pendentes</Text>
               <Text style={styles.resumoValor}>{resumo.memorial}</Text>

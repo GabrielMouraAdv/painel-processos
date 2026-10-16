@@ -312,10 +312,10 @@ export default async function ModuloHomePage({
             Bem-vindo, {nome}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-brand-navy sm:text-3xl">
-            Gestao Processual
+            Gestão Processual
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Selecione o modulo
+            Selecione o módulo
           </p>
         </header>
 
@@ -340,7 +340,7 @@ export default async function ModuloHomePage({
             </div>
             <dl className="grid grid-cols-3 gap-2 border-t pt-3">
               <Stat label="Processos TCE" value={totalTce} />
-              <Stat label="Pendencias" value={totalPendenciasTce} tone="rose" />
+              <Stat label="Pendências" value={totalPendenciasTce} tone="rose" />
               <Stat label="Prazos abertos" value={prazosTceAbertos} tone="red" />
             </dl>
           </Link>
@@ -366,7 +366,7 @@ export default async function ModuloHomePage({
             <dl className="grid grid-cols-3 gap-2 border-t pt-3">
               <Stat label="Processos" value={totalJud} />
               <Stat
-                label="Pendencias"
+                label="Pendências"
                 value={totalPendenciasJud}
                 tone="rose"
               />
@@ -386,7 +386,7 @@ export default async function ModuloHomePage({
             </div>
             <div>
               <h2 className="text-xl font-semibold tracking-tight text-brand-navy">
-                Relatorios
+                Relatórios
               </h2>
               <p className="text-sm uppercase tracking-wide text-muted-foreground">
                 Gerencial e por cliente
@@ -415,7 +415,7 @@ export default async function ModuloHomePage({
                   Financeiro
                 </h2>
                 <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                  Contratos, notas fiscais e honorarios
+                  Contratos, notas fiscais e honorários
                 </p>
               </div>
               <dl className="grid grid-cols-3 gap-2 border-t pt-3">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
 import { Providers } from "@/components/providers";
@@ -16,9 +17,17 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+// Titulos em serifa (Direcao A "Pauta"); texto em Geist; numeros em Geist Mono.
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Gestao Processual | Painel Juridico",
-  description: "Painel de gestao processual para escritorios de advocacia.",
+  title: "Gestão Processual | Painel Jurídico",
+  description: "Painel de gestão processual para escritórios de advocacia.",
 };
 
 export const viewport = {
@@ -34,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen overflow-x-hidden bg-brand-beige antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${sourceSerif.variable} min-h-screen overflow-x-hidden bg-background font-sans antialiased`}
       >
         <Providers>{children}</Providers>
         <Toaster />

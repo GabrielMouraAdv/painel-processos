@@ -56,9 +56,9 @@ export function LoginForm() {
           </div>
           <div className="text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-              Gestao Processual
+              Gestão Processual
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">Painel Juridico</p>
+            <p className="mt-1 text-sm text-muted-foreground">Painel Jurídico</p>
           </div>
         </div>
 
@@ -82,7 +82,7 @@ export function LoginForm() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="voce@escritorio.com"
+                  placeholder="você@escritório.com"
                 />
               </div>
 
@@ -129,7 +129,7 @@ export function LoginForm() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Acesso restrito a usuarios autorizados.
+          Acesso restrito a usuários autorizados.
         </p>
       </div>
     </div>

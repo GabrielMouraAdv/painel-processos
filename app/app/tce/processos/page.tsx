@@ -269,7 +269,7 @@ export default async function TceProcessosPage({
           <Button asChild variant="outline">
             <Link href="/app/tce/pendencias">
               <AlertTriangle className="mr-2 h-4 w-4 text-rose-600" />
-              Ver Pendencias
+              Ver Pendências
             </Link>
           </Button>
           <NovoProcessoTceButton

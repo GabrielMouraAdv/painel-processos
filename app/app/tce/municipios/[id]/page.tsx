@@ -97,7 +97,7 @@ export default async function MunicipioDetailPage({
       <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
         <Link href="/app/tce/municipios">
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Voltar para municipios
+          Voltar para municípios
         </Link>
       </Button>
 
@@ -107,7 +107,7 @@ export default async function MunicipioDetailPage({
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Municipio
+            Município
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
             {municipio.nome}
@@ -123,7 +123,7 @@ export default async function MunicipioDetailPage({
       {municipio.observacoes && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Observacoes</CardTitle>
+            <CardTitle className="text-base">Observações</CardTitle>
           </CardHeader>
           <CardContent className="whitespace-pre-wrap text-sm text-slate-700">
             {municipio.observacoes}
@@ -141,7 +141,7 @@ export default async function MunicipioDetailPage({
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.3fr]">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Historico de gestao</CardTitle>
+            <CardTitle className="text-base">Histórico de gestão</CardTitle>
             <CardDescription>
               {municipio.gestoes.length} registro
               {municipio.gestoes.length === 1 ? "" : "s"}.
@@ -150,7 +150,7 @@ export default async function MunicipioDetailPage({
           <CardContent>
             {municipio.gestoes.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Sem historico de gestao registrado.
+                Sem histórico de gestão registrado.
               </p>
             ) : (
               <ol className="relative space-y-4 border-l border-slate-200 pl-5">
@@ -184,9 +184,9 @@ export default async function MunicipioDetailPage({
             <CardTitle className="text-base">Processos TCE vinculados</CardTitle>
             <CardDescription>
               {municipio.processosTce.length} processo
-              {municipio.processosTce.length === 1 ? "" : "s"} no municipio.
+              {municipio.processosTce.length === 1 ? "" : "s"} no município.
               {processosViaGestores.length > 0 &&
-                ` +${processosViaGestores.length} via gestores historicos.`}
+                ` +${processosViaGestores.length} via gestores históricos.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -200,7 +200,7 @@ export default async function MunicipioDetailPage({
             {processosViaGestores.length > 0 && (
               <div>
                 <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Via gestores que ja passaram pelo municipio
+                  Via gestores que já passaram pelo município
                 </p>
                 <ProcessoList
                   processos={processosViaGestores.map((p) => ({
@@ -264,7 +264,7 @@ function ProcessoList({
             </div>
             <div className="text-xs text-slate-700">
               {TCE_TIPO_LABELS[p.tipo]}
-              {p.exercicio ? ` • exercicio ${p.exercicio}` : ""}
+              {p.exercicio ? ` • exercício ${p.exercicio}` : ""}
               {p.relator ? ` • Relator ${p.relator}` : ""}
             </div>
             <div className="text-xs text-muted-foreground">
@@ -360,11 +360,11 @@ async function StatusFinanceiroCard({
               Contrato ativo
             </span>
             <span className="text-slate-700">
-              {formatBRL(Number(contratoAtivo.valorMensal))}/mes
+              {formatBRL(Number(contratoAtivo.valorMensal))}/mês
             </span>
             <BancaBadgeList slugs={contratoAtivo.bancasSlug} size="sm" />
             <span className="text-[11px] text-muted-foreground">
-              Inicio:{" "}
+              Início:{" "}
               {contratoAtivo.dataInicio.toLocaleDateString("pt-BR")}
               {contratoAtivo.dataFim &&
                 ` • Fim: ${contratoAtivo.dataFim.toLocaleDateString("pt-BR")}`}
@@ -372,7 +372,7 @@ async function StatusFinanceiroCard({
           </div>
         ) : (
           <div className="text-sm italic text-muted-foreground">
-            Sem contrato ativo. Use o botao acima para criar.
+            Sem contrato ativo. Use o botão acima para criar.
           </div>
         )}
         <div className="grid grid-cols-3 gap-3">

@@ -94,7 +94,7 @@ export function PessoasFisicasView({
       });
       return;
     }
-    toast({ title: "Honorario excluido" });
+    toast({ title: "Honorário excluído" });
     router.refresh();
   }
 
@@ -121,15 +121,15 @@ export function PessoasFisicasView({
             Financeiro
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Honorarios Pessoais
+            Honorários Pessoais
           </h1>
           <p className="text-sm text-muted-foreground">
-            Honorarios contratados por causa, sucumbencia ou outros.
+            Honorários contratados por causa, sucumbência ou outros.
           </p>
         </div>
         <Button onClick={() => setNovoOpen(true)}>
           <Plus className="mr-1.5 h-4 w-4" />
-          Cadastrar Honorario
+          Cadastrar Honorário
         </Button>
       </header>
 
@@ -231,7 +231,7 @@ export function PessoasFisicasView({
                 <th className="px-3 py-2 text-right">Valor</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Contrato</th>
-                <th className="px-3 py-2 text-right">Acoes</th>
+                <th className="px-3 py-2 text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -241,7 +241,7 @@ export function PessoasFisicasView({
                     colSpan={8}
                     className="px-3 py-8 text-center text-muted-foreground"
                   >
-                    Nenhum honorario encontrado.
+                    Nenhum honorário encontrado.
                   </td>
                 </tr>
               ) : (

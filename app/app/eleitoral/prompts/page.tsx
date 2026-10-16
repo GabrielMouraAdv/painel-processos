@@ -13,8 +13,8 @@ export default async function EleitoralPromptsPage() {
         <p className="text-sm text-muted-foreground">
           Prompts estruturados para qualquer IA (Claude, ChatGPT, Gemini,
           NotebookLM): escolha a peça, preencha o contexto e copie o prompt
-          pronto — ancorado na Lei 9.504/97, nas resolucoes do TSE e no
-          Codigo Eleitoral.
+          pronto — ancorado na Lei 9.504/97, nas resoluções do TSE e no
+          Código Eleitoral.
         </p>
       </div>
       <GeradorPrompts modulos={["ele"]} />

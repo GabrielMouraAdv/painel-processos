@@ -84,9 +84,9 @@ export function NovoMunicipioSubDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Novo municipio</DialogTitle>
+          <DialogTitle>Novo município</DialogTitle>
           <DialogDescription>
-            Cadastre um municipio para vincular a processos do TCE.
+            Cadastre um município para vincular a processos do TCE.
           </DialogDescription>
         </DialogHeader>
 
@@ -114,7 +114,7 @@ export function NovoMunicipioSubDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Observacoes</Label>
+            <Label>Observações</Label>
             <Textarea
               rows={2}
               value={observacoes}

@@ -208,7 +208,7 @@ export function GlobalSearch({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por numero do processo, gestor, municipio..."
+            placeholder="Buscar por número do processo, gestor, município..."
             className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
             autoComplete="off"
             spellCheck={false}
@@ -236,7 +236,7 @@ export function GlobalSearch({
             <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
               <Search className="mb-2 h-6 w-6 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                Digite para buscar processos, gestores ou municipios...
+                Digite para buscar processos, gestores ou municípios...
               </p>
             </div>
           ) : !loading && flat.lista.length === 0 ? (

@@ -121,7 +121,7 @@ export function PrazoTceForm({
     if (!advogadoRespId) {
       toast({
         variant: "destructive",
-        title: "Selecione o advogado responsavel",
+        title: "Selecione o advogado responsável",
       });
       return;
     }
@@ -199,12 +199,12 @@ export function PrazoTceForm({
         <Input
           value={tipo}
           onChange={(e) => setTipo(e.target.value)}
-          placeholder="Ex.: Defesa Previa, Embargos de Declaracao..."
+          placeholder="Ex.: Defesa Prévia, Embargos de Declaração..."
         />
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <Label>Intimacao</Label>
+          <Label>Intimação</Label>
           <Input
             type="date"
             value={dataIntimacao}
@@ -212,7 +212,7 @@ export function PrazoTceForm({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Dias uteis</Label>
+          <Label>Dias úteis</Label>
           <Input
             type="number"
             min={1}
@@ -231,7 +231,7 @@ export function PrazoTceForm({
       </div>
       <div className="space-y-1.5">
         <Label>
-          Advogado responsavel <span className="text-red-600">*</span>
+          Advogado responsável <span className="text-red-600">*</span>
         </Label>
         <Select value={advogadoRespId} onValueChange={setAdvogadoRespId}>
           <SelectTrigger>
@@ -252,10 +252,10 @@ export function PrazoTceForm({
           checked={prorrogavel}
           onChange={(e) => setProrrogavel(e.target.checked)}
         />
-        Prorrogavel
+        Prorrogável
       </label>
       <div className="space-y-1.5">
-        <Label>Observacoes</Label>
+        <Label>Observações</Label>
         <Textarea
           rows={2}
           value={observacoes}
@@ -280,7 +280,7 @@ export function PrazoTceForm({
         >
           {submitting
             ? "Salvando..."
-            : submitLabel ?? (mode === "edit" ? "Salvar alteracoes" : "Cadastrar prazo")}
+            : submitLabel ?? (mode === "edit" ? "Salvar alterações" : "Cadastrar prazo")}
         </Button>
       </DialogFooter>
     </form>
