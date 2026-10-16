@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Activity,
   BarChart3,
@@ -12,9 +15,9 @@ import {
   Gavel,
   History,
   Home,
-  Landmark,
   LayoutDashboard,
   Link as LinkIcon,
+  ListChecks,
   Scale,
   Search,
   UserCheck,
@@ -25,16 +28,20 @@ import {
 import { cn } from "@/lib/utils";
 import { LogoutButton } from "@/components/logout-button";
 
+// Menu lateral da Direcao A "Pauta": fundo claro, grupos por area de trabalho,
+// pagina atual destacada. Todas as rotas existentes continuam acessiveis.
+
 type NavItem = {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
   badgeTone?: "red" | "navy";
+  exato?: boolean; // so marca como ativo na rota exata (ex.: /app)
 };
 
 type NavGroup = {
-  title: string;
+  title?: string;
   items: NavItem[];
 };
 
@@ -55,6 +62,8 @@ type Props = {
   onOpenSearch?: () => void;
 };
 
+const n = (v: number) => (v > 0 ? v : undefined);
+
 export function Sidebar({
   prazosUrgentes = 0,
   prazosTceUrgentes = 0,
@@ -71,246 +80,135 @@ export function Sidebar({
   deteccoesEleitoralPendentes = 0,
   onOpenSearch,
 }: Props) {
+  const pathname = usePathname() ?? "";
+
   const groupsEleitoral: NavGroup[] = [
     {
       title: "Eleitoral 2026",
       items: [
-        { label: "Dashboard", href: "/app/eleitoral", icon: LayoutDashboard },
-        {
-          label: "Processos",
-          href: "/app/eleitoral/processos",
-          icon: Gavel,
-          badge:
-            processosEleitoralTotal > 0 ? processosEleitoralTotal : undefined,
-          badgeTone: "navy",
-        },
-        {
-          label: "Calendário",
-          href: "/app/eleitoral/calendario",
-          icon: CalendarRange,
-          badge:
-            prazosEleitoralUrgentes > 0 ? prazosEleitoralUrgentes : undefined,
-          badgeTone: "red",
-        },
-        {
-          label: "Monitoramento",
-          href: "/app/eleitoral/monitoramento",
-          icon: Activity,
-          badge:
-            deteccoesEleitoralPendentes > 0
-              ? deteccoesEleitoralPendentes
-              : undefined,
-          badgeTone: "red",
-        },
-        {
-          label: "Relatórios",
-          href: "/app/eleitoral/relatorios",
-          icon: FileText,
-        },
-        {
-          label: "Gerador de prompts",
-          href: "/app/eleitoral/prompts",
-          icon: Wand2,
-        },
-        {
-          label: "Links úteis",
-          href: "/app/eleitoral/links",
-          icon: LinkIcon,
-        },
+        { label: "Painel", href: "/app/eleitoral", icon: LayoutDashboard, exato: true },
+        { label: "Processos", href: "/app/eleitoral/processos", icon: Gavel, badge: n(processosEleitoralTotal), badgeTone: "navy" },
+        { label: "Calendário", href: "/app/eleitoral/calendario", icon: CalendarRange, badge: n(prazosEleitoralUrgentes), badgeTone: "red" },
+        { label: "Monitoramento", href: "/app/eleitoral/monitoramento", icon: Activity, badge: n(deteccoesEleitoralPendentes), badgeTone: "red" },
+        { label: "Relatórios", href: "/app/eleitoral/relatorios", icon: FileText },
+        { label: "Gerador de prompts", href: "/app/eleitoral/prompts", icon: Wand2 },
+        { label: "Links úteis", href: "/app/eleitoral/links", icon: LinkIcon },
       ],
     },
   ];
 
   const groupsPadrao: NavGroup[] = [
     {
+      items: [
+        { label: "Hoje", href: "/app", icon: Home, exato: true },
+        { label: "Agenda", href: "/app/compromissos", icon: CalendarCheck, badge: n(compromissosHoje), badgeTone: "navy" },
+      ],
+    },
+    {
       title: "Tribunal de Contas",
       items: [
-        { label: "Dashboard TCE", href: "/app/tce", icon: LayoutDashboard },
-        {
-          label: "Processos TCE",
-          href: "/app/tce/processos",
-          icon: Gavel,
-          badge: processosTceTotal > 0 ? processosTceTotal : undefined,
-          badgeTone: "navy",
-        },
+        { label: "Processos", href: "/app/tce/processos", icon: Gavel, badge: n(processosTceTotal), badgeTone: "navy" },
+        { label: "Painel TCE", href: "/app/tce", icon: LayoutDashboard, exato: true },
         { label: "Pauta", href: "/app/tce/pauta", icon: CalendarRange },
-        { label: "Municípios", href: "/app/tce/municipios", icon: Building2 },
+        { label: "Prazos", href: "/app/tce/prazos", icon: CalendarClock, badge: n(prazosTceUrgentes), badgeTone: "red" },
+        { label: "Pendências", href: "/app/tce/pendencias", icon: ListChecks },
+        { label: "Despachos", href: "/app/tce/despachos", icon: ClipboardCheck, badge: n(despachosTcePendentes), badgeTone: "navy" },
+        { label: "Órgãos e entidades", href: "/app/tce/municipios", icon: Building2 },
         { label: "Interessados", href: "/app/tce/interessados", icon: UserCheck },
-        {
-          label: "Prazos TCE",
-          href: "/app/tce/prazos",
-          icon: CalendarClock,
-          badge: prazosTceUrgentes > 0 ? prazosTceUrgentes : undefined,
-          badgeTone: "red",
-        },
-        {
-          label: "Despachos",
-          href: "/app/tce/despachos",
-          icon: ClipboardCheck,
-          badge:
-            despachosTcePendentes > 0 ? despachosTcePendentes : undefined,
-          badgeTone: "navy",
-        },
       ],
     },
     {
       title: "Judicial",
       items: [
-        { label: "Dashboard", href: "/app/judicial", icon: LayoutDashboard },
         { label: "Processos", href: "/app/processos", icon: Scale },
-        {
-          label: "Prazos",
-          href: "/app/prazos",
-          icon: CalendarClock,
-          badge: prazosUrgentes > 0 ? prazosUrgentes : undefined,
-          badgeTone: "red",
-        },
-        {
-          label: "Pautas",
-          href: "/app/pautas",
-          icon: CalendarRange,
-          badge:
-            pautasJudiciaisTotal > 0 ? pautasJudiciaisTotal : undefined,
-          badgeTone: "navy",
-        },
+        { label: "Painel judicial", href: "/app/judicial", icon: LayoutDashboard, exato: true },
+        { label: "Novidades", href: "/app/monitoramento", icon: Activity, badge: n(alertasMonitoramento), badgeTone: "navy" },
+        { label: "Prazos", href: "/app/prazos", icon: CalendarClock, badge: n(prazosUrgentes), badgeTone: "red" },
+        { label: "Pautas", href: "/app/pautas", icon: CalendarRange, badge: n(pautasJudiciaisTotal), badgeTone: "navy" },
         { label: "Gestores", href: "/app/gestores", icon: Users },
-        {
-          label: "Monitoramento",
-          href: "/app/monitoramento",
-          icon: Activity,
-          badge:
-            alertasMonitoramento > 0 ? alertasMonitoramento : undefined,
-          badgeTone: "red",
-        },
       ],
     },
     {
-      title: "Ferramentas",
+      title: "Escritório",
       items: [
-        {
-          label: "Gerador de prompts",
-          href: "/app/prompts",
-          icon: Wand2,
-        },
+        { label: "Relatórios", href: "/app/relatorios", icon: BarChart3 },
+        ...(podeFinanceiro ? [{ label: "Financeiro", href: "/app/financeiro", icon: DollarSign }] : []),
+        { label: "Modelos de peça", href: "/app/prompts", icon: Wand2 },
+        ...(isAdmin ? [{ label: "Registro de atividades", href: "/app/admin/logs", icon: History }] : []),
       ],
     },
   ];
 
   const groups = modoEleitoral ? groupsEleitoral : groupsPadrao;
+  const ativo = (item: NavItem) =>
+    item.exato ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
 
   return (
-    <div className="flex h-full flex-col bg-brand-navy text-slate-100">
-      <div className="flex items-center gap-3 border-b border-white/10 px-6 py-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10">
-          <Landmark className="h-5 w-5" />
+    <div className="flex h-full flex-col border-r border-border bg-white text-brand-tinta">
+      <div className="flex items-center gap-3 px-5 pb-4 pt-5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-navy font-serif text-lg font-semibold text-white">
+          {modoEleitoral ? "E" : "G"}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold leading-tight">
-            {modoEleitoral ? "Eleitoral" : "Gestão"}
+            {modoEleitoral ? "Eleitoral" : "Gestão Processual"}
           </p>
-          <p className="text-xs leading-tight text-slate-300">
-            {modoEleitoral ? "TRE-PE 2026" : "Processual"}
+          <p className="text-xs leading-tight text-muted-foreground">
+            {modoEleitoral ? "TRE-PE 2026" : "Painel jurídico"}
           </p>
         </div>
-        {onOpenSearch && (
+      </div>
+
+      {onOpenSearch && (
+        <div className="px-3 pb-2">
           <button
             type="button"
             onClick={onOpenSearch}
             aria-label="Buscar (Ctrl+K)"
-            title="Buscar (Ctrl+K)"
-            className="flex shrink-0 items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-slate-200 transition-colors hover:bg-white/15 hover:text-white"
+            className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors hover:border-slate-300"
           >
-            <Search className="h-3.5 w-3.5" aria-hidden="true" />
-            <kbd className="hidden font-mono text-[10px] font-semibold leading-none text-slate-300 lg:inline">
-              Ctrl+K
-            </kbd>
-          </button>
-        )}
-      </div>
-
-      <nav className="flex-1 overflow-y-auto px-3 py-6">
-        <div className={cn("space-y-1 pb-2", modoEleitoral && "hidden")}>
-          <Link
-            href="/app"
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
-              "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
-            )}
-          >
-            <Home className="h-4 w-4" aria-hidden="true" />
-            <span>Início</span>
-          </Link>
-          <Link
-            href="/app/compromissos"
-            className={cn(
-              "flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium",
-              "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
-            )}
-          >
-            <span className="flex items-center gap-3">
-              <CalendarCheck className="h-4 w-4" aria-hidden="true" />
-              <span>Compromissos</span>
+            <span className="flex items-center gap-2">
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
+              Buscar processo, órgão ou pessoa
             </span>
-            {compromissosHoje > 0 && (
-              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold leading-none text-white">
-                {compromissosHoje}
-              </span>
-            )}
-          </Link>
-          <Link
-            href="/app/relatorios"
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
-              "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
-            )}
-          >
-            <BarChart3 className="h-4 w-4" aria-hidden="true" />
-            <span>Relatórios</span>
-          </Link>
-          {podeFinanceiro && (
-            <Link
-              href="/app/financeiro"
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
-                "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
-              )}
-            >
-              <DollarSign className="h-4 w-4" aria-hidden="true" />
-              <span>Financeiro</span>
-            </Link>
-          )}
+            <kbd className="hidden rounded border border-border bg-white px-1 font-mono text-[10px] lg:inline">Ctrl K</kbd>
+          </button>
         </div>
-        {groups.map((group, index) => (
-          <div
-            key={group.title}
-            className={cn(index > 0 && "mt-6 border-t border-white/10 pt-6")}
-          >
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-              {group.title}
-            </p>
-            <div className="space-y-1">
+      )}
+
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-3" aria-label="Menu principal">
+        {groups.map((group, gi) => (
+          <div key={group.title ?? `g${gi}`}>
+            {group.title && (
+              <p className="px-3 pb-1.5 text-[11px] font-medium uppercase tracking-[0.07em] text-muted-foreground">
+                {group.title}
+              </p>
+            )}
+            <div className="space-y-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon;
+                const on = ativo(item);
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    aria-current={on ? "page" : undefined}
                     className={cn(
-                      "flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium",
-                      "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
+                      "flex min-h-[36px] items-center justify-between gap-3 rounded-md px-3 py-1.5 text-sm transition-colors",
+                      on ? "bg-accent font-semibold text-brand-navy" : "text-brand-tinta hover:bg-background",
                     )}
                   >
-                    <span className="flex items-center gap-3">
-                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    <span className="flex items-center gap-2.5">
+                      <Icon className={cn("h-4 w-4", on ? "text-brand-navy" : "text-muted-foreground")} aria-hidden="true" />
                       <span>{item.label}</span>
                     </span>
                     {item.badge !== undefined && (
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none text-white",
-                          item.badgeTone === "navy"
-                            ? "bg-white/15 text-slate-100"
-                            : "bg-red-500",
+                          "font-mono text-[11px] leading-none",
+                          item.badgeTone === "red"
+                            ? "rounded-full bg-destructive px-1.5 py-0.5 font-semibold text-white"
+                            : "text-muted-foreground",
                         )}
                       >
                         {item.badge}
@@ -324,24 +222,8 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="space-y-3 border-t border-white/10 px-6 py-4 text-xs text-slate-300">
-        {isAdmin && (
-          <Link
-            href="/app/admin/logs"
-            className={cn(
-              "-mx-3 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
-              "text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
-            )}
-          >
-            <History className="h-4 w-4" aria-hidden="true" />
-            <span>Logs</span>
-          </Link>
-        )}
+      <div className="border-t border-border px-3 py-3">
         <LogoutButton />
-        <div>
-          <p className="font-semibold text-slate-100">Painel Jurídico</p>
-          <p>v0.1.0</p>
-        </div>
       </div>
     </div>
   );

@@ -126,10 +126,13 @@ export default async function AppLayout({
         },
       },
     }),
-    prisma.movimentacaoAutomatica.count({
+    // Novidades: numero de PROCESSOS com algo nao lido (e nao a soma de alertas).
+    prisma.movimentacaoAutomatica.groupBy({
+      by: ["processoId"],
       where: { lida: false, processo: { escritorioId } },
     }),
-    prisma.publicacaoDJEN.count({
+    prisma.publicacaoDJEN.groupBy({
+      by: ["processoId"],
       where: { lida: false, processo: { escritorioId } },
     }),
     prisma.processoTce.count({
@@ -201,7 +204,9 @@ export default async function AppLayout({
       prazosTceUrgentes={prazosTceUrgentes}
       processosTceTotal={processosTceTotal}
       pautasJudiciaisTotal={pautasJudiciaisTotal}
-      alertasMonitoramento={movsNaoLidas + pubsNaoLidas}
+      alertasMonitoramento={
+        new Set([...movsNaoLidas, ...pubsNaoLidas].map((g) => g.processoId)).size
+      }
       despachosTcePendentes={despachosTcePendentes}
       compromissosHoje={compromissosHoje}
       podeFinanceiro={podeAcessarFinanceiro(

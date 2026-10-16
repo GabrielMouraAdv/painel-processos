@@ -386,8 +386,10 @@ export async function POST(req: Request) {
     }
     // Detecta tipo do prazo para auto-fechar pendencias correlatas.
     const tipoNorm = prazo.tipo.toLowerCase();
-    const isContrarrazoesNt = /contrarraz.*nota\s*tecnica/i.test(prazo.tipo);
-    const isContrarrazoesMpco = /contrarraz.*(mpco|parecer)/i.test(prazo.tipo);
+    // Sem acento: o tipo pode ter sido gravado como "Nota Tecnica" ou "Nota Técnica".
+    const tipoSemAcento = prazo.tipo.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const isContrarrazoesNt = /contrarraz.*nota\s*tecnica/i.test(tipoSemAcento);
+    const isContrarrazoesMpco = /contrarraz.*(mpco|parecer)/i.test(tipoSemAcento);
 
     await prisma.$transaction(async (tx) => {
       await tx.prazoTce.update({

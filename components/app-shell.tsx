@@ -93,7 +93,7 @@ export function AppShell({
           type="button"
           aria-label="Fechar menu"
           onClick={() => setOpen(false)}
-          className="absolute right-2 top-2 z-10 rounded-md p-2 text-slate-200 hover:bg-white/10 md:hidden"
+          className="absolute right-2 top-2 z-10 rounded-md p-2 text-muted-foreground hover:bg-background md:hidden"
         >
           <X className="h-5 w-5" />
         </button>
