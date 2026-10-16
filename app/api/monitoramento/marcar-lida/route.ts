@@ -6,9 +6,11 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
-  tipo: z.enum(["movimentacao", "publicacao"]),
+  tipo: z.enum(["movimentacao", "publicacao"]).optional(),
   id: z.string().min(1).optional(),
   todas: z.boolean().optional(),
+  // Novidades: marca de uma vez tudo o que nao foi lido de um processo.
+  processoId: z.string().min(1).optional(),
 });
 
 export async function POST(req: Request) {
@@ -27,7 +29,20 @@ export async function POST(req: Request) {
     );
   }
 
-  const { tipo, id, todas } = parsed.data;
+  const { tipo, id, todas, processoId } = parsed.data;
+
+  if (processoId) {
+    const proc = await prisma.processo.findFirst({ where: { id: processoId, escritorioId }, select: { id: true } });
+    if (!proc) return NextResponse.json({ error: "Processo nao encontrado" }, { status: 404 });
+    const [m, p] = await prisma.$transaction([
+      prisma.movimentacaoAutomatica.updateMany({ where: { processoId, lida: false }, data: { lida: true } }),
+      prisma.publicacaoDJEN.updateMany({ where: { processoId, lida: false }, data: { lida: true } }),
+    ]);
+    return NextResponse.json({ atualizadas: m.count + p.count });
+  }
+  if (!tipo) {
+    return NextResponse.json({ error: "tipo obrigatorio" }, { status: 400 });
+  }
 
   if (todas) {
     if (tipo === "movimentacao") {
