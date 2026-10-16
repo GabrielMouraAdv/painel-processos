@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { extrairIp, registrarLog } from "@/lib/audit-log";
 import { authOptions } from "@/lib/auth";
+import { RESULTADOS_POR_TIPO_TCE, rotuloCanonico } from "@/lib/julgamento-config";
 import { prisma } from "@/lib/prisma";
 
 async function ensureOwned(id: string, escritorioId: string) {
@@ -13,13 +14,18 @@ async function ensureOwned(id: string, escritorioId: string) {
       id: true,
       cargo: true,
       gestor: { select: { nome: true } },
-      processo: { select: { numero: true } },
+      processo: { select: { numero: true, tipo: true } },
     },
   });
 }
 
 const patchSchema = z.object({
   cargo: z.string().min(1, "Informe o cargo").optional(),
+  // Julgamento individual (multa por responsavel).
+  resultadoIndividual: z.string().nullable().optional(),
+  valorMulta: z.number().nonnegative().nullable().optional(),
+  valorDevolucao: z.number().nonnegative().nullable().optional(),
+  ehCliente: z.boolean().optional(),
 });
 
 export async function PATCH(
@@ -42,10 +48,24 @@ export async function PATCH(
       { status: 400 },
     );
   }
+  const d = parsed.data;
+  // Resultado individual usa os mesmos rotulos do tipo do processo.
+  let resultadoIndividual: string | null | undefined = undefined;
+  if (d.resultadoIndividual !== undefined) {
+    const texto = d.resultadoIndividual?.trim() || null;
+    resultadoIndividual = texto ? rotuloCanonico(RESULTADOS_POR_TIPO_TCE[existing.processo.tipo], texto) : null;
+    if (texto && !resultadoIndividual) {
+      return NextResponse.json({ error: "Resultado inválido para este tipo de processo" }, { status: 400 });
+    }
+  }
   await prisma.interessadoProcessoTce.update({
     where: { id: params.id },
     data: {
-      ...(parsed.data.cargo !== undefined && { cargo: parsed.data.cargo }),
+      ...(d.cargo !== undefined && { cargo: d.cargo }),
+      ...(resultadoIndividual !== undefined && { resultadoIndividual }),
+      ...(d.valorMulta !== undefined && { valorMulta: d.valorMulta }),
+      ...(d.valorDevolucao !== undefined && { valorDevolucao: d.valorDevolucao }),
+      ...(d.ehCliente !== undefined && { ehCliente: d.ehCliente }),
     },
   });
   await registrarLog({
@@ -53,7 +73,7 @@ export async function PATCH(
     acao: "EDITAR_INTERESSADO",
     entidade: "InteressadoProcessoTce",
     entidadeId: params.id,
-    descricao: `${session.user.name ?? "Usuario"} editou cargo do interessado ${existing.gestor.nome} no processo ${existing.processo.numero}`,
+    descricao: `${session.user.name ?? "Usuario"} editou o interessado ${existing.gestor.nome} no processo ${existing.processo.numero}`,
     detalhes: parsed.data,
     ip: extrairIp(req),
   });

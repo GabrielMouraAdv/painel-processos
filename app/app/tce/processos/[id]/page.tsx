@@ -41,6 +41,7 @@ import {
 } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 import { formatarDia } from "@/lib/datas";
+import { RESULTADOS_POR_TIPO_TCE } from "@/lib/julgamento-config";
 
 import { AndamentoTceAcoes } from "./andamento-tce-acoes";
 import { AndamentoTceForm } from "./andamento-tce-form";
@@ -249,6 +250,10 @@ export default async function ProcessoTceDetailPage({
     id: i.id,
     cargo: i.cargo,
     gestor: i.gestor,
+    resultadoIndividual: i.resultadoIndividual,
+    valorMulta: i.valorMulta !== null ? Number(i.valorMulta) : null,
+    valorDevolucao: i.valorDevolucao !== null ? Number(i.valorDevolucao) : null,
+    ehCliente: i.ehCliente,
   }));
 
   const prazos: PrazoTceItem[] = processo.prazos.map((p) => ({
@@ -630,7 +635,7 @@ export default async function ProcessoTceDetailPage({
           <CardHeader>
             <CardTitle className="text-base">Interessados</CardTitle>
             <CardDescription>
-              Gestores vinculados a este processo.
+              Gestores vinculados. No lápis: resultado individual, multa e cliente.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -638,6 +643,9 @@ export default async function ProcessoTceDetailPage({
               processoId={processo.id}
               interessados={interessados}
               gestores={gestores}
+              resultados={RESULTADOS_POR_TIPO_TCE[processo.tipo]}
+              valorMultaProcesso={processo.valorMulta !== null ? Number(processo.valorMulta) : null}
+              valorDevolucaoProcesso={processo.valorDevolucao !== null ? Number(processo.valorDevolucao) : null}
             />
           </CardContent>
         </Card>

@@ -618,6 +618,12 @@ model InteressadoProcessoTce {
   processoId String
   gestorId   String
   cargo      String
+  // Julgamento individual (um acordao pode julgar cada responsavel de um jeito).
+  resultadoIndividual String?
+  valorMulta          Decimal? @db.Decimal(15, 2)
+  valorDevolucao      Decimal? @db.Decimal(15, 2)
+  // Interessado defendido pelo escritorio neste processo.
+  ehCliente           Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   processo ProcessoTce @relation(fields: [processoId], references: [id], onDelete: Cascade)
