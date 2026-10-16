@@ -426,6 +426,14 @@ export default async function ProcessoTceDetailPage({
         initialBancas={processo.bancasSlug}
       />
 
+      {/* Recursos no topo da ficha (antes ficavam depois de todos os andamentos) */}
+      <RecursosSection
+        processoId={processo.id}
+        baseNumero={processo.numero}
+        bancasOrigem={processo.bancasSlug}
+        recursos={recursosLista}
+      />
+
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-3">
@@ -721,12 +729,6 @@ export default async function ProcessoTceDetailPage({
         </CardContent>
       </Card>
 
-      <RecursosSection
-        processoId={processo.id}
-        baseNumero={processo.numero}
-        bancasOrigem={processo.bancasSlug}
-        recursos={recursosLista}
-      />
 
       <DocumentosSection
         escopo="tce"
