@@ -1,5 +1,7 @@
 "use client";
 
+import { SITUACAO_TCE_LABELS, SITUACOES_TCE } from "@/lib/situacao-tce";
+
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
@@ -68,7 +70,6 @@ export function ProcessosTceFilters({
   const temFiltros =
     Array.from(searchParams.keys()).filter((k) => k !== "page").length > 0;
 
-  const fases = todasFasesTce();
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-sm">
@@ -174,17 +175,17 @@ export function ProcessosTceFilters({
         </Select>
 
         <Select
-          value={searchParams.get("fase") ?? ALL}
-          onValueChange={(v) => pushWith("fase", v)}
+          value={searchParams.get("situacao") ?? ALL}
+          onValueChange={(v) => pushWith("situacao", v)}
         >
           <SelectTrigger className="w-[220px]">
-            <SelectValue placeholder="Fase" />
+            <SelectValue placeholder="Situação" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todas as fases</SelectItem>
-            {fases.map((f) => (
-              <SelectItem key={f.key} value={f.key}>
-                {f.label}
+            <SelectItem value={ALL}>Todas as situações</SelectItem>
+            {SITUACOES_TCE.map((s) => (
+              <SelectItem key={s} value={s}>
+                {SITUACAO_TCE_LABELS[s]}
               </SelectItem>
             ))}
           </SelectContent>

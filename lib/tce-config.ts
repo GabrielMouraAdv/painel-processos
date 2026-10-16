@@ -220,12 +220,41 @@ export function fasesDoTipo(tipo: TipoProcessoTce): FaseTce[] {
   return tipo === "MEDIDA_CAUTELAR" ? FLUXO_CAUTELAR : FLUXO_PADRAO;
 }
 
+// Fases gravadas pelas importacoes e pelos botoes da ficha, fora dos dois fluxos.
+const FASES_EXTRAS: Record<string, string> = {
+  em_instrucao: "Em instrução",
+  em_admissibilidade: "Em admissibilidade",
+  em_julgamento: "Em julgamento",
+  julgado: "Julgado",
+  julgado_recorrido: "Julgado com recurso",
+  arquivado: "Arquivado",
+  sobrestado: "Sobrestado",
+  recurso_interposto: "Recurso interposto",
+  embargos_interpostos: "Embargos interpostos",
+  agravo_interposto: "Agravo interposto",
+  agravo_regimental_interposto: "Agravo regimental interposto",
+  pedido_rescisao_interposto: "Pedido de rescisão interposto",
+  pedido_suspensao_interposto: "Pedido de suspensão interposto",
+  nota_tecnica: "Nota Técnica registrada",
+  parecer_mpco: "Parecer do MPCO registrado",
+  contrarrazoes_nt_dispensadas: "Contrarrazões à NT dispensadas",
+  contrarrazoes_mpco_dispensadas: "Contrarrazões ao MPCO dispensadas",
+  contrarrazoes_nt_dispensa_revertida: "Dispensa de contrarrazões à NT revertida",
+  contrarrazoes_mpco_dispensa_revertida: "Dispensa de contrarrazões ao MPCO revertida",
+  contrarrazoes_nt: "Contrarrazões à NT apresentadas",
+  contrarrazoes_mpco: "Contrarrazões ao MPCO apresentadas",
+  julgamento: "Julgamento",
+  julgamento_desfeito: "Julgamento desfeito",
+};
+
 export function faseTceLabel(tipo: TipoProcessoTce, key: string): string {
-  // Fase do outro fluxo (ex.: acordao de recurso em cautelar) tambem tem rotulo.
+  // Fase do outro fluxo (ex.: acordao de recurso em cautelar) tambem tem rotulo;
+  // o que sobrar vira texto legivel ("algo_assim" -> "Algo assim").
   return (
     fasesDoTipo(tipo).find((f) => f.key === key)?.label ??
     todasFasesTce().find((f) => f.key === key)?.label ??
-    key
+    FASES_EXTRAS[key] ??
+    (key.charAt(0).toUpperCase() + key.slice(1)).replace(/_/g, " ")
   );
 }
 

@@ -20,15 +20,15 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
     "Arquivada / Prejudicada",
   ],
   PRESTACAO_CONTAS_GOVERNO: [
-    "Parecer Previo pela Aprovacao",
-    "Parecer Previo pela Aprovacao com Ressalvas",
-    "Parecer Previo pela Rejeicao",
+    "Parecer Prévio pela Aprovação",
+    "Parecer Prévio pela Aprovação com Ressalvas",
+    "Parecer Prévio pela Rejeição",
   ],
   PRESTACAO_CONTAS_GESTAO: [
     "Contas Regulares",
     "Contas Regulares com Ressalvas",
     "Contas Irregulares",
-    "Contas Iliquidaveis",
+    "Contas Iliquidáveis",
   ],
   AUDITORIA_ESPECIAL: [
     "Regular",
@@ -46,11 +46,11 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
     "Contas Regulares",
     "Contas Regulares com Ressalvas",
     "Contas Irregulares",
-    "Contas Iliquidaveis",
+    "Contas Iliquidáveis",
   ],
   AUTO_INFRACAO: [
     "Homologado",
-    "Nao Homologado",
+    "Não Homologado",
     "Parcialmente Homologado",
   ],
   RGF: ["Regular", "Regular com Ressalvas", "Irregular"],
@@ -72,11 +72,24 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
 };
 
 // Desfecho proprio do recurso (RO, ED, AG, AR, PS, PR).
+// Compara rotulos ignorando acento e maiusculas: os registros antigos foram
+// gravados sem acento ("Parecer Previo pela Rejeicao").
+export function semAcento(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
+// Rotulo canonico (da lista oficial) correspondente a um valor gravado, com ou sem acento.
+export function rotuloCanonico(lista: string[], valor: string | null | undefined): string | null {
+  if (!valor) return null;
+  const v = semAcento(valor);
+  return lista.find((r) => semAcento(r) === v) ?? null;
+}
+
 export const RESULTADO_RECURSO_LABELS: Record<ResultadoRecursoTce, string> = {
   PROVIDO: "Provido",
   PROVIDO_EM_PARTE: "Provido em parte",
-  NAO_PROVIDO: "Nao provido",
-  NAO_CONHECIDO: "Nao conhecido",
+  NAO_PROVIDO: "Não provido",
+  NAO_CONHECIDO: "Não conhecido",
   PREJUDICADO: "Prejudicado",
 };
 
@@ -100,21 +113,21 @@ export const RECURSO_MANTEM_RESULTADO: ResultadoRecursoTce[] = [
 export const PENALIDADES_TCE: string[] = [
   "Sem Penalidade",
   "Multa",
-  "Devolucao ao Erario",
-  "Multa + Devolucao ao Erario",
-  "Declaracao de Inidoneidade",
-  "Multa + Declaracao de Inidoneidade",
+  "Devolução ao Erário",
+  "Multa + Devolução ao Erário",
+  "Declaração de Inidoneidade",
+  "Multa + Declaração de Inidoneidade",
 ];
 
 // Resultados que indicam irregularidade/rejeicao (mostram select de penalidade)
 const TCE_RESULTADOS_COM_PENALIDADE = new Set<string>([
   "Cautelar Deferida",
   "Cautelar Parcialmente Deferida",
-  "Parecer Previo pela Aprovacao com Ressalvas",
-  "Parecer Previo pela Rejeicao",
+  "Parecer Prévio pela Aprovação com Ressalvas",
+  "Parecer Prévio pela Rejeição",
   "Contas Regulares com Ressalvas",
   "Contas Irregulares",
-  "Contas Iliquidaveis",
+  "Contas Iliquidáveis",
   "Regular com Ressalvas",
   "Irregular",
   "Homologado",
@@ -128,16 +141,19 @@ const TCE_RESULTADOS_COM_PENALIDADE = new Set<string>([
   "Parcialmente Legal",
 ]);
 
+const TCE_COM_PENALIDADE_NORM = new Set(Array.from(TCE_RESULTADOS_COM_PENALIDADE, semAcento));
 export function tceTemPenalidade(resultado: string | null | undefined): boolean {
-  return !!resultado && TCE_RESULTADOS_COM_PENALIDADE.has(resultado);
+  return !!resultado && TCE_COM_PENALIDADE_NORM.has(semAcento(resultado));
 }
 
 // Classificacao por tipo+resultado — perspectiva do escritorio (defesa)
 export function classificarResultadoTce(
   tipo: TipoProcessoTce,
-  resultado: string | null | undefined,
+  resultadoGravado: string | null | undefined,
 ): ClassificacaoResultado {
-  if (!resultado) return "neutro";
+  if (!resultadoGravado) return "neutro";
+  // As regras abaixo comparam sem acento.
+  const resultado = semAcento(resultadoGravado);
 
   // Resultados parciais (amarelo)
   if (
@@ -205,7 +221,7 @@ const RESULTADOS_JUD_PADRAO = [
   "Procedente",
   "Improcedente",
   "Parcialmente Procedente",
-  "Extinta sem Merito",
+  "Extinta sem Mérito",
   "Acordo",
 ];
 
@@ -214,39 +230,39 @@ export const RESULTADOS_POR_TIPO_JUD: Record<TipoProcesso, string[]> = {
     "Procedente",
     "Improcedente",
     "Parcialmente Procedente",
-    "Extinta sem Merito",
-    "Acordo de Nao Persecucao",
+    "Extinta sem Mérito",
+    "Acordo de Não Persecução",
   ],
   ACP: [
     "Procedente",
     "Improcedente",
     "Parcialmente Procedente",
-    "Extinta sem Merito",
+    "Extinta sem Mérito",
     "Acordo",
   ],
   CRIMINAL: [
-    "Condenacao",
-    "Absolvicao",
-    "Extincao da Punibilidade",
-    "Prescricao",
+    "Condenação",
+    "Absolvição",
+    "Extinção da Punibilidade",
+    "Prescrição",
   ],
   MANDADO_SEGURANCA: [
-    "Seguranca Concedida",
-    "Seguranca Denegada",
-    "Extinto sem Merito",
+    "Segurança Concedida",
+    "Segurança Denegada",
+    "Extinto sem Mérito",
   ],
   MANDADO_SEGURANCA_COLETIVO: [
-    "Seguranca Concedida",
-    "Seguranca Denegada",
-    "Extinto sem Merito",
+    "Segurança Concedida",
+    "Segurança Denegada",
+    "Extinto sem Mérito",
   ],
-  ACAO_POPULAR: ["Procedente", "Improcedente", "Extinta sem Merito"],
+  ACAO_POPULAR: ["Procedente", "Improcedente", "Extinta sem Mérito"],
   HABEAS_CORPUS: [
     "Concedida a Ordem",
     "Denegada a Ordem",
-    "Extinto sem Merito",
+    "Extinto sem Mérito",
   ],
-  HABEAS_DATA: ["Procedente", "Improcedente", "Extinta sem Merito"],
+  HABEAS_DATA: ["Procedente", "Improcedente", "Extinta sem Mérito"],
   ACAO_RESCISORIA: RESULTADOS_JUD_PADRAO,
   EXECUCAO_FISCAL: RESULTADOS_JUD_PADRAO,
   EXECUCAO_TITULO_EXTRAJUDICIAL: RESULTADOS_JUD_PADRAO,
@@ -266,32 +282,34 @@ export const RESULTADOS_POR_TIPO_JUD: Record<TipoProcesso, string[]> = {
 };
 
 export const PENALIDADES_JUD: string[] = [
-  "Sem Condenacao",
-  "Condenacao Pecuniaria",
+  "Sem Condenação",
+  "Condenação Pecuniária",
   "Perda de Cargo",
-  "Suspensao de Direitos Politicos",
-  "Condenacao Pecuniaria + Perda de Cargo",
-  "Condenacao Pecuniaria + Suspensao de Direitos Politicos",
+  "Suspensão de Direitos Políticos",
+  "Condenação Pecuniária + Perda de Cargo",
+  "Condenação Pecuniária + Suspensão de Direitos Políticos",
   "Pena Privativa de Liberdade",
 ];
 
 const JUD_RESULTADOS_COM_PENALIDADE = new Set<string>([
   "Procedente",
   "Parcialmente Procedente",
-  "Condenacao",
-  "Seguranca Denegada",
+  "Condenação",
+  "Segurança Denegada",
   "Denegada a Ordem",
 ]);
 
+const JUD_COM_PENALIDADE_NORM = new Set(Array.from(JUD_RESULTADOS_COM_PENALIDADE, semAcento));
 export function judTemPenalidade(resultado: string | null | undefined): boolean {
-  return !!resultado && JUD_RESULTADOS_COM_PENALIDADE.has(resultado);
+  return !!resultado && JUD_COM_PENALIDADE_NORM.has(semAcento(resultado));
 }
 
 export function classificarResultadoJud(
   tipo: TipoProcesso,
-  resultado: string | null | undefined,
+  resultadoGravado: string | null | undefined,
 ): ClassificacaoResultado {
-  if (!resultado) return "neutro";
+  if (!resultadoGravado) return "neutro";
+  const resultado = semAcento(resultadoGravado);
 
   if (/parcialmente|com ressalvas/i.test(resultado)) return "parcial";
 

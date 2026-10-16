@@ -20,7 +20,7 @@
 import { PrismaClient, type CamaraTce, type ResultadoRecursoTce, type TipoProcessoTce } from "@prisma/client";
 import { readFileSync, writeFileSync } from "fs";
 
-import { PENALIDADES_TCE, RESULTADOS_POR_TIPO_TCE } from "../lib/julgamento-config";
+import { PENALIDADES_TCE, RESULTADOS_POR_TIPO_TCE, rotuloCanonico, semAcento } from "../lib/julgamento-config";
 import { todasFasesTce } from "../lib/tce-config";
 
 const prisma = new PrismaClient();
@@ -168,8 +168,15 @@ async function main() {
     const p = processoOuErro("Julgamentos", l);
     if (!p) continue;
     const validos = RESULTADOS_POR_TIPO_TCE[p.tipo as TipoProcessoTce];
-    if (!validos.includes(l.resultado)) { add("Julgamentos", l, "erro", `resultado '${l.resultado}' nao vale para ${p.tipo}. Validos: ${validos.join(" | ")}`); continue; }
-    if (l.penalidade && !PENALIDADES_TCE.includes(l.penalidade)) { add("Julgamentos", l, "erro", `penalidade '${l.penalidade}' invalida`); continue; }
+    // Aceita com ou sem acento; grava sempre o rotulo oficial (acentuado).
+    const resultadoOficial = rotuloCanonico(validos, l.resultado);
+    if (!resultadoOficial) { add("Julgamentos", l, "erro", `resultado '${l.resultado}' nao vale para ${p.tipo}. Validos: ${validos.join(" | ")}`); continue; }
+    l.resultado = resultadoOficial;
+    if (l.penalidade) {
+      const pen = rotuloCanonico(PENALIDADES_TCE, l.penalidade);
+      if (!pen) { add("Julgamentos", l, "erro", `penalidade '${l.penalidade}' invalida`); continue; }
+      l.penalidade = pen;
+    }
     const recurso = l.resultado_recurso ? DESFECHOS[norm(l.resultado_recurso)] : null;
     if (l.resultado_recurso && !recurso) { add("Julgamentos", l, "erro", `resultado_recurso '${l.resultado_recurso}' invalido. Validos: provido | provido em parte | nao provido | nao conhecido | prejudicado`); continue; }
     if (recurso && !p.ehRecurso) { add("Julgamentos", l, "erro", "resultado_recurso so vale para recurso (numero com ED, RO, AG...)"); continue; }
@@ -181,8 +188,8 @@ async function main() {
         atual: p.dataJulgamento, novo: meioDia(l.data!), rotulo: "data",
         igual: !!p.dataJulgamento && diaDe(p.dataJulgamento) === l.data, vazio: !p.dataJulgamento,
       },
-      resultadoJulgamento: { atual: p.resultadoJulgamento, novo: l.resultado, rotulo: "resultado", igual: p.resultadoJulgamento === l.resultado, vazio: !p.resultadoJulgamento },
-      penalidade: { atual: p.penalidade, novo: l.penalidade, rotulo: "penalidade", igual: (p.penalidade ?? null) === (l.penalidade ?? null), vazio: !p.penalidade },
+      resultadoJulgamento: { atual: p.resultadoJulgamento, novo: l.resultado, rotulo: "resultado", igual: semAcento(p.resultadoJulgamento ?? "") === semAcento(l.resultado), vazio: !p.resultadoJulgamento },
+      penalidade: { atual: p.penalidade, novo: l.penalidade, rotulo: "penalidade", igual: semAcento(p.penalidade ?? "") === semAcento(l.penalidade ?? ""), vazio: !p.penalidade },
       valorMulta: { atual: p.valorMulta, novo: l.valor_multa, rotulo: "valor da multa", igual: Number(p.valorMulta ?? 0) === Number(l.valor_multa ?? 0), vazio: p.valorMulta === null },
       valorDevolucao: { atual: p.valorDevolucao, novo: l.valor_devolucao, rotulo: "valor da devolucao", igual: Number(p.valorDevolucao ?? 0) === Number(l.valor_devolucao ?? 0), vazio: p.valorDevolucao === null },
       observacoesJulgamento: { atual: p.observacoesJulgamento, novo: l.observacoes, rotulo: "observacoes", igual: norm(p.observacoesJulgamento) === norm(l.observacoes), vazio: !p.observacoesJulgamento },

@@ -31,6 +31,7 @@ import {
   RESULTADOS_POR_TIPO_JUD,
   RESULTADOS_POR_TIPO_TCE,
   judTemPenalidade,
+  rotuloCanonico,
   tceTemPenalidade,
 } from "@/lib/julgamento-config";
 
@@ -83,10 +84,10 @@ export function JulgamentoDialog(props: Props) {
     initial?.dataJulgamento ? initial.dataJulgamento.slice(0, 10) : isoToday(),
   );
   const [resultado, setResultado] = React.useState(
-    initial?.resultadoJulgamento ?? "",
+    rotuloCanonico(resultados, initial?.resultadoJulgamento) ?? initial?.resultadoJulgamento ?? "",
   );
   const [penalidade, setPenalidade] = React.useState(
-    initial?.penalidade ?? "",
+    rotuloCanonico(penalidades, initial?.penalidade) ?? initial?.penalidade ?? "",
   );
   const [valorMulta, setValorMulta] = React.useState(
     initial?.valorMulta != null ? String(initial.valorMulta) : "",
@@ -110,8 +111,8 @@ export function JulgamentoDialog(props: Props) {
         ? initial.dataJulgamento.slice(0, 10)
         : isoToday(),
     );
-    setResultado(initial?.resultadoJulgamento ?? "");
-    setPenalidade(initial?.penalidade ?? "");
+    setResultado(rotuloCanonico(resultados, initial?.resultadoJulgamento) ?? initial?.resultadoJulgamento ?? "");
+    setPenalidade(rotuloCanonico(penalidades, initial?.penalidade) ?? initial?.penalidade ?? "");
     setValorMulta(
       initial?.valorMulta != null ? String(initial.valorMulta) : "",
     );

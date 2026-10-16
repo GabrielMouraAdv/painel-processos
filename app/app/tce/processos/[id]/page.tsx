@@ -30,6 +30,7 @@ import {
 import { authOptions } from "@/lib/auth";
 import { TIPOS_DOCUMENTO_TCE } from "@/lib/documento-config";
 import { prisma } from "@/lib/prisma";
+import { SITUACAO_TCE_LABELS, situacaoTce } from "@/lib/situacao-tce";
 import { computeTceAlertas } from "@/lib/tce-alertas";
 import {
   TCE_CAMARAS,
@@ -432,6 +433,21 @@ export default async function ProcessoTceDetailPage({
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <Info label="Tipo" value={TCE_TIPO_LABELS[processo.tipo]} />
+            <Info
+              label="Situação"
+              value={
+                SITUACAO_TCE_LABELS[
+                  situacaoTce({
+                    julgado: processo.julgado,
+                    faseAtual: processo.faseAtual,
+                    dataTransito: processo.dataTransito,
+                    recursosPendentes: recursosDesfecho.filter((r) => !r.julgado).length,
+                    notaTecnica: processo.notaTecnica,
+                    parecerMpco: processo.parecerMpco,
+                  })
+                ]
+              }
+            />
             <Info label="Fase atual" value={faseTceLabel(processo.tipo, processo.faseAtual)} />
             <Info label="Câmara" value={TCE_CAMARA_LABELS[processo.camara]} />
             <Info label="Relator" value={processo.relator ?? "-"} />

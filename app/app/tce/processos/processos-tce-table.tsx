@@ -23,6 +23,7 @@ import {
   TCE_TIPO_LABELS,
   faseTceLabel,
 } from "@/lib/tce-config";
+import { SITUACAO_TCE_LABELS, type SituacaoTce } from "@/lib/situacao-tce";
 import { cn } from "@/lib/utils";
 import { NumeroProcesso } from "@/components/numero-processo";
 
@@ -40,6 +41,7 @@ export type ProcessoTceRow = {
   camara: CamaraTce;
   relator: string | null;
   faseAtual: string;
+  situacao: SituacaoTce;
   bancasSlug: string[];
   ehRecurso: boolean;
   tipoRecurso: TipoRecursoTce | null;
@@ -266,7 +268,10 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                   )}
                 </TableCell>
                 <TableCell className={cellBase}>
-                  {faseTceLabel(p.tipo, p.faseAtual)}
+                  <div className="font-medium">{SITUACAO_TCE_LABELS[p.situacao]}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {faseTceLabel(p.tipo, p.faseAtual)}
+                  </div>
                 </TableCell>
                 <TableCell className={cellBase}>
                   {p.julgado && p.resultadoJulgamento ? (

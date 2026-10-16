@@ -32,6 +32,7 @@ import {
   RECURSO_MANTEM_RESULTADO,
   RESULTADOS_POR_TIPO_TCE,
   RESULTADO_RECURSO_LABELS,
+  rotuloCanonico,
   classeBadgeResultado,
   classificarResultadoRecurso,
   classificarResultadoTce,
@@ -630,7 +631,7 @@ function DialogDesfechoFinal({
 
   React.useEffect(() => {
     if (!aberto) return;
-    setValor(resultadoFinal ?? MANTIDO);
+    setValor(rotuloCanonico(RESULTADOS_POR_TIPO_TCE[tipo], resultadoFinal) ?? resultadoFinal ?? MANTIDO);
     setTransito(dataTransito ? diaDe(dataTransito) : "");
   }, [aberto, resultadoFinal, dataTransito]);
 

@@ -13,6 +13,7 @@ import { authOptions } from "@/lib/auth";
 import { parseBancasParam } from "@/lib/bancas";
 import { diasUteisRestantes } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
+import { SITUACOES_TCE, situacaoTce, whereSituacaoTce } from "@/lib/situacao-tce";
 
 import { KpiCardsTce } from "./kpi-cards-tce";
 import { NovoProcessoTceButton } from "./novo-processo-tce-button";
@@ -49,6 +50,8 @@ export default async function TceProcessosPage({
   const municipioId = asString(searchParams.municipioId);
   const interessadoId = asString(searchParams.interessadoId);
   const fase = asString(searchParams.fase);
+  const situacaoParam = asString(searchParams.situacao);
+  const situacao = SITUACOES_TCE.find((x) => x === situacaoParam) ?? null;
   const prazoFiltro = asString(searchParams.prazo);
   const semDespacho = asString(searchParams.semDespacho) === "1";
   const memorialFiltro = asString(searchParams.memorial);
@@ -69,6 +72,8 @@ export default async function TceProcessosPage({
     ...(relator && { relator }),
     ...(municipioId && { municipioId }),
     ...(fase && { faseAtual: fase }),
+    // Em AND para nao colidir com o OR da busca textual.
+    ...(situacao && { AND: [whereSituacaoTce(situacao)] }),
     ...(bancasFiltro.length > 0 && {
       bancasSlug: { hasSome: bancasFiltro },
     }),
@@ -136,6 +141,7 @@ export default async function TceProcessosPage({
           select: { tipo: true, dataVencimento: true },
         },
         processoOrigem: { select: { id: true, numero: true } },
+        _count: { select: { recursos: { where: { julgado: false } } } },
       },
     }),
     prisma.municipio.findMany({
@@ -210,6 +216,14 @@ export default async function TceProcessosPage({
       camara: p.camara,
       relator: p.relator,
       faseAtual: p.faseAtual,
+      situacao: situacaoTce({
+        julgado: p.julgado,
+        faseAtual: p.faseAtual,
+        dataTransito: p.dataTransito,
+        recursosPendentes: p._count.recursos,
+        notaTecnica: p.notaTecnica,
+        parecerMpco: p.parecerMpco,
+      }),
       bancasSlug: p.bancasSlug,
       ehRecurso: p.ehRecurso,
       tipoRecurso: p.tipoRecurso,
