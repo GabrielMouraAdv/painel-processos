@@ -18,10 +18,16 @@ import { MarcarProcessoVisto } from "./marcar-processo-visto";
 const IMPORTANTE: [RegExp, string][] = [
   [/senten|ac[oó]rd[aã]o|decis|provimento|m[eé]rito|julgament|liminar|tutela|homolog/i, "Decisão"],
   [/audi[eê]ncia|sess[aã]o|pauta|adiad/i, "Audiência"],
-  [/prazo|intima|cita[cç]|decurso|tr[aâ]nsito/i, "Prazo"],
+  [/intima|cita[cç]|tr[aâ]nsito/i, "Prazo"],
 ];
-const etiqueta = (t: string) => IMPORTANTE.find(([re]) => re.test(t))?.[1] ?? null;
-const br = (d: Date) => diaDe(d).split("-").reverse().slice(0, 2).join("/");
+// "Decurso de prazo" e rotina (so informa que um prazo correu): fica em "Tudo".
+const etiqueta = (t: string) => (/decurso/i.test(t) ? null : IMPORTANTE.find(([re]) => re.test(t))?.[1] ?? null);
+// dd/mm no ano corrente; dd/mm/aa nos anteriores.
+const ANO = new Date().getFullYear().toString();
+const br = (d: Date) => {
+  const [a, m, dd] = diaDe(d).split("-");
+  return a === ANO ? `${dd}/${m}` : `${dd}/${m}/${a.slice(2)}`;
+};
 
 export default async function NovidadesPage({
   searchParams,
@@ -80,7 +86,7 @@ export default async function NovidadesPage({
         else vistos.set(k, { dia: br(m.dataMovimento), texto: m.nomeMovimento, tag: etiqueta(m.nomeMovimento), n: 1 });
       }
       if (p.publicacoesDjen.length) {
-        vistos.set(`pub`, { dia: br(p.publicacoesDjen[0].dataPublicacao), texto: "Publicação no DJEN", tag: "Prazo", n: p.publicacoesDjen.length });
+        vistos.set(`pub`, { dia: br(p.publicacoesDjen[0].dataPublicacao), texto: "Publicação no DJEN", tag: "Publicação", n: p.publicacoesDjen.length });
       }
       const movs = Array.from(vistos.values());
       const importantes = movs.filter((m) => m.tag);
@@ -154,13 +160,13 @@ export default async function NovidadesPage({
             <div className="space-y-1">
               {mostrar.map((m, i) => (
                 <div key={i} className="flex items-baseline gap-2.5 text-sm">
-                  <span className="w-11 shrink-0 font-mono text-xs text-muted-foreground">{m.dia}</span>
+                  <span className="w-[62px] shrink-0 font-mono text-xs text-muted-foreground">{m.dia}</span>
                   {m.tag && <span className="rounded bg-brand-navy px-1.5 text-[11px] font-semibold uppercase tracking-wide text-white">{m.tag}</span>}
                   <span className={m.tag ? "font-semibold" : "text-muted-foreground"}>{m.texto}</span>
                   {m.n > 1 && <span className="font-mono text-[11px] text-muted-foreground">×{m.n}</span>}
                 </div>
               ))}
-              {resto > 0 && <div className="pl-[54px] text-[13px] text-muted-foreground">+ {resto} {resto === 1 ? "movimento" : "movimentos"}</div>}
+              {resto > 0 && <div className="pl-[72px] text-[13px] text-muted-foreground">+ {resto} {resto === 1 ? "movimento" : "movimentos"}</div>}
             </div>
             <div className="flex flex-wrap items-start justify-end gap-2">
               <Link href={`/app/processos/${p.id}`} className="inline-flex h-8 items-center rounded-md border px-3 text-[13px] hover:bg-background">
