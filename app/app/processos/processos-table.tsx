@@ -104,7 +104,7 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
                     "font-medium",
                   )}
                 >
-                  <NumeroProcesso numero={p.numero} />
+                  <NumeroProcesso numero={p.numero} sufixoAbaixo />
                 </TableCell>
                 <TableCell className={cellBase}>
                   <div className="break-words font-medium">

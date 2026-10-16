@@ -145,7 +145,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
         <Table className="min-w-[1080px] md:table-fixed">
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
-              <TableHead className={cn(headBase, "md:w-[110px]")}>
+              <TableHead className={cn(headBase, "md:w-[132px]")}>
                 Número
               </TableHead>
               <TableHead className={cn(headBase, "md:w-[130px]")}>
@@ -229,7 +229,7 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                     "font-medium",
                   )}
                 >
-                  <NumeroProcesso numero={p.numero} />
+                  <NumeroProcesso numero={p.numero} sufixoAbaixo />
                 </TableCell>
                 <TableCell className={cellBase}>
                   {p.municipio?.nome ?? (

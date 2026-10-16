@@ -7,10 +7,13 @@ import { cn } from "@/lib/utils";
 export function NumeroProcesso({
   numero,
   tamanho = "normal",
+  sufixoAbaixo = false,
   className,
 }: {
   numero: string;
   tamanho?: "normal" | "grande";
+  // Em tabelas: a etiqueta do recurso (RO001) desce para a linha de baixo.
+  sufixoAbaixo?: boolean;
   className?: string;
 }) {
   const base = cn(
@@ -30,7 +33,8 @@ export function NumeroProcesso({
         {sufixo && (
           <span
             className={cn(
-              "ml-1 rounded bg-accent px-1 align-middle font-semibold text-brand-navy",
+              "rounded bg-accent px-1 align-middle font-semibold text-brand-navy",
+              sufixoAbaixo ? "mt-0.5 block w-fit" : "ml-1",
               tamanho === "grande" ? "text-xl" : "text-[11px]",
             )}
           >
