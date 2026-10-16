@@ -324,7 +324,7 @@ export default async function HojePage() {
         </div>
         <div className="space-y-2.5 px-5 pb-5 pt-1">
           {porBanca.map((b) => (
-            <Link key={b.slug} href={`/app/tce/processos?banca=${b.slug}`} className="flex items-center gap-3 text-sm hover:underline">
+            <Link key={b.slug} href={`/app/tce/processos?banca=${b.slug}&situacao=todos`} className="flex items-center gap-3 text-sm hover:underline">
               <span className="w-56 shrink-0">{b.nome}</span>
               <span className="h-2 flex-1 rounded-full bg-secondary">
                 <span className="block h-2 rounded-full bg-brand-navy" style={{ width: `${Math.round((b.n / maxBanca) * 100)}%` }} />

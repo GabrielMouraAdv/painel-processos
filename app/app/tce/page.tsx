@@ -386,7 +386,7 @@ export default async function TceDashboardPage({
     {
       label: "Em pauta",
       value: emPauta,
-      href: "/app/tce/processos?pauta=1",
+      href: "/app/tce/processos?pauta=1&situacao=todos",
       icon: Gavel,
       tone: "violet",
     },

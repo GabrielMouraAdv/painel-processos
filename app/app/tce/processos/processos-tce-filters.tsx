@@ -1,6 +1,6 @@
 "use client";
 
-import { SITUACAO_TCE_LABELS, SITUACOES_TCE } from "@/lib/situacao-tce";
+import { ABA_ANDAMENTO, ABA_ANDAMENTO_LABEL, SITUACAO_TCE_LABELS, SITUACOES_TCE } from "@/lib/situacao-tce";
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -174,14 +174,15 @@ export function ProcessosTceFilters({
         </Select>
 
         <Select
-          value={searchParams.get("situacao") ?? ALL}
+          value={searchParams.get("situacao") ?? (searchParams.get("q") ? "todos" : ABA_ANDAMENTO)}
           onValueChange={(v) => pushWith("situacao", v)}
         >
           <SelectTrigger className="w-[220px]">
             <SelectValue placeholder="Situação" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todas as situações</SelectItem>
+            <SelectItem value="todos">Todas as situações</SelectItem>
+            <SelectItem value={ABA_ANDAMENTO}>{ABA_ANDAMENTO_LABEL}</SelectItem>
             {SITUACOES_TCE.map((s) => (
               <SelectItem key={s} value={s}>
                 {SITUACAO_TCE_LABELS[s]}

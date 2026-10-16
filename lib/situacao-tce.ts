@@ -27,6 +27,11 @@ export const SITUACAO_TCE_LABELS: Record<SituacaoTce, string> = {
 
 export const SITUACOES_TCE = Object.keys(SITUACAO_TCE_LABELS) as SituacaoTce[];
 
+// Aba padrao da lista: tudo o que ainda nao foi julgado (instrucao, defesa e julgamento).
+export const ABA_ANDAMENTO = "andamento";
+export const ABA_ANDAMENTO_LABEL = "Em instrução e julgamento";
+export const SITUACOES_ANDAMENTO: SituacaoTce[] = ["em_instrucao", "defesa_apresentada", "em_julgamento"];
+
 const TRANSITADO = ["transitado", "transitado_cautelar"];
 const DEFESA = ["defesa_apresentada", "manifestacao_apresentada"];
 const FORA_DO_FLUXO = ["arquivado", "sobrestado", ...TRANSITADO];
@@ -46,6 +51,10 @@ export function situacaoTce(p: {
   if (p.faseAtual === "em_julgamento" || p.notaTecnica || p.parecerMpco) return "em_julgamento";
   if (DEFESA.includes(p.faseAtual)) return "defesa_apresentada";
   return "em_instrucao";
+}
+
+export function whereAndamentoTce(): Prisma.ProcessoTceWhereInput {
+  return { OR: SITUACOES_ANDAMENTO.map(whereSituacaoTce) };
 }
 
 // Filtro equivalente para a consulta da lista.

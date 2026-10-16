@@ -13,7 +13,17 @@ import { authOptions } from "@/lib/auth";
 import { parseBancasParam } from "@/lib/bancas";
 import { diasUteisRestantes } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
-import { SITUACAO_TCE_LABELS, SITUACOES_TCE, situacaoTce, whereSituacaoTce } from "@/lib/situacao-tce";
+import {
+  ABA_ANDAMENTO,
+  ABA_ANDAMENTO_LABEL,
+  SITUACAO_TCE_LABELS,
+  SITUACOES_ANDAMENTO,
+  SITUACOES_TCE,
+  situacaoTce,
+  whereAndamentoTce,
+  whereSituacaoTce,
+  type SituacaoTce,
+} from "@/lib/situacao-tce";
 import { cn } from "@/lib/utils";
 
 import { NovoProcessoTceButton } from "./novo-processo-tce-button";
@@ -51,7 +61,12 @@ export default async function TceProcessosPage({
   const interessadoId = asString(searchParams.interessadoId);
   const fase = asString(searchParams.fase);
   const situacaoParam = asString(searchParams.situacao);
-  const situacao = SITUACOES_TCE.find((x) => x === situacaoParam) ?? null;
+  // Aba: "todos", "andamento" (instrucao + defesa + julgamento) ou uma situacao.
+  // Sem escolha, abre em "andamento"; a busca por texto procura em todos.
+  const situacao =
+    situacaoParam === "todos" || situacaoParam === ABA_ANDAMENTO
+      ? situacaoParam
+      : SITUACOES_TCE.find((x) => x === situacaoParam) ?? (asString(searchParams.q).trim() ? "todos" : ABA_ANDAMENTO);
   const prazoFiltro = asString(searchParams.prazo);
   const semDespacho = asString(searchParams.semDespacho) === "1";
   const memorialFiltro = asString(searchParams.memorial);
@@ -111,21 +126,30 @@ export default async function TceProcessosPage({
   };
 
   // Abas por situacao: a lista usa a aba escolhida; cada aba conta com os demais filtros.
-  const whereLista: Prisma.ProcessoTceWhereInput = situacao
-    ? { AND: [where, whereSituacaoTce(situacao)] }
-    : where;
-  const [contagemTodos, ...contagemSituacao] = await Promise.all([
-    prisma.processoTce.count({ where }),
-    ...SITUACOES_TCE.map((s) => prisma.processoTce.count({ where: { AND: [where, whereSituacaoTce(s)] } })),
-  ]);
+  const whereAba = (s: string): Prisma.ProcessoTceWhereInput =>
+    s === "todos"
+      ? where
+      : { AND: [where, s === ABA_ANDAMENTO ? whereAndamentoTce() : whereSituacaoTce(s as SituacaoTce)] };
+  const whereLista = whereAba(situacao);
+  // Abas: Todos, a aba padrao e as situacoes depois do julgamento. Uma situacao
+  // da aba padrao escolhida no filtro aparece como aba propria enquanto ativa.
+  const abas: { s: string; label: string }[] = [
+    { s: "todos", label: "Todos" },
+    { s: ABA_ANDAMENTO, label: ABA_ANDAMENTO_LABEL },
+    ...(SITUACOES_ANDAMENTO.includes(situacao as SituacaoTce)
+      ? [{ s: situacao, label: SITUACAO_TCE_LABELS[situacao as SituacaoTce] }]
+      : []),
+    ...SITUACOES_TCE.filter((s) => !SITUACOES_ANDAMENTO.includes(s)).map((s) => ({ s: s as string, label: SITUACAO_TCE_LABELS[s] })),
+  ];
+  const contagemAbas = await Promise.all(abas.map((a) => prisma.processoTce.count({ where: whereAba(a.s) })));
   const paramsSemSituacao = new URLSearchParams();
   for (const [k, v] of Object.entries(searchParams)) {
     if (k === "situacao" || k === "page" || v === undefined) continue;
     for (const x of Array.isArray(v) ? v : [v]) paramsSemSituacao.append(k, x);
   }
-  const linkAba = (s: string | null) => {
+  const linkAba = (s: string) => {
     const p = new URLSearchParams(paramsSemSituacao);
-    if (s) p.set("situacao", s);
+    p.set("situacao", s);
     const q = p.toString();
     return `/app/tce/processos${q ? `?${q}` : ""}`;
   };
@@ -314,10 +338,11 @@ export default async function TceProcessosPage({
 
       {/* Abas por situacao (Direcao A), no lugar dos cartoes coloridos */}
       <nav className="flex flex-wrap gap-1 border-b" aria-label="Situação">
-        {[{ s: null as string | null, label: "Todos", n: contagemTodos }, ...SITUACOES_TCE.map((s, i) => ({ s: s as string | null, label: SITUACAO_TCE_LABELS[s], n: contagemSituacao[i] }))]
-          .filter((a) => a.s === null || a.n > 0 || a.s === situacao)
+        {abas
+          .map((a, i) => ({ ...a, n: contagemAbas[i] }))
+          .filter((a) => a.s === "todos" || a.s === ABA_ANDAMENTO || a.n > 0 || a.s === situacao)
           .map((a) => {
-            const on = (situacao ?? null) === a.s;
+            const on = situacao === a.s;
             return (
               <Link
                 key={a.label}
@@ -336,8 +361,8 @@ export default async function TceProcessosPage({
       </nav>
       <p className="-mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
         <span>Atalhos:</span>
-        <Link href="/app/tce/processos?prazo=aberto" className="hover:text-brand-navy hover:underline">Com prazo aberto <span className="font-mono">{comPrazoAberto}</span></Link>
-        <Link href="/app/tce/processos?pauta=1" className="hover:text-brand-navy hover:underline">Em pauta <span className="font-mono">{emPauta}</span></Link>
+        <Link href="/app/tce/processos?prazo=aberto&situacao=todos" className="hover:text-brand-navy hover:underline">Com prazo aberto <span className="font-mono">{comPrazoAberto}</span></Link>
+        <Link href="/app/tce/processos?pauta=1&situacao=todos" className="hover:text-brand-navy hover:underline">Em pauta <span className="font-mono">{emPauta}</span></Link>
         <Link href="/app/tce/processos?semDespacho=1" className="hover:text-brand-navy hover:underline">Sem despacho <span className="font-mono">{semDespachoCount}</span></Link>
         <Link href="/app/tce/processos?memorial=pendente" className="hover:text-brand-navy hover:underline">Memoriais pendentes <span className="font-mono">{memoriaisPendentes}</span></Link>
         <Link href="/app/tce/processos?contrarrazoes=pendentes" className="hover:text-brand-navy hover:underline">Contrarrazões pendentes <span className="font-mono">{contrarrazoesPendentes}</span></Link>
