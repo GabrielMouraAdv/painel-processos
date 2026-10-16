@@ -39,6 +39,8 @@ export const RESULTADOS_POR_TIPO_TCE: Record<TipoProcessoTce, string[]> = {
     "Legal (registro concedido)",
     "Ilegal (registro negado)",
     "Parcialmente Legal",
+    // Julgamento que so expede determinacoes/medidas saneadoras (ex.: 25100389-9)
+    "Determinações (sem juízo de irregularidade)",
   ],
   TOMADA_CONTAS_ESPECIAL: [
     "Contas Regulares",
@@ -177,6 +179,10 @@ export function classificarResultadoTce(
       return "favoravel";
     if (/descumprido/i.test(resultado)) return "desfavoravel";
   }
+
+  // So determinacoes, sem juizo de regularidade: neutro (antes da regra geral,
+  // porque o rotulo contem a palavra "irregularidade").
+  if (/^determina/i.test(resultado)) return "neutro";
 
   // Admissao de Pessoal: legalidade do ato (registro)
   if (/^ilegal/i.test(resultado)) return "desfavoravel";
