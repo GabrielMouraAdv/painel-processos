@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { semAcento } from "@/lib/julgamento-config";
 import { prisma } from "@/lib/prisma";
 import { TCE_RECURSO_CODE, TCE_TIPO_LABELS } from "@/lib/tce-config";
 import { tipoProcessoLabel } from "@/lib/processo-labels";
@@ -90,29 +91,27 @@ export async function GET(req: Request) {
           gestor: { select: { nome: true } },
         },
       }),
-      prisma.gestor.findMany({
-        where: {
-          escritorioId,
-          nome: { contains: q, mode: "insensitive" },
-        },
-        orderBy: { nome: "asc" },
-        take: LIMITE_POR_CATEGORIA,
-        select: {
-          id: true,
-          nome: true,
-          cargo: true,
-          municipio: true,
-        },
-      }),
-      prisma.municipio.findMany({
-        where: {
-          escritorioId,
-          nome: { contains: q, mode: "insensitive" },
-        },
-        orderBy: { nome: "asc" },
-        take: LIMITE_POR_CATEGORIA,
-        select: { id: true, nome: true, uf: true },
-      }),
+      // Pessoas e orgaos: busca sem depender de acento ("betania" acha "Betânia").
+      // Sao poucas centenas de registros, entao o filtro e feito aqui.
+      prisma.gestor
+        .findMany({
+          where: { escritorioId },
+          orderBy: { nome: "asc" },
+          select: {
+            id: true,
+            nome: true,
+            cargo: true,
+            municipio: true,
+          },
+        })
+        .then((l) => l.filter((g) => semAcento(g.nome).includes(semAcento(q))).slice(0, LIMITE_POR_CATEGORIA)),
+      prisma.municipio
+        .findMany({
+          where: { escritorioId },
+          orderBy: { nome: "asc" },
+          select: { id: true, nome: true, uf: true },
+        })
+        .then((l) => l.filter((m) => semAcento(m.nome).includes(semAcento(q))).slice(0, LIMITE_POR_CATEGORIA)),
     ]);
 
   const resultados: ResultadoBusca[] = [
