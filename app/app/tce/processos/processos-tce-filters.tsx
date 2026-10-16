@@ -20,7 +20,6 @@ import {
   TCE_CAMARA_LABELS,
   TCE_RECURSO_LABELS,
   TCE_TIPO_LABELS,
-  todasFasesTce,
 } from "@/lib/tce-config";
 import { TipoRecursoTce } from "@prisma/client";
 
