@@ -80,6 +80,47 @@ const BANCAS_BY_SLUG = new Map(BANCAS.map((b) => [b.slug, b]));
 export const BANCA_SLUGS_VALIDOS: readonly string[] = BANCAS.map((b) => b.slug);
 const BANCA_SLUGS_SET = new Set(BANCA_SLUGS_VALIDOS);
 
+// ---------------------------------------------------------------------------
+// OABs monitoradas no DJEN (varredura por advogado em lib/djen-oab.ts).
+// A lista de bancas acima e a UNICA fonte dos numeros de OAB; aqui so se
+// escolhe quais entram na varredura diaria. Bancas sem OAB cadastrada
+// (ex.: paulo-maciel) sao ignoradas automaticamente.
+export const BANCAS_MONITORADAS_DJEN: readonly string[] = [
+  "gabriel-moura", // PE 58958 Gabriel Vidal de Moura
+  "filipe-campos", // PE 31509 Filipe Fernandes Campos
+  "porto-rodrigues", // PE 23610 Julio Tiago de C. Rodrigues
+  "henrique", // PE 50695 Henrique Moura de Arruda
+];
+
+export type OabMonitorada = {
+  slug: string;
+  numero: string; // so digitos, ex.: "58958"
+  uf: string; // ex.: "PE"
+  advogado: string;
+  sigla: string;
+};
+
+// "OAB/PE 58.958" -> { uf: "PE", numero: "58958" }
+export function parseOab(oab: string): { uf: string; numero: string } | null {
+  const m = oab.match(/OAB\/?([A-Z]{2})\s*([\d.]+)/i);
+  if (!m) return null;
+  const numero = m[2].replace(/\D+/g, "");
+  if (!numero) return null;
+  return { uf: m[1].toUpperCase(), numero };
+}
+
+export function oabsMonitoradasDjen(): OabMonitorada[] {
+  const lista: OabMonitorada[] = [];
+  for (const slug of BANCAS_MONITORADAS_DJEN) {
+    const b = BANCAS_BY_SLUG.get(slug);
+    if (!b) continue;
+    const oab = parseOab(b.oab);
+    if (!oab) continue;
+    lista.push({ slug, numero: oab.numero, uf: oab.uf, advogado: b.advogado, sigla: b.sigla });
+  }
+  return lista;
+}
+
 export function getBanca(slug: string): Banca | null {
   return BANCAS_BY_SLUG.get(slug) ?? null;
 }

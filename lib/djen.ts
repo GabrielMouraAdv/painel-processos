@@ -1,6 +1,11 @@
 import { prisma } from "./prisma";
-import { consultarProcesso } from "./datajud";
+import { consultarProcesso, type DatajudConsultaResultado } from "./datajud";
+import { hashConteudo } from "./djen-oab";
 import { detectaIntimacao } from "./monitoramento-detect";
+
+// Publicacoes DERIVADAS dos movimentos do Datajud (fonte "DJEN"). Sao um
+// complemento: a fonte primaria das intimacoes e a varredura por OAB na API
+// do DJEN (lib/djen-oab.ts, fonte "DJEN_OAB").
 
 export type PublicacaoDjenResultado = {
   dataPublicacao: Date;
@@ -49,13 +54,13 @@ function extrairPagina(complementos: string[]): string | null {
   return null;
 }
 
-export async function consultarPublicacoesDJEN(
-  numeroProcesso: string,
-  tribunal: string,
-): Promise<PublicacaoDjenResultado[]> {
-  const resultado = await consultarProcesso(numeroProcesso, tribunal);
-  if (!resultado) return [];
-
+/**
+ * Extrai, de um resultado do Datajud JA OBTIDO, os movimentos que indicam
+ * publicacao/intimacao. Funcao pura: nao consulta nada.
+ */
+export function extrairPublicacoesDoDatajud(
+  resultado: DatajudConsultaResultado,
+): PublicacaoDjenResultado[] {
   const publicacoes: PublicacaoDjenResultado[] = [];
 
   for (const mov of resultado.movimentos) {
@@ -83,6 +88,46 @@ export async function consultarPublicacoesDJEN(
   return publicacoes;
 }
 
+export async function consultarPublicacoesDJEN(
+  numeroProcesso: string,
+  tribunal: string,
+): Promise<PublicacaoDjenResultado[]> {
+  const resultado = await consultarProcesso(numeroProcesso, tribunal);
+  if (!resultado) return [];
+  return extrairPublicacoesDoDatajud(resultado);
+}
+
+/**
+ * Grava em lote as publicacoes derivadas do Datajud. Duplicadas pela unique
+ * constraint (processoId, dataPublicacao, hashConteudo) sao ignoradas.
+ */
+export async function gravarPublicacoesDatajud(
+  processoId: string,
+  publicacoes: PublicacaoDjenResultado[],
+): Promise<number> {
+  if (publicacoes.length === 0) return 0;
+  const criadas = await prisma.publicacaoDJEN.createMany({
+    data: publicacoes.map((pub) => ({
+      processoId,
+      dataPublicacao: pub.dataPublicacao,
+      dataDisponibilizacao: pub.dataDisponibilizacao,
+      conteudo: pub.conteudo,
+      caderno: pub.caderno,
+      pagina: pub.pagina,
+      fonte: "DJEN",
+      geraIntimacao: pub.geraIntimacao,
+      hashConteudo: hashConteudo(pub.conteudo),
+    })),
+    skipDuplicates: true,
+  });
+  return criadas.count;
+}
+
+/**
+ * Consulta o Datajud e grava as publicacoes derivadas. Mantida para
+ * compatibilidade; o cron usa verificarProcessoMonitorado, que aproveita a
+ * mesma consulta das movimentacoes (uma requisicao por processo, nao duas).
+ */
 export async function verificarNovasPublicacoes(
   processoId: string,
 ): Promise<number> {
@@ -96,24 +141,5 @@ export async function verificarNovasPublicacoes(
     processo.numero,
     processo.tribunal,
   );
-
-  if (publicacoes.length === 0) return 0;
-
-  // Insercao em lote — duplicadas pela unique constraint
-  // (processoId, dataPublicacao, conteudo) sao ignoradas pelo skipDuplicates.
-  const criadas = await prisma.publicacaoDJEN.createMany({
-    data: publicacoes.map((pub) => ({
-      processoId: processo.id,
-      dataPublicacao: pub.dataPublicacao,
-      dataDisponibilizacao: pub.dataDisponibilizacao,
-      conteudo: pub.conteudo,
-      caderno: pub.caderno,
-      pagina: pub.pagina,
-      fonte: "DJEN",
-      geraIntimacao: pub.geraIntimacao,
-    })),
-    skipDuplicates: true,
-  });
-
-  return criadas.count;
+  return gravarPublicacoesDatajud(processo.id, publicacoes);
 }

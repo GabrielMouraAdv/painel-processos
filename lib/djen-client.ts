@@ -375,6 +375,74 @@ export async function buscarPublicacaoNoDJEN(
   return { encontrado: false, ...ultimoErro };
 }
 
+export const DJEN_ENDPOINT_COMUNICACAO = DJEN_ENDPOINT;
+
+export type RequisicaoDjenResultado =
+  | { ok: true; json: unknown }
+  | { ok: false; erro: string; esgotouTempo: boolean };
+
+/**
+ * Faz UMA requisicao GET generica a API do DJEN respeitando o mesmo
+ * rate-limiter (16 req/min) e o mesmo cooldown de 429 usados por
+ * buscarPublicacaoNoDJEN. Usada pela varredura por OAB (lib/djen-oab.ts),
+ * que precisa de paginacao em vez de "primeiro match".
+ */
+export async function requisitarDjen(
+  url: string,
+  opts?: { deadline?: number; rotulo?: string },
+): Promise<RequisicaoDjenResultado> {
+  const rotulo = opts?.rotulo ?? url;
+  let ultimoErro = "sem tentativas";
+  for (let tentativa = 1; tentativa <= DJEN_MAX_TENTATIVAS; tentativa++) {
+    const conseguiuSlot = await aguardarSlotDjen(opts?.deadline);
+    if (!conseguiuSlot) {
+      return {
+        ok: false,
+        erro: "orcamento de tempo esgotado (fica para a proxima execucao)",
+        esgotouTempo: true,
+      };
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), DJEN_TIMEOUT_MS);
+    try {
+      console.log(`[djen] GET ${rotulo} (tentativa ${tentativa})`);
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+        cache: "no-store",
+      });
+      if (res.status === 429) {
+        entrarEmCooldown();
+        console.warn(
+          `[djen] HTTP 429 em ${rotulo} (tentativa ${tentativa}/${DJEN_MAX_TENTATIVAS}); cooldown de ${COOLDOWN_MS}ms ativado`,
+        );
+        ultimoErro = "HTTP 429 (rate-limit)";
+        if (tentativa < DJEN_MAX_TENTATIVAS) continue;
+        return { ok: false, erro: ultimoErro, esgotouTempo: false };
+      }
+      if (!res.ok) {
+        return { ok: false, erro: `HTTP ${res.status}`, esgotouTempo: false };
+      }
+      const json = (await res.json()) as unknown;
+      return { ok: true, json };
+    } catch (err) {
+      const isAbort = err instanceof Error && err.name === "AbortError";
+      ultimoErro = isAbort
+        ? "timeout"
+        : err instanceof Error
+          ? err.message
+          : String(err);
+      console.warn(`[djen] erro em ${rotulo}: ${ultimoErro}`);
+      if (tentativa < DJEN_MAX_TENTATIVAS) continue;
+      return { ok: false, erro: ultimoErro, esgotouTempo: false };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return { ok: false, erro: ultimoErro, esgotouTempo: false };
+}
+
 /**
  * Mapeia o resultado de buscarPublicacaoNoDJEN para o conjunto de campos que
  * vai persistir em MovimentacaoAutomatica.

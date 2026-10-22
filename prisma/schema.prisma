@@ -260,6 +260,9 @@ model Processo {
   valorCondenacao            Decimal?     @db.Decimal(15, 2)
   observacoesJulgamento      String?      @db.Text
   tipoLivre                  String?
+  // Processo prioritario do escritorio (lista de improbidade/criminal acompanhada
+  // pelos socios): abre a pagina Hoje, ordenado pela situacao atual.
+  prioritario                Boolean      @default(false)
   gestorId                   String
   advogadoId           String
   escritorioId     String
@@ -283,6 +286,7 @@ model Processo {
   @@index([advogadoId])
   @@index([tipo])
   @@index([risco])
+  @@index([escritorioId, prioritario])
 }
 
 model Andamento {
@@ -804,13 +808,21 @@ model PublicacaoDJEN {
   conteudo             String?   @db.Text
   caderno              String?
   pagina               String?
+  // "DJEN" = derivada dos movimentos do Datajud; "DJEN_OAB" = intimacao
+  // trazida pela varredura por OAB na API do DJEN (lib/djen-oab.ts).
   fonte                String    @default("DJEN")
   lida                 Boolean   @default(false)
   geraIntimacao        Boolean   @default(false)
+  // md5 do conteudo: o indice unico nao pode incluir o texto integral
+  // (intimacoes do DJEN passam do limite de ~2,7KB por entrada do btree).
+  hashConteudo         String    @default("")
+  linkOficial          String?
+  tipoComunicacao      String?
   createdAt            DateTime  @default(now())
 
-  @@unique([processoId, dataPublicacao, conteudo])
+  @@unique([processoId, dataPublicacao, hashConteudo])
   @@index([processoId, lida])
+  @@index([fonte, dataPublicacao])
 }
 
 model MonitoramentoConfig {
@@ -821,6 +833,9 @@ model MonitoramentoConfig {
   ultimaVerificacao  DateTime?
   ultimoErro         String?
   totalVerificacoes  Int       @default(0)
+  // dataHoraUltimaAtualizacao devolvida pelo Datajud na ultima consulta:
+  // mostra na tela quando a base do CNJ esta congelada.
+  datajudAtualizadoEm DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }

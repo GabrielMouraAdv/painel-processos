@@ -148,10 +148,13 @@ export default async function TceDashboardPage({
         prazos: { some: { cumprido: false, dispensado: false } },
       },
     }),
-    prisma.processoTce.count({
+    // Itens da pauta da semana corrente (a mesma semana do card "Pauta" abaixo).
+    prisma.itemPauta.count({
       where: {
-        ...base,
-        faseAtual: { in: ["acordao_1", "referendo_pleno", "acordao_agravo"] },
+        sessao: { escritorioId, data: { gte: weekStart, lte: weekEnd } },
+        ...(bancasFiltro.length > 0 && {
+          processoTce: { bancasSlug: { hasSome: bancasFiltro } },
+        }),
       },
     }),
     prisma.processoTce.count({
@@ -386,7 +389,7 @@ export default async function TceDashboardPage({
     {
       label: "Em pauta",
       value: emPauta,
-      href: "/app/tce/processos?pauta=1&situacao=todos",
+      href: `/app/tce/pauta?semana=${weekStartIso}`,
       icon: Gavel,
       tone: "violet",
     },

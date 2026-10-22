@@ -3,8 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { verificarNovasMovimentacoes } from "@/lib/datajud";
-import { verificarNovasPublicacoes } from "@/lib/djen";
+import { verificarProcessoMonitorado } from "@/lib/monitoramento-verificar";
 import { processarFilaDjen } from "@/lib/djen-fila";
 import { prisma } from "@/lib/prisma";
 
@@ -80,16 +79,14 @@ export async function POST(req: Request) {
     if (Date.now() - inicio > BUDGET_VERIFICACAO_MS) break;
     verificados++;
     try {
-      const m = await verificarNovasMovimentacoes(id);
-      novasMovimentacoes += m;
+      // Uma unica consulta ao Datajud por processo (movimentacoes e
+      // publicacoes derivadas saem do mesmo resultado).
+      const r = await verificarProcessoMonitorado(id);
+      novasMovimentacoes += r.novasMovimentacoes;
+      novasPublicacoes += r.novasPublicacoes;
+      if (r.erro) erros.push({ processoId: id, erro: r.erro });
     } catch (err) {
-      erros.push({ processoId: id, erro: `mov: ${errorMessage(err)}` });
-    }
-    try {
-      const p = await verificarNovasPublicacoes(id);
-      novasPublicacoes += p;
-    } catch (err) {
-      erros.push({ processoId: id, erro: `pub: ${errorMessage(err)}` });
+      erros.push({ processoId: id, erro: errorMessage(err) });
     }
   }
 

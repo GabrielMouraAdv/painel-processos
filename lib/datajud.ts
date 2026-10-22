@@ -194,6 +194,93 @@ export async function consultarProcesso(
   }
 }
 
+/**
+ * Registra o resultado de uma verificacao em MonitoramentoConfig (uma unica
+ * gravacao por processo e por rodada). `datajudAtualizadoEm` e a
+ * dataHoraUltimaAtualizacao que o Datajud devolveu — a tela usa a mais
+ * recente delas para avisar quando a base do CNJ esta congelada.
+ */
+export async function registrarVerificacaoMonitoramento(
+  processoId: string,
+  info: { erro: string | null; datajudAtualizadoEm?: Date | null },
+): Promise<void> {
+  const agora = new Date();
+  const atualizadoEm =
+    info.datajudAtualizadoEm instanceof Date &&
+    !Number.isNaN(info.datajudAtualizadoEm.getTime())
+      ? info.datajudAtualizadoEm
+      : undefined;
+  await prisma.monitoramentoConfig.upsert({
+    where: { processoId },
+    create: {
+      processoId,
+      ultimaVerificacao: agora,
+      ultimoErro: info.erro,
+      totalVerificacoes: 1,
+      ...(atualizadoEm ? { datajudAtualizadoEm: atualizadoEm } : {}),
+    },
+    update: {
+      ultimaVerificacao: agora,
+      ultimoErro: info.erro,
+      totalVerificacoes: { increment: 1 },
+      ...(atualizadoEm ? { datajudAtualizadoEm: atualizadoEm } : {}),
+    },
+  });
+}
+
+export function datajudAtualizadoEmDe(
+  resultado: DatajudConsultaResultado | null,
+): Date | null {
+  if (!resultado?.dataUltimaAtualizacao) return null;
+  const d = new Date(resultado.dataUltimaAtualizacao);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Grava em lote as movimentacoes de um resultado do Datajud ja obtido.
+ * Devolve quantas eram novas (duplicadas pela unique constraint
+ * processoId+dataMovimento+nomeMovimento sao ignoradas).
+ */
+export async function gravarMovimentacoesDatajud(
+  processoId: string,
+  resultado: DatajudConsultaResultado,
+): Promise<number> {
+  // Insercao em LOTE: um processo nunca verificado pode trazer centenas de
+  // movimentacoes historicas; criar uma a uma estourava o orcamento de
+  // tempo do cron. createMany + skipDuplicates resolve em uma unica query.
+  const linhas = [];
+  for (const mov of resultado.movimentos) {
+    if (!mov.nome || !mov.dataHora) continue;
+    const data = new Date(mov.dataHora);
+    if (Number.isNaN(data.getTime())) continue;
+    linhas.push({
+      processoId,
+      codigoMovimento: mov.codigo,
+      nomeMovimento: mov.nome,
+      dataMovimento: data,
+      complementos: mov.complementos.length
+        ? mov.complementos.join(" | ")
+        : null,
+      fonte: "DATAJUD",
+    });
+  }
+  if (linhas.length === 0) return 0;
+  const criadas = await prisma.movimentacaoAutomatica.createMany({
+    data: linhas,
+    skipDuplicates: true,
+  });
+  // O inteiro teor (DJEN) NAO e buscado aqui: a movimentacao nasce com
+  // conteudoIntegralStatus null e entra na fila (processarFilaDjen), que
+  // respeita rate-limit e orcamento de tempo.
+  return criadas.count;
+}
+
+/**
+ * Consulta o Datajud e grava as movimentacoes novas de um processo.
+ * Mantida para quem so precisa das movimentacoes; o cron usa
+ * verificarProcessoMonitorado (lib/monitoramento-verificar.ts), que
+ * aproveita a MESMA consulta tambem para as publicacoes.
+ */
 export async function verificarNovasMovimentacoes(
   processoId: string,
 ): Promise<number> {
@@ -207,86 +294,19 @@ export async function verificarNovasMovimentacoes(
   try {
     const resultado = await consultarProcesso(processo.numero, processo.tribunal);
     if (!resultado) {
-      await prisma.monitoramentoConfig.upsert({
-        where: { processoId: processo.id },
-        create: {
-          processoId: processo.id,
-          ultimaVerificacao: new Date(),
-          ultimoErro: "consulta retornou nulo",
-          totalVerificacoes: 1,
-        },
-        update: {
-          ultimaVerificacao: new Date(),
-          ultimoErro: "consulta retornou nulo",
-          totalVerificacoes: { increment: 1 },
-        },
+      await registrarVerificacaoMonitoramento(processo.id, {
+        erro: "consulta retornou nulo",
       });
       return 0;
     }
-
-    // Insercao em LOTE: um processo nunca verificado pode trazer centenas de
-    // movimentacoes historicas; criar uma a uma estourava o orcamento de
-    // tempo do cron. createMany + skipDuplicates resolve em uma unica query
-    // (duplicadas pela unique constraint processoId+dataMovimento+nomeMovimento
-    // sao ignoradas, inclusive dentro do proprio lote).
-    const linhas = [];
-    for (const mov of resultado.movimentos) {
-      if (!mov.nome || !mov.dataHora) continue;
-      const data = new Date(mov.dataHora);
-      if (Number.isNaN(data.getTime())) continue;
-      linhas.push({
-        processoId: processo.id,
-        codigoMovimento: mov.codigo,
-        nomeMovimento: mov.nome,
-        dataMovimento: data,
-        complementos: mov.complementos.length
-          ? mov.complementos.join(" | ")
-          : null,
-        fonte: "DATAJUD",
-      });
-    }
-    if (linhas.length > 0) {
-      const criadas = await prisma.movimentacaoAutomatica.createMany({
-        data: linhas,
-        skipDuplicates: true,
-      });
-      novas = criadas.count;
-    }
-
-    // O inteiro teor (DJEN) NAO e buscado aqui: a movimentacao nasce com
-    // conteudoIntegralStatus null e entra na fila (processarFilaDjen), que
-    // respeita rate-limit e orcamento de tempo. Buscar inline derrubava o
-    // cron por timeout antes de percorrer todos os processos.
-
-    await prisma.monitoramentoConfig.upsert({
-      where: { processoId: processo.id },
-      create: {
-        processoId: processo.id,
-        ultimaVerificacao: new Date(),
-        ultimoErro: null,
-        totalVerificacoes: 1,
-      },
-      update: {
-        ultimaVerificacao: new Date(),
-        ultimoErro: null,
-        totalVerificacoes: { increment: 1 },
-      },
+    novas = await gravarMovimentacoesDatajud(processo.id, resultado);
+    await registrarVerificacaoMonitoramento(processo.id, {
+      erro: null,
+      datajudAtualizadoEm: datajudAtualizadoEmDe(resultado),
     });
   } catch (err) {
-    const msg = errorMessage(err);
-    await prisma.monitoramentoConfig.upsert({
-      where: { processoId: processo.id },
-      create: {
-        processoId: processo.id,
-        ultimaVerificacao: new Date(),
-        ultimoErro: msg,
-        totalVerificacoes: 1,
-      },
-      update: {
-        ultimaVerificacao: new Date(),
-        ultimoErro: msg,
-        totalVerificacoes: { increment: 1 },
-      },
+    await registrarVerificacaoMonitoramento(processo.id, {
+      erro: errorMessage(err),
     });
   }
 

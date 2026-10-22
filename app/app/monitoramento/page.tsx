@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { NumeroProcesso } from "@/components/numero-processo";
 import { authOptions } from "@/lib/auth";
 import { diaDe } from "@/lib/datas";
+import { FONTE_DJEN_OAB, resumoDe } from "@/lib/djen-oab";
+import { datajudParadoHa, datajudUltimaAtualizacao } from "@/lib/monitoramento-verificar";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +41,10 @@ export default async function NovidadesPage({
   const escritorioId = session.user.escritorioId;
   const tudo = searchParams.filtro === "tudo";
 
-  const [gruposMov, gruposPub] = await Promise.all([
+  // Intimacoes trazidas pela varredura do DJEN por OAB (fonte primaria):
+  // ultimos 14 dias, em destaque acima dos movimentos do Datajud.
+  const desde14 = new Date(Date.now() - 14 * 86_400_000);
+  const [gruposMov, gruposPub, intimacoes, datajudUltima] = await Promise.all([
     prisma.movimentacaoAutomatica.groupBy({
       by: ["processoId"],
       where: { lida: false, processo: { escritorioId } },
@@ -52,7 +57,19 @@ export default async function NovidadesPage({
       _count: { _all: true },
       _max: { dataPublicacao: true },
     }),
+    prisma.publicacaoDJEN.findMany({
+      where: { fonte: FONTE_DJEN_OAB, dataPublicacao: { gte: desde14 }, processo: { escritorioId } },
+      orderBy: [{ dataPublicacao: "desc" }, { createdAt: "desc" }],
+      take: 60,
+      select: {
+        id: true, dataPublicacao: true, conteudo: true, lida: true, tipoComunicacao: true, linkOficial: true, caderno: true,
+        processo: { select: { id: true, numero: true, tribunal: true, gestor: { select: { nome: true } } } },
+      },
+    }),
+    datajudUltimaAtualizacao(escritorioId),
   ]);
+  const datajudParado = datajudParadoHa(datajudUltima);
+  const intimacoesNaoLidas = intimacoes.filter((i) => !i.lida).length;
 
   const resumo = new Map<string, { n: number; ultima: Date }>();
   for (const g of gruposMov) resumo.set(g.processoId, { n: g._count._all, ultima: g._max.dataMovimento! });
@@ -136,6 +153,51 @@ export default async function NovidadesPage({
           Lista completa e configurações →
         </Link>
       </div>
+
+      {/* ------------------------------------------------ intimacoes DJEN por OAB */}
+      <section className="rounded-xl border border-brand-navy/30 bg-white" aria-labelledby="intim">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-2 pt-4">
+          <h2 id="intim" className="text-xl font-semibold">
+            Intimações do DJEN
+            {intimacoesNaoLidas > 0 && <span className="ml-2 font-mono text-sm font-semibold text-brand-navy">{intimacoesNaoLidas} não {intimacoesNaoLidas === 1 ? "lida" : "lidas"}</span>}
+          </h2>
+          <span className="text-[13px] text-muted-foreground">últimos 14 dias · publicadas em nome dos advogados do escritório</span>
+        </div>
+        {intimacoes.length === 0 && (
+          <p className="border-t px-5 py-4 text-sm text-muted-foreground">Nenhuma intimação publicada nos últimos 14 dias para os processos cadastrados.</p>
+        )}
+        {intimacoes.map((i) => (
+          <div key={i.id} className={cn("grid gap-3 border-t px-5 py-3 md:grid-cols-[62px_minmax(220px,1fr)_minmax(280px,1.6fr)_auto]", i.lida && "text-muted-foreground")}>
+            <span className="font-mono text-xs text-muted-foreground">{br(i.dataPublicacao)}</span>
+            <div className="min-w-0">
+              <Link href={`/app/processos/${i.processo.id}`} className="hover:underline">
+                <NumeroProcesso numero={i.processo.numero} />
+              </Link>
+              <span className="ml-2 rounded border px-1 font-mono text-[11px] text-muted-foreground">{i.processo.tribunal}</span>
+              <div className={cn("mt-0.5 text-[13px]", !i.lida && "font-semibold text-foreground")}>{i.processo.gestor?.nome ?? "—"}</div>
+              {i.caderno && <div className="truncate text-[12px] text-muted-foreground">{i.caderno}</div>}
+            </div>
+            <div className="min-w-0 text-sm">
+              {!i.lida && <span className="mr-2 rounded bg-brand-navy px-1.5 text-[11px] font-semibold uppercase tracking-wide text-white">{i.tipoComunicacao || "Intimação"}</span>}
+              {i.lida && i.tipoComunicacao && <span className="mr-2 text-[11px] uppercase tracking-wide">{i.tipoComunicacao}</span>}
+              <span>{resumoDe(i.conteudo ?? "", 260)}</span>
+            </div>
+            <div className="flex flex-wrap items-start justify-end gap-2">
+              {i.linkOficial && (
+                <a href={i.linkOficial} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center rounded-md border px-3 text-[13px] hover:bg-background">
+                  Ver no tribunal
+                </a>
+              )}
+              {!i.lida && <MarcarProcessoVisto processoId={i.processo.id} />}
+            </div>
+          </div>
+        ))}
+        {datajudParado != null && datajudUltima && (
+          <p className="border-t px-5 py-2 text-[12px] text-muted-foreground">
+            DataJud atualizado pela última vez em {br(datajudUltima)} (há {datajudParado} dias): os movimentos abaixo podem estar defasados.
+          </p>
+        )}
+      </section>
 
       {cartoes.length === 0 && (
         <div className="rounded-xl border border-dashed bg-white p-8 text-center text-sm">
