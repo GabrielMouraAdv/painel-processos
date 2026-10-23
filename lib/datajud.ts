@@ -80,8 +80,18 @@ type RawHit = {
   classe?: string | { nome?: string };
   orgaoJulgador?: string | { nome?: string };
   dataHoraUltimaAtualizacao?: string;
+  grau?: string | null;
   movimentos?: RawMovimento[];
 };
+
+// Rotulo da instancia para os movimentos que nao sao do 1o grau.
+function rotuloDoGrau(grau: string | null | undefined): string | null {
+  const g = (grau ?? "").toUpperCase();
+  if (!g || g === "G1" || g === "JE") return null;
+  if (g === "G2") return "2º grau";
+  if (g === "SUP") return "tribunal superior";
+  return g;
+}
 
 type RawMovimento = {
   codigo?: number | string | null;
@@ -151,7 +161,10 @@ export async function consultarProcesso(
       },
       body: JSON.stringify({
         query: { match: { numeroProcesso: numero } },
-        size: 1,
+        // O mesmo numero CNJ tem um registro por instancia (G1, G2, tribunal
+        // superior). Com size 1 o painel via so uma delas — quase sempre o 1o
+        // grau parado, enquanto o recurso andava no 2o grau.
+        size: 10,
       }),
       cache: "no-store",
     });
@@ -161,32 +174,50 @@ export async function consultarProcesso(
     const json = (await res.json()) as {
       hits?: { hits?: Array<{ _source?: RawHit }> };
     };
-    const hit = json?.hits?.hits?.[0]?._source;
-    if (!hit) return null;
+    const hits = (json?.hits?.hits ?? [])
+      .map((h) => h?._source)
+      .filter((h): h is RawHit => !!h);
+    if (hits.length === 0) return null;
 
-    const movimentos: DatajudMovimento[] = Array.isArray(hit.movimentos)
-      ? hit.movimentos.map((m) => ({
+    // Movimentos de todas as instancias juntos; os que nao sao do 1o grau
+    // ganham o grau como primeiro complemento ("2º grau · para decisão").
+    const movimentos: DatajudMovimento[] = [];
+    for (const hit of hits) {
+      const rotuloGrau = rotuloDoGrau(hit.grau);
+      if (!Array.isArray(hit.movimentos)) continue;
+      for (const m of hit.movimentos) {
+        const complementos = extrairComplementos(m);
+        movimentos.push({
           codigo: m?.codigo != null ? String(m.codigo) : null,
           nome: String(m?.nome ?? ""),
           dataHora: String(m?.dataHora ?? ""),
-          complementos: extrairComplementos(m),
-        }))
-      : [];
+          complementos: rotuloGrau ? [rotuloGrau, ...complementos] : complementos,
+        });
+      }
+    }
+    movimentos.sort((a, b) => (a.dataHora < b.dataHora ? -1 : a.dataHora > b.dataHora ? 1 : 0));
 
+    // Classe e orgao: da instancia atualizada mais recentemente pelo tribunal.
+    const principal = hits.reduce((melhor, h) =>
+      (h.dataHoraUltimaAtualizacao ?? "") > (melhor.dataHoraUltimaAtualizacao ?? "") ? h : melhor,
+    );
     const orgao =
-      typeof hit.orgaoJulgador === "string"
-        ? hit.orgaoJulgador
-        : (hit.orgaoJulgador?.nome ?? null);
-
+      typeof principal.orgaoJulgador === "string"
+        ? principal.orgaoJulgador
+        : (principal.orgaoJulgador?.nome ?? null);
     const classe =
-      typeof hit.classe === "string"
-        ? hit.classe
-        : (hit.classe?.nome ?? null);
+      typeof principal.classe === "string"
+        ? principal.classe
+        : (principal.classe?.nome ?? null);
+    const dataUltimaAtualizacao = hits
+      .map((h) => h.dataHoraUltimaAtualizacao ?? "")
+      .sort()
+      .slice(-1)[0] || null;
 
     return {
       classe: classe ?? null,
       orgaoJulgador: orgao ? String(orgao) : null,
-      dataUltimaAtualizacao: hit.dataHoraUltimaAtualizacao ?? null,
+      dataUltimaAtualizacao,
       movimentos,
     };
   } catch {
