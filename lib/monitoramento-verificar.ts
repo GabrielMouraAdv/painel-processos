@@ -1,5 +1,5 @@
 import {
-  consultarProcesso,
+  consultarProcessoDetalhado,
   datajudAtualizadoEmDe,
   gravarMovimentacoesDatajud,
   registrarVerificacaoMonitoramento,
@@ -39,12 +39,14 @@ export async function verificarProcessoMonitorado(
   if (!processo) return { ...vazio, erro: "processo nao encontrado" };
 
   try {
-    const resultado = await consultarProcesso(processo.numero, processo.tribunal);
+    const consulta = await consultarProcessoDetalhado(processo.numero, processo.tribunal);
+    const resultado = consulta.resultado;
     if (!resultado) {
-      await registrarVerificacaoMonitoramento(processo.id, {
-        erro: "consulta retornou nulo",
-      });
-      return { ...vazio, erro: "consulta retornou nulo" };
+      // O motivo fica gravado (HTTP 429, timeout, nao encontrado...) em vez do
+      // antigo "consulta retornou nulo", que escondia a causa.
+      const erro = `Datajud: ${consulta.erro ?? "sem resultado"}`;
+      await registrarVerificacaoMonitoramento(processo.id, { erro });
+      return { ...vazio, erro };
     }
 
     const novasMovimentacoes = await gravarMovimentacoesDatajud(

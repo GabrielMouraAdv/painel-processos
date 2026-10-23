@@ -137,47 +137,78 @@ function errorMessage(err: unknown): string {
   return String(err);
 }
 
-export async function consultarProcesso(
+export type DatajudConsultaDetalhada = {
+  resultado: DatajudConsultaResultado | null;
+  // Motivo de nao haver resultado: "sem endpoint", "sem chave", "nao encontrado",
+  // "HTTP 429", "rede: fetch failed"... (null quando deu certo).
+  erro: string | null;
+};
+
+// Tempo maximo de uma consulta: o Datajud chega a 50 s em horario ruim.
+const DATAJUD_TIMEOUT_MS = 60_000;
+
+async function chamarDatajud(endpoint: string, numero: string): Promise<Response> {
+  return fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `APIKey ${DATAJUD_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: { match: { numeroProcesso: numero } },
+      // O mesmo numero CNJ tem um registro por instancia (G1, G2, tribunal
+      // superior). Com size 1 o painel via so uma delas — quase sempre o 1o
+      // grau parado, enquanto o recurso andava no 2o grau.
+      size: 10,
+    }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(DATAJUD_TIMEOUT_MS),
+  });
+}
+
+/**
+ * Consulta com o motivo da falha. Erros de rede, timeout, 429 e 5xx sao
+ * tentados uma segunda vez apos 3 s.
+ */
+export async function consultarProcessoDetalhado(
   numeroProcesso: string,
   tribunal: string,
-): Promise<DatajudConsultaResultado | null> {
+): Promise<DatajudConsultaDetalhada> {
   // Se o tribunal cadastrado nao tem endpoint (ex.: OUTRO), tenta derivar do
   // proprio numero CNJ antes de desistir.
   const tribunalEfetivo = TRIBUNAL_ENDPOINTS[tribunal]
     ? tribunal
     : (tribunalPorNumeroCNJ(numeroProcesso) ?? tribunal);
   const endpoint = endpointPorTribunal(tribunalEfetivo);
-  if (!endpoint) return null;
-  if (!DATAJUD_API_KEY) return null;
+  if (!endpoint) return { resultado: null, erro: `sem endpoint para ${tribunal}` };
+  if (!DATAJUD_API_KEY) return { resultado: null, erro: "sem chave DATAJUD_API_KEY" };
 
   const numero = normalizarNumero(numeroProcesso);
 
+  let res: Response | null = null;
+  let erroRede: string | null = null;
+  for (let tentativa = 1; tentativa <= 2; tentativa++) {
+    try {
+      res = await chamarDatajud(endpoint, numero);
+      erroRede = null;
+      if (res.ok || (res.status !== 429 && res.status < 500)) break;
+    } catch (err) {
+      erroRede = `rede: ${errorMessage(err)}`;
+      res = null;
+    }
+    if (tentativa === 1) await new Promise((r) => setTimeout(r, 3_000));
+  }
+  if (!res) return { resultado: null, erro: erroRede ?? "sem resposta" };
+  if (!res.ok) return { resultado: null, erro: `HTTP ${res.status}` };
+
   try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `APIKey ${DATAJUD_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: { match: { numeroProcesso: numero } },
-        // O mesmo numero CNJ tem um registro por instancia (G1, G2, tribunal
-        // superior). Com size 1 o painel via so uma delas — quase sempre o 1o
-        // grau parado, enquanto o recurso andava no 2o grau.
-        size: 10,
-      }),
-      cache: "no-store",
-    });
-
-    if (!res.ok) return null;
-
     const json = (await res.json()) as {
       hits?: { hits?: Array<{ _source?: RawHit }> };
     };
     const hits = (json?.hits?.hits ?? [])
       .map((h) => h?._source)
       .filter((h): h is RawHit => !!h);
-    if (hits.length === 0) return null;
+    if (hits.length === 0) return { resultado: null, erro: "nao encontrado no Datajud" };
 
     // Movimentos de todas as instancias juntos; os que nao sao do 1o grau
     // ganham o grau como primeiro complemento ("2º grau · para decisão").
@@ -215,14 +246,28 @@ export async function consultarProcesso(
       .slice(-1)[0] || null;
 
     return {
-      classe: classe ?? null,
-      orgaoJulgador: orgao ? String(orgao) : null,
-      dataUltimaAtualizacao,
-      movimentos,
+      resultado: {
+        classe: classe ?? null,
+        orgaoJulgador: orgao ? String(orgao) : null,
+        dataUltimaAtualizacao,
+        movimentos,
+      },
+      erro: null,
     };
-  } catch {
-    return null;
+  } catch (err) {
+    return { resultado: null, erro: `resposta invalida: ${errorMessage(err)}` };
   }
+}
+
+/**
+ * Versao simples: so o resultado (null quando nao encontrou ou falhou).
+ * Mantida para quem nao precisa do motivo (DJEN, eleitoral).
+ */
+export async function consultarProcesso(
+  numeroProcesso: string,
+  tribunal: string,
+): Promise<DatajudConsultaResultado | null> {
+  return (await consultarProcessoDetalhado(numeroProcesso, tribunal)).resultado;
 }
 
 /**
