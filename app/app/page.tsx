@@ -97,7 +97,7 @@ export default async function HojePage() {
   const fimBusca = new Date(`${somaDias(fimFaixaDia, 1)}T23:59:59Z`);
 
   const [
-    prazosTce, prazosJud, compromissos, sessoesTce, sessoesJud,
+    prazosTce, prazosJud, compromissos,
     emJulgamentoSemMemorial, contrarrazoesPendentes, recursoPendente, situacaoConfirmar,
     novidadesGrupo,
     itensSemana,
@@ -127,15 +127,6 @@ export default async function HojePage() {
       where: { escritorioId, cumprido: false, dataInicio: { gte: iniBusca, lte: fimBusca }, ...filtroVisibilidadeCompromissos(user) },
       orderBy: { dataInicio: "asc" },
       select: { id: true, titulo: true, tipo: true, dataInicio: true, advogado: { select: { nome: true } } },
-    }),
-    prisma.sessaoPauta.findMany({
-      where: { escritorioId, data: { gte: iniBusca, lte: fimBusca } },
-      orderBy: [{ data: "asc" }, { camara: "asc" }],
-      select: { id: true, data: true, camara: true, _count: { select: { itens: true } } },
-    }),
-    prisma.sessaoJudicial.findMany({
-      where: { escritorioId, data: { gte: iniBusca, lte: fimBusca } },
-      select: { id: true, data: true, tribunal: true, orgaoJulgador: true, _count: { select: { itens: true } } },
     }),
     prisma.processoTce.count({
       where: { escritorioId, memorialPronto: false, memorialDispensado: false, AND: [whereSituacaoTce("em_julgamento")] },
@@ -193,8 +184,8 @@ export default async function HojePage() {
   const datajudParado = datajudParadoHa(datajudUltima);
 
   // ---------------------------------------------------------------- faixa da semana (por advogado)
+  // So os compromissos e prazos dos advogados: a pauta do TCE-PE tem o proprio bloco logo abaixo.
   const linhasFaixa: LinhaFaixa[] = [
-    { chave: "pauta", rotulo: "Pauta", sub: "TCE-PE e tribunais" },
     ...SOCIOS.map((s) => ({ chave: s.chave, rotulo: s.rotulo, iniciais: s.iniciais })),
     { chave: "outros", rotulo: "Outros", sub: "demais responsáveis" },
   ];
@@ -233,30 +224,12 @@ export default async function HojePage() {
       href: "/app/compromissos", classe: "bg-violet-50 text-violet-900 ring-1 ring-violet-200",
     });
   }
-  for (const s of sessoesTce) {
-    if (s._count.itens === 0) continue;
-    const d = diaDe(s.data);
-    poeFaixa("pauta", d, {
-      texto: `${CAMARA_COR[s.camara].curto} · ${s._count.itens}`,
-      detalhe: `Pauta TCE-PE · ${TCE_CAMARA_LABELS[s.camara]} · ${s._count.itens} ${s._count.itens === 1 ? "item" : "itens"}`,
-      href: `/app/tce/pauta?semana=${d}`, classe: CAMARA_COR[s.camara].chip,
-    });
-  }
-  for (const s of sessoesJud) {
-    if (s._count.itens === 0) continue;
-    poeFaixa("pauta", diaDe(s.data), {
-      texto: `${s.tribunal} · ${s.orgaoJulgador}`,
-      detalhe: `Pauta ${s.tribunal} · ${s.orgaoJulgador} · ${s._count.itens} ${s._count.itens === 1 ? "item" : "itens"}`,
-      href: "/app/pautas", classe: "bg-brand-navy text-white",
-    });
-  }
   const itensLinha = (chave: string) => Array.from(faixa.get(chave)?.values() ?? []).flat();
   const linhasVisiveis = linhasFaixa.filter((l) => l.chave !== "outros" || itensLinha("outros").length > 0);
   const colunasFaixa = diasFaixa.map((d) => (fimDeSemana(d) ? "72px" : "148px")).join(" ");
 
   const prazosSemana = [...prazosTce.map((p) => diaDe(p.dataVencimento)), ...prazosJud.map((p) => diaDe(p.data))].filter(naSemana).length;
   const compromissosSemana = compromissos.filter((c) => naSemana(diaDe(c.dataInicio))).length;
-  const sessoesSemana = sessoesTce.filter((s) => s._count.itens > 0 && naSemana(diaDe(s.data))).length;
 
   // ---------------------------------------------------------------- pauta do TCE-PE da semana
   const itensPauta = itensSemana.map((it) => {
@@ -424,7 +397,7 @@ export default async function HojePage() {
                     )}
                     aria-hidden="true"
                   >
-                    {l.iniciais ?? (l.chave === "pauta" ? "§" : "+")}
+                    {l.iniciais ?? "+"}
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{l.rotulo}</span>
@@ -433,7 +406,7 @@ export default async function HojePage() {
                 </div>
                 {itensLinha(l.chave).length === 0 && (
                   <div className="flex min-h-[58px] items-center border-b border-l px-4 text-[12px] italic text-muted-foreground" style={{ gridColumn: "2 / span 7" }}>
-                    {l.chave === "pauta" ? "Nenhuma sessão de pauta cadastrada nestas três semanas." : "Nenhum prazo ou compromisso cadastrado nestas três semanas."}
+                    Nenhum prazo ou compromisso cadastrado nestas três semanas.
                   </div>
                 )}
                 {(itensLinha(l.chave).length === 0 ? diasFaixa.slice(7) : diasFaixa).map((d) => {
@@ -465,7 +438,7 @@ export default async function HojePage() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-2.5 text-[13px]">
           <span className="text-muted-foreground">
-            Esta semana: {prazosSemana} {prazosSemana === 1 ? "prazo" : "prazos"} · {compromissosSemana} {compromissosSemana === 1 ? "compromisso" : "compromissos"} · {sessoesSemana} {sessoesSemana === 1 ? "sessão" : "sessões"} do TCE-PE
+            Esta semana: {prazosSemana} {prazosSemana === 1 ? "prazo" : "prazos"} · {compromissosSemana} {compromissosSemana === 1 ? "compromisso" : "compromissos"} · agenda do Legal One e prazos do painel
           </span>
           <span className="flex gap-4">
             <Link href="/app/compromissos" className="font-medium text-brand-navy hover:underline">Ver agenda →</Link>
@@ -628,7 +601,14 @@ export default async function HojePage() {
                           {p.tipo === "CRIMINAL" && <span className="ml-1 rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">criminal</span>}
                         </td>
                         <td className="px-2 py-2.5 align-top">{p.cliente}</td>
-                        <td className={cn("px-2 py-2.5 align-top text-[13px]", p.destaque && "font-semibold text-brand-navy")}>{p.situacao}</td>
+                        <td className="px-2 py-2.5 align-top text-[13px]">
+                          <span className={cn(p.destaque && "font-semibold text-brand-navy")}>{p.situacao}</span>
+                          {p.ultimaPeca && (
+                            <div className="mt-0.5 text-[12px] text-muted-foreground">
+                              Última peça: <span className="font-medium text-foreground">{p.ultimaPeca.texto}</span> · <span className="font-mono text-[11px]">{br(p.ultimaPeca.dia)}</span>
+                            </div>
+                          )}
+                        </td>
                         <td className="px-2 py-2.5 align-top text-[13px] text-muted-foreground">
                           {p.ultimoMovimento ? (
                             <>
@@ -651,7 +631,7 @@ export default async function HojePage() {
           </div>
         )}
         <p className="border-t px-5 py-2 text-[12px] text-muted-foreground">
-          Conclusão para despacho é rotina do cartório e não entra entre os conclusos.
+          Conclusão para despacho é rotina do cartório e não entra entre os conclusos. A última peça vem do nome do movimento e pode ser de corréu: confirme nos autos.
           {datajudParado != null && datajudUltima && (
             <> Movimentos vindos do DataJud, atualizado pela última vez em {br(diaDe(datajudUltima))} (há {datajudParado} dias); as intimações do DJEN entram assim que publicadas.</>
           )}

@@ -32,6 +32,9 @@ export type Prioritario = {
   // Dia (aaaa-mm-dd) que ordena dentro da categoria.
   dia: string | null;
   ultimoMovimento: { dia: string; texto: string } | null;
+  // Ultima peca tipica da defesa registrada nos movimentos (contestacao, apelacao,
+  // contraminuta, embargos...). O DataJud nao diz quem protocolou: pode ser de corréu.
+  ultimaPeca: { dia: string; texto: string } | null;
   naoLidos: number;
   destaque: boolean; // em pauta esta semana ou prazo vencendo em ate 3 dias
 };
@@ -53,6 +56,28 @@ function rotuloConclusao(complementos: string | null): string {
 function conclusaoPrioritaria(complementos: string | null): boolean {
   const c = (complementos ?? "").toLowerCase();
   return c.includes("julgamento") || c.includes("sentença") || c.includes("sentenca") || c.includes("decis");
+}
+
+// Pecas tipicas da defesa, pelo complemento do movimento (sem acento, minusculas).
+const PECAS_DEFESA: [RegExp, string][] = [
+  [/contestac/, "Contestação"],
+  [/defesa (previa|preliminar)/, "Defesa prévia"],
+  [/alegacoes finais|memoriais/, "Alegações finais"],
+  [/embargos de declarac/, "Embargos de declaração"],
+  [/apelac/, "Apelação"],
+  [/recurso especial/, "Recurso especial"],
+  [/recurso extraordinario/, "Recurso extraordinário"],
+  [/agravo/, "Agravo"],
+  [/contraminuta/, "Contraminuta"],
+  [/contra-?razoes|contrarrazoes/, "Contrarrazões"],
+];
+const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+function pecaDefesa(nomeMovimento: string, complementos: string | null): string | null {
+  if (!/^(petic|documento|juntada)/i.test(semAcento(nomeMovimento))) return null;
+  const c = semAcento(complementos ?? "");
+  if (!c) return null;
+  for (const [re, rotulo] of PECAS_DEFESA) if (re.test(c)) return rotulo;
+  return null;
 }
 
 function pesoConclusao(complementos: string | null): number {
@@ -84,9 +109,10 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
         take: 1,
         select: { sessao: { select: { data: true, tribunal: true, orgaoJulgador: true } } },
       },
+      // O primeiro e o ultimo movimento; os demais servem para achar a ultima peca da defesa.
       movimentacoesAuto: {
         orderBy: { dataMovimento: "desc" },
-        take: 1,
+        take: 40,
         select: { nomeMovimento: true, complementos: true, dataMovimento: true },
       },
       publicacoesDjen: {
@@ -108,10 +134,19 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
       ultimo = { dia: diaDe(pub.dataPublicacao), texto: `${pub.tipoComunicacao || "Intimação"} publicada no DJEN` };
     }
 
+    let ultimaPeca: Prioritario["ultimaPeca"] = null;
+    for (const m of p.movimentacoesAuto) {
+      const rotulo = pecaDefesa(m.nomeMovimento, m.complementos);
+      if (rotulo) {
+        ultimaPeca = { dia: diaDe(m.dataMovimento), texto: rotulo };
+        break;
+      }
+    }
+
     const base = {
       id: p.id, numero: p.numero, tribunal: p.tribunal, tipo: p.tipo,
       cliente: p.gestor?.nome ?? "—", advogado: p.advogado?.nome ?? "—",
-      ultimoMovimento: ultimo, naoLidos: p._count.movimentacoesAuto,
+      ultimoMovimento: ultimo, ultimaPeca, naoLidos: p._count.movimentacoesAuto,
     };
 
     const pauta = p.itensPautaJudicial[0];
