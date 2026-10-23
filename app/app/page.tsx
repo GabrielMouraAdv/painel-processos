@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Fragment } from "react";
 import { getServerSession } from "next-auth";
+import type { CamaraTce } from "@prisma/client";
 
 import { NumeroProcesso } from "@/components/numero-processo";
 import { authOptions } from "@/lib/auth";
@@ -18,10 +19,10 @@ import { cn } from "@/lib/utils";
 
 import { HojePrazoAcoes } from "./hoje-prazo-acoes";
 
-// Inicio "Pauta de hoje" (Direcao A), na ordem que os socios leem: a semana
-// (prazos por advogado e pauta do TCE-PE), os processos prioritarios de
-// improbidade/criminal, os vencidos sem baixa, a regua de 14 dias e, por fim,
-// a fila de trabalho e as novidades judiciais.
+// Inicio "Pauta de hoje" (Direcao A), na ordem que os socios leem: o painel do dia,
+// a faixa da semana (prazos e compromissos por advogado, tres semanas com rolagem),
+// a pauta do TCE-PE da semana, os processos prioritarios, os vencidos sem baixa e,
+// por fim, a fila de trabalho e as novidades judiciais.
 
 const SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -36,10 +37,28 @@ function somaDias(iso: string, n: number): string {
 const br = (iso: string) => iso.split("-").reverse().slice(0, 2).join("/");
 const diasEntre = (a: string, b: string) =>
   Math.round((new Date(`${b}T12:00:00Z`).getTime() - new Date(`${a}T12:00:00Z`).getTime()) / 86400000);
+const diaSemanaCurto = (iso: string) => SEMANA[new Date(`${iso}T12:00:00Z`).getUTCDay()];
+const fimDeSemana = (iso: string) => {
+  const d = new Date(`${iso}T12:00:00Z`).getUTCDay();
+  return d === 0 || d === 6;
+};
 
-type ItemRegua = { tipo: "prazo" | "sessao" | "compromisso"; texto: string; href: string };
+// Cores por camara (as mesmas do Dashboard TCE), para diferenciar bem Primeira, Segunda e Pleno.
+const CAMARA_COR: Record<CamaraTce, { chip: string; faixa: string; curto: string }> = {
+  PRIMEIRA: { chip: "bg-[#1e40af] text-white", faixa: "border-l-[#1e40af] bg-blue-50 text-blue-950", curto: "1ª Câmara" },
+  SEGUNDA: { chip: "bg-[#047857] text-white", faixa: "border-l-[#047857] bg-emerald-50 text-emerald-950", curto: "2ª Câmara" },
+  PLENO: { chip: "bg-[#6b21a8] text-white", faixa: "border-l-[#6b21a8] bg-purple-50 text-purple-950", curto: "Pleno" },
+};
 
-// Bloco "Semana": tipos de compromisso (lib/schemas.ts) com rotulo de exibicao.
+// Cores por categoria dos prioritarios.
+const PRIO_COR: Record<CategoriaPrioritario, string> = {
+  em_pauta: "border-l-[#6b21a8] bg-purple-50 text-purple-950",
+  prazo_aberto: "border-l-amber-600 bg-amber-50 text-amber-950",
+  concluso: "border-l-sky-700 bg-sky-50 text-sky-950",
+  parado: "border-l-slate-400 bg-slate-100 text-slate-700",
+};
+
+// Tipos de compromisso (lib/schemas.ts) com rotulo de exibicao.
 const COMPROMISSO_TIPO_LABEL: Record<string, string> = {
   REUNIAO: "Reunião",
   AUDIENCIA: "Audiência",
@@ -49,9 +68,15 @@ const COMPROMISSO_TIPO_LABEL: Record<string, string> = {
   PESSOAL: "Pessoal",
   OUTRO: "Compromisso",
 };
-const SEM_RESPONSAVEL = "Sem responsável";
-type ItemAgenda = { dia: string; tipo: "prazo" | "compromisso"; rotulo: string; texto: string; href: string };
-const diaSemanaCurto = (iso: string) => SEMANA[new Date(`${iso}T12:00:00Z`).getUTCDay()];
+
+// Socios com linha propria na faixa da semana; os demais responsaveis entram em "Outros".
+const SOCIOS = [
+  { chave: "gabriel", rotulo: "Gabriel", iniciais: "GM", teste: /gabriel/i },
+  { chave: "henrique", rotulo: "Henrique", iniciais: "HA", teste: /henrique/i },
+  { chave: "heloisa", rotulo: "Heloísa", iniciais: "HC", teste: /helo[ií]sa/i },
+];
+type LinhaFaixa = { chave: string; rotulo: string; sub?: string; iniciais?: string };
+type ItemFaixa = { texto: string; detalhe: string; href: string; classe: string };
 
 export default async function HojePage() {
   const session = await getServerSession(authOptions);
@@ -59,22 +84,23 @@ export default async function HojePage() {
   const escritorioId = user.escritorioId;
 
   const hoje = hojeDia();
-  const fimRegua = somaDias(hoje, 13);
-  const iniBusca = new Date(`${somaDias(hoje, -1)}T00:00:00Z`);
-  const fimBusca = new Date(`${somaDias(fimRegua, 1)}T23:59:59Z`);
 
-  // Semana corrente (segunda a domingo), para o bloco "Semana".
+  // Semana corrente (segunda a domingo) e a faixa de tres semanas (esta e as duas seguintes).
   const semIni = startOfWeekUTC(new Date(`${hoje}T12:00:00Z`));
   const semFim = endOfWeekUTC(semIni);
   const semIniDia = semIni.toISOString().slice(0, 10);
   const semFimDia = semFim.toISOString().slice(0, 10);
   const naSemana = (dia: string) => dia >= semIniDia && dia <= semFimDia;
+  const diasFaixa = Array.from({ length: 21 }, (_, i) => somaDias(semIniDia, i));
+  const fimFaixaDia = diasFaixa[diasFaixa.length - 1];
+  const iniBusca = new Date(`${somaDias(semIniDia, -1)}T00:00:00Z`);
+  const fimBusca = new Date(`${somaDias(fimFaixaDia, 1)}T23:59:59Z`);
 
   const [
     prazosTce, prazosJud, compromissos, sessoesTce, sessoesJud,
     emJulgamentoSemMemorial, contrarrazoesPendentes, recursoPendente, situacaoConfirmar,
     novidadesGrupo,
-    itensSemana, compromissosSemana,
+    itensSemana,
     intimacoes, datajudUltima,
     prioritarios,
   ] = await Promise.all([
@@ -96,13 +122,15 @@ export default async function HojePage() {
         processo: { select: { id: true, numero: true, gestor: { select: { nome: true } } } },
       },
     }),
+    // Compromissos da faixa (com folga de um dia; o dia certo e conferido por diaDe).
     prisma.compromisso.findMany({
       where: { escritorioId, cumprido: false, dataInicio: { gte: iniBusca, lte: fimBusca }, ...filtroVisibilidadeCompromissos(user) },
       orderBy: { dataInicio: "asc" },
-      select: { id: true, titulo: true, dataInicio: true },
+      select: { id: true, titulo: true, tipo: true, dataInicio: true, advogado: { select: { nome: true } } },
     }),
     prisma.sessaoPauta.findMany({
       where: { escritorioId, data: { gte: iniBusca, lte: fimBusca } },
+      orderBy: [{ data: "asc" }, { camara: "asc" }],
       select: { id: true, data: true, camara: true, _count: { select: { itens: true } } },
     }),
     prisma.sessaoJudicial.findMany({
@@ -149,16 +177,6 @@ export default async function HojePage() {
         },
       },
     }),
-    // Compromissos da semana (com folga de um dia; o dia certo e conferido por diaDe).
-    prisma.compromisso.findMany({
-      where: {
-        escritorioId, cumprido: false,
-        dataInicio: { gte: new Date(`${somaDias(semIniDia, -1)}T00:00:00Z`), lte: new Date(`${somaDias(semFimDia, 1)}T23:59:59Z`) },
-        ...filtroVisibilidadeCompromissos(user),
-      },
-      orderBy: { dataInicio: "asc" },
-      select: { id: true, titulo: true, tipo: true, dataInicio: true, advogado: { select: { nome: true } } },
-    }),
     // Intimacoes da varredura do DJEN por OAB (fonte primaria), ultimos 14 dias.
     prisma.publicacaoDJEN.findMany({
       where: { fonte: FONTE_DJEN_OAB, lida: false, dataPublicacao: { gte: new Date(Date.now() - 14 * 86_400_000) }, processo: { escritorioId } },
@@ -174,7 +192,73 @@ export default async function HojePage() {
   ]);
   const datajudParado = datajudParadoHa(datajudUltima);
 
-  // ---------------------------------------------------------------- semana: em pauta
+  // ---------------------------------------------------------------- faixa da semana (por advogado)
+  const linhasFaixa: LinhaFaixa[] = [
+    { chave: "pauta", rotulo: "Pauta", sub: "TCE-PE e tribunais" },
+    ...SOCIOS.map((s) => ({ chave: s.chave, rotulo: s.rotulo, iniciais: s.iniciais })),
+    { chave: "outros", rotulo: "Outros", sub: "demais responsáveis" },
+  ];
+  const faixa = new Map<string, Map<string, ItemFaixa[]>>();
+  const poeFaixa = (linha: string, dia: string, item: ItemFaixa) => {
+    if (dia < semIniDia || dia > fimFaixaDia) return;
+    if (!faixa.has(linha)) faixa.set(linha, new Map());
+    const porDia = faixa.get(linha)!;
+    if (!porDia.has(dia)) porDia.set(dia, []);
+    porDia.get(dia)!.push(item);
+  };
+  const linhaDe = (nome: string | null | undefined) => SOCIOS.find((s) => nome && s.teste.test(nome))?.chave ?? "outros";
+  const classePrazo = (dia: string) =>
+    dia < hoje ? "bg-red-50 text-red-900 ring-1 ring-red-200" : "bg-amber-50 text-amber-900 ring-1 ring-amber-200";
+  for (const p of prazosTce) {
+    const d = diaDe(p.dataVencimento);
+    poeFaixa(linhaDe(p.advogadoResp?.nome), d, {
+      texto: `${p.tipo} · ${p.processo.numero}`,
+      detalhe: `Prazo TCE · ${p.tipo} · ${p.processo.numero}${p.advogadoResp ? ` · ${p.advogadoResp.nome}` : ""}`,
+      href: `/app/tce/processos/${p.processo.id}`, classe: classePrazo(d),
+    });
+  }
+  for (const p of prazosJud) {
+    const d = diaDe(p.data);
+    poeFaixa(linhaDe(p.advogadoResp?.nome), d, {
+      texto: `${p.tipo} · ${p.processo.numero}`,
+      detalhe: `Prazo judicial · ${p.tipo} · ${p.processo.numero}${p.advogadoResp ? ` · ${p.advogadoResp.nome}` : ""}`,
+      href: `/app/processos/${p.processo.id}`, classe: classePrazo(d),
+    });
+  }
+  for (const c of compromissos) {
+    const d = diaDe(c.dataInicio);
+    poeFaixa(linhaDe(c.advogado.nome), d, {
+      texto: c.titulo,
+      detalhe: `${COMPROMISSO_TIPO_LABEL[c.tipo] ?? "Compromisso"} · ${c.titulo} · ${c.advogado.nome}`,
+      href: "/app/compromissos", classe: "bg-violet-50 text-violet-900 ring-1 ring-violet-200",
+    });
+  }
+  for (const s of sessoesTce) {
+    if (s._count.itens === 0) continue;
+    const d = diaDe(s.data);
+    poeFaixa("pauta", d, {
+      texto: `${CAMARA_COR[s.camara].curto} · ${s._count.itens}`,
+      detalhe: `Pauta TCE-PE · ${TCE_CAMARA_LABELS[s.camara]} · ${s._count.itens} ${s._count.itens === 1 ? "item" : "itens"}`,
+      href: `/app/tce/pauta?semana=${d}`, classe: CAMARA_COR[s.camara].chip,
+    });
+  }
+  for (const s of sessoesJud) {
+    if (s._count.itens === 0) continue;
+    poeFaixa("pauta", diaDe(s.data), {
+      texto: `${s.tribunal} · ${s.orgaoJulgador}`,
+      detalhe: `Pauta ${s.tribunal} · ${s.orgaoJulgador} · ${s._count.itens} ${s._count.itens === 1 ? "item" : "itens"}`,
+      href: "/app/pautas", classe: "bg-brand-navy text-white",
+    });
+  }
+  const itensLinha = (chave: string) => Array.from(faixa.get(chave)?.values() ?? []).flat();
+  const linhasVisiveis = linhasFaixa.filter((l) => l.chave !== "outros" || itensLinha("outros").length > 0);
+  const colunasFaixa = diasFaixa.map((d) => (fimDeSemana(d) ? "72px" : "148px")).join(" ");
+
+  const prazosSemana = [...prazosTce.map((p) => diaDe(p.dataVencimento)), ...prazosJud.map((p) => diaDe(p.data))].filter(naSemana).length;
+  const compromissosSemana = compromissos.filter((c) => naSemana(diaDe(c.dataInicio))).length;
+  const sessoesSemana = sessoesTce.filter((s) => s._count.itens > 0 && naSemana(diaDe(s.data))).length;
+
+  // ---------------------------------------------------------------- pauta do TCE-PE da semana
   const itensPauta = itensSemana.map((it) => {
     const p = it.processoTce;
     const selos: string[] = [];
@@ -201,7 +285,7 @@ export default async function HojePage() {
     }
     return { ...it, dia: diaDe(it.sessao.data), situacao, selos };
   });
-  type GrupoPauta = { chave: string; dia: string; camara: keyof typeof TCE_CAMARA_LABELS; itens: typeof itensPauta };
+  type GrupoPauta = { chave: string; dia: string; camara: CamaraTce; itens: typeof itensPauta };
   const gruposPauta: GrupoPauta[] = [];
   for (const it of itensPauta) {
     const chave = `${it.dia}|${it.sessao.camara}`;
@@ -213,39 +297,6 @@ export default async function HojePage() {
     g.itens.push(it);
   }
   const semCadastro = itensPauta.filter((it) => !it.processoTce).length;
-
-  // ---------------------------------------------------------------- semana: prazos e compromissos por advogado
-  const agenda = new Map<string, ItemAgenda[]>();
-  const agendaPoe = (nome: string | null | undefined, item: ItemAgenda) => {
-    const k = nome?.trim() || SEM_RESPONSAVEL;
-    if (!agenda.has(k)) agenda.set(k, []);
-    agenda.get(k)!.push(item);
-  };
-  for (const p of prazosTce) {
-    const d = diaDe(p.dataVencimento);
-    if (naSemana(d)) agendaPoe(p.advogadoResp?.nome, { dia: d, tipo: "prazo", rotulo: "Prazo TCE", texto: `${p.tipo} · ${p.processo.numero}`, href: `/app/tce/processos/${p.processo.id}` });
-  }
-  for (const p of prazosJud) {
-    const d = diaDe(p.data);
-    if (naSemana(d)) agendaPoe(p.advogadoResp?.nome, { dia: d, tipo: "prazo", rotulo: "Prazo judicial", texto: `${p.tipo} · ${p.processo.numero}`, href: `/app/processos/${p.processo.id}` });
-  }
-  for (const c of compromissosSemana) {
-    const d = diaDe(c.dataInicio);
-    if (naSemana(d)) agendaPoe(c.advogado.nome, { dia: d, tipo: "compromisso", rotulo: COMPROMISSO_TIPO_LABEL[c.tipo] ?? c.tipo, texto: c.titulo, href: "/app/compromissos" });
-  }
-  const agendaPorAdvogado = Array.from(agenda.entries())
-    .map(([nome, itens]) => ({ nome, itens: itens.sort((a, b) => (a.dia < b.dia ? -1 : a.dia > b.dia ? 1 : 0)) }))
-    .sort((a, b) =>
-      a.nome === SEM_RESPONSAVEL ? 1 : b.nome === SEM_RESPONSAVEL ? -1 : a.nome.localeCompare(b.nome, "pt-BR"),
-    );
-  const todaAgenda = agendaPorAdvogado.flatMap((a) => a.itens);
-  const nPrazosSemana = todaAgenda.filter((i) => i.tipo === "prazo").length;
-  const nCompromissosSemana = todaAgenda.filter((i) => i.tipo === "compromisso").length;
-  const rodapeSemana = [
-    `${itensPauta.length} ${itensPauta.length === 1 ? "item" : "itens"} em pauta${semCadastro ? ` (${semCadastro} sem cadastro)` : ""}`,
-    `${nPrazosSemana} ${nPrazosSemana === 1 ? "prazo" : "prazos"}`,
-    `${nCompromissosSemana} ${nCompromissosSemana === 1 ? "compromisso" : "compromissos"}`,
-  ].join(" · ");
 
   // ---------------------------------------------------------------- vencidos sem baixa
   const vencidos = [
@@ -265,17 +316,6 @@ export default async function HojePage() {
         contexto: p.processo.gestor?.nome ?? "", resp: p.advogadoResp?.nome ?? null,
       })),
   ].sort((a, b) => (a.dia < b.dia ? -1 : 1));
-
-  // ---------------------------------------------------------------- regua de 14 dias
-  const dias = Array.from({ length: 14 }, (_, i) => somaDias(hoje, i));
-  const regua = new Map<string, ItemRegua[]>(dias.map((d) => [d, []]));
-  const poe = (dia: string, item: ItemRegua) => regua.get(dia)?.push(item);
-  for (const p of prazosTce) poe(diaDe(p.dataVencimento), { tipo: "prazo", texto: `${p.tipo} · ${p.processo.numero}`, href: `/app/tce/processos/${p.processo.id}` });
-  for (const p of prazosJud) poe(diaDe(p.data), { tipo: "prazo", texto: `${p.tipo} · ${p.processo.numero}`, href: `/app/processos/${p.processo.id}` });
-  for (const s of sessoesTce) if (s._count.itens > 0) poe(diaDe(s.data), { tipo: "sessao", texto: `Pauta TCE · ${s.camara === "PLENO" ? "Pleno" : s.camara === "PRIMEIRA" ? "1ª Câmara" : "2ª Câmara"} (${s._count.itens})`, href: "/app/tce/pauta" });
-  for (const s of sessoesJud) if (s._count.itens > 0) poe(diaDe(s.data), { tipo: "sessao", texto: `Pauta ${s.tribunal} · ${s.orgaoJulgador} (${s._count.itens})`, href: "/app/pautas" });
-  for (const c of compromissos) poe(diaDe(c.dataInicio), { tipo: "compromisso", texto: c.titulo, href: "/app/compromissos" });
-  const totalRegua = Array.from(regua.values()).reduce((a, l) => a + l.length, 0);
 
   // ---------------------------------------------------------------- novidades judiciais
   const topNovidades = novidadesGrupo.slice(0, 5);
@@ -297,17 +337,17 @@ export default async function HojePage() {
     .map((cat) => ({ cat, itens: prioritarios.filter((p) => p.categoria === cat) }))
     .filter((g) => g.itens.length > 0);
   const nPrio = (cat: CategoriaPrioritario) => prioritarios.filter((p) => p.categoria === cat).length;
+  const prioEmMovimento = nPrio("em_pauta") + nPrio("prazo_aberto") + nPrio("concluso");
 
   // ---------------------------------------------------------------- cabecalho
   const dHoje = new Date(`${hoje}T12:00:00Z`);
   const titulo = `${DIAS_SEMANA[dHoje.getUTCDay()]}, ${dHoje.getUTCDate()} de ${MESES[dHoje.getUTCMonth()]}`;
-  const resumo = [
-    totalRegua === 0 ? "Nada cadastrado nos próximos 14 dias." : `${totalRegua} ${totalRegua === 1 ? "compromisso" : "itens"} nos próximos 14 dias.`,
-    vencidos.length ? `${vencidos.length} ${vencidos.length === 1 ? "prazo vencido continua" : "prazos vencidos continuam"} sem baixa.` : "Nenhum prazo vencido sem baixa.",
-    prioritarios.length
-      ? `${prioritarios.length} prioritários: ${nPrio("em_pauta")} em pauta, ${nPrio("prazo_aberto")} com prazo, ${nPrio("concluso")} conclusos, ${nPrio("parado")} parados.`
-      : "",
-  ].filter(Boolean).join(" ");
+  const indicadores = [
+    { n: prazosSemana + compromissosSemana, t: "prazos e compromissos na semana", href: "#semana", alerta: false },
+    { n: itensPauta.length, t: "processos em pauta no TCE-PE", href: "#pauta", alerta: false },
+    { n: prioEmMovimento, t: "prioritários em pauta, com prazo ou conclusos", href: "#prio", alerta: false },
+    { n: vencidos.length, t: "prazos vencidos sem baixa", href: "#venc", alerta: vencidos.length > 0 },
+  ];
 
   const fila = [
     { n: emJulgamentoSemMemorial, t: "Em julgamento sem memorial", d: "TCE · nenhum memorial pronto ou dispensado", href: "/app/tce/processos?situacao=em_julgamento" },
@@ -318,190 +358,264 @@ export default async function HojePage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 md:px-10">
-      <header>
-        <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Pauta do escritório</p>
-        <h1 className="mt-1 text-3xl font-semibold leading-tight text-brand-tinta md:text-4xl">{titulo}</h1>
-        <p className="mt-2 text-[15px] text-muted-foreground">{resumo}</p>
+      {/* ------------------------------------------------ painel do dia */}
+      <header className="relative overflow-hidden rounded-2xl bg-brand-navy px-6 py-6 text-white shadow-sm md:px-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/[0.06]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 right-40 h-72 w-72 rounded-full bg-white/[0.05]" />
+        <div className="relative">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-white/60">Pauta do escritório</p>
+          <h1 className="mt-1 text-3xl font-semibold leading-tight text-white md:text-4xl">{titulo}</h1>
+          <p className="mt-2 text-[15px] text-white/75">Semana de {br(semIniDia)} a {br(semFimDia)}.</p>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {indicadores.map((i) => (
+              <a key={i.t} href={i.href} className="rounded-xl bg-white/10 px-4 py-3 transition-colors hover:bg-white/[0.16]">
+                <span className={cn("block font-mono text-2xl font-medium leading-none", i.alerta && "text-red-200")}>{i.n}</span>
+                <span className="mt-1.5 block text-[12px] leading-snug text-white/75">{i.t}</span>
+              </a>
+            ))}
+          </div>
+        </div>
       </header>
 
-      {/* ------------------------------------------------ semana */}
-      <section className="rounded-xl border bg-white" aria-labelledby="semana">
+      {/* ------------------------------------------------ faixa da semana */}
+      <section id="semana" className="scroll-mt-6 rounded-xl border bg-white" aria-labelledby="semana-t">
         <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-2 pt-4">
-          <h2 id="semana" className="text-xl font-semibold">Semana</h2>
+          <h2 id="semana-t" className="text-xl font-semibold">Semana</h2>
           <span className="text-[13px] text-muted-foreground">
-            {br(semIniDia)} a {br(semFimDia)} · prazos por advogado e pauta do TCE-PE
+            {br(semIniDia)} a {br(fimFaixaDia)} · prazos e compromissos por advogado · role para o lado para ver as próximas semanas
           </span>
         </div>
-
-        {/* prazos e compromissos da semana */}
-        <div className="border-t">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-1 pt-3">
-            <h3 className="font-semibold">Prazos e compromissos da semana</h3>
-            <span className="text-[13px] text-muted-foreground">por advogado responsável</span>
-          </div>
-          {agendaPorAdvogado.length === 0 ? (
-            <p className="px-5 pb-4 text-sm text-muted-foreground">Nenhum prazo ou compromisso cadastrado para esta semana.</p>
-          ) : (
-            <div className="grid gap-x-8 gap-y-4 px-5 pb-4 md:grid-cols-2">
-              {agendaPorAdvogado.map((a) => (
-                <div key={a.nome}>
-                  <div className="font-semibold">
-                    {a.nome} <span className="ml-1 font-mono text-xs font-normal text-muted-foreground">{a.itens.length}</span>
+        <div className="overflow-x-auto border-t">
+          <div className="grid" style={{ gridTemplateColumns: `156px ${colunasFaixa}` }}>
+            {/* cabecalho dos dias */}
+            <div className="sticky left-0 z-20 border-b bg-white" />
+            {diasFaixa.map((d, i) => {
+              const dt = new Date(`${d}T12:00:00Z`);
+              const segunda = dt.getUTCDay() === 1;
+              return (
+                <div
+                  key={d}
+                  className={cn(
+                    "border-b border-l px-1 py-2 text-center",
+                    segunda && i > 0 && "border-l-2 border-l-slate-300",
+                    fimDeSemana(d) && "bg-background",
+                    d === hoje && "bg-accent",
+                  )}
+                >
+                  <div className={cn("text-[10.5px] uppercase tracking-wide", d === hoje ? "font-semibold text-brand-navy" : "text-muted-foreground")}>
+                    {d === hoje ? "hoje" : diaSemanaCurto(d)}
                   </div>
-                  <ul className="mt-1 space-y-1">
-                    {a.itens.map((it, i) => (
-                      <li key={i} className="flex items-baseline gap-2 text-[13px]">
-                        <span className={cn("w-[72px] shrink-0 font-mono text-xs", it.dia === hoje ? "font-semibold text-brand-navy" : it.dia < hoje ? "text-destructive" : "text-muted-foreground")}>
-                          {diaSemanaCurto(it.dia)} {br(it.dia)}
-                        </span>
-                        <span className={cn("shrink-0 rounded px-1 text-[11px] font-semibold", it.tipo === "prazo" ? "bg-amber-50 text-amber-900" : "bg-accent text-brand-navy")}>
-                          {it.rotulo}
-                        </span>
-                        <Link href={it.href} className="min-w-0 truncate hover:underline" title={it.texto}>{it.texto}</Link>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className={cn("font-mono text-[15px] font-medium leading-tight", d === hoje && "text-brand-navy")}>
+                    {dt.getUTCDate()}
+                    {(i === 0 || dt.getUTCDate() === 1) && <span className="text-[11px] text-muted-foreground">/{String(dt.getUTCMonth() + 1).padStart(2, "0")}</span>}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              );
+            })}
 
-        {/* em pauta esta semana */}
-        <div className="border-t">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-1 pt-3">
-            <h3 className="font-semibold">
-              Em pauta esta semana <span className="ml-1 font-mono text-sm font-semibold text-brand-navy">{itensPauta.length}</span>
-            </h3>
-            {semCadastro > 0 && (
-              <span className="text-[13px] text-muted-foreground">
-                {semCadastro} {semCadastro === 1 ? "item ainda não cadastrado" : "itens ainda não cadastrados"} no painel
-              </span>
-            )}
+            {/* uma linha por advogado (e a da pauta) */}
+            {linhasVisiveis.map((l) => (
+              <Fragment key={l.chave}>
+                <div className="sticky left-0 z-10 flex items-center gap-2.5 border-b bg-white px-4 py-2.5">
+                  <span
+                    className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-semibold",
+                      l.iniciais ? "bg-brand-navy text-white" : "bg-accent text-brand-navy",
+                    )}
+                    aria-hidden="true"
+                  >
+                    {l.iniciais ?? (l.chave === "pauta" ? "§" : "+")}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">{l.rotulo}</span>
+                    {l.sub && <span className="block truncate text-[11px] text-muted-foreground">{l.sub}</span>}
+                  </span>
+                </div>
+                {itensLinha(l.chave).length === 0 && (
+                  <div className="flex min-h-[58px] items-center border-b border-l px-4 text-[12px] italic text-muted-foreground" style={{ gridColumn: "2 / span 7" }}>
+                    {l.chave === "pauta" ? "Nenhuma sessão de pauta cadastrada nestas três semanas." : "Nenhum prazo ou compromisso cadastrado nestas três semanas."}
+                  </div>
+                )}
+                {(itensLinha(l.chave).length === 0 ? diasFaixa.slice(7) : diasFaixa).map((d) => {
+                    const i = diasFaixa.indexOf(d);
+                    const itens = faixa.get(l.chave)?.get(d) ?? [];
+                    const segunda = new Date(`${d}T12:00:00Z`).getUTCDay() === 1;
+                    return (
+                      <div
+                        key={d}
+                        className={cn(
+                          "min-h-[58px] space-y-1 border-b border-l p-1",
+                          segunda && i > 0 && "border-l-2 border-l-slate-300",
+                          fimDeSemana(d) && "bg-background",
+                          d === hoje && "bg-accent/60",
+                        )}
+                      >
+                        {itens.slice(0, 3).map((it, k) => (
+                          <Link key={k} href={it.href} title={it.detalhe} className={cn("block truncate rounded px-1.5 py-0.5 text-[11px] leading-tight", it.classe)}>
+                            {it.texto}
+                          </Link>
+                        ))}
+                        {itens.length > 3 && <div className="text-center text-[10.5px] text-muted-foreground">+{itens.length - 3}</div>}
+                      </div>
+                    );
+                  })}
+              </Fragment>
+            ))}
           </div>
-          {itensPauta.length === 0 ? (
-            <p className="px-5 pb-4 text-sm text-muted-foreground">
-              Nenhum item de pauta cadastrado para esta semana.{" "}
-              <Link href="/app/tce/pauta" className="font-medium text-brand-navy hover:underline">Cadastrar pauta →</Link>
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] text-sm">
-                <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                    <th className="px-5 py-1.5 font-medium">Processo</th>
-                    <th className="px-2 py-1.5 font-medium">Município</th>
-                    <th className="px-2 py-1.5 font-medium">Advogado</th>
-                    <th className="px-2 py-1.5 font-medium">Situação no painel</th>
-                    <th className="px-2 py-1.5 font-medium">Prognóstico</th>
-                    <th className="px-5 py-1.5 font-medium">Providência</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {gruposPauta.map((g) => (
-                    <Fragment key={g.chave}>
-                      <tr className="border-t bg-background">
-                        <td colSpan={6} className="px-5 py-1.5 text-[12px] font-semibold uppercase tracking-wide text-brand-navy">
-                          {diaSemanaCurto(g.dia)} {br(g.dia)}{g.dia === hoje && " · hoje"} · {TCE_CAMARA_LABELS[g.camara]}
-                          <span className="ml-2 font-mono font-normal normal-case text-muted-foreground">{g.itens.length} {g.itens.length === 1 ? "item" : "itens"}</span>
-                        </td>
-                      </tr>
-                      {g.itens.map((it) => (
-                        <tr key={it.id} className="border-t">
-                          <td className="px-5 py-2.5 align-top">
-                            {it.processoTce ? (
-                              <Link href={`/app/tce/processos/${it.processoTce.id}`} className="hover:underline">
-                                <NumeroProcesso numero={it.numeroProcesso} />
-                              </Link>
-                            ) : (
-                              <NumeroProcesso numero={it.numeroProcesso} />
-                            )}
-                            {(it.retiradoDePauta || it.pedidoVistas) && (
-                              <div className="mt-0.5 flex gap-1">
-                                {it.retiradoDePauta && <span className="rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">retirado de pauta</span>}
-                                {it.pedidoVistas && <span className="rounded bg-orange-100 px-1 text-[11px] font-semibold text-orange-800">pedido de vistas</span>}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-2 py-2.5 align-top">{it.municipio}</td>
-                          <td className="px-2 py-2.5 align-top text-[13px] text-muted-foreground">{it.advogadoResp}</td>
-                          <td className="px-2 py-2.5 align-top">
-                            {it.situacao ? (
-                              <>
-                                <span className={cn(it.situacao.julgado ? "inline-block rounded border px-1.5 py-0.5 text-xs font-semibold" : "text-[13px]", it.situacao.classe)}>
-                                  {it.situacao.texto}
-                                </span>
-                                {it.selos.length > 0 && (
-                                  <div className="mt-1 flex flex-wrap gap-1">
-                                    {it.selos.map((s) => (
-                                      <span key={s} className="rounded bg-accent px-1 text-[11px] font-semibold text-brand-navy">{s}</span>
-                                    ))}
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-[13px] text-muted-foreground">
-                                não cadastrado no painel ·{" "}
-                                <Link
-                                  href={`/app/tce/processos?q=${encodeURIComponent(it.numeroProcesso)}&situacao=todos`}
-                                  className="font-medium text-brand-navy hover:underline"
-                                >
-                                  cadastrar
-                                </Link>
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-2 py-2.5 align-top text-[13px]">{it.prognostico ?? <span className="text-muted-foreground">—</span>}</td>
-                          <td className="px-5 py-2.5 align-top text-[13px]">{it.providencia ?? <span className="text-muted-foreground">—</span>}</td>
-                        </tr>
-                      ))}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
-
-        {/* rodape do bloco */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-3 text-[13px]">
-          <span className="text-muted-foreground">{rodapeSemana}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-2.5 text-[13px]">
+          <span className="text-muted-foreground">
+            Esta semana: {prazosSemana} {prazosSemana === 1 ? "prazo" : "prazos"} · {compromissosSemana} {compromissosSemana === 1 ? "compromisso" : "compromissos"} · {sessoesSemana} {sessoesSemana === 1 ? "sessão" : "sessões"} do TCE-PE
+          </span>
           <span className="flex gap-4">
-            <Link href="/app/tce/pauta" className="font-medium text-brand-navy hover:underline">Ver pauta completa →</Link>
             <Link href="/app/compromissos" className="font-medium text-brand-navy hover:underline">Ver agenda →</Link>
+            <Link href="/app/tce/prazos?status=aberto" className="font-medium text-brand-navy hover:underline">Ver prazos TCE →</Link>
           </span>
         </div>
       </section>
 
-      {/* ------------------------------------------------ prioritarios */}
-      <section className="rounded-xl border bg-white" aria-labelledby="prio">
+      {/* ------------------------------------------------ pauta do TCE-PE da semana */}
+      <section id="pauta" className="scroll-mt-6 rounded-xl border bg-white" aria-labelledby="pauta-t">
         <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-2 pt-4">
-          <h2 id="prio" className="text-xl font-semibold">
+          <h2 id="pauta-t" className="text-xl font-semibold">
+            Em pauta no TCE-PE <span className="ml-1 font-mono text-sm font-semibold text-brand-navy">{itensPauta.length}</span>
+          </h2>
+          <span className="text-[13px] text-muted-foreground">
+            {br(semIniDia)} a {br(semFimDia)}
+            {semCadastro > 0 && ` · ${semCadastro} ${semCadastro === 1 ? "item ainda não cadastrado" : "itens ainda não cadastrados"} no painel`}
+          </span>
+        </div>
+        {itensPauta.length === 0 ? (
+          <p className="border-t px-5 py-4 text-sm text-muted-foreground">
+            Nenhum item de pauta cadastrado para esta semana.{" "}
+            <Link href="/app/tce/pauta" className="font-medium text-brand-navy hover:underline">Cadastrar pauta →</Link>
+          </p>
+        ) : (
+          <div className="max-h-[400px] overflow-auto border-t">
+            <table className="w-full min-w-[920px] text-sm">
+              <thead className="sticky top-0 z-10 bg-white shadow-[inset_0_-1px_0_hsl(var(--border))]">
+                <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <th className="px-5 py-2 font-medium">Processo</th>
+                  <th className="px-2 py-2 font-medium">Município</th>
+                  <th className="px-2 py-2 font-medium">Advogado</th>
+                  <th className="px-2 py-2 font-medium">Situação no painel</th>
+                  <th className="px-2 py-2 font-medium">Prognóstico</th>
+                  <th className="px-5 py-2 font-medium">Providência</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gruposPauta.map((g) => (
+                  <Fragment key={g.chave}>
+                    <tr className={cn("border-l-4", CAMARA_COR[g.camara].faixa)}>
+                      <td colSpan={6} className="px-4 py-1.5">
+                        <span className={cn("mr-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", CAMARA_COR[g.camara].chip)}>
+                          {TCE_CAMARA_LABELS[g.camara]}
+                        </span>
+                        <span className="text-[12px] font-semibold uppercase tracking-wide">
+                          {diaSemanaCurto(g.dia)} {br(g.dia)}{g.dia === hoje && " · hoje"}
+                        </span>
+                        <span className="ml-2 font-mono text-[12px] opacity-70">{g.itens.length} {g.itens.length === 1 ? "item" : "itens"}</span>
+                      </td>
+                    </tr>
+                    {g.itens.map((it) => (
+                      <tr key={it.id} className="border-t">
+                        <td className="px-5 py-2.5 align-top">
+                          {it.processoTce ? (
+                            <Link href={`/app/tce/processos/${it.processoTce.id}`} className="hover:underline">
+                              <NumeroProcesso numero={it.numeroProcesso} />
+                            </Link>
+                          ) : (
+                            <NumeroProcesso numero={it.numeroProcesso} />
+                          )}
+                          {(it.retiradoDePauta || it.pedidoVistas) && (
+                            <div className="mt-0.5 flex gap-1">
+                              {it.retiradoDePauta && <span className="rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">retirado de pauta</span>}
+                              {it.pedidoVistas && <span className="rounded bg-orange-100 px-1 text-[11px] font-semibold text-orange-800">pedido de vistas</span>}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-2.5 align-top">{it.municipio}</td>
+                        <td className="px-2 py-2.5 align-top text-[13px] text-muted-foreground">{it.advogadoResp}</td>
+                        <td className="px-2 py-2.5 align-top">
+                          {it.situacao ? (
+                            <>
+                              <span className={cn(it.situacao.julgado ? "inline-block rounded border px-1.5 py-0.5 text-xs font-semibold" : "text-[13px]", it.situacao.classe)}>
+                                {it.situacao.texto}
+                              </span>
+                              {it.selos.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {it.selos.map((s) => (
+                                    <span key={s} className="rounded bg-accent px-1 text-[11px] font-semibold text-brand-navy">{s}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-[13px] text-muted-foreground">
+                              não cadastrado no painel ·{" "}
+                              <Link
+                                href={`/app/tce/processos?q=${encodeURIComponent(it.numeroProcesso)}&situacao=todos`}
+                                className="font-medium text-brand-navy hover:underline"
+                              >
+                                cadastrar
+                              </Link>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2.5 align-top text-[13px]">{it.prognostico ?? <span className="text-muted-foreground">—</span>}</td>
+                        <td className="px-5 py-2.5 align-top text-[13px]">{it.providencia ?? <span className="text-muted-foreground">—</span>}</td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-2.5 text-[13px]">
+          <span className="flex flex-wrap gap-3 text-muted-foreground">
+            {(Object.keys(CAMARA_COR) as CamaraTce[]).map((c) => (
+              <span key={c} className="inline-flex items-center gap-1.5">
+                <span className={cn("inline-block h-2.5 w-2.5 rounded-full", CAMARA_COR[c].chip)} aria-hidden="true" />
+                {TCE_CAMARA_LABELS[c]}
+              </span>
+            ))}
+          </span>
+          <Link href="/app/tce/pauta" className="font-medium text-brand-navy hover:underline">Ver pauta completa →</Link>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------ prioritarios */}
+      <section id="prio" className="scroll-mt-6 rounded-xl border bg-white" aria-labelledby="prio-t">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-2 pt-4">
+          <h2 id="prio-t" className="text-xl font-semibold">
             Processos prioritários <span className="ml-1 font-mono text-sm font-semibold text-brand-navy">{prioritarios.length}</span>
           </h2>
-          <span className="text-[13px] text-muted-foreground">improbidade e criminal · em pauta, com prazo, conclusos e parados</span>
+          <span className="text-[13px] text-muted-foreground">
+            improbidade e criminal · {nPrio("em_pauta")} em pauta · {nPrio("prazo_aberto")} com prazo · {nPrio("concluso")} conclusos · {nPrio("parado")} parados
+          </span>
         </div>
         {prioritarios.length === 0 ? (
           <p className="border-t px-5 py-4 text-sm text-muted-foreground">Nenhum processo marcado como prioritário.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[440px] overflow-auto border-t">
             <table className="w-full min-w-[920px] text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-white shadow-[inset_0_-1px_0_hsl(var(--border))]">
                 <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                  <th className="px-5 py-1.5 font-medium">Processo</th>
-                  <th className="px-2 py-1.5 font-medium">Cliente</th>
-                  <th className="px-2 py-1.5 font-medium">Situação</th>
-                  <th className="px-2 py-1.5 font-medium">Último movimento</th>
-                  <th className="px-5 py-1.5 font-medium">Advogado</th>
+                  <th className="px-5 py-2 font-medium">Processo</th>
+                  <th className="px-2 py-2 font-medium">Cliente</th>
+                  <th className="px-2 py-2 font-medium">Situação</th>
+                  <th className="px-2 py-2 font-medium">Último movimento</th>
+                  <th className="px-5 py-2 font-medium">Advogado</th>
                 </tr>
               </thead>
               <tbody>
                 {gruposPrio.map((g) => (
                   <Fragment key={g.cat}>
-                    <tr className="border-t bg-background">
-                      <td colSpan={5} className="px-5 py-1.5 text-[12px] font-semibold uppercase tracking-wide text-brand-navy">
+                    <tr className={cn("border-l-4", PRIO_COR[g.cat])}>
+                      <td colSpan={5} className="px-4 py-1.5 text-[12px] font-semibold uppercase tracking-wide">
                         {CATEGORIA_PRIORITARIO_LABELS[g.cat]}
-                        <span className="ml-2 font-mono font-normal normal-case text-muted-foreground">{g.itens.length}</span>
+                        <span className="ml-2 font-mono font-normal normal-case opacity-70">{g.itens.length}</span>
                       </td>
                     </tr>
                     {g.itens.map((p) => (
@@ -536,18 +650,19 @@ export default async function HojePage() {
             </table>
           </div>
         )}
-        {datajudParado != null && datajudUltima && (
-          <p className="border-t px-5 py-2 text-[12px] text-muted-foreground">
-            Movimentos vindos do DataJud, atualizado pela última vez em {br(diaDe(datajudUltima))} (há {datajudParado} dias); as intimações do DJEN entram assim que publicadas.
-          </p>
-        )}
+        <p className="border-t px-5 py-2 text-[12px] text-muted-foreground">
+          Conclusão para despacho é rotina do cartório e não entra entre os conclusos.
+          {datajudParado != null && datajudUltima && (
+            <> Movimentos vindos do DataJud, atualizado pela última vez em {br(diaDe(datajudUltima))} (há {datajudParado} dias); as intimações do DJEN entram assim que publicadas.</>
+          )}
+        </p>
       </section>
 
       {/* ------------------------------------------------ vencidos sem baixa */}
       {vencidos.length > 0 && (
-        <section className="rounded-xl border bg-white" aria-labelledby="venc">
+        <section id="venc" className="scroll-mt-6 rounded-xl border bg-white" aria-labelledby="venc-t">
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-2 pt-4">
-            <h2 id="venc" className="flex items-center gap-2 text-xl font-semibold">
+            <h2 id="venc-t" className="flex items-center gap-2 text-xl font-semibold">
               <span className="inline-block h-2.5 w-2.5 rounded-full bg-destructive" aria-hidden="true" />
               Prazos vencidos sem baixa
               <span className="font-mono text-sm font-semibold text-destructive">{vencidos.length}</span>
@@ -582,57 +697,6 @@ export default async function HojePage() {
         </section>
       )}
 
-      {/* ------------------------------------------------ regua 14 dias */}
-      <section className="rounded-xl border bg-white" aria-labelledby="regua">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-2 pt-4">
-          <h2 id="regua" className="text-xl font-semibold">Próximos 14 dias</h2>
-          <span className="text-[13px] text-muted-foreground">
-            {br(hoje)} a {br(fimRegua)} · prazos, sessões de pauta e compromissos
-          </span>
-        </div>
-        <div className="overflow-x-auto border-t">
-          <div className="grid min-w-[980px] grid-cols-[repeat(14,minmax(0,1fr))]">
-            {dias.map((d) => {
-              const dt = new Date(`${d}T12:00:00Z`);
-              const fds = dt.getUTCDay() === 0 || dt.getUTCDay() === 6;
-              const itens = regua.get(d) ?? [];
-              return (
-                <div key={d} className={cn("min-h-[120px] border-l px-1.5 pb-2 pt-2 first:border-l-0", fds && "bg-background", d === hoje && "bg-accent")}>
-                  <div className="text-center">
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{d === hoje ? "hoje" : SEMANA[dt.getUTCDay()]}</div>
-                    <div className="font-mono text-[15px] font-medium">{dt.getUTCDate()}</div>
-                  </div>
-                  <div className="mt-1.5 space-y-1">
-                    {itens.slice(0, 3).map((it, i) => (
-                      <Link
-                        key={i}
-                        href={it.href}
-                        title={it.texto}
-                        className={cn(
-                          "block truncate rounded px-1 py-0.5 text-[10.5px] leading-tight",
-                          it.tipo === "prazo" && "bg-amber-50 text-amber-900",
-                          it.tipo === "sessao" && "bg-brand-navy text-white",
-                          it.tipo === "compromisso" && "bg-accent text-brand-navy",
-                        )}
-                      >
-                        {it.texto}
-                      </Link>
-                    ))}
-                    {itens.length > 3 && <div className="text-center text-[10.5px] text-muted-foreground">+{itens.length - 3}</div>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        {totalRegua === 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-3 text-sm">
-            <span>Nenhum prazo, sessão de pauta ou compromisso cadastrado no período.</span>
-            <Link href="/app/tce/pauta" className="font-medium text-brand-navy hover:underline">Cadastrar pauta da semana →</Link>
-          </div>
-        )}
-      </section>
-
       <div className="grid gap-6 lg:grid-cols-2">
         {/* ------------------------------------------------ fila de trabalho (secundaria) */}
         <section className="rounded-xl border bg-white" aria-labelledby="fila">
@@ -653,7 +717,7 @@ export default async function HojePage() {
         {/* ------------------------------------------------ novidades judiciais */}
         <section className="rounded-xl border bg-white" aria-labelledby="nov">
           <div className="flex items-baseline justify-between gap-2 px-5 pb-2 pt-4">
-            <h2 id="nov" className="text-xl font-semibold">Novidades nos judiciais</h2>
+            <h2 id="nov" className="text-base font-semibold">Novidades nos judiciais</h2>
             <Link href="/app/monitoramento" className="text-[13px] font-medium text-brand-navy hover:underline">
               {novidadesGrupo.length} {novidadesGrupo.length === 1 ? "processo" : "processos"} →
             </Link>
@@ -702,7 +766,6 @@ export default async function HojePage() {
           )}
         </section>
       </div>
-
     </div>
   );
 }

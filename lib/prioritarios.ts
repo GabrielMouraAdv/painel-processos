@@ -6,15 +6,15 @@ import { prisma } from "@/lib/prisma";
 // na ordem de prioridade combinada:
 //   1. em pauta de julgamento (ItemPautaJudicial em sessao de hoje em diante)
 //   2. com prazo em aberto (Prazo nao cumprido nem dispensado)
-//   3. concluso (ultimo movimento "Conclusao"; julgamento/sentenca/decisao antes de despacho)
-//   4. parado (sem nenhum dos anteriores; os mais antigos primeiro)
+//   3. concluso para julgamento/sentenca ou para decisao (ultimo movimento "Conclusao")
+//   4. parado (sem nenhum dos anteriores, inclusive "Conclusao para despacho"; os mais antigos primeiro)
 
 export type CategoriaPrioritario = "em_pauta" | "prazo_aberto" | "concluso" | "parado";
 
 export const CATEGORIA_PRIORITARIO_LABELS: Record<CategoriaPrioritario, string> = {
   em_pauta: "Em pauta de julgamento",
   prazo_aberto: "Com prazo em aberto",
-  concluso: "Conclusos",
+  concluso: "Conclusos para julgamento ou decisão",
   parado: "Parados",
 };
 
@@ -45,6 +45,14 @@ function rotuloConclusao(complementos: string | null): string {
   if (c.includes("decis")) return "Concluso para decisão";
   if (c.includes("despacho")) return "Concluso para despacho";
   return "Concluso";
+}
+
+// So a conclusao para julgamento/sentenca ou para decisao e prioritaria.
+// "Conclusao para despacho" (e a conclusao sem complemento) e rotina do cartorio:
+// o processo continua na categoria "parado", com o rotulo informando a conclusao.
+function conclusaoPrioritaria(complementos: string | null): boolean {
+  const c = (complementos ?? "").toLowerCase();
+  return c.includes("julgamento") || c.includes("sentença") || c.includes("sentenca") || c.includes("decis");
 }
 
 function pesoConclusao(complementos: string | null): number {
@@ -125,7 +133,8 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
         destaque: falta <= 3,
       };
     }
-    if (mov && /^conclus/i.test(mov.nomeMovimento)) {
+    const concluso = !!mov && /^conclus/i.test(mov.nomeMovimento);
+    if (mov && concluso && conclusaoPrioritaria(mov.complementos)) {
       const dia = diaDe(mov.dataMovimento);
       return {
         ...base, categoria: "concluso", dia,
@@ -134,9 +143,15 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
       };
     }
     const dia = ultimo?.dia ?? null;
+    // Se o ultimo evento conhecido e a propria conclusao (para despacho), o rotulo diz isso.
+    const ultimoEhConclusao = concluso && !!mov && dia === diaDe(mov.dataMovimento);
     return {
       ...base, categoria: "parado", dia,
-      situacao: dia ? `Sem movimento há ${diasEntre(dia, hoje)} dias` : "Sem movimento registrado",
+      situacao: !dia
+        ? "Sem movimento registrado"
+        : ultimoEhConclusao
+          ? `${rotuloConclusao(mov!.complementos)} desde ${dia.split("-").reverse().slice(0, 2).join("/")} (${diasEntre(dia, hoje)} dias)`
+          : `Sem movimento há ${diasEntre(dia, hoje)} dias`,
       destaque: false,
     };
   });
