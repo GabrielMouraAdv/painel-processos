@@ -73,24 +73,41 @@ export async function GET(req: Request) {
   let datajudAtualizadoEm: Date | null = null;
 
   if (!simular) {
-    // Quem nunca foi verificado (ou foi ha mais tempo) vem primeiro — rodizio
-    // justo quando o tempo nao alcanca todos.
+    // Prioritarios primeiro; depois quem nunca foi verificado (ou foi ha mais
+    // tempo) — rodizio justo quando o tempo nao alcanca todos.
     const processos = await prisma.processo.findMany({
       where: { monitoramento: { monitoramentoAtivo: true } },
       select: { id: true, numero: true },
-      orderBy: {
-        monitoramento: { ultimaVerificacao: { sort: "asc", nulls: "first" } },
-      },
+      orderBy: [
+        { prioritario: "desc" },
+        { monitoramento: { ultimaVerificacao: { sort: "asc", nulls: "first" } } },
+      ],
     });
     processosAtivos = processos.length;
 
-    for (const p of processos) {
+    // O Datajud leva de 9 a 30 s por consulta em horario ruim (medido em
+    // 23/10/2026), mas responde consultas em paralelo: lotes de 5 processos.
+    const LOTE = 5;
+    for (let k = 0; k < processos.length; k += LOTE) {
       if (Date.now() - inicio > BUDGET_VERIFICACAO_MS) break;
-      verificados++;
-      try {
-        // Uma unica consulta ao Datajud por processo: movimentacoes e
-        // publicacoes derivadas saem do mesmo resultado.
-        const r = await verificarProcessoMonitorado(p.id);
+      const lote = processos.slice(k, k + LOTE);
+      verificados += lote.length;
+      const resultados = await Promise.all(
+        lote.map(async (p) => {
+          try {
+            // Uma unica consulta ao Datajud por processo: movimentacoes e
+            // publicacoes derivadas saem do mesmo resultado.
+            return { p, r: await verificarProcessoMonitorado(p.id), falha: null as string | null };
+          } catch (err) {
+            return { p, r: null, falha: msg(err) };
+          }
+        }),
+      );
+      for (const { p, r, falha } of resultados) {
+        if (falha || !r) {
+          erros.push({ processoId: p.id, numero: p.numero, erro: falha ?? "sem resultado" });
+          continue;
+        }
         novasMovimentacoes += r.novasMovimentacoes;
         novasPublicacoes += r.novasPublicacoes;
         if (r.erro) {
@@ -102,8 +119,6 @@ export async function GET(req: Request) {
         ) {
           datajudAtualizadoEm = r.datajudAtualizadoEm;
         }
-      } catch (err) {
-        erros.push({ processoId: p.id, numero: p.numero, erro: msg(err) });
       }
     }
   }

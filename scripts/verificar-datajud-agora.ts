@@ -22,14 +22,21 @@ async function main() {
   let movs = 0, pubs = 0, erros = 0, i = 0;
   let maisRecente: Date | null = null;
   const inicio = Date.now();
-  for (const p of processos) {
-    i++;
-    const r = await verificarProcessoMonitorado(p.id);
-    movs += r.novasMovimentacoes; pubs += r.novasPublicacoes;
-    if (r.erro) erros++;
-    if (r.datajudAtualizadoEm && (!maisRecente || r.datajudAtualizadoEm > maisRecente)) maisRecente = r.datajudAtualizadoEm;
-    if (r.novasMovimentacoes > 0 || r.erro) console.log(`  ${p.prioritario ? "*" : " "} ${p.numero}: +${r.novasMovimentacoes} mov, +${r.novasPublicacoes} pub${r.erro ? ` | ERRO ${r.erro}` : ""}`);
-    if (i % 25 === 0) console.log(`  ... ${i}/${processos.length} (${Math.round((Date.now() - inicio) / 1000)}s)`);
+  // O Datajud leva de 9 a 30 s por consulta em horario ruim, mas aceita
+  // consultas em paralelo: lotes de 5 processos por vez.
+  const LOTE = 5;
+  for (let k = 0; k < processos.length; k += LOTE) {
+    const lote = processos.slice(k, k + LOTE);
+    const resultados = await Promise.all(lote.map((p) => verificarProcessoMonitorado(p.id)));
+    for (let j = 0; j < lote.length; j++) {
+      const p = lote[j], r = resultados[j];
+      i++;
+      movs += r.novasMovimentacoes; pubs += r.novasPublicacoes;
+      if (r.erro) erros++;
+      if (r.datajudAtualizadoEm && (!maisRecente || r.datajudAtualizadoEm > maisRecente)) maisRecente = r.datajudAtualizadoEm;
+      if (r.novasMovimentacoes > 0 || r.erro) console.log(`  ${p.prioritario ? "*" : " "} ${p.numero}: +${r.novasMovimentacoes} mov, +${r.novasPublicacoes} pub${r.erro ? ` | ERRO ${r.erro}` : ""}`);
+    }
+    if (i % 25 < LOTE) console.log(`  ... ${i}/${processos.length} (${Math.round((Date.now() - inicio) / 1000)}s)`);
   }
   console.log(`\nverificados=${processos.length} novasMovimentacoes=${movs} novasPublicacoes=${pubs} erros=${erros} datajudMaisRecente=${maisRecente?.toISOString() ?? "-"} em ${Math.round((Date.now() - inicio) / 1000)}s`);
 }
