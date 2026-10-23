@@ -59,10 +59,11 @@ export function ProcessosTable({ processos }: { processos: ProcessoRow[] }) {
   return (
     <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <Table className="min-w-[1080px] md:table-fixed">
+        <Table className="min-w-[1160px] md:table-fixed">
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
-              <TableHead className={cn(headBase, "md:w-[140px]")}>
+              {/* Numero CNJ completo em mono ocupa ~215px; com 140px invadia a coluna do gestor. */}
+              <TableHead className={cn(headBase, "md:w-[230px]")}>
                 Número
               </TableHead>
               <TableHead className={cn(headBase, "md:w-[200px]")}>
