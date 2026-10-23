@@ -355,59 +355,11 @@ export default async function HojePage() {
         <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-2 pt-4">
           <h2 id="semana-t" className="text-xl font-semibold">Semana</h2>
           <span className="text-[13px] text-muted-foreground">
-            {br(semIniDia)} a {br(fimFaixaDia)} · prazos e compromissos por advogado
-            <span className="hidden md:inline"> · role para o lado para ver as próximas semanas</span>
+            {br(semIniDia)} a {br(fimFaixaDia)} · prazos e compromissos por advogado · role para o lado para ver as próximas semanas
           </span>
         </div>
-
-        {/* celular: uma lista por advogado, so os dias com alguma coisa */}
-        <div className="divide-y border-t md:hidden">
-          {linhasVisiveis.map((l) => {
-            const porDia = diasFaixa
-              .map((d) => ({ d, itens: faixa.get(l.chave)?.get(d) ?? [] }))
-              .filter((x) => x.itens.length > 0);
-            return (
-              <div key={l.chave} className="px-4 py-3">
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className={cn(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-semibold",
-                      l.iniciais ? "bg-brand-navy text-white" : "bg-accent text-brand-navy",
-                    )}
-                    aria-hidden="true"
-                  >
-                    {l.iniciais ?? "+"}
-                  </span>
-                  <span className="text-sm font-semibold">{l.rotulo}</span>
-                  <span className="ml-auto font-mono text-xs text-muted-foreground">{porDia.reduce((a, x) => a + x.itens.length, 0)}</span>
-                </div>
-                {porDia.length === 0 ? (
-                  <p className="mt-1.5 pl-[38px] text-[12px] italic text-muted-foreground">Nenhum prazo ou compromisso nestas três semanas.</p>
-                ) : (
-                  <ul className="mt-2 space-y-2 pl-[38px]">
-                    {porDia.map(({ d, itens }) => (
-                      <li key={d}>
-                        <div className={cn("text-[11px] font-semibold uppercase tracking-wide", d === hoje ? "text-brand-navy" : d < hoje ? "text-destructive" : "text-muted-foreground")}>
-                          {d === hoje ? "hoje" : diaSemanaCurto(d)} {br(d)}
-                        </div>
-                        <div className="mt-1 space-y-1">
-                          {itens.map((it, k) => (
-                            <Link key={k} href={it.href} className={cn("block rounded px-2 py-1.5 text-[13px] leading-snug", it.classe)}>
-                              {it.texto}
-                            </Link>
-                          ))}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="hidden overflow-x-auto border-t md:block">
-          <div className="grid" style={{ gridTemplateColumns: `156px ${colunasFaixa}` }}>
+        <div className="overflow-x-auto border-t">
+          <div className="grid [--col-nome:112px] md:[--col-nome:156px]" style={{ gridTemplateColumns: `var(--col-nome) ${colunasFaixa}` }}>
             {/* cabecalho dos dias */}
             <div className="sticky left-0 z-20 border-b bg-white" />
             {diasFaixa.map((d, i) => {
@@ -437,10 +389,10 @@ export default async function HojePage() {
             {/* uma linha por advogado (e a da pauta) */}
             {linhasVisiveis.map((l) => (
               <Fragment key={l.chave}>
-                <div className="sticky left-0 z-10 flex items-center gap-2.5 border-b bg-white px-4 py-2.5">
+                <div className="sticky left-0 z-10 flex items-center gap-2 border-b bg-white px-2 py-2.5 shadow-[1px_0_0_hsl(var(--border))] md:gap-2.5 md:px-4">
                   <span
                     className={cn(
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-semibold",
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-semibold md:h-8 md:w-8 md:text-[11px]",
                       l.iniciais ? "bg-brand-navy text-white" : "bg-accent text-brand-navy",
                     )}
                     aria-hidden="true"
@@ -448,8 +400,8 @@ export default async function HojePage() {
                     {l.iniciais ?? "+"}
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">{l.rotulo}</span>
-                    {l.sub && <span className="block truncate text-[11px] text-muted-foreground">{l.sub}</span>}
+                    <span className="block truncate text-[13px] font-semibold md:text-sm">{l.rotulo}</span>
+                    {l.sub && <span className="hidden truncate text-[11px] text-muted-foreground md:block">{l.sub}</span>}
                   </span>
                 </div>
                 {itensLinha(l.chave).length === 0 && (
@@ -512,67 +464,11 @@ export default async function HojePage() {
             <Link href="/app/tce/pauta" className="font-medium text-brand-navy hover:underline">Cadastrar pauta →</Link>
           </p>
         ) : (
-          <>
-          <div className="divide-y border-t md:hidden">
-            {gruposPauta.map((g) => (
-              <div key={g.chave}>
-                <div className={cn("flex items-center gap-2 border-l-4 px-4 py-1.5", CAMARA_COR[g.camara].faixa)}>
-                  <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", CAMARA_COR[g.camara].chip)}>
-                    {TCE_CAMARA_LABELS[g.camara]}
-                  </span>
-                  <span className="text-[12px] font-semibold uppercase tracking-wide">
-                    {diaSemanaCurto(g.dia)} {br(g.dia)}{g.dia === hoje && " · hoje"}
-                  </span>
-                  <span className="ml-auto font-mono text-[12px] opacity-70">{g.itens.length}</span>
-                </div>
-                <ul className="divide-y">
-                  {g.itens.map((it) => (
-                    <li key={it.id} className="px-4 py-2.5">
-                      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-                        {it.processoTce ? (
-                          <Link href={`/app/tce/processos/${it.processoTce.id}`}>
-                            <NumeroProcesso numero={it.numeroProcesso} />
-                          </Link>
-                        ) : (
-                          <NumeroProcesso numero={it.numeroProcesso} />
-                        )}
-                        <span className="text-[12px] text-muted-foreground">{it.advogadoResp}</span>
-                      </div>
-                      <div className="text-sm">{it.municipio}</div>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px]">
-                        {it.situacao ? (
-                          <>
-                            <span className={cn(it.situacao.julgado && "rounded border px-1.5 py-0.5 font-semibold", it.situacao.classe)}>{it.situacao.texto}</span>
-                            {it.selos.map((s) => (
-                              <span key={s} className="rounded bg-accent px-1 text-[11px] font-semibold text-brand-navy">{s}</span>
-                            ))}
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">
-                            não cadastrado no painel ·{" "}
-                            <Link href={`/app/tce/processos?q=${encodeURIComponent(it.numeroProcesso)}&situacao=todos`} className="font-medium text-brand-navy">cadastrar</Link>
-                          </span>
-                        )}
-                        {it.retiradoDePauta && <span className="rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">retirado de pauta</span>}
-                        {it.pedidoVistas && <span className="rounded bg-orange-100 px-1 text-[11px] font-semibold text-orange-800">pedido de vistas</span>}
-                      </div>
-                      {(it.prognostico || it.providencia) && (
-                        <div className="mt-1 space-y-0.5 text-[12px] text-muted-foreground">
-                          {it.prognostico && <div><span className="font-medium text-foreground">Prognóstico:</span> {it.prognostico}</div>}
-                          {it.providencia && <div><span className="font-medium text-foreground">Providência:</span> {it.providencia}</div>}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="hidden max-h-[400px] overflow-auto border-t md:block">
+          <div className="max-h-[400px] overflow-auto border-t">
             <table className="w-full min-w-[920px] text-sm">
               <thead className="sticky top-0 z-10 bg-white shadow-[inset_0_-1px_0_hsl(var(--border))]">
                 <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                  <th className="px-5 py-2 font-medium">Processo</th>
+                  <th className="sticky left-0 z-[1] bg-white px-3 py-2 font-medium shadow-[1px_0_0_hsl(var(--border))] md:px-5">Processo</th>
                   <th className="px-2 py-2 font-medium">Município</th>
                   <th className="px-2 py-2 font-medium">Advogado</th>
                   <th className="px-2 py-2 font-medium">Situação no painel</th>
@@ -585,6 +481,7 @@ export default async function HojePage() {
                   <Fragment key={g.chave}>
                     <tr className={cn("border-l-4", CAMARA_COR[g.camara].faixa)}>
                       <td colSpan={6} className="px-4 py-1.5">
+                        <div className="sticky left-4 inline-flex flex-wrap items-center">
                         <span className={cn("mr-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", CAMARA_COR[g.camara].chip)}>
                           {TCE_CAMARA_LABELS[g.camara]}
                         </span>
@@ -592,11 +489,12 @@ export default async function HojePage() {
                           {diaSemanaCurto(g.dia)} {br(g.dia)}{g.dia === hoje && " · hoje"}
                         </span>
                         <span className="ml-2 font-mono text-[12px] opacity-70">{g.itens.length} {g.itens.length === 1 ? "item" : "itens"}</span>
+                        </div>
                       </td>
                     </tr>
                     {g.itens.map((it) => (
                       <tr key={it.id} className="border-t">
-                        <td className="px-5 py-2.5 align-top">
+                        <td className="sticky left-0 z-[1] bg-white px-3 py-2.5 align-top shadow-[1px_0_0_hsl(var(--border))] md:px-5">
                           {it.processoTce ? (
                             <Link href={`/app/tce/processos/${it.processoTce.id}`} className="hover:underline">
                               <NumeroProcesso numero={it.numeroProcesso} />
@@ -648,7 +546,6 @@ export default async function HojePage() {
               </tbody>
             </table>
           </div>
-          </>
         )}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-2.5 text-[13px]">
           <span className="flex flex-wrap gap-3 text-muted-foreground">
@@ -676,48 +573,11 @@ export default async function HojePage() {
         {prioritarios.length === 0 ? (
           <p className="border-t px-5 py-4 text-sm text-muted-foreground">Nenhum processo marcado como prioritário.</p>
         ) : (
-          <>
-          <div className="divide-y border-t md:hidden">
-            {gruposPrio.map((g) => (
-              <div key={g.cat}>
-                <div className={cn("border-l-4 px-4 py-1.5 text-[12px] font-semibold uppercase tracking-wide", PRIO_COR[g.cat])}>
-                  {CATEGORIA_PRIORITARIO_LABELS[g.cat]}
-                  <span className="ml-2 font-mono font-normal normal-case opacity-70">{g.itens.length}</span>
-                </div>
-                <ul className="divide-y">
-                  {g.itens.map((p) => (
-                    <li key={p.id} className={cn("px-4 py-2.5", p.destaque && "bg-amber-50/50")}>
-                      <Link href={`/app/processos/${p.id}`} className="block">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <NumeroProcesso numero={p.numero} />
-                          <span className="rounded border px-1 font-mono text-[11px] text-muted-foreground">{p.tribunal}</span>
-                          {p.tipo === "CRIMINAL" && <span className="rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">criminal</span>}
-                        </div>
-                        <div className="mt-0.5 text-sm font-medium">{p.cliente}</div>
-                        <div className={cn("text-[13px]", p.destaque && "font-semibold text-brand-navy")}>{p.situacao}</div>
-                        {p.ultimaPeca && (
-                          <div className="text-[12px] text-muted-foreground">
-                            Última peça: <span className="font-medium text-foreground">{p.ultimaPeca.texto}</span> · {br(p.ultimaPeca.dia)}
-                          </div>
-                        )}
-                        {p.ultimoMovimento && (
-                          <div className="text-[12px] text-muted-foreground">
-                            <span className="font-mono">{br(p.ultimoMovimento.dia)}</span> · {p.ultimoMovimento.texto}
-                          </div>
-                        )}
-                        <div className="text-[12px] text-muted-foreground">{p.advogado}</div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="hidden max-h-[440px] overflow-auto border-t md:block">
+          <div className="max-h-[440px] overflow-auto border-t">
             <table className="w-full min-w-[920px] text-sm">
               <thead className="sticky top-0 z-10 bg-white shadow-[inset_0_-1px_0_hsl(var(--border))]">
                 <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                  <th className="px-5 py-2 font-medium">Processo</th>
+                  <th className="sticky left-0 z-[1] bg-white px-3 py-2 font-medium shadow-[1px_0_0_hsl(var(--border))] md:px-5">Processo</th>
                   <th className="px-2 py-2 font-medium">Cliente</th>
                   <th className="px-2 py-2 font-medium">Situação</th>
                   <th className="px-2 py-2 font-medium">Último movimento</th>
@@ -729,13 +589,15 @@ export default async function HojePage() {
                   <Fragment key={g.cat}>
                     <tr className={cn("border-l-4", PRIO_COR[g.cat])}>
                       <td colSpan={5} className="px-4 py-1.5 text-[12px] font-semibold uppercase tracking-wide">
+                        <div className="sticky left-4 inline-block">
                         {CATEGORIA_PRIORITARIO_LABELS[g.cat]}
                         <span className="ml-2 font-mono font-normal normal-case opacity-70">{g.itens.length}</span>
+                        </div>
                       </td>
                     </tr>
                     {g.itens.map((p) => (
                       <tr key={p.id} className={cn("border-t", p.destaque && "bg-amber-50/50")}>
-                        <td className="px-5 py-2.5 align-top">
+                        <td className={cn("sticky left-0 z-[1] px-3 py-2.5 align-top shadow-[1px_0_0_hsl(var(--border))] md:px-5", p.destaque ? "bg-amber-50" : "bg-white")}>
                           <Link href={`/app/processos/${p.id}`} className="hover:underline">
                             <NumeroProcesso numero={p.numero} />
                           </Link>
@@ -771,7 +633,6 @@ export default async function HojePage() {
               </tbody>
             </table>
           </div>
-          </>
         )}
         <p className="border-t px-5 py-2 text-[12px] text-muted-foreground">
           Conclusão para despacho é rotina do cartório e não entra entre os conclusos. A última peça vem do nome do movimento e pode ser de corréu: confirme nos autos.
@@ -792,30 +653,12 @@ export default async function HojePage() {
             </h2>
             <span className="text-[13px] text-muted-foreground">Marque como cumprido ou encerre como perdido.</span>
           </div>
-          <ul className="divide-y border-t md:hidden">
-            {vencidos.map((v) => (
-              <li key={v.id} className="px-4 py-3">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-mono text-[13px] font-semibold text-destructive">há {diasEntre(v.dia, hoje)} dias</span>
-                  <span className="text-xs text-muted-foreground">venceu {br(v.dia)}</span>
-                </div>
-                <div className="font-semibold">{v.tipo}</div>
-                <Link href={v.href}>
-                  <NumeroProcesso numero={v.numero} />
-                </Link>
-                <div className="text-[13px] text-muted-foreground">{v.contexto}{v.resp ? ` · ${v.resp}` : ""}</div>
-                <div className="mt-2">
-                  <HojePrazoAcoes prazoId={v.id} escopo={v.escopo} usuarioId={user.id} />
-                </div>
-              </li>
-            ))}
-          </ul>
-          <div className="hidden overflow-x-auto md:block">
+          <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <tbody>
                 {vencidos.map((v) => (
                   <tr key={v.id} className="border-t">
-                    <td className="w-28 px-5 py-3 align-top">
+                    <td className="sticky left-0 z-[1] w-28 bg-white px-3 py-3 align-top shadow-[1px_0_0_hsl(var(--border))] md:px-5">
                       <span className="font-mono text-[13px] font-semibold text-destructive">há {diasEntre(v.dia, hoje)} dias</span>
                       <div className="text-xs text-muted-foreground">venceu {br(v.dia)}</div>
                     </td>
