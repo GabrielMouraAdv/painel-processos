@@ -40,6 +40,7 @@ import {
 } from "@/lib/semana";
 import { TCE_CAMARA_LABELS, faseTceLabel } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 function formatDate(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -423,59 +424,23 @@ export default async function TceDashboardPage({
     },
   ];
 
-  const toneStyles: Record<(typeof kpis)[number]["tone"], string> = {
-    navy: "border-brand-navy/20 bg-brand-navy/5 text-brand-navy",
-    red: "border-red-200 bg-red-50 text-red-800",
-    orange: "border-orange-200 bg-orange-50 text-orange-800",
-    slate: "border-slate-300 bg-slate-100 text-slate-800",
-    violet: "border-violet-200 bg-violet-50 text-violet-800",
-    emerald: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    rose: "border-rose-300 bg-rose-100 text-rose-900",
-  };
-
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
-      <header className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Tribunal de Contas
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-          Dashboard TCE
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Visão consolidada dos processos do Tribunal de Contas.
-        </p>
-      </header>
+      <PaginaCabecalho
+        secao="Tribunal de Contas"
+        titulo="Painel TCE"
+        descricao="Visão consolidada dos processos do Tribunal de Contas."
+        indicadores={kpis.map((k) => ({
+          n: k.value,
+          t: k.label,
+          href: k.href,
+          alerta: (k.tone === "rose" || k.tone === "red") && k.value > 0,
+        }))}
+      />
 
       <div className="rounded-lg border bg-white px-4 py-3 shadow-sm">
         <BancaFilter />
       </div>
-
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
-        {kpis.map((k) => {
-          const Icon = k.icon;
-          return (
-            <Link
-              key={k.label}
-              href={k.href}
-              className={cn(
-                "group rounded-lg border p-2.5 shadow-sm transition hover:shadow-md",
-                toneStyles[k.tone],
-              )}
-            >
-              <div className="flex items-start justify-between gap-1">
-                <p className="text-[9px] font-semibold uppercase tracking-tight leading-tight opacity-80">
-                  {k.label}
-                </p>
-                <Icon className="h-3 w-3 shrink-0 opacity-80" aria-hidden="true" />
-              </div>
-              <p className="mt-1 text-2xl font-semibold leading-tight">
-                {k.value}
-              </p>
-            </Link>
-          );
-        })}
-      </section>
 
       <Card className="border-brand-navy/20">
         <CardHeader className="border-b bg-brand-navy/5 pb-4">

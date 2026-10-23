@@ -43,6 +43,7 @@ import { faseTceLabel, TCE_TIPO_LABELS } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 
 import { DispensarPendenciaDialog } from "../pendencias/dispensar-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 type DispensaInfo = {
   por: string;
@@ -194,19 +195,12 @@ export function DespachosView({
 
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Tribunal de Contas
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Despachos TCE
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gerenciamento de despachos com relatores.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PaginaCabecalho
+        compacto
+        secao="Tribunal de Contas"
+        titulo="Despachos TCE"
+        descricao="Despachos com os relatores: agendados, feitos e pendentes."
+        acoes={
           <Button
             onClick={() => setAdicionarOpen(true)}
             className="bg-brand-navy hover:bg-brand-navy/90"
@@ -215,8 +209,8 @@ export function DespachosView({
             <Plus className="mr-2 h-4 w-4" />
             Adicionar Processo
           </Button>
-        </div>
-      </header>
+        }
+      />
 
       {/* KPIs rapidos clicaveis */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 
 import { AlterarSenhaButton } from "./alterar-senha-button";
 import { TelegramSection } from "./telegram-section";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Administrador",
@@ -42,12 +43,12 @@ export default async function PerfilPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-6 py-8">
-      <header>
-        <h1 className="text-2xl font-semibold text-brand-navy">Meu Perfil</h1>
-        <p className="text-sm text-slate-500">
-          Visualize seus dados de acesso e altere sua senha.
-        </p>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Conta"
+        titulo="Meu perfil"
+        descricao="Dados de acesso e troca de senha."
+      />
 
       <Card>
         <CardContent className="space-y-4 p-6">

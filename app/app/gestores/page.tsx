@@ -10,6 +10,7 @@ import { iniciais } from "@/lib/iniciais";
 import { prisma } from "@/lib/prisma";
 
 import { NovoGestorButton } from "./novo-gestor-button";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 const riscoOrdem: Record<Risco, number> = { ALTO: 3, MEDIO: 2, BAIXO: 1 };
 
@@ -64,18 +65,13 @@ export default async function GestoresPage() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-            Gestores
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {gestores.length} gestor{gestores.length === 1 ? "" : "es"} cadastrado
-            {gestores.length === 1 ? "" : "s"}.
-          </p>
-        </div>
-        <NovoGestorButton />
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Judicial"
+        titulo="Gestores"
+        descricao={`${gestores.length} gestor${gestores.length === 1 ? "" : "es"} cadastrado${gestores.length === 1 ? "" : "s"}.`}
+        acoes={<NovoGestorButton />}
+      />
 
       {gestores.length === 0 ? (
         <Card>

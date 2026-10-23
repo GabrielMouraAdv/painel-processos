@@ -24,6 +24,7 @@ import {
 } from "@/lib/eleitoral-labels";
 import { exigirPaginaEleitoral } from "@/lib/eleitoral-server";
 import { prisma } from "@/lib/prisma";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export const dynamic = "force-dynamic";
 
@@ -47,15 +48,13 @@ export default async function EleitoralRelatoriosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Relatórios</h1>
-          <p className="text-sm text-muted-foreground">
-            Relatórios de monitoramento do contencioso eleitoral.
-          </p>
-        </div>
-        <UploadRelatorioDialog />
-      </div>
+      <PaginaCabecalho
+        compacto
+        secao="Eleitoral 2026"
+        titulo="Relatórios"
+        descricao="Relatórios de monitoramento do contencioso eleitoral."
+        acoes={<UploadRelatorioDialog />}
+      />
 
       {!ultimo && (
         <Card>

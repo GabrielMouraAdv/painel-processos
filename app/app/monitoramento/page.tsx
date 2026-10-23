@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 
 import { MarcarProcessoVisto } from "./marcar-processo-visto";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 // Novidades (Direcao A): um cartao por processo com algo nao lido, em vez de
 // milhares de alertas soltos. Decisoes, audiencias e prazos vem primeiro; o
@@ -116,23 +117,22 @@ export default async function NovidadesPage({
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-8 md:px-10">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Judicial · Datajud e DJEN</p>
-          <h1 className="mt-1 text-3xl font-semibold text-brand-tinta md:text-4xl">Novidades</h1>
-          <p className="mt-2 text-[15px] text-muted-foreground">
-            Um cartão por processo. &quot;Marcar como visto&quot; limpa todos os movimentos dele de uma vez.
-          </p>
-        </div>
-        <div className="inline-flex overflow-hidden rounded-lg border bg-white" role="group" aria-label="Filtrar movimentos">
-          <Link href="/app/monitoramento" className={cn("px-4 py-2 text-sm", !tudo ? "bg-brand-navy text-white" : "text-muted-foreground hover:bg-background")}>
-            Decisões, audiências e prazos
-          </Link>
-          <Link href="/app/monitoramento?filtro=tudo" className={cn("px-4 py-2 text-sm", tudo ? "bg-brand-navy text-white" : "text-muted-foreground hover:bg-background")}>
-            Tudo
-          </Link>
-        </div>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Judicial · DataJud e DJEN"
+        titulo="Novidades"
+        descricao={<>Um cartão por processo. &quot;Marcar como visto&quot; limpa todos os movimentos dele de uma vez.</>}
+        acoes={
+          <div className="inline-flex overflow-hidden rounded-lg bg-white/15 p-0.5" role="group" aria-label="Filtrar movimentos">
+            <Link href="/app/monitoramento" className={cn("rounded-md px-3 py-1.5 text-sm", !tudo ? "bg-white text-brand-navy" : "text-white/85 hover:bg-white/10")}>
+              Decisões, audiências e prazos
+            </Link>
+            <Link href="/app/monitoramento?filtro=tudo" className={cn("rounded-md px-3 py-1.5 text-sm", tudo ? "bg-white text-brand-navy" : "text-white/85 hover:bg-white/10")}>
+              Tudo
+            </Link>
+          </div>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-6 rounded-xl border bg-white px-5 py-4">
         <div>

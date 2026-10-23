@@ -53,6 +53,7 @@ import {
   type ItemPautaJudicialInitial,
   type ProcessoJudicialOption,
 } from "./item-pauta-judicial-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type TribunalKey = "TJPE" | "TRF5";
 
@@ -529,19 +530,13 @@ export function PautasJudiciaisView({
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Judicial
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Pautas Judiciais
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Acompanhamento semanal das sessões do Tribunal.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PaginaCabecalho
+        compacto
+        secao="Judicial"
+        titulo="Pautas judiciais"
+        descricao="Acompanhamento semanal das sessões dos tribunais."
+        acoes={
+          <>
           <Button
             variant="outline"
             onClick={exportarPdf}
@@ -567,8 +562,9 @@ export function PautasJudiciaisView({
               Nova Sessão
             </Button>
           )}
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <div className="flex gap-1 border-b">
         <button

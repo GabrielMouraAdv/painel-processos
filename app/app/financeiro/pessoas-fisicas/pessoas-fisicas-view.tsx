@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { HonorarioPessoalDialog, type HonorarioParaEditar } from "./honorario-pessoal-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type HonorarioRow = {
   id: string;
@@ -115,23 +116,18 @@ export function PessoasFisicasView({
 
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Financeiro
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Honorários Pessoais
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Honorários contratados por causa, sucumbência ou outros.
-          </p>
-        </div>
-        <Button onClick={() => setNovoOpen(true)}>
-          <Plus className="mr-1.5 h-4 w-4" />
-          Cadastrar Honorário
-        </Button>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Financeiro"
+        titulo="Honorários pessoais"
+        descricao="Honorários contratados por causa, sucumbência ou outros."
+        acoes={
+          <Button onClick={() => setNovoOpen(true)}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            Cadastrar Honorário
+          </Button>
+        }
+      />
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Total" valor={formatBRL(totais.totalGeral)} tone="navy" />

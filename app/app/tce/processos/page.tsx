@@ -32,6 +32,7 @@ import {
   ProcessosTceTable,
   type ProcessoTceRow,
 } from "./processos-tce-table";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 function asString(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
@@ -308,33 +309,27 @@ export default async function TceProcessosPage({
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Tribunal de Contas
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-tinta md:text-4xl">
-            Processos
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {total} processo{total === 1 ? "" : "s"} cadastrado
-            {total === 1 ? "" : "s"}.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline">
-            <Link href="/app/tce/pendencias">
-              <AlertTriangle className="mr-2 h-4 w-4 text-rose-600" />
-              Ver Pendências
-            </Link>
-          </Button>
-          <NovoProcessoTceButton
-            municipios={municipiosTodos}
-            gestores={todosGestores}
-            defaultBancaSlug={userBancaSlug}
-          />
-        </div>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Tribunal de Contas"
+        titulo="Processos"
+        descricao={`${total} processo${total === 1 ? "" : "s"} cadastrado${total === 1 ? "" : "s"}.`}
+        acoes={
+          <>
+            <Button asChild variant="outline">
+              <Link href="/app/tce/pendencias">
+                <AlertTriangle className="mr-2 h-4 w-4 text-rose-600" />
+                Ver Pendências
+              </Link>
+            </Button>
+            <NovoProcessoTceButton
+              municipios={municipiosTodos}
+              gestores={todosGestores}
+              defaultBancaSlug={userBancaSlug}
+            />
+          </>
+        }
+      />
 
       {/* Abas por situacao (Direcao A), no lugar dos cartoes coloridos */}
       <nav className="flex flex-wrap gap-1 border-b" aria-label="Situação">

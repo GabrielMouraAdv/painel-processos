@@ -17,7 +17,6 @@ import { getServerSession } from "next-auth";
 import { Risco, Role } from "@prisma/client";
 
 import { BancaFilter } from "@/components/bancas/banca-filter";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,6 +41,7 @@ import {
 import { ORGAOS_JULGADORES } from "@/lib/tjpe-config";
 import { ORGAOS_JULGADORES_TRF5 } from "@/lib/trf5-config";
 import { cn } from "@/lib/utils";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 function formatDate(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -537,27 +537,21 @@ export default async function AppHome({
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
-      <header className="flex flex-col gap-3">
-        <Badge className="w-fit bg-brand-navy text-white hover:bg-brand-navy/90">
-          Painel Jurídico
-        </Badge>
-        <h1 className="text-3xl font-semibold tracking-tight text-brand-navy sm:text-4xl">
-          Olá, {nome}
-        </h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Visão geral do escritório — clique nos indicadores para filtrar rapidamente.
-        </p>
-      </header>
+      <PaginaCabecalho
+        secao="Judicial"
+        titulo="Painel judicial"
+        descricao={`Olá, ${nome}. Visão geral dos processos judiciais; clique nos números para filtrar.`}
+        indicadores={kpis.map((k) => ({
+          n: k.value,
+          t: k.label,
+          href: k.href,
+          alerta: (k.tone === "rose" || k.tone === "red") && k.value > 0,
+        }))}
+      />
 
       <div className="rounded-lg border bg-white px-4 py-3 shadow-sm">
         <BancaFilter />
       </div>
-
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
-        {kpis.map((k) => (
-          <KpiCard key={k.label} {...k} />
-        ))}
-      </section>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -1088,64 +1082,3 @@ export default async function AppHome({
   );
 }
 
-function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  href,
-  tone,
-}: {
-  label: string;
-  value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  href: string;
-  tone: "default" | "red" | "amber" | "slate" | "navy" | "rose";
-}) {
-  const valueClass = {
-    default: "text-brand-navy",
-    red: "text-red-700",
-    amber: "text-amber-700",
-    slate: "text-slate-700",
-    navy: "text-brand-navy",
-    rose: "text-rose-700",
-  }[tone];
-  const iconClass = {
-    default: "text-brand-navy",
-    red: "text-red-600",
-    amber: "text-amber-600",
-    slate: "text-slate-500",
-    navy: "text-brand-navy",
-    rose: "text-rose-600",
-  }[tone];
-  const containerClass = {
-    default: "border-slate-200 bg-white",
-    red: "border-slate-200 bg-white",
-    amber: "border-slate-200 bg-white",
-    slate: "border-slate-200 bg-white",
-    navy: "border-slate-200 bg-white",
-    rose: "border-rose-300 bg-rose-100",
-  }[tone];
-
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "group rounded-lg border p-4 shadow-sm transition hover:border-brand-navy/40 hover:shadow-md",
-        containerClass,
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {label}
-        </p>
-        <Icon className={cn("h-4 w-4", iconClass)} />
-      </div>
-      <p className={cn("mt-2 text-3xl font-semibold leading-tight", valueClass)}>
-        {value}
-      </p>
-      <p className="mt-1 text-[11px] text-muted-foreground group-hover:text-brand-navy">
-        ver lista →
-      </p>
-    </Link>
-  );
-}

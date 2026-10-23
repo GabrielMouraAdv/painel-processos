@@ -19,6 +19,7 @@ import { KpiCards } from "./kpi-cards";
 import { Pagination } from "./pagination";
 import { ProcessosFilters } from "./processos-filters";
 import { ProcessosTable } from "./processos-table";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 const PAGE_SIZE = 20;
 
@@ -118,30 +119,28 @@ export default async function ProcessosPage({
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-            Processos
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie e acompanhe todos os processos do escritório.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline">
-            <Link href="/app/pendencias">
-              <AlertTriangle className="mr-2 h-4 w-4 text-rose-600" />
-              Ver Pendências
-            </Link>
-          </Button>
-          <Button asChild className="bg-brand-navy hover:bg-brand-navy/90">
-            <Link href="/app/processos/novo">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Processo
-            </Link>
-          </Button>
-        </div>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Judicial"
+        titulo="Processos"
+        descricao="Todos os processos judiciais do escritório."
+        acoes={
+          <>
+            <Button asChild variant="outline">
+              <Link href="/app/pendencias">
+                <AlertTriangle className="mr-2 h-4 w-4 text-rose-600" />
+                Ver Pendências
+              </Link>
+            </Button>
+            <Button asChild className="bg-brand-navy hover:bg-brand-navy/90">
+              <Link href="/app/processos/novo">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Processo
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       <KpiCards
         total={totalKpi}

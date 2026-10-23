@@ -51,6 +51,7 @@ import {
   type CalendarEvento,
   type CompromissoCategoriaEvento,
 } from "./types";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type AdvogadoOption = { id: string; nome: string };
 export type ProcessoTceOption = {
@@ -507,16 +508,12 @@ export function CompromissosView({
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="flex flex-col gap-4">
-        <header className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-              Meus Compromissos
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Visão unificada de prazos TCE, judiciais e compromissos pessoais.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+        <PaginaCabecalho
+          compacto
+          secao="Escritório"
+          titulo="Agenda"
+          descricao="Prazos TCE, prazos judiciais e compromissos, em uma só agenda."
+          acoes={
             <Button
               onClick={() => {
                 setNovoDataInicial(null);
@@ -527,8 +524,8 @@ export function CompromissosView({
               <Plus className="mr-2 h-4 w-4" />
               Cadastrar Compromisso
             </Button>
-          </div>
-        </header>
+          }
+        />
 
         <Card>
           <CardContent className="flex flex-wrap items-end gap-3 pt-6">

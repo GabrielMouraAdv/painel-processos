@@ -43,6 +43,7 @@ import { AgendarPendenciaDialog } from "./agendar-dialog";
 import { DespachoFeitoDialog } from "./despacho-feito-dialog";
 import { DispensarPendenciaDialog } from "./dispensar-dialog";
 import { MemorialProntoDialog } from "./memorial-pronto-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 const CAMARA_LABEL: Record<CamaraTce, string> = {
   PRIMEIRA: "1a Câmara",
@@ -88,25 +89,20 @@ export function PendenciasView({
 
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Tribunal de Contas
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Pendências TCE
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Contrarrazões, memoriais, despachos e prazos pendentes.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <a href="/api/tce/pendencias/export" download>
-            <FileDown className="mr-2 h-4 w-4" />
-            Exportar PDF
-          </a>
-        </Button>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Tribunal de Contas"
+        titulo="Pendências TCE"
+        descricao="Contrarrazões, memoriais, despachos e prazos pendentes."
+        acoes={
+          <Button asChild variant="outline">
+            <a href="/api/tce/pendencias/export" download>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar PDF
+            </a>
+          </Button>
+        }
+      />
 
       {/* KPIs clicaveis */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { LINKS_ELEITORAIS, type GrupoLinks } from "@/lib/eleitoral-links";
 import { exigirPaginaEleitoral } from "@/lib/eleitoral-server";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +24,12 @@ export default async function EleitoralLinksPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Links úteis</h1>
-        <p className="text-sm text-muted-foreground">
-          Jurisprudência, resoluções do TSE para 2026 e acesso ao PJe. Todos
-          abrem em nova aba.
-        </p>
-      </div>
+      <PaginaCabecalho
+        compacto
+        secao="Eleitoral 2026"
+        titulo="Links úteis"
+        descricao="Jurisprudência, resoluções do TSE para 2026 e acesso ao PJe. Todos abrem em nova aba."
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         {LINKS_ELEITORAIS.map((grupo) => (

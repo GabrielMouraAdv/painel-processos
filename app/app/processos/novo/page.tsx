@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import { ProcessoForm } from "../processo-form";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export default async function NovoProcessoPage() {
   const session = await getServerSession(authOptions);
@@ -28,20 +29,20 @@ export default async function NovoProcessoPage() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2">
-          <Link href="/app/processos">
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Voltar para processos
-          </Link>
-        </Button>
-        <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-          Novo processo
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Preencha os dados para registrar um novo processo no escritório.
-        </p>
-      </div>
+      <PaginaCabecalho
+        compacto
+        secao="Judicial"
+        titulo="Novo processo"
+        descricao="Preencha os dados para registrar um novo processo no escritório."
+        acoes={
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/app/processos">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Voltar para processos
+            </Link>
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>

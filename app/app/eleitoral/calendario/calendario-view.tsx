@@ -46,6 +46,7 @@ import {
   statusPrazoInfo,
 } from "@/lib/eleitoral-labels";
 import { cn } from "@/lib/utils";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type PrazoCalendario = {
   id: string;
@@ -276,17 +277,13 @@ export function CalendarioEleitoralView({
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">Calendário de prazos</h1>
-            <p className="text-sm text-muted-foreground">
-              {visiveis.length}
-              {visiveis.length !== itens.length ? ` de ${itens.length}` : ""}{" "}
-              prazo(s) em {MESES[mes]} de {ano} · clique no dia para criar,
-              arraste para remarcar.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+        <PaginaCabecalho
+          compacto
+          secao="Eleitoral 2026"
+          titulo="Calendário de prazos"
+          descricao={`${visiveis.length}${visiveis.length !== itens.length ? ` de ${itens.length}` : ""} prazo${visiveis.length === 1 ? "" : "s"} em ${MESES[mes]} de ${ano}. Clique no dia para criar, arraste para remarcar.`}
+          acoes={
+            <>
             <Button
               variant={todasSelecionadas ? "outline" : "default"}
               size="sm"
@@ -305,7 +302,7 @@ export function CalendarioEleitoralView({
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
-            <span className="min-w-[150px] text-center text-sm font-semibold">
+            <span className="min-w-[150px] text-center text-sm font-semibold text-white">
               {MESES[mes]} {ano}
             </span>
             <Button asChild variant="outline" size="sm">
@@ -317,8 +314,9 @@ export function CalendarioEleitoralView({
               <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
               Novo prazo
             </Button>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         <div className="flex flex-wrap items-center gap-3 text-xs">
           {STATUS_PRAZO_ELEITORAL.map((s) => (

@@ -16,6 +16,7 @@ import {
   STATUS_NOTA,
 } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export default async function FinanceiroEscolhaPage() {
   const session = await getServerSession(authOptions);
@@ -129,17 +130,12 @@ export default async function FinanceiroEscolhaPage() {
           </Link>
         </div>
 
-        <header className="mb-6 text-center sm:mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Financeiro
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-brand-navy sm:text-5xl">
-            Financeiro
-          </h1>
-          <p className="mt-2 text-base text-muted-foreground">
-            Gestão financeira do escritório
-          </p>
-        </header>
+        <PaginaCabecalho
+          secao="Escritório"
+          titulo="Financeiro"
+          descricao="Gestão financeira do escritório."
+          className="mb-6 sm:mb-10"
+        />
 
         <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-3">
           <Link

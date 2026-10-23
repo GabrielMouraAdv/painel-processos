@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { tribunalLabels } from "@/lib/processo-labels";
 import { diasAte, urgenciaDe } from "@/lib/prazos";
 import { cn } from "@/lib/utils";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type PrazoItem = {
   id: string;
@@ -237,15 +238,12 @@ export function PrazosView({
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-            Prazos
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Acompanhe os prazos processuais e gere-os manualmente quando necessário.
-          </p>
-        </div>
+      <PaginaCabecalho
+        compacto
+        secao="Judicial"
+        titulo="Prazos"
+        descricao="Prazos processuais dos processos judiciais."
+        acoes={
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button className="bg-brand-navy hover:bg-brand-navy/90">
@@ -272,7 +270,8 @@ export function PrazosView({
             />
           </DialogContent>
         </Dialog>
-      </header>
+        }
+      />
 
       <Dialog
         open={!!editing}

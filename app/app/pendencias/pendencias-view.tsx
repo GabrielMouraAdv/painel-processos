@@ -46,6 +46,7 @@ import { AgendarPendenciaDialog } from "../tce/pendencias/agendar-dialog";
 import { DespachoFeitoDialog } from "../tce/pendencias/despacho-feito-dialog";
 import { DispensarPendenciaDialog } from "../tce/pendencias/dispensar-dialog";
 import { MemorialProntoDialog } from "../tce/pendencias/memorial-pronto-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 type Advogado = { id: string; nome: string };
 
@@ -113,25 +114,20 @@ export function PendenciasView({
 
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Judicial
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Pendências Judiciais
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Memoriais, despachos e prazos pendentes.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <a href="/api/pendencias/export" download>
-            <FileDown className="mr-2 h-4 w-4" />
-            Exportar PDF
-          </a>
-        </Button>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Judicial"
+        titulo="Pendências judiciais"
+        descricao="Memoriais, despachos e prazos pendentes."
+        acoes={
+          <Button asChild variant="outline">
+            <a href="/api/pendencias/export" download>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar PDF
+            </a>
+          </Button>
+        }
+      />
 
       {/* KPIs clicaveis */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">

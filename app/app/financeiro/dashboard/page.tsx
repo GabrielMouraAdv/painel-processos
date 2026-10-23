@@ -18,6 +18,7 @@ import {
 import { prisma } from "@/lib/prisma";
 
 import { FinanceiroFiltros } from "../financeiro-filtros";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 function asString(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
@@ -288,17 +289,12 @@ export default async function FinanceiroDashboardPage({
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
-      <header className="flex flex-col gap-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Financeiro
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-          Dashboard Financeiro
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Honorários contratuais municipais e honorários pessoais por causa.
-        </p>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Financeiro"
+        titulo="Painel financeiro"
+        descricao="Honorários contratuais municipais e honorários pessoais por causa."
+      />
 
       <FinanceiroFiltros anoSelecionado={ano} mostrarFiltroBanca={isAdmin} />
 

@@ -22,6 +22,7 @@ import {
 } from "@/lib/eleitoral-labels";
 import { exigirPaginaEleitoral } from "@/lib/eleitoral-server";
 import { prisma } from "@/lib/prisma";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export const dynamic = "force-dynamic";
 
@@ -82,12 +83,11 @@ export default async function EleitoralDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Eleitoral 2026</h1>
-        <p className="text-sm text-muted-foreground">
-          Contencioso eleitoral TRE-PE — processos, prazos e relatórios.
-        </p>
-      </div>
+      <PaginaCabecalho
+        secao="Eleitoral 2026"
+        titulo="Painel eleitoral"
+        descricao="Contencioso eleitoral no TRE-PE: processos, prazos e relatórios."
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Link href="/app/eleitoral/processos">

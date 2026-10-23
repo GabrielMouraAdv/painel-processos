@@ -43,6 +43,7 @@ import {
 import { EditarNotaDialog, type NotaParaEditar } from "./editar-nota-dialog";
 import { EmitirAditivoDialog } from "./emitir-aditivo-dialog";
 import { RenovarContratoDialog } from "./renovar-contrato-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type NotaCard = {
   id: string;
@@ -184,19 +185,12 @@ export function MunicipiosFinanceiroView({
 
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Financeiro
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Honorários Municipais
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Calendário anual de notas fiscais por contrato municipal.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <PaginaCabecalho
+        compacto
+        secao="Financeiro"
+        titulo="Honorários municipais"
+        descricao="Calendário anual de notas fiscais por contrato municipal."
+        acoes={
           <Button
             variant="outline"
             onClick={() => setNovoContratoOpen(true)}
@@ -204,8 +198,8 @@ export function MunicipiosFinanceiroView({
             <Plus className="mr-1.5 h-4 w-4" />
             Cadastrar Contrato
           </Button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-end gap-3">

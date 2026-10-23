@@ -42,6 +42,7 @@ import {
   type InteressadoFormInitial,
   type MunicipioOption,
 } from "./interessado-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type InteressadoCard = {
   id: string;
@@ -176,22 +177,13 @@ export function InteressadosList({
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Tribunal de Contas
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Interessados
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {interessados.length} interessado
-            {interessados.length === 1 ? "" : "s"} cadastrado
-            {interessados.length === 1 ? "" : "s"}.
-          </p>
-        </div>
-        <NovoInteressadoButton municipios={municipios} />
-      </div>
+      <PaginaCabecalho
+        compacto
+        secao="Tribunal de Contas"
+        titulo="Interessados"
+        descricao={`${interessados.length} interessado${interessados.length === 1 ? "" : "s"} cadastrado${interessados.length === 1 ? "" : "s"}.`}
+        acoes={<NovoInteressadoButton municipios={municipios} />}
+      />
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">

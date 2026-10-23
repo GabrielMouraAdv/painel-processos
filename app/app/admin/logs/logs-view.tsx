@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  History,
   Newspaper,
 } from "lucide-react";
 
@@ -15,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 type LogRow = {
   id: string;
@@ -141,19 +141,12 @@ export function LogsView({
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 px-6 py-8">
-      <header className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-brand-navy/10 text-brand-navy">
-          <History className="h-5 w-5" aria-hidden="true" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-navy">
-            Log de Auditoria
-          </h1>
-          <p className="text-sm text-slate-500">
-            Registro de todas as movimentações do sistema
-          </p>
-        </div>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Administração"
+        titulo="Registro de atividades"
+        descricao="Tudo o que foi gravado ou alterado no painel, por quem e quando."
+      />
 
       <Card>
         <CardContent className="p-4">

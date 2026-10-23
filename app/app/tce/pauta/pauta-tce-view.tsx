@@ -50,6 +50,7 @@ import {
   type ItemPautaInitial,
   type ProcessoTceOption,
 } from "./item-pauta-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type SessaoRow = {
   id: string;
@@ -325,19 +326,13 @@ export function PautaTceView({
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Tribunal de Contas
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Monitoramento de Pauta TCE
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Acompanhamento semanal das sessões das Câmaras e Pleno.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PaginaCabecalho
+        compacto
+        secao="Tribunal de Contas"
+        titulo="Pauta TCE-PE"
+        descricao="Acompanhamento semanal das sessões das Câmaras e do Pleno."
+        acoes={
+          <>
           <Button
             variant="outline"
             onClick={exportarPdf}
@@ -361,8 +356,9 @@ export function PautaTceView({
             <Plus className="mr-2 h-4 w-4" />
             Nova Sessão de Pauta
           </Button>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <Card>
         <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">

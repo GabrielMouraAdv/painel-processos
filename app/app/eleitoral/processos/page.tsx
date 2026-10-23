@@ -24,6 +24,7 @@ import {
   listarUsuariosEleitoral,
 } from "@/lib/eleitoral-server";
 import { prisma } from "@/lib/prisma";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export const dynamic = "force-dynamic";
 
@@ -51,24 +52,24 @@ export default async function EleitoralProcessosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Processos eleitorais</h1>
-          <p className="text-sm text-muted-foreground">
-            {processos.length} processo(s) cadastrado(s)
-          </p>
-        </div>
-        <ProcessoFormDialog
-          mode="create"
-          usuarios={usuarios}
-          trigger={
-            <Button>
-              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-              Novo processo
-            </Button>
-          }
-        />
-      </div>
+      <PaginaCabecalho
+        compacto
+        secao="Eleitoral 2026"
+        titulo="Processos eleitorais"
+        descricao={`${processos.length} processo${processos.length === 1 ? "" : "s"} cadastrado${processos.length === 1 ? "" : "s"}.`}
+        acoes={
+          <ProcessoFormDialog
+            mode="create"
+            usuarios={usuarios}
+            trigger={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                Novo processo
+              </Button>
+            }
+          />
+        }
+      />
 
       <div className="rounded-md border">
         <Table>

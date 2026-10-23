@@ -22,6 +22,7 @@ import {
   NovoMunicipioButton,
   type MunicipioFormInitial,
 } from "./municipio-dialog";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type MunicipioCard = {
   id: string;
@@ -82,22 +83,13 @@ export function MunicipiosList({
 
   return (
     <>
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Tribunal de Contas
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Municípios
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {municipios.length} município
-            {municipios.length === 1 ? "" : "s"} cadastrado
-            {municipios.length === 1 ? "" : "s"}.
-          </p>
-        </div>
-        <NovoMunicipioButton />
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Tribunal de Contas"
+        titulo="Órgãos e entidades"
+        descricao={`${municipios.length} ${municipios.length === 1 ? "órgão cadastrado" : "órgãos cadastrados"}.`}
+        acoes={<NovoMunicipioButton />}
+      />
 
       {municipios.length === 0 ? (
         <Card>

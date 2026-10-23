@@ -28,6 +28,7 @@ import {
 
 import { ClienteForm } from "./cliente-form";
 import { PeriodoFilter } from "./periodo-filter";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 function asString(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
@@ -114,17 +115,12 @@ export default async function RelatoriosPage({
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-8 md:px-8">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-brand-navy">
-            Relatórios
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gere relatórios de cliente para reunião e veja agrupamentos do
-            escritório.
-          </p>
-        </div>
-      </header>
+      <PaginaCabecalho
+        compacto
+        secao="Escritório"
+        titulo="Relatórios"
+        descricao="Relatórios de cliente para reunião e agrupamentos do escritório."
+      />
 
       {/* Relatorio de Cliente */}
       <Card className="border-brand-navy/30">

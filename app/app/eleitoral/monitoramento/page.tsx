@@ -21,6 +21,7 @@ import {
   listarUsuariosEleitoral,
 } from "@/lib/eleitoral-server";
 import { prisma } from "@/lib/prisma";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export const dynamic = "force-dynamic";
 
@@ -53,14 +54,12 @@ export default async function EleitoralMonitoramentoPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Monitoramento</h1>
-        <p className="text-sm text-muted-foreground">
-          Processos novos detectados pela rotina de monitoramento (PDPJ).
-          Cadastre no acervo, dispense ou marque como responsabilidade de
-          outro escritório.
-        </p>
-      </div>
+      <PaginaCabecalho
+        compacto
+        secao="Eleitoral 2026"
+        titulo="Monitoramento"
+        descricao="Processos novos detectados pela rotina de monitoramento (PDPJ). Cadastre no acervo, dispense ou marque como de outro escritório."
+      />
 
       <Card>
         <CardHeader>

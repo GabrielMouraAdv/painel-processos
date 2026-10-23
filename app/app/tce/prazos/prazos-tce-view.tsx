@@ -47,6 +47,7 @@ import {
   type PrazoTceInitial,
   type ProcessoTceOption,
 } from "@/components/tce/prazo-tce-form";
+import { PaginaCabecalho } from "@/components/pagina-cabecalho";
 
 export type PrazoTceRow = {
   id: string;
@@ -312,20 +313,13 @@ export function PrazosTceView({
           </span>
         </div>
       )}
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Tribunal de Contas
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-brand-navy">
-            Prazos TCE
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Contagem em dias úteis considerando feriados nacionais e recesso
-            forense (20/12 a 20/01).
-          </p>
-        </div>
-        <div className="flex gap-2">
+      <PaginaCabecalho
+        compacto
+        secao="Tribunal de Contas"
+        titulo="Prazos TCE"
+        descricao="Contagem em dias úteis, considerando feriados nacionais e o recesso forense (20/12 a 20/01)."
+        acoes={
+          <>
           <Button
             variant="outline"
             onClick={() => setEditAllOpen(true)}
@@ -360,8 +354,9 @@ export function PrazosTceView({
               />
             </DialogContent>
           </Dialog>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <EditPrazosTceDialog
         open={editAllOpen}
