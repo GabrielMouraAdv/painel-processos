@@ -23,6 +23,8 @@
  * Uso (PowerShell, na pasta do repo):
  *   npx.cmd tsx scripts/importar-agenda-legalone.ts --arquivo "C:\caminho\agenda.json"
  *   npx.cmd tsx scripts/importar-agenda-legalone.ts --arquivo "C:\caminho\agenda.json" --gravar
+ *   --sigla HA           agenda de um advogado so, itens sem a sigla na frente (Porto e Rodrigues)
+ *   --desde aaaa-mm-dd   ignora compromissos anteriores a esse dia
  */
 import fs from "node:fs";
 import { PrismaClient } from "@prisma/client";
@@ -34,13 +36,17 @@ type ItemAgenda = { sigla: string; dia: string; hora?: string | null; titulo: st
 // Formato bruto que a leitura pelo navegador devolve: { date, hora, texto: "SIGLA Titulo HH:MM" }.
 type ItemBruto = { date: string | null; hora?: string | null; texto: string };
 
-function normalizar(x: ItemAgenda | ItemBruto): ItemAgenda | null {
+// `siglaPadrao` (--sigla HA): agenda de um advogado so, em que os itens nao vem
+// com a sigla na frente (ex.: o Legal One do Porto e Rodrigues).
+function normalizar(x: ItemAgenda | ItemBruto, siglaPadrao: string | null): ItemAgenda | null {
   if ("titulo" in x) return x;
   if (!x.date) return null;
-  const m = /^([A-Z]{2,3})\s+(.*)$/.exec(x.texto.trim());
+  const limpo = x.texto.trim();
+  const semHora = (t: string) => t.replace(/\s*(Dia inteiro|\d{1,2}:\d{2})\s*$/i, "").trim();
+  if (siglaPadrao) return { sigla: siglaPadrao, dia: x.date, hora: x.hora ?? null, titulo: semHora(limpo) };
+  const m = /^([A-Z]{2,3})\s+(.*)$/.exec(limpo);
   if (!m) return null;
-  const titulo = m[2].replace(/\s*(Dia inteiro|\d{1,2}:\d{2})\s*$/i, "").trim();
-  return { sigla: m[1], dia: x.date, hora: x.hora ?? null, titulo };
+  return { sigla: m[1], dia: x.date, hora: x.hora ?? null, titulo: semHora(m[2]) };
 }
 
 // Sigla da agenda no Legal One -> nome (parcial) do usuario no painel.
@@ -58,6 +64,9 @@ const RE_TCE = /\b(\d{2}\d{5,6}-\d(?:[A-Z]{2,3}\d{3})?)\b/;
 const RE_CNJ = /\b(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})\b/;
 // "PF 23/10", "Pf! 23/10", "PF REAL: 23/10", "Fatal Real: 23/10", "PF: 03/11"
 const RE_PRAZO = /\b(?:pf|prazo\s*fatal|fatal)(?:\s*real)?\s*[!:.]?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/i;
+// "Audiencia ... 14/12 as 10h", "Sessão de Julgamento ... 06/10 as 09h": a data do ato manda.
+// (o numero do processo pode vir antes da data; "dd/mm" so aparece em datas)
+const RE_EVENTO = /\b(?:audi[êe]ncia|sess[ãa]o)\b.*?\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/i;
 
 function tipoDe(titulo: string): string {
   const t = titulo.toLowerCase();
@@ -70,7 +79,7 @@ function tipoDe(titulo: string): string {
 
 // Dia do compromisso: o prazo escrito no titulo, senao o dia do item.
 function diaDoCompromisso(item: ItemAgenda): { dia: string; doPrazo: boolean } {
-  const m = RE_PRAZO.exec(item.titulo);
+  const m = RE_PRAZO.exec(item.titulo) ?? RE_EVENTO.exec(item.titulo);
   if (!m) return { dia: item.dia, doPrazo: false };
   const d = m[1].padStart(2, "0");
   const mes = m[2].padStart(2, "0");
@@ -111,8 +120,14 @@ async function main() {
   const iDesde = args.indexOf("--desde");
   const desde = iDesde >= 0 ? args[iDesde + 1] : null; // "aaaa-mm-dd": ignora itens anteriores
   const brutos: (ItemAgenda | ItemBruto)[] = JSON.parse(fs.readFileSync(arquivo, "utf-8"));
-  const itens = brutos.map(normalizar).filter((x): x is ItemAgenda => !!x).filter((x) => !desde || x.dia >= desde);
-  console.log(`${brutos.length} itens no arquivo, ${itens.length} considerados${desde ? ` (desde ${desde})` : ""}. Modo: ${gravar ? "GRAVAR" : "simulacao"}`);
+  const iSigla = args.indexOf("--sigla");
+  const siglaPadrao = iSigla >= 0 ? args[iSigla + 1] : null;
+  // O filtro --desde vale para o dia do compromisso (prazo escrito no titulo), nao para o dia do item.
+  const itens = brutos
+    .map((x) => normalizar(x, siglaPadrao))
+    .filter((x): x is ItemAgenda => !!x)
+    .filter((x) => !desde || diaDoCompromisso(x).dia >= desde);
+  console.log(`${brutos.length} itens no arquivo, ${itens.length} considerados${desde ? ` (desde ${desde})` : ""}${siglaPadrao ? ` · agenda ${siglaPadrao}` : ""}. Modo: ${gravar ? "GRAVAR" : "simulacao"}`);
 
   const escritorio = await prisma.escritorio.findFirst({ select: { id: true } });
   if (!escritorio) throw new Error("Nenhum escritorio cadastrado");
