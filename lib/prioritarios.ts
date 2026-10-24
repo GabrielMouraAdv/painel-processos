@@ -25,6 +25,8 @@ export type Prioritario = {
   tipo: string;
   cliente: string;
   advogado: string;
+  // Objeto do processo, resumido para caber na coluna (ate ~90 caracteres).
+  objeto: string;
   categoria: CategoriaPrioritario;
   // Texto curto da situacao (ex.: "Pauta TRF5 · 2ª Turma · 28/10", "Prazo: Contestação · 29/10",
   // "Concluso para julgamento desde 11/06", "Sem movimento há 93 dias").
@@ -80,6 +82,14 @@ function pecaDefesa(nomeMovimento: string, complementos: string | null): string 
   return null;
 }
 
+// Objeto do processo em uma frase curta (sem quebras, ate 90 caracteres).
+function resumirObjeto(objeto: string | null | undefined): string {
+  const t = (objeto ?? "").replace(/\s+/g, " ").trim();
+  if (t.length <= 90) return t;
+  const corte = t.slice(0, 90);
+  return `${corte.slice(0, Math.max(40, corte.lastIndexOf(" ")))}…`;
+}
+
 function pesoConclusao(complementos: string | null): number {
   const c = (complementos ?? "").toLowerCase();
   if (c.includes("julgamento") || c.includes("sentença") || c.includes("sentenca")) return 0;
@@ -94,7 +104,7 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
   const processos = await prisma.processo.findMany({
     where: { escritorioId, prioritario: true },
     select: {
-      id: true, numero: true, tribunal: true, tipo: true,
+      id: true, numero: true, tribunal: true, tipo: true, objeto: true,
       gestor: { select: { nome: true } },
       advogado: { select: { nome: true } },
       prazos: {
@@ -146,6 +156,7 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
     const base = {
       id: p.id, numero: p.numero, tribunal: p.tribunal, tipo: p.tipo,
       cliente: p.gestor?.nome ?? "—", advogado: p.advogado?.nome ?? "—",
+      objeto: resumirObjeto(p.objeto),
       ultimoMovimento: ultimo, ultimaPeca, naoLidos: p._count.movimentacoesAuto,
     };
 

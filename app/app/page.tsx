@@ -597,12 +597,15 @@ export default async function HojePage() {
                     </tr>
                     {g.itens.map((p) => (
                       <tr key={p.id} className={cn("border-t", p.destaque && "bg-amber-50/50")}>
-                        <td className={cn("sticky left-0 z-[1] px-3 py-2.5 align-top shadow-[1px_0_0_hsl(var(--border))] md:px-5", p.destaque ? "bg-amber-50" : "bg-white")}>
+                        <td className={cn("sticky left-0 z-[1] w-[236px] max-w-[236px] px-3 py-2.5 align-top shadow-[1px_0_0_hsl(var(--border))] md:px-5", p.destaque ? "bg-amber-50" : "bg-white")}>
                           <Link href={`/app/processos/${p.id}`} className="hover:underline">
                             <NumeroProcesso numero={p.numero} />
                           </Link>
-                          <span className="ml-2 rounded border px-1 font-mono text-[11px] text-muted-foreground">{p.tribunal}</span>
-                          {p.tipo === "CRIMINAL" && <span className="ml-1 rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">criminal</span>}
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                            <span className="rounded border px-1 font-mono text-[11px] text-muted-foreground">{p.tribunal}</span>
+                            {p.tipo === "CRIMINAL" && <span className="rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">criminal</span>}
+                          </div>
+                          {p.objeto && <div className="mt-1 line-clamp-2 text-[12px] leading-snug text-muted-foreground" title={p.objeto}>{p.objeto}</div>}
                         </td>
                         <td className="px-2 py-2.5 align-top">{p.cliente}</td>
                         <td className="px-2 py-2.5 align-top text-[13px]">
