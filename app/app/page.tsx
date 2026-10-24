@@ -12,7 +12,7 @@ import { classeBadgeResultado, classificarResultadoTce } from "@/lib/julgamento-
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 import { CATEGORIA_PRIORITARIO_LABELS, carregarPrioritarios, type CategoriaPrioritario } from "@/lib/prioritarios";
 import { prisma } from "@/lib/prisma";
-import { endOfWeekUTC, startOfWeekUTC } from "@/lib/semana";
+import { endOfWeekUTC, inicioSemanaPauta, startOfWeekUTC } from "@/lib/semana";
 import { SITUACAO_TCE_LABELS, situacaoTce, whereSituacaoTce } from "@/lib/situacao-tce";
 import { TCE_CAMARA_LABELS, TCE_TIPO_LABELS } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
@@ -91,6 +91,12 @@ export default async function HojePage() {
   const semIniDia = semIni.toISOString().slice(0, 10);
   const semFimDia = semFim.toISOString().slice(0, 10);
   const naSemana = (dia: string) => dia >= semIniDia && dia <= semFimDia;
+  // Semana da pauta do TCE-PE: a partir de sexta ja e a da semana seguinte.
+  const pautaIni = inicioSemanaPauta();
+  const pautaFim = endOfWeekUTC(pautaIni);
+  const pautaIniDia = pautaIni.toISOString().slice(0, 10);
+  const pautaFimDia = pautaFim.toISOString().slice(0, 10);
+  const naSemanaPauta = (dia: string) => dia >= pautaIniDia && dia <= pautaFimDia;
   const diasFaixa = Array.from({ length: 21 }, (_, i) => somaDias(semIniDia, i));
   const fimFaixaDia = diasFaixa[diasFaixa.length - 1];
   const iniBusca = new Date(`${somaDias(semIniDia, -1)}T00:00:00Z`);
@@ -152,7 +158,7 @@ export default async function HojePage() {
     }),
     // Itens da pauta do TCE-PE na semana corrente, com o processo do painel quando vinculado.
     prisma.itemPauta.findMany({
-      where: { sessao: { escritorioId, data: { gte: semIni, lte: semFim } } },
+      where: { sessao: { escritorioId, data: { gte: pautaIni, lte: pautaFim } } },
       orderBy: [{ sessao: { data: "asc" } }, { sessao: { camara: "asc" } }, { ordem: "asc" }, { createdAt: "asc" }],
       select: {
         id: true, numeroProcesso: true, municipio: true, advogadoResp: true,
@@ -237,7 +243,7 @@ export default async function HojePage() {
     const selos: string[] = [];
     let situacao: { texto: string; classe?: string; julgado: boolean } | null = null;
     if (p) {
-      const julgadoNaSemana = p.julgado && !!p.dataJulgamento && naSemana(diaDe(p.dataJulgamento));
+      const julgadoNaSemana = p.julgado && !!p.dataJulgamento && naSemanaPauta(diaDe(p.dataJulgamento));
       if (julgadoNaSemana) {
         situacao = {
           texto: `Julgado: ${p.resultadoJulgamento ?? "resultado não lançado"}`,
@@ -317,7 +323,12 @@ export default async function HojePage() {
   const titulo = `${DIAS_SEMANA[dHoje.getUTCDay()]}, ${dHoje.getUTCDate()} de ${MESES[dHoje.getUTCMonth()]}`;
   const indicadores = [
     { n: prazosSemana + compromissosSemana, t: "prazos e compromissos na semana", href: "#semana", alerta: false },
-    { n: itensPauta.length, t: "processos em pauta no TCE-PE", href: "#pauta", alerta: false },
+    {
+      n: itensPauta.length,
+      t: pautaIniDia > semFimDia ? `processos em pauta no TCE-PE na semana de ${br(pautaIniDia)}` : "processos em pauta no TCE-PE",
+      href: "#pauta",
+      alerta: false,
+    },
     { n: prioEmMovimento, t: "prioritários em pauta, com prazo ou conclusos", href: "#prio", alerta: false },
     { n: vencidos.length, t: "prazos vencidos sem baixa", href: "#venc", alerta: vencidos.length > 0 },
   ];
@@ -454,7 +465,7 @@ export default async function HojePage() {
             Em pauta no TCE-PE <span className="ml-1 font-mono text-sm font-semibold text-brand-navy">{itensPauta.length}</span>
           </h2>
           <span className="text-[13px] text-muted-foreground">
-            {br(semIniDia)} a {br(semFimDia)}
+            {br(pautaIniDia)} a {br(pautaFimDia)}
             {semCadastro > 0 && ` · ${semCadastro} ${semCadastro === 1 ? "item ainda não cadastrado" : "itens ainda não cadastrados"} no painel`}
           </span>
         </div>

@@ -51,3 +51,17 @@ export function formatDayMonthBR(iso: string): string {
   const month = String(d.getUTCMonth() + 1).padStart(2, "0");
   return `${day}/${month}`;
 }
+
+// Segunda-feira (00:00 UTC) da semana de pauta "atual". A partir de sexta-feira, no fuso de
+// Recife, a pauta da semana seguinte ja e a que importa (pedido do Gabriel em 24/10/2026);
+// de segunda a quinta, vale a da semana corrente. Sem `ref`, usa o dia de hoje em Recife.
+export function inicioSemanaPauta(ref?: Date): Date {
+  const dia = ref
+    ? isoDay(ref)
+    : new Intl.DateTimeFormat("en-CA", { timeZone: "America/Recife", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const d = new Date(`${dia}T12:00:00Z`);
+  const inicio = startOfWeekUTC(d);
+  const diaSemana = d.getUTCDay(); // 0 domingo ... 5 sexta, 6 sabado
+  if (diaSemana === 5 || diaSemana === 6 || diaSemana === 0) inicio.setUTCDate(inicio.getUTCDate() + 7);
+  return inicio;
+}

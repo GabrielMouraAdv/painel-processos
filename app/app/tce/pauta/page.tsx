@@ -8,6 +8,7 @@ import {
   endOfWeekUTC,
   isoDay,
   parseISODate,
+  inicioSemanaPauta,
   startOfWeekUTC,
 } from "@/lib/semana";
 import { CONSELHEIROS_SUBSTITUTOS, TCE_CAMARAS } from "@/lib/tce-config";
@@ -34,8 +35,9 @@ export default async function PautaTcePage({
   const escritorioId = session!.user.escritorioId;
 
   const semanaParam = asString(searchParams.semana);
-  const ref = parseISODate(semanaParam) ?? new Date();
-  const weekStart = startOfWeekUTC(ref);
+  // Sem semana escolhida, a pauta "atual" (a partir de sexta, a da semana seguinte).
+  const ref = parseISODate(semanaParam);
+  const weekStart = ref ? startOfWeekUTC(ref) : inicioSemanaPauta();
   const weekEnd = endOfWeekUTC(weekStart);
 
   const camara = parseEnum(Object.values(CamaraTce), asString(searchParams.camara));

@@ -36,6 +36,7 @@ import {
   formatDayMonthBR,
   isoDay,
   parseISODate,
+  inicioSemanaPauta,
   startOfWeekUTC,
 } from "@/lib/semana";
 import { TCE_CAMARA_LABELS, faseTceLabel } from "@/lib/tce-config";
@@ -103,8 +104,9 @@ export default async function TceDashboardPage({
   const isAdvogado = session!.user.role === Role.ADVOGADO;
 
   const semanaParam = asString(searchParams.pautaSemana);
-  const ref = parseISODate(semanaParam) ?? new Date();
-  const weekStart = startOfWeekUTC(ref);
+  // Sem semana escolhida, a pauta "atual" (a partir de sexta, a da semana seguinte).
+  const ref = parseISODate(semanaParam);
+  const weekStart = ref ? startOfWeekUTC(ref) : inicioSemanaPauta();
   const weekEnd = endOfWeekUTC(weekStart);
   const weekStartIso = isoDay(weekStart);
   const weekEndIso = isoDay(weekEnd);
