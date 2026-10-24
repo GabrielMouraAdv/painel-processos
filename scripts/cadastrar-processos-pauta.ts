@@ -1,16 +1,19 @@
 /**
- * Cadastra no painel os processos da pauta de 19 a 23/10/2026 que ainda nao existiam
- * (pedido do Gabriel em 16/10/2026). Dados tirados do documento da pauta.
+ * Cadastra no painel os processos das pautas de 19 a 23/10 e 26 a 30/10/2026 que ainda
+ * nao existiam (pedidos do Gabriel em 16/10 e 24/10/2026). Dados tirados do documento da pauta.
  *
  * - Fase "em_julgamento" (estao em pauta); nao gera prazo nem andamento.
  * - 25101086-7 (auditoria de origem dos embargos ED001/ED002) tambem e cadastrado,
  *   como julgado, para os embargos ficarem vinculados a ele.
  * - Cria o orgao "Secretaria de Saúde do Recife" se nao existir.
- * - Rodar ANTES do importar-pauta-tce.ts, para os itens da pauta ja nascerem vinculados.
+ * - Os itens de pauta ja gravados com o mesmo numero e sem vinculo passam a apontar para o
+ *   processo criado (o desfazer solta o vinculo de novo).
+ * - Recurso cuja origem nao esta no painel (19100582-4, 2056058-8) fica sem processo de origem,
+ *   com a origem descrita no objeto.
  *
- * Uso:
- *   npx tsx scripts/cadastrar-processos-pauta.ts <pauta.json>                       (simulacao)
- *   npx tsx scripts/cadastrar-processos-pauta.ts <pauta.json> --gravar <desfazer.json>
+ * Uso (um ou mais JSON de pauta, gerados por scripts/ler-pauta-docx.py):
+ *   npx tsx scripts/cadastrar-processos-pauta.ts <pauta.json> [<pauta2.json>]                       (simulacao)
+ *   npx tsx scripts/cadastrar-processos-pauta.ts <pauta.json> [<pauta2.json>] --gravar <desfazer.json>
  *   npx tsx scripts/cadastrar-processos-pauta.ts --desfazer <desfazer.json>
  */
 import {
@@ -59,14 +62,14 @@ const CADASTROS: Cadastro[] = [
   },
   { numero: "25101086-7ED001", tipo: "AUDITORIA_ESPECIAL", camara: "PRIMEIRA", relator: "Rodrigo Novaes", orgao: "Cachoeirinha", exercicio: "2020 a 2022", bancas: [PR], recurso: { tipo: "EMBARGOS_DECLARACAO", origem: "25101086-7" } },
   { numero: "25101086-7ED002", tipo: "AUDITORIA_ESPECIAL", camara: "PRIMEIRA", relator: "Rodrigo Novaes", orgao: "Cachoeirinha", exercicio: "2020 a 2022", bancas: [PR], recurso: { tipo: "EMBARGOS_DECLARACAO", origem: "25101086-7" } },
-  { numero: "25100981-6", tipo: "AUDITORIA_ESPECIAL", camara: "PRIMEIRA", relator: "Dirceu Rodolfo Junior", orgao: "Venturosa", exercicio: "2025", bancas: [PR] },
+  { numero: "25100981-6", tipo: "AUDITORIA_ESPECIAL", camara: "PRIMEIRA", relator: "Dirceu Rodolfo", orgao: "Venturosa", exercicio: "2025", bancas: [PR] },
   { numero: "24100563-2", tipo: "PRESTACAO_CONTAS_GOVERNO", camara: "PRIMEIRA", relator: "Luiz Arcoverde", orgao: "Altinho", exercicio: "2023", bancas: [FC, PR] },
   {
     numero: "2219115-0", tipo: "AUDITORIA_ESPECIAL", camara: "PLENO", relator: "Ricardo Rios", orgao: ORGAO_NOVO, exercicio: "2018", bancas: [FC],
     recurso: { tipo: "RECURSO_ORDINARIO" }, extra: { parecerMpco: true },
     objetoExtra: "Origem: Auditoria Especial nº 1822461-1 (não cadastrada no painel).",
   },
-  { numero: "25101183-5", tipo: "CONSULTA", camara: "PLENO", relator: "Dirceu Rodolfo Junior", orgao: "Instituto Previdência Caruaru", exercicio: "2025", bancas: [PR] },
+  { numero: "25101183-5", tipo: "CONSULTA", camara: "PLENO", relator: "Dirceu Rodolfo", orgao: "Instituto Previdência Caruaru", exercicio: "2025", bancas: [PR] },
   { numero: "26101133-9", tipo: "MEDIDA_CAUTELAR", camara: "SEGUNDA", relator: "Eduardo Porto", orgao: "Ibimirim", exercicio: "2026", bancas: [FC] },
   {
     numero: "26101246-0", tipo: "MEDIDA_CAUTELAR", camara: "SEGUNDA", relator: "Eduardo Porto", orgao: "Ipojuca", exercicio: "2026", bancas: [FC],
@@ -74,6 +77,26 @@ const CADASTROS: Cadastro[] = [
   },
   { numero: "23100831-4", tipo: "AUTO_INFRACAO", camara: "PRIMEIRA", relator: "Ranilson Ramos", orgao: "Olinda", exercicio: "2023", bancas: [FC] },
   { numero: "25101032-6", tipo: "AUDITORIA_ESPECIAL", camara: "PRIMEIRA", relator: "Rodrigo Novaes", orgao: "Goiana", exercicio: "2025", bancas: [FC] },
+
+  // ---- pauta de 26 a 30/10/2026
+  {
+    numero: "19100582-4ED001", tipo: "AUDITORIA_ESPECIAL", camara: "PLENO", relator: "Marcos Flavio",
+    orgao: "Vitória de Santo Antão", exercicio: "2019", bancas: [PR],
+    recurso: { tipo: "EMBARGOS_DECLARACAO" }, extra: { parecerMpco: true },
+    objetoExtra:
+      "Origem: Auditoria Especial de Conformidade nº 19100582-4 (Instituto de Previdência de Vitória de Santo Antão, plano financeiro, exercício 2019), julgada irregular pela 2ª Câmara em 14/04/2025 (não cadastrada no painel). Recursos ordinários RO001 a RO005 improvidos no Pleno.",
+  },
+  {
+    numero: "2526421-7", tipo: "AUDITORIA_ESPECIAL", camara: "PLENO", relator: "Ruy Harten",
+    orgao: "Canhotinho", exercicio: "2020", bancas: [PR],
+    recurso: { tipo: "EMBARGOS_DECLARACAO" },
+    objetoExtra:
+      "Origem: Admissão de Pessoal nº 2056058-8 (contratação temporária, 1º quadrimestre de 2020), julgada ilegal pelo Acórdão T.C. nº 1955/2021 da 1ª Câmara (não cadastrada no painel). Já houve ED 2110028-7 e RO 2211599-7.",
+  },
+  { numero: "25100702-9", tipo: "PRESTACAO_CONTAS_GOVERNO", camara: "SEGUNDA", relator: "Marcos Loreto", orgao: "Venturosa", exercicio: "2024", bancas: [PR] },
+  { numero: "25101813-1", tipo: "AUDITORIA_ESPECIAL", camara: "SEGUNDA", relator: "Marcos Loreto", orgao: "Brejo da Madre de Deus", exercicio: "2024/2025", bancas: [FC] },
+  { numero: "25101096-0", tipo: "AUDITORIA_ESPECIAL", camara: "SEGUNDA", relator: "Valdecir Pascoal", orgao: "Instituto Previdência Olinda (olinprev)", exercicio: "2025", bancas: [FC] },
+  { numero: "26101192-3", tipo: "MEDIDA_CAUTELAR", camara: "SEGUNDA", relator: "Valdecir Pascoal", orgao: "Arcoverde", exercicio: "2026", bancas: [PR] },
 ];
 
 const NOME_RECURSO: Record<string, string> = {
@@ -98,11 +121,14 @@ async function main() {
     return;
   }
 
-  const entrada = process.argv[2];
   const iGravar = process.argv.indexOf("--gravar");
   const gravar = iGravar > -1;
-  const { sessoes } = JSON.parse(readFileSync(entrada, "utf-8")) as { sessoes: { itens: ItemPautaJson[] }[] };
-  const doc = new Map(sessoes.flatMap((s) => s.itens).map((i) => [i.numeroProcesso, i]));
+  const entradas = process.argv.slice(2, iGravar > -1 ? iGravar : undefined).filter((a) => !a.startsWith("--"));
+  const doc = new Map<string, ItemPautaJson>();
+  for (const entrada of entradas) {
+    const { sessoes } = JSON.parse(readFileSync(entrada, "utf-8")) as { sessoes: { itens: ItemPautaJson[] }[] };
+    for (const i of sessoes.flatMap((x) => x.itens)) doc.set(i.numeroProcesso, i);
+  }
   const { escritorioId } = await prisma.user.findUniqueOrThrow({ where: { id: GABRIEL_ID }, select: { escritorioId: true } });
   const desfazer: Desfazer = { processosCriados: [], orgaoCriado: null };
   const criados = new Map<string, string>();
@@ -138,7 +164,7 @@ async function main() {
       c.objetoExtra ?? null,
       d?.situacao ? `Na pauta: ${d.situacao}` : null,
     ].filter(Boolean);
-    const objeto = partes.join("\n\n") || "Cadastrado a partir da pauta de 19 a 23/10/2026.";
+    const objeto = partes.join("\n\n") || "Cadastrado a partir da pauta semanal do TCE-PE.";
     console.log(
       `CRIAR ${c.numero.padEnd(16)} ${c.tipo}${c.recurso ? ` / ${c.recurso.tipo}${c.recurso.origem ? ` de ${c.recurso.origem}` : ""}` : ""} | ${c.camara} | ${c.relator} | ${c.orgao} | ${c.bancas.join("+")}${c.extra?.parecerMpco ? " | parecer MPCO" : ""}${c.extra?.julgado ? " | julgado" : ""}`,
     );
@@ -155,6 +181,11 @@ async function main() {
     });
     criados.set(c.numero, novo.id);
     desfazer.processosCriados.push({ id: novo.id, numero: c.numero });
+    const vinc = await prisma.itemPauta.updateMany({
+      where: { numeroProcesso: c.numero, processoTceId: null, sessao: { escritorioId } },
+      data: { processoTceId: novo.id },
+    });
+    if (vinc.count) console.log(`      ${vinc.count} item(ns) de pauta vinculado(s)`);
   }
 
   if (!gravar) { console.log("SIMULACAO: nada foi gravado."); return; }
@@ -164,7 +195,7 @@ async function main() {
   await prisma.logAuditoria.create({
     data: {
       userId: GABRIEL_ID, acao: "CADASTRAR_PROCESSOS_PAUTA", entidade: "ProcessoTce",
-      descricao: `Cadastro dos processos da pauta de 19 a 23/10/2026: ${desfazer.processosCriados.length} processos${desfazer.orgaoCriado ? " e 1 órgão" : ""}.`,
+      descricao: `Cadastro dos processos das pautas do TCE-PE (19 a 23/10 e 26 a 30/10/2026): ${desfazer.processosCriados.length} processos${desfazer.orgaoCriado ? " e 1 órgão" : ""}.`,
       detalhes: JSON.stringify(desfazer),
     },
   });
