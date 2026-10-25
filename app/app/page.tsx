@@ -493,12 +493,11 @@ export default async function HojePage() {
           </p>
         ) : (
           <div className="max-h-[400px] overflow-auto border-t">
-            <table className="w-full min-w-[1180px] text-sm">
+            <table className="w-full min-w-[1040px] text-sm">
               <thead className="sticky top-0 z-10 bg-white shadow-[inset_0_-1px_0_hsl(var(--border))]">
                 <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                   <th className="sticky left-0 z-[1] bg-white px-3 py-2 font-medium shadow-[1px_0_0_hsl(var(--border))] md:px-5">Processo</th>
                   <th className="px-2 py-2 font-medium">Objeto</th>
-                  <th className="px-2 py-2 font-medium">Município</th>
                   <th className="px-2 py-2 font-medium">Advogado</th>
                   <th className="px-2 py-2 font-medium">Situação no painel</th>
                   <th className="px-2 py-2 font-medium">Prognóstico</th>
@@ -509,7 +508,7 @@ export default async function HojePage() {
                 {gruposPauta.map((g) => (
                   <Fragment key={g.chave}>
                     <tr className={cn("border-l-4", CAMARA_COR[g.camara].faixa)}>
-                      <td colSpan={7} className="px-4 py-1.5">
+                      <td colSpan={6} className="px-4 py-1.5">
                         <div className="sticky left-4 inline-flex flex-wrap items-center">
                         <span className={cn("mr-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", CAMARA_COR[g.camara].chip)}>
                           {TCE_CAMARA_LABELS[g.camara]}
@@ -531,6 +530,7 @@ export default async function HojePage() {
                           ) : (
                             <NumeroProcesso numero={it.numeroProcesso} />
                           )}
+                          <div className="mt-0.5 max-w-[124px] text-[12px] leading-snug text-muted-foreground md:max-w-[200px]">{it.municipio}</div>
                           {(it.retiradoDePauta || it.pedidoVistas) && (
                             <div className="mt-0.5 flex gap-1">
                               {it.retiradoDePauta && <span className="rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">retirado de pauta</span>}
@@ -538,10 +538,11 @@ export default async function HojePage() {
                             </div>
                           )}
                         </td>
-                        <td className="w-[260px] min-w-[240px] px-2 py-2.5 align-top text-[12.5px] md:w-[300px] leading-snug text-muted-foreground">
-                          {it.objeto ? <span className="line-clamp-3" title={it.objeto}>{it.objeto}</span> : "—"}
+                        <td className="px-2 py-2.5 align-top text-[12.5px] leading-snug text-muted-foreground">
+                          <div className="w-[228px] md:w-[300px]">
+                            {it.objeto ? <span className="line-clamp-3" title={it.objeto}>{it.objeto}</span> : "—"}
+                          </div>
                         </td>
-                        <td className="px-2 py-2.5 align-top">{it.municipio}</td>
                         <td className="px-2 py-2.5 align-top text-[13px] text-muted-foreground">{it.advogadoResp}</td>
                         <td className="px-2 py-2.5 align-top">
                           {it.situacao ? (
