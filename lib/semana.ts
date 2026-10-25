@@ -65,3 +65,16 @@ export function inicioSemanaPauta(ref?: Date): Date {
   if (diaSemana === 5 || diaSemana === 6 || diaSemana === 0) inicio.setUTCDate(inicio.getUTCDate() + 7);
   return inicio;
 }
+
+// Semana da agenda dos advogados na pagina Hoje: no sabado e no domingo ja e a
+// semana seguinte (a que esta acabando nao tem mais o que fazer).
+export function inicioSemanaAgenda(ref?: Date): Date {
+  const dia = ref
+    ? isoDay(ref)
+    : new Intl.DateTimeFormat("en-CA", { timeZone: "America/Recife", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const d = new Date(`${dia}T12:00:00Z`);
+  const inicio = startOfWeekUTC(d);
+  const diaSemana = d.getUTCDay(); // 0 domingo ... 6 sabado
+  if (diaSemana === 6 || diaSemana === 0) inicio.setUTCDate(inicio.getUTCDate() + 7);
+  return inicio;
+}

@@ -12,7 +12,7 @@ import { classeBadgeResultado, classificarResultadoTce } from "@/lib/julgamento-
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 import { CATEGORIA_PRIORITARIO_LABELS, carregarPrioritarios, type CategoriaPrioritario } from "@/lib/prioritarios";
 import { prisma } from "@/lib/prisma";
-import { endOfWeekUTC, inicioSemanaPauta, startOfWeekUTC } from "@/lib/semana";
+import { endOfWeekUTC, inicioSemanaAgenda, inicioSemanaPauta } from "@/lib/semana";
 import { SITUACAO_TCE_LABELS, situacaoTce, whereSituacaoTce } from "@/lib/situacao-tce";
 import { TCE_CAMARA_LABELS, TCE_TIPO_LABELS } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,22 @@ function somaDias(iso: string, n: number): string {
 const br = (iso: string) => iso.split("-").reverse().slice(0, 2).join("/");
 const diasEntre = (a: string, b: string) =>
   Math.round((new Date(`${b}T12:00:00Z`).getTime() - new Date(`${a}T12:00:00Z`).getTime()) / 86400000);
+// Objeto resumido de um item da pauta do TCE-PE: o "Objeto:" escrito na pauta
+// semanal (observacoes do item) e o mais limpo; senao, o objeto do processo,
+// desde que nao seja o texto generico das importacoes.
+function objetoPauta(observacoes: string | null, objetoProcesso: string | null | undefined): string | null {
+  const daPauta = (observacoes ?? "").match(/Objeto:\s*([\s\S]+)/i)?.[1];
+  const generico = /Importado da lista|Estagio no e-TCE|^[A-Z_]+ - .+ - exercicio \d{4}$/i;
+  const proc = objetoProcesso && !generico.test(objetoProcesso.trim()) ? objetoProcesso : null;
+  const t = (daPauta ?? proc ?? "").replace(/^Embargos de Declara[çc][ãa]o\.\s*/i, "").replace(/\s+/g, " ").trim();
+  if (!t) return null;
+  // Primeira frase, ate 160 caracteres.
+  const frase = t.match(/^(.{40,160}?[.;])(\s|$)/)?.[1] ?? t;
+  if (frase.length <= 160) return frase;
+  const corte = frase.slice(0, 160);
+  return `${corte.slice(0, Math.max(80, corte.lastIndexOf(" ")))}…`;
+}
+
 const diaSemanaCurto = (iso: string) => SEMANA[new Date(`${iso}T12:00:00Z`).getUTCDay()];
 const fimDeSemana = (iso: string) => {
   const d = new Date(`${iso}T12:00:00Z`).getUTCDay();
@@ -85,8 +101,9 @@ export default async function HojePage() {
 
   const hoje = hojeDia();
 
-  // Semana corrente (segunda a domingo) e a faixa de tres semanas (esta e as duas seguintes).
-  const semIni = startOfWeekUTC(new Date(`${hoje}T12:00:00Z`));
+  // Semana da agenda (segunda a domingo; no sabado e no domingo ja e a seguinte)
+  // e a faixa de tres semanas (esta e as duas seguintes).
+  const semIni = inicioSemanaAgenda();
   const semFim = endOfWeekUTC(semIni);
   const semIniDia = semIni.toISOString().slice(0, 10);
   const semFimDia = semFim.toISOString().slice(0, 10);
@@ -161,12 +178,12 @@ export default async function HojePage() {
       where: { sessao: { escritorioId, data: { gte: pautaIni, lte: pautaFim } } },
       orderBy: [{ sessao: { data: "asc" } }, { sessao: { camara: "asc" } }, { ordem: "asc" }, { createdAt: "asc" }],
       select: {
-        id: true, numeroProcesso: true, municipio: true, advogadoResp: true,
+        id: true, numeroProcesso: true, municipio: true, advogadoResp: true, observacoes: true,
         prognostico: true, providencia: true, retiradoDePauta: true, pedidoVistas: true,
         sessao: { select: { data: true, camara: true } },
         processoTce: {
           select: {
-            id: true, tipo: true, julgado: true, dataJulgamento: true, resultadoJulgamento: true,
+            id: true, tipo: true, julgado: true, dataJulgamento: true, resultadoJulgamento: true, objeto: true,
             faseAtual: true, dataTransito: true, notaTecnica: true, parecerMpco: true,
             memorialPronto: true, despachadoComRelator: true,
             recursos: { where: { julgado: false }, select: { id: true } },
@@ -262,7 +279,7 @@ export default async function HojePage() {
       if (p.memorialPronto) selos.push("Memorial");
       if (p.despachadoComRelator) selos.push("Despachado");
     }
-    return { ...it, dia: diaDe(it.sessao.data), situacao, selos };
+    return { ...it, dia: diaDe(it.sessao.data), situacao, selos, objeto: objetoPauta(it.observacoes, p?.objeto) };
   });
   type GrupoPauta = { chave: string; dia: string; camara: CamaraTce; itens: typeof itensPauta };
   const gruposPauta: GrupoPauta[] = [];
@@ -476,10 +493,11 @@ export default async function HojePage() {
           </p>
         ) : (
           <div className="max-h-[400px] overflow-auto border-t">
-            <table className="w-full min-w-[920px] text-sm">
+            <table className="w-full min-w-[1180px] text-sm">
               <thead className="sticky top-0 z-10 bg-white shadow-[inset_0_-1px_0_hsl(var(--border))]">
                 <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                   <th className="sticky left-0 z-[1] bg-white px-3 py-2 font-medium shadow-[1px_0_0_hsl(var(--border))] md:px-5">Processo</th>
+                  <th className="px-2 py-2 font-medium">Objeto</th>
                   <th className="px-2 py-2 font-medium">Município</th>
                   <th className="px-2 py-2 font-medium">Advogado</th>
                   <th className="px-2 py-2 font-medium">Situação no painel</th>
@@ -491,7 +509,7 @@ export default async function HojePage() {
                 {gruposPauta.map((g) => (
                   <Fragment key={g.chave}>
                     <tr className={cn("border-l-4", CAMARA_COR[g.camara].faixa)}>
-                      <td colSpan={6} className="px-4 py-1.5">
+                      <td colSpan={7} className="px-4 py-1.5">
                         <div className="sticky left-4 inline-flex flex-wrap items-center">
                         <span className={cn("mr-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", CAMARA_COR[g.camara].chip)}>
                           {TCE_CAMARA_LABELS[g.camara]}
@@ -519,6 +537,9 @@ export default async function HojePage() {
                               {it.pedidoVistas && <span className="rounded bg-orange-100 px-1 text-[11px] font-semibold text-orange-800">pedido de vistas</span>}
                             </div>
                           )}
+                        </td>
+                        <td className="w-[260px] min-w-[240px] px-2 py-2.5 align-top text-[12.5px] md:w-[300px] leading-snug text-muted-foreground">
+                          {it.objeto ? <span className="line-clamp-3" title={it.objeto}>{it.objeto}</span> : "—"}
                         </td>
                         <td className="px-2 py-2.5 align-top">{it.municipio}</td>
                         <td className="px-2 py-2.5 align-top text-[13px] text-muted-foreground">{it.advogadoResp}</td>
