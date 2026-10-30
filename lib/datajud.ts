@@ -341,8 +341,20 @@ export async function gravarMovimentacoesDatajud(
     });
   }
   if (linhas.length === 0) return 0;
+  // Movimentos ja lidos no PJe pelo conector (fonte "PDPJ", scripts/importar-movimentos-pdpj.ts)
+  // chegam ao DataJud semanas depois e com outro horario: mesmo dia (Recife) e mesmo nome
+  // = mesmo movimento, nao grava de novo.
+  const pdpj = await prisma.movimentacaoAutomatica.findMany({
+    where: { processoId, fonte: "PDPJ" },
+    select: { dataMovimento: true, nomeMovimento: true },
+  });
+  const chave = (d: Date, nome: string) =>
+    `${new Intl.DateTimeFormat("en-CA", { timeZone: "America/Recife" }).format(d)}|${nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim()}`;
+  const jaVieram = new Set(pdpj.map((m) => chave(m.dataMovimento, m.nomeMovimento)));
+  const novas = jaVieram.size ? linhas.filter((l) => !jaVieram.has(chave(l.dataMovimento, l.nomeMovimento))) : linhas;
+  if (novas.length === 0) return 0;
   const criadas = await prisma.movimentacaoAutomatica.createMany({
-    data: linhas,
+    data: novas,
     skipDuplicates: true,
   });
   // O inteiro teor (DJEN) NAO e buscado aqui: a movimentacao nasce com
