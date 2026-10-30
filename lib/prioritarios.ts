@@ -7,15 +7,21 @@ import { prisma } from "@/lib/prisma";
 //   1. em pauta de julgamento (ItemPautaJudicial em sessao de hoje em diante)
 //   2. com prazo em aberto (Prazo nao cumprido nem dispensado)
 //   3. concluso para julgamento/sentenca ou para decisao (ultimo movimento "Conclusao")
-//   4. parado (sem nenhum dos anteriores, inclusive "Conclusao para despacho"; os mais antigos primeiro)
+//   4. em andamento (nenhum dos anteriores, mas com movimento nos ultimos 60 dias; o mais recente primeiro)
+//   5. parado (sem movimento ha mais de 60 dias ou sem movimento registrado; os mais antigos primeiro)
+// "Conclusao para despacho" nao e prioritaria: cai em andamento ou parado conforme a data.
 
-export type CategoriaPrioritario = "em_pauta" | "prazo_aberto" | "concluso" | "parado";
+export type CategoriaPrioritario = "em_pauta" | "prazo_aberto" | "concluso" | "em_andamento" | "parado";
+
+// Dias sem movimento a partir dos quais o processo conta como parado.
+export const DIAS_PARADO = 60;
 
 export const CATEGORIA_PRIORITARIO_LABELS: Record<CategoriaPrioritario, string> = {
   em_pauta: "Em pauta de julgamento",
   prazo_aberto: "Com prazo em aberto",
   concluso: "Conclusos para julgamento ou decisão",
-  parado: "Parados",
+  em_andamento: "Em andamento",
+  parado: `Parados (sem movimento há mais de ${DIAS_PARADO} dias)`,
 };
 
 export type Prioritario = {
@@ -191,26 +197,31 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
     const dia = ultimo?.dia ?? null;
     // Se o ultimo evento conhecido e a propria conclusao (para despacho), o rotulo diz isso.
     const ultimoEhConclusao = concluso && !!mov && dia === diaDe(mov.dataMovimento);
+    const parado = !dia || diasEntre(dia, hoje) > DIAS_PARADO;
     return {
-      ...base, categoria: "parado", dia,
+      ...base, categoria: parado ? "parado" : "em_andamento", dia,
       situacao: !dia
         ? "Sem movimento registrado"
         : ultimoEhConclusao
           ? `${rotuloConclusao(mov!.complementos)} desde ${dia.split("-").reverse().slice(0, 2).join("/")} (${diasEntre(dia, hoje)} dias)`
-          : `Sem movimento há ${diasEntre(dia, hoje)} dias`,
+          : parado
+            ? `Sem movimento há ${diasEntre(dia, hoje)} dias`
+            : `Último movimento em ${dia.split("-").reverse().slice(0, 2).join("/")} (há ${diasEntre(dia, hoje)} dias)`,
       destaque: false,
     };
   });
 
-  const ordemCat: Record<CategoriaPrioritario, number> = { em_pauta: 0, prazo_aberto: 1, concluso: 2, parado: 3 };
+  const ordemCat: Record<CategoriaPrioritario, number> = { em_pauta: 0, prazo_aberto: 1, concluso: 2, em_andamento: 3, parado: 4 };
   return lista.sort((a, b) => {
     if (ordemCat[a.categoria] !== ordemCat[b.categoria]) return ordemCat[a.categoria] - ordemCat[b.categoria];
     if (a.categoria === "concluso" && b.categoria === "concluso") {
       const pa = pesoConclusao(a.situacao), pb = pesoConclusao(b.situacao);
       if (pa !== pb) return pa - pb;
     }
-    // em pauta e prazo: o mais proximo primeiro; concluso e parado: o mais antigo primeiro.
+    // em pauta e prazo: o mais proximo primeiro; concluso e parado: o mais antigo primeiro;
+    // em andamento: o movimento mais recente primeiro.
     const da = a.dia ?? "9999-99-99", db = b.dia ?? "9999-99-99";
+    if (a.categoria === "em_andamento") return da > db ? -1 : da < db ? 1 : a.numero.localeCompare(b.numero);
     if (a.categoria === "parado") return (a.dia ?? "0000") < (b.dia ?? "0000") ? -1 : 1;
     return da < db ? -1 : da > db ? 1 : a.numero.localeCompare(b.numero);
   });

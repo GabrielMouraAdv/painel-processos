@@ -71,6 +71,7 @@ const PRIO_COR: Record<CategoriaPrioritario, string> = {
   em_pauta: "border-l-[#6b21a8] bg-purple-50 text-purple-950",
   prazo_aberto: "border-l-amber-600 bg-amber-50 text-amber-950",
   concluso: "border-l-sky-700 bg-sky-50 text-sky-950",
+  em_andamento: "border-l-emerald-600 bg-emerald-50 text-emerald-950",
   parado: "border-l-slate-400 bg-slate-100 text-slate-700",
 };
 
@@ -329,7 +330,7 @@ export default async function HojePage() {
     .filter((x) => x.p);
 
   // ---------------------------------------------------------------- prioritarios por categoria
-  const gruposPrio = (["em_pauta", "prazo_aberto", "concluso", "parado"] as CategoriaPrioritario[])
+  const gruposPrio = (["em_pauta", "prazo_aberto", "concluso", "em_andamento", "parado"] as CategoriaPrioritario[])
     .map((cat) => ({ cat, itens: prioritarios.filter((p) => p.categoria === cat) }))
     .filter((g) => g.itens.length > 0);
   const nPrio = (cat: CategoriaPrioritario) => prioritarios.filter((p) => p.categoria === cat).length;
@@ -600,7 +601,7 @@ export default async function HojePage() {
             Processos prioritários <span className="ml-1 font-mono text-sm font-semibold text-brand-navy">{prioritarios.length}</span>
           </h2>
           <span className="text-[13px] text-muted-foreground">
-            improbidade e criminal · {nPrio("em_pauta")} em pauta · {nPrio("prazo_aberto")} com prazo · {nPrio("concluso")} conclusos · {nPrio("parado")} parados
+            improbidade e criminal · {nPrio("em_pauta")} em pauta · {nPrio("prazo_aberto")} com prazo · {nPrio("concluso")} conclusos · {nPrio("em_andamento")} em andamento · {nPrio("parado")} parados
           </span>
         </div>
         {prioritarios.length === 0 ? (
