@@ -1,11 +1,11 @@
 /**
- * Cadastra no painel os processos das pautas de 19 a 23/10 e 26 a 30/10/2026 que ainda
- * nao existiam (pedidos do Gabriel em 16/10 e 24/10/2026). Dados tirados do documento da pauta.
+ * Cadastra no painel os processos das pautas semanais do TCE-PE que ainda nao existiam
+ * (19 a 23/10, 26 a 30/10 e 03 a 05/11/2026). Dados tirados do documento da pauta.
  *
  * - Fase "em_julgamento" (estao em pauta); nao gera prazo nem andamento.
  * - 25101086-7 (auditoria de origem dos embargos ED001/ED002) tambem e cadastrado,
  *   como julgado, para os embargos ficarem vinculados a ele.
- * - Cria o orgao "Secretaria de Saúde do Recife" se nao existir.
+ * - Cria os orgaos de ORGAOS_NOVOS que nao existirem.
  * - Os itens de pauta ja gravados com o mesmo numero e sem vinculo passam a apontar para o
  *   processo criado (o desfazer solta o vinculo de novo).
  * - Recurso cuja origem nao esta no painel (19100582-4, 2056058-8) fica sem processo de origem,
@@ -42,7 +42,9 @@ type Cadastro = {
   objetoExtra?: string;
 };
 
+// Orgaos criados se ainda nao existirem no painel.
 const ORGAO_NOVO = "Secretaria de Saúde do Recife";
+const ORGAOS_NOVOS = [ORGAO_NOVO, "Pombos"];
 const PR = "porto-rodrigues";
 const FC = "filipe-campos";
 
@@ -97,6 +99,30 @@ const CADASTROS: Cadastro[] = [
   { numero: "25101813-1", tipo: "AUDITORIA_ESPECIAL", camara: "SEGUNDA", relator: "Marcos Loreto", orgao: "Brejo da Madre de Deus", exercicio: "2024/2025", bancas: [FC] },
   { numero: "25101096-0", tipo: "AUDITORIA_ESPECIAL", camara: "SEGUNDA", relator: "Valdecir Pascoal", orgao: "Instituto Previdência Olinda (olinprev)", exercicio: "2025", bancas: [FC] },
   { numero: "26101192-3", tipo: "MEDIDA_CAUTELAR", camara: "SEGUNDA", relator: "Valdecir Pascoal", orgao: "Arcoverde", exercicio: "2026", bancas: [PR] },
+
+  // ---- pauta de 03 a 05/11/2026
+  { numero: "26100277-6", tipo: "AUDITORIA_ESPECIAL", camara: "PRIMEIRA", relator: "Ranilson Ramos", orgao: "Pombos", exercicio: "2025", bancas: [FC] },
+  { numero: "26101228-9", tipo: "MEDIDA_CAUTELAR", camara: "PRIMEIRA", relator: "Dirceu Rodolfo", orgao: "Caruaru", exercicio: "2026", bancas: [PR] },
+  {
+    numero: "19100226-4RO001", tipo: "PRESTACAO_CONTAS_GESTAO", camara: "PLENO", relator: "Ruy Harten",
+    orgao: "Agrestina", exercicio: "2018", bancas: [PR],
+    recurso: { tipo: "RECURSO_ORDINARIO" },
+    objetoExtra:
+      "Origem: Prestação de Contas de Gestão nº 19100226-4 (Agrestina, 2018), julgada irregular em 30/06/2025 (Rel. Adriano Cisneiros); embargos ED001 improvidos em 13/10/2025 (não cadastrada no painel).",
+  },
+  {
+    numero: "24100673-9ED002", tipo: "AUDITORIA_ESPECIAL", camara: "PLENO", relator: "Marcos Loreto",
+    orgao: "Ibimirim", exercicio: "2026", bancas: [FC],
+    recurso: { tipo: "EMBARGOS_DECLARACAO", origem: "24100673-9" },
+  },
+  { numero: "25100716-9", tipo: "PRESTACAO_CONTAS_GOVERNO", camara: "SEGUNDA", relator: "Eduardo Porto", orgao: "Vitória de Santo Antão", exercicio: "2024", bancas: [PR] },
+  {
+    numero: "25101276-1ED002", tipo: "AUDITORIA_ESPECIAL", camara: "SEGUNDA", relator: "Luiz Arcoverde",
+    orgao: "Cachoeirinha", exercicio: "2026", bancas: [FC],
+    recurso: { tipo: "EMBARGOS_DECLARACAO" },
+    objetoExtra:
+      "Origem: processo 25101276-1, não cadastrado no painel e sem deliberação no banco de julgados; o tipo do processo de origem (registrado como auditoria especial) está A CONFIRMAR.",
+  },
 ];
 
 const NOME_RECURSO: Record<string, string> = {
@@ -105,7 +131,7 @@ const NOME_RECURSO: Record<string, string> = {
 };
 
 type ItemPautaJson = { numeroProcesso: string; objeto: string | null; situacao: string | null };
-type Desfazer = { processosCriados: { id: string; numero: string }[]; orgaoCriado: string | null };
+type Desfazer = { processosCriados: { id: string; numero: string }[]; orgaoCriado: string | null; orgaosCriados?: string[] };
 
 async function main() {
   const iDesfazer = process.argv.indexOf("--desfazer");
@@ -116,8 +142,9 @@ async function main() {
       await prisma.itemPauta.updateMany({ where: { processoTceId: p.id }, data: { processoTceId: null } });
       await prisma.processoTce.delete({ where: { id: p.id } });
     }
-    if (d.orgaoCriado) await prisma.municipio.delete({ where: { id: d.orgaoCriado } });
-    console.log(`desfeito: ${d.processosCriados.length} processos${d.orgaoCriado ? " e 1 orgao" : ""}`);
+    const orgaos = [...(d.orgaosCriados ?? []), ...(d.orgaoCriado ? [d.orgaoCriado] : [])];
+    for (const id of orgaos) await prisma.municipio.delete({ where: { id } });
+    console.log(`desfeito: ${d.processosCriados.length} processos e ${orgaos.length} orgao(s)`);
     return;
   }
 
@@ -130,17 +157,25 @@ async function main() {
     for (const i of sessoes.flatMap((x) => x.itens)) doc.set(i.numeroProcesso, i);
   }
   const { escritorioId } = await prisma.user.findUniqueOrThrow({ where: { id: GABRIEL_ID }, select: { escritorioId: true } });
-  const desfazer: Desfazer = { processosCriados: [], orgaoCriado: null };
+  const desfazer: Desfazer = { processosCriados: [], orgaoCriado: null, orgaosCriados: [] };
   const criados = new Map<string, string>();
 
-  // Orgao novo
-  let orgaoNovoId = (await prisma.municipio.findFirst({ where: { escritorioId, nome: ORGAO_NOVO }, select: { id: true } }))?.id ?? null;
-  if (!orgaoNovoId) {
-    console.log(`CRIAR orgao "${ORGAO_NOVO}" (PE)`);
-    if (gravar) {
-      orgaoNovoId = (await prisma.municipio.create({ data: { nome: ORGAO_NOVO, uf: "PE", escritorioId }, select: { id: true } })).id;
-      desfazer.orgaoCriado = orgaoNovoId;
+  // Orgaos novos (so os que algum cadastro pendente usa)
+  const pendentes = new Set<string>();
+  for (const c of CADASTROS) {
+    if (!(await prisma.processoTce.findFirst({ where: { escritorioId, numero: c.numero }, select: { id: true } }))) pendentes.add(c.orgao);
+  }
+  const orgaosNovosIds = new Map<string, string | null>();
+  for (const nome of ORGAOS_NOVOS) {
+    let id = (await prisma.municipio.findFirst({ where: { escritorioId, nome }, select: { id: true } }))?.id ?? null;
+    if (!id && pendentes.has(nome)) {
+      console.log(`CRIAR orgao "${nome}" (PE)`);
+      if (gravar) {
+        id = (await prisma.municipio.create({ data: { nome, uf: "PE", escritorioId }, select: { id: true } })).id;
+        desfazer.orgaosCriados!.push(id);
+      }
     }
+    orgaosNovosIds.set(nome, id);
   }
 
   for (const c of CADASTROS) {
@@ -148,8 +183,10 @@ async function main() {
       console.log(`PULAR ${c.numero}: ja existe`);
       continue;
     }
-    const orgao = c.orgao === ORGAO_NOVO ? { id: orgaoNovoId } : await prisma.municipio.findFirst({ where: { escritorioId, nome: c.orgao }, select: { id: true } });
-    if (!orgao) { console.log(`ERRO ${c.numero}: orgao "${c.orgao}" nao encontrado`); continue; }
+    const orgao = orgaosNovosIds.has(c.orgao)
+      ? { id: orgaosNovosIds.get(c.orgao) ?? null }
+      : await prisma.municipio.findFirst({ where: { escritorioId, nome: c.orgao }, select: { id: true } });
+    if (!orgao || (gravar && !orgao.id)) { console.log(`ERRO ${c.numero}: orgao "${c.orgao}" nao encontrado`); continue; }
     let origemId: string | null = null;
     if (c.recurso?.origem) {
       origemId = criados.get(c.recurso.origem)
@@ -171,7 +208,7 @@ async function main() {
     if (!gravar) continue;
     const novo = await prisma.processoTce.create({
       data: {
-        numero: c.numero, tipo: c.tipo, camara: c.camara, relator: c.relator, municipioId: orgao.id,
+        numero: c.numero, tipo: c.tipo, camara: c.camara, relator: c.relator, municipioId: orgao.id!,
         exercicio: c.exercicio, bancasSlug: c.bancas, escritorioId, objeto,
         faseAtual: "em_julgamento",
         ...(c.recurso && { ehRecurso: true, tipoRecurso: c.recurso.tipo, processoOrigemId: origemId }),
@@ -195,7 +232,7 @@ async function main() {
   await prisma.logAuditoria.create({
     data: {
       userId: GABRIEL_ID, acao: "CADASTRAR_PROCESSOS_PAUTA", entidade: "ProcessoTce",
-      descricao: `Cadastro dos processos das pautas do TCE-PE (19 a 23/10 e 26 a 30/10/2026): ${desfazer.processosCriados.length} processos${desfazer.orgaoCriado ? " e 1 órgão" : ""}.`,
+      descricao: `Cadastro dos processos das pautas do TCE-PE: ${desfazer.processosCriados.length} processos e ${desfazer.orgaosCriados!.length} órgão(s).`,
       detalhes: JSON.stringify(desfazer),
     },
   });

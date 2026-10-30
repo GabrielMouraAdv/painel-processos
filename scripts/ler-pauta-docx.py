@@ -22,7 +22,8 @@ entrada, saida = sys.argv[1], sys.argv[2]
 d = docx.Document(entrada)
 
 CAMARAS = {"1ª Câmara": "PRIMEIRA", "2ª Câmara": "SEGUNDA", "Pleno": "PLENO"}
-RE_TITULO_COM_DATA = re.compile(r"^(1ª Câmara|2ª Câmara|Pleno) — (\d{2})(?: a (\d{2}))?/(\d{2})/(\d{4})$")
+# aceita hora no fim: "1ª Câmara — 03/11/2026, 10h"
+RE_TITULO_COM_DATA = re.compile(r"^(1ª Câmara|2ª Câmara|Pleno) — (\d{2})(?: a (\d{2}))?/(\d{2})/(\d{4})(?:,.*)?$")
 RE_TITULO_SIMPLES = re.compile(r"^(1ª Câmara|2ª Câmara|Pleno)$")
 RE_SEMANA = re.compile(r"(\d{2})/(\d{2}) a (\d{2})/(\d{2})/(\d{4})")
 RE_DIA_COLUNA = re.compile(r"(\d{2})/(\d{2})")
