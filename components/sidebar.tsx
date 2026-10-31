@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   BarChart3,
+  Calculator,
   Building2,
   CalendarCheck,
   CalendarClock,
@@ -134,6 +135,7 @@ export function Sidebar({
         { label: "Relatórios", href: "/app/relatorios", icon: BarChart3 },
         ...(podeFinanceiro ? [{ label: "Financeiro", href: "/app/financeiro", icon: DollarSign }] : []),
         { label: "Modelos de peça", href: "/app/prompts", icon: Wand2 },
+        { label: "Simulador de direitos", href: "/app/simulador", icon: Calculator },
         ...(isAdmin ? [{ label: "Registro de atividades", href: "/app/admin/logs", icon: History }] : []),
       ],
     },

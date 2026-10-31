@@ -83,7 +83,7 @@ export function AppShell({
       <aside
         aria-label="Navegação principal"
         className={cn(
-          "fixed inset-y-0 left-0 z-40 h-screen w-[280px] transform transition-transform duration-200 ease-out",
+          "fixed inset-y-0 left-0 z-40 h-screen w-[280px] transform transition-transform duration-200 ease-out print:hidden",
           "md:static md:w-64 md:translate-x-0 md:transition-none",
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
@@ -117,7 +117,7 @@ export function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header mobile */}
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b bg-white px-3 shadow-sm md:hidden">
+        <header className="sticky top-0 z-20 flex h-14 print:hidden items-center justify-between gap-2 border-b bg-white px-3 shadow-sm md:hidden">
           <button
             type="button"
             aria-label="Abrir menu"
