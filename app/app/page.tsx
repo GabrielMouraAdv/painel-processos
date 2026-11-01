@@ -5,7 +5,7 @@ import type { CamaraTce } from "@prisma/client";
 
 import { NumeroProcesso } from "@/components/numero-processo";
 import { authOptions } from "@/lib/auth";
-import { diaDe, hojeDia } from "@/lib/datas";
+import { diaDe, formatarDia, hojeDia } from "@/lib/datas";
 import { FONTE_DJEN_OAB, resumoDe } from "@/lib/djen-oab";
 import { datajudParadoHa, datajudUltimaAtualizacao } from "@/lib/monitoramento-verificar";
 import { classeBadgeResultado, classificarResultadoTce } from "@/lib/julgamento-config";
@@ -18,6 +18,7 @@ import { TCE_CAMARA_LABELS, TCE_TIPO_LABELS } from "@/lib/tce-config";
 import { cn } from "@/lib/utils";
 
 import { HojePrazoAcoes } from "./hoje-prazo-acoes";
+import { SemanaItem, SemanaMais, type DetalheFaixa } from "./semana-item";
 
 // Inicio "Pauta de hoje" (Direcao A), na ordem que os socios leem: o painel do dia,
 // a faixa da semana (prazos e compromissos por advogado, tres semanas com rolagem),
@@ -93,7 +94,10 @@ const SOCIOS = [
   { chave: "heloisa", rotulo: "Heloísa", iniciais: "HC", teste: /helo[ií]sa/i },
 ];
 type LinhaFaixa = { chave: string; rotulo: string; sub?: string; iniciais?: string };
-type ItemFaixa = { texto: string; detalhe: string; href: string; classe: string };
+type ItemFaixa = { texto: string; classe: string; detalhe: DetalheFaixa };
+
+// Hora de um compromisso no fuso de Recife ("14:30").
+const fmtHora = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Recife", hour: "2-digit", minute: "2-digit" });
 
 export default async function HojePage() {
   const session = await getServerSession(authOptions);
@@ -132,7 +136,7 @@ export default async function HojePage() {
       where: { cumprido: false, dispensado: false, processo: { escritorioId } },
       orderBy: { dataVencimento: "asc" },
       select: {
-        id: true, tipo: true, dataVencimento: true,
+        id: true, tipo: true, dataVencimento: true, dataIntimacao: true, prorrogacaoPedida: true, dataProrrogacao: true, observacoes: true,
         advogadoResp: { select: { nome: true } },
         processo: { select: { id: true, numero: true, tipo: true, municipio: { select: { nome: true } } } },
       },
@@ -141,7 +145,7 @@ export default async function HojePage() {
       where: { cumprido: false, dispensado: false, processo: { escritorioId } },
       orderBy: { data: "asc" },
       select: {
-        id: true, tipo: true, data: true,
+        id: true, tipo: true, data: true, hora: true, observacoes: true,
         advogadoResp: { select: { nome: true } },
         processo: { select: { id: true, numero: true, gestor: { select: { nome: true } } } },
       },
@@ -150,7 +154,12 @@ export default async function HojePage() {
     prisma.compromisso.findMany({
       where: { escritorioId, cumprido: false, dataInicio: { gte: iniBusca, lte: fimBusca }, ...filtroVisibilidadeCompromissos(user) },
       orderBy: { dataInicio: "asc" },
-      select: { id: true, titulo: true, tipo: true, dataInicio: true, advogado: { select: { nome: true } } },
+      select: {
+        id: true, titulo: true, tipo: true, dataInicio: true, dataFim: true, diaInteiro: true, descricao: true, local: true,
+        advogado: { select: { nome: true } },
+        processo: { select: { id: true, numero: true, gestor: { select: { nome: true } } } },
+        processoTce: { select: { id: true, numero: true, tipo: true, municipio: { select: { nome: true } } } },
+      },
     }),
     prisma.processoTce.count({
       where: { escritorioId, memorialPronto: false, memorialDispensado: false, AND: [whereSituacaoTce("em_julgamento")] },
@@ -207,6 +216,28 @@ export default async function HojePage() {
   ]);
   const datajudParado = datajudParadoHa(datajudUltima);
 
+  // Compromissos do Legal One nao vem vinculados: o numero do processo costuma estar
+  // no titulo ("Defesa Previa - 26100491-8 - Cabo"); busca a ficha por esse numero.
+  const RE_TCE = /\b\d{7,8}-\d(?:[A-Z]{2}\d{3})?\b/g;
+  const RE_CNJ = /\b\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}\b/g;
+  const semVinculo = compromissos.filter((c) => !c.processo && !c.processoTce);
+  const numsTce = Array.from(new Set(semVinculo.flatMap((c) => c.titulo.match(RE_TCE) ?? [])));
+  const numsCnj = Array.from(new Set(semVinculo.flatMap((c) => c.titulo.match(RE_CNJ) ?? [])));
+  const [procsTceTitulo, procsJudTitulo] = await Promise.all([
+    numsTce.length
+      ? prisma.processoTce.findMany({
+          where: { escritorioId, numero: { in: numsTce } },
+          select: { id: true, numero: true, tipo: true, municipio: { select: { nome: true } } },
+        })
+      : [],
+    numsCnj.length
+      ? prisma.processo.findMany({
+          where: { escritorioId, numero: { in: numsCnj } },
+          select: { id: true, numero: true, gestor: { select: { nome: true } } },
+        })
+      : [],
+  ]);
+
   // ---------------------------------------------------------------- faixa da semana (por advogado)
   // So os compromissos e prazos dos advogados: a pauta do TCE-PE tem o proprio bloco logo abaixo.
   const linhasFaixa: LinhaFaixa[] = [
@@ -224,28 +255,80 @@ export default async function HojePage() {
   const linhaDe = (nome: string | null | undefined) => SOCIOS.find((s) => nome && s.teste.test(nome))?.chave ?? "outros";
   const classePrazo = (dia: string) =>
     dia < hoje ? "bg-red-50 text-red-900 ring-1 ring-red-200" : "bg-amber-50 text-amber-900 ring-1 ring-amber-200";
+  // Situacao exibida no detalhe (a faixa so traz prazos sem baixa e compromissos nao cumpridos).
+  const statusPrazo = (dia: string) =>
+    dia < hoje
+      ? { status: "Vencido sem baixa", statusClasse: "bg-red-100 text-red-900" }
+      : dia === hoje
+        ? { status: "Aberto · vence hoje", statusClasse: "bg-amber-100 text-amber-900" }
+        : { status: `Aberto · vence em ${diasEntre(hoje, dia)} ${diasEntre(hoje, dia) === 1 ? "dia" : "dias"}`, statusClasse: "bg-amber-100 text-amber-900" };
+  const obs = (t: string | null | undefined) => (t?.trim() ? [{ rotulo: "Observações", valor: t.trim().slice(0, 500) }] : []);
   for (const p of prazosTce) {
     const d = diaDe(p.dataVencimento);
     poeFaixa(linhaDe(p.advogadoResp?.nome), d, {
       texto: `${p.tipo} · ${p.processo.numero}`,
-      detalhe: `Prazo TCE · ${p.tipo} · ${p.processo.numero}${p.advogadoResp ? ` · ${p.advogadoResp.nome}` : ""}`,
-      href: `/app/tce/processos/${p.processo.id}`, classe: classePrazo(d),
+      classe: classePrazo(d),
+      detalhe: {
+        titulo: p.tipo, tipo: "Prazo TCE", data: formatarDia(p.dataVencimento), ...statusPrazo(d),
+        advogado: p.advogadoResp?.nome ?? "sem responsável",
+        processo: {
+          numero: p.processo.numero, href: `/app/tce/processos/${p.processo.id}`,
+          contexto: [p.processo.municipio?.nome, TCE_TIPO_LABELS[p.processo.tipo]].filter(Boolean).join(" · ") || null,
+        },
+        linhas: [
+          { rotulo: "Intimação", valor: formatarDia(p.dataIntimacao) },
+          ...(p.prorrogacaoPedida ? [{ rotulo: "Prorrogação", valor: p.dataProrrogacao ? `pedida · até ${formatarDia(p.dataProrrogacao)}` : "pedida" }] : []),
+          ...obs(p.observacoes),
+        ],
+      },
     });
   }
   for (const p of prazosJud) {
     const d = diaDe(p.data);
     poeFaixa(linhaDe(p.advogadoResp?.nome), d, {
       texto: `${p.tipo} · ${p.processo.numero}`,
-      detalhe: `Prazo judicial · ${p.tipo} · ${p.processo.numero}${p.advogadoResp ? ` · ${p.advogadoResp.nome}` : ""}`,
-      href: `/app/processos/${p.processo.id}`, classe: classePrazo(d),
+      classe: classePrazo(d),
+      detalhe: {
+        titulo: p.tipo, tipo: "Prazo judicial", data: formatarDia(p.data), hora: p.hora, ...statusPrazo(d),
+        advogado: p.advogadoResp?.nome ?? "sem responsável",
+        processo: { numero: p.processo.numero, href: `/app/processos/${p.processo.id}`, contexto: p.processo.gestor?.nome ?? null },
+        linhas: obs(p.observacoes),
+      },
     });
   }
   for (const c of compromissos) {
     const d = diaDe(c.dataInicio);
+    const legalOne = /^Importado da agenda do Legal One/i.test(c.descricao ?? "");
+    const hora = c.diaInteiro
+      ? null
+      : `${fmtHora.format(c.dataInicio)}${c.dataFim && c.dataFim > c.dataInicio && diaDe(c.dataFim) === d ? ` às ${fmtHora.format(c.dataFim)}` : ""}`;
+    const tceDoTitulo = c.processo || c.processoTce ? undefined : procsTceTitulo.find((x) => c.titulo.includes(x.numero));
+    const judDoTitulo = c.processo || c.processoTce ? undefined : procsJudTitulo.find((x) => c.titulo.includes(x.numero));
+    const pTce = c.processoTce ?? tceDoTitulo;
+    const pJud = c.processo ?? judDoTitulo;
+    const processo = pTce
+      ? {
+          numero: pTce.numero, href: `/app/tce/processos/${pTce.id}`,
+          contexto: [pTce.municipio?.nome, TCE_TIPO_LABELS[pTce.tipo]].filter(Boolean).join(" · ") || null,
+        }
+      : pJud
+        ? { numero: pJud.numero, href: `/app/processos/${pJud.id}`, contexto: pJud.gestor?.nome ?? null }
+        : null;
     poeFaixa(linhaDe(c.advogado.nome), d, {
       texto: c.titulo,
-      detalhe: `${COMPROMISSO_TIPO_LABEL[c.tipo] ?? "Compromisso"} · ${c.titulo} · ${c.advogado.nome}`,
-      href: "/app/compromissos", classe: "bg-violet-50 text-violet-900 ring-1 ring-violet-200",
+      classe: "bg-violet-50 text-violet-900 ring-1 ring-violet-200",
+      detalhe: {
+        titulo: c.titulo, tipo: COMPROMISSO_TIPO_LABEL[c.tipo] ?? "Compromisso", data: formatarDia(c.dataInicio), hora,
+        status: `${d < hoje ? "Já passou · sem baixa" : "Agendado"}${c.diaInteiro ? " · dia inteiro" : ""}`,
+        statusClasse: d < hoje ? "bg-red-100 text-red-900" : "bg-violet-100 text-violet-900",
+        advogado: c.advogado.nome,
+        processo,
+        linhas: [
+          ...(c.local?.trim() ? [{ rotulo: "Local", valor: c.local.trim() }] : []),
+          ...(legalOne ? [{ rotulo: "Origem", valor: "Agenda do Legal One" }] : obs(c.descricao)),
+        ],
+        outroLink: { texto: "Ver na agenda", href: "/app/compromissos" },
+      },
     });
   }
   const itensLinha = (chave: string) => Array.from(faixa.get(chave)?.values() ?? []).flat();
@@ -453,11 +536,9 @@ export default async function HojePage() {
                         )}
                       >
                         {itens.slice(0, 3).map((it, k) => (
-                          <Link key={k} href={it.href} title={it.detalhe} className={cn("block truncate rounded px-1.5 py-0.5 text-[11px] leading-tight", it.classe)}>
-                            {it.texto}
-                          </Link>
+                          <SemanaItem key={k} texto={it.texto} classe={it.classe} detalhe={it.detalhe} />
                         ))}
-                        {itens.length > 3 && <div className="text-center text-[10.5px] text-muted-foreground">+{itens.length - 3}</div>}
+                        {itens.length > 3 && <SemanaMais itens={itens.slice(3)} dia={formatarDia(d)} />}
                       </div>
                     );
                   })}
