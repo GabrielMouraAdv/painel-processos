@@ -12,7 +12,7 @@ import { datajudParadoHa, datajudUltimaAtualizacao } from "@/lib/monitoramento-v
 import { classeBadgeResultado, classificarResultadoTce } from "@/lib/julgamento-config";
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 import { CATEGORIA_PRIORITARIO_LABELS, carregarPrioritarios, type CategoriaPrioritario } from "@/lib/prioritarios";
-import { linhaPrazo, rosVirtuais, rotuloRoVirtual, situacaoAgenda, urgencia } from "@/lib/prazos-lig";
+import { aplicarDispensas, dispensaLig, linhaPrazo, rosVirtuais, rotuloRoVirtual, situacaoAgenda, urgencia } from "@/lib/prazos-lig";
 import { prisma } from "@/lib/prisma";
 import { endOfWeekUTC, inicioSemanaAgenda, inicioSemanaPauta } from "@/lib/semana";
 import { SITUACAO_TCE_LABELS, situacaoTce, whereSituacaoTce } from "@/lib/situacao-tce";
@@ -218,7 +218,10 @@ export default async function HojePage() {
     datajudUltimaAtualizacao(escritorioId),
     carregarPrioritarios(escritorioId),
     // Planilha da triagem LIG (aba Agendamento de publicacoes), para o RO virtual na faixa.
-    prisma.prazoLig.findMany({ where: { ativoNaPlanilha: true } }),
+    Promise.all([
+      prisma.prazoLig.findMany({ where: { ativoNaPlanilha: true } }),
+      prisma.dispensaPrazoLig.findMany({ where: { desfeitaEm: null } }),
+    ]).then(([p, d]) => aplicarDispensas(p.map(linhaPrazo), d.map(dispensaLig))),
     prisma.compromisso.findMany({
       where: { escritorioId, descricao: { startsWith: "Importado da agenda do Legal One" }, dataInicio: { gte: new Date(Date.now() - 120 * 864e5) } },
       select: { titulo: true, dataInicio: true, advogado: { select: { nome: true } } },
@@ -344,7 +347,7 @@ export default async function HojePage() {
   // RO virtual (planilha LIG): lembrete antes do fatal do recurso ordinario quando so os embargos
   // foram agendados. Vai para a linha de quem tem os embargos na agenda do Legal One.
   {
-    const prazosLig = prazosLigDb.map(linhaPrazo);
+    const prazosLig = prazosLigDb;
     const agendaL1 = agendaL1Db.map((c) => ({ titulo: c.titulo, dia: diaDe(c.dataInicio), advogado: c.advogado.nome }));
     const porId = new Map(prazosLig.map((r) => [r.ID, r]));
     const virtuais = rosVirtuais(prazosLig, urgencia(prazosLig, hoje), (iso, tce) => ehDiaUtil(iso, tce ? "TCE_PE" : "TRF1"));

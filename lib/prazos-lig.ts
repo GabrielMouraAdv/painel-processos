@@ -215,13 +215,14 @@ export function linhaPrazo(p: PrazoLigDb): LinhaLig {
 // So o que a regra de urgencia le (badge do menu, sem carregar textos longos).
 export function linhaPrazoMinima(p: {
   idPlanilha: string; status: string; prazoInternoTexto: string; prazoFatalTexto: string;
-  peca: string; orgao: string; observacoes: string; lancadoLegalOne: string;
+  peca: string; orgao: string; observacoes: string; lancadoLegalOne: string; numeroProcesso: string;
 }): LinhaLig {
   return {
     ID: p.idPlanilha,
     Status: p.status,
     "Prazo interno": p.prazoInternoTexto,
     "Prazo fatal": p.prazoFatalTexto,
+    "Nº do processo": p.numeroProcesso,
     "Peça / providência": p.peca,
     "Órgão / tribunal": p.orgao,
     "Observações / alertas": p.observacoes,
@@ -365,4 +366,50 @@ export function rotuloRoVirtual(v: RoVirtual): string {
   if (v.situacao === "suspenso") return "Suspenso pelos embargos protocolados";
   if (v.situacao === "embargos_perdidos") return `Embargos perdidos · RO vence ${v.fatalRo.slice(0, 5)}`;
   return `RO virtual · ${br(v.dataVirtual)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Dispensa feita no painel. A linha dispensada passa a ter o Status "Sem providencia",
+// e as regras acima ja a tratam como encerrada (contagens, badge, RO virtual: embargos
+// dispensados deixam o RO como prazo real). Vale so enquanto a linha for a mesma.
+// ---------------------------------------------------------------------------
+
+export type DispensaLig = {
+  id: string;
+  idPlanilha: string;
+  numeroProcesso: string;
+  prazoFatalTexto: string;
+  motivo: string;
+  usuarioNome: string;
+  createdAt: string; // ISO
+};
+
+export const STATUS_DISPENSADO = "Sem providência (dispensado no painel)";
+
+export function dispensaDaLinha(r: LinhaLig, dispensas: DispensaLig[]): DispensaLig | null {
+  return (
+    dispensas.find(
+      (d) => d.idPlanilha === r.ID && d.numeroProcesso === r["Nº do processo"] && d.prazoFatalTexto === r["Prazo fatal"],
+    ) ?? null
+  );
+}
+
+export function aplicarDispensas(prazos: LinhaLig[], dispensas: DispensaLig[]): LinhaLig[] {
+  if (!dispensas.length) return prazos;
+  return prazos.map((r) => (dispensaDaLinha(r, dispensas) ? { ...r, Status: STATUS_DISPENSADO } : r));
+}
+
+export function dispensaLig(d: {
+  id: string; idPlanilha: string; numeroProcesso: string; prazoFatalTexto: string; motivo: string;
+  usuarioNome: string; createdAt: Date;
+}): DispensaLig {
+  return {
+    id: d.id,
+    idPlanilha: d.idPlanilha,
+    numeroProcesso: d.numeroProcesso,
+    prazoFatalTexto: d.prazoFatalTexto,
+    motivo: d.motivo,
+    usuarioNome: d.usuarioNome,
+    createdAt: d.createdAt.toISOString(),
+  };
 }

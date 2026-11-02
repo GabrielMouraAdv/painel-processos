@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Search, Star, X } from "lucide-react";
 import {
   Bar,
@@ -16,9 +17,12 @@ import {
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   confDia,
   confTotal,
+  chaveProcesso,
+  familiaPeca,
   ordemTabela,
   RO_VIRTUAL_DIAS_UTEIS,
   rotuloRoVirtual,
@@ -26,6 +30,7 @@ import {
   urgencia,
   type LinhaLig,
   type Proximo,
+  type DispensaLig,
   type Resumo,
   type RoVirtual,
   type SituacaoAgenda,
@@ -58,6 +63,7 @@ export function PrazosLigView({
   proximo,
   situacoes,
   virtuais,
+  dispensas,
 }: {
   hoje: string;
   prazos: LinhaLig[];
@@ -69,6 +75,7 @@ export function PrazosLigView({
   proximo: Proximo | null;
   situacoes: Record<string, SituacaoAgenda>;
   virtuais: Record<string, RoVirtual>;
+  dispensas: Record<string, DispensaLig>;
 }) {
   const urg = React.useMemo(() => urgencia(prazos, hoje), [prazos, hoje]);
   // Em aberto e fora da agenda do Legal One (o RO virtual e dispensa intencional, nao conta).
@@ -110,6 +117,7 @@ export function PrazosLigView({
           abrir={abrir}
           situacoes={situacoes}
           virtuais={virtuais}
+          dispensas={dispensas}
         />
       </section>
 
@@ -120,6 +128,8 @@ export function PrazosLigView({
           textoColunaV={textoColunaV}
           situacao={sel ? situacoes[sel] : undefined}
           virtual={sel ? virtuais[sel] : undefined}
+          dispensa={sel ? dispensas[sel] : undefined}
+          ligados={sel ? rosLigados(sel, prazos, urg) : []}
           fechar={() => setSel(null)}
         />
       </div>
@@ -373,6 +383,7 @@ function Tabela({
   abrir,
   situacoes,
   virtuais,
+  dispensas,
 }: {
   urg: Urgencia[];
   prazos: LinhaLig[];
@@ -386,6 +397,7 @@ function Tabela({
   abrir: (id: string) => void;
   situacoes: Record<string, SituacaoAgenda>;
   virtuais: Record<string, RoVirtual>;
+  dispensas: Record<string, DispensaLig>;
 }) {
   const u = React.useMemo(() => new Map(urg.map((r) => [r.ID, r])), [urg]);
   const q = busca.toLowerCase().trim();
@@ -490,7 +502,7 @@ function Tabela({
                       sev === "warn" && "text-amber-800",
                     )}
                   >
-                    {x.Faltam}
+                    {dispensas[r.ID] ? "Dispensado" : x.Faltam}
                     {v && <ChipVirtual v={v} />}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r["Prazo interno"]}</td>
@@ -504,7 +516,11 @@ function Tabela({
                   <td className="hidden min-w-[110px] px-3 py-2 md:table-cell">{r["Órgão / tribunal"]}</td>
                   <td className="hidden whitespace-nowrap px-3 py-2 md:table-cell">{r.Status}</td>
                   <td className="hidden min-w-[150px] px-3 py-2 md:table-cell">
-                    <ChipAgenda s={situacoes[r.ID]} virtual={!!v} emAberto={x.emAberto} />
+                    {dispensas[r.ID] ? (
+                      <span className="text-xs text-muted-foreground">dispensado no painel</span>
+                    ) : (
+                      <ChipAgenda s={situacoes[r.ID]} virtual={!!v} emAberto={x.emAberto} />
+                    )}
                   </td>
                   <td className="hidden min-w-[220px] max-w-[300px] px-3 py-2 text-xs text-slate-600 md:table-cell">
                     <span className="line-clamp-2">{r["Observações / alertas"]}</span>
@@ -530,6 +546,8 @@ function Leitor({
   textoColunaV,
   situacao,
   virtual,
+  dispensa,
+  ligados,
   fechar,
 }: {
   prazo: LinhaLig | null;
@@ -537,6 +555,8 @@ function Leitor({
   textoColunaV: Record<string, string>;
   situacao?: SituacaoAgenda;
   virtual?: RoVirtual;
+  dispensa?: DispensaLig;
+  ligados: LinhaLig[];
   fechar: () => void;
 }) {
   if (!prazo) {
@@ -578,7 +598,8 @@ function Leitor({
           </span>
         ))}
       </div>
-      <AgendaNoLeitor s={situacao} virtual={virtual} />
+      <Dispensa key={prazo.ID} prazo={prazo} dispensa={dispensa} ligados={ligados} />
+      {!dispensa && <AgendaNoLeitor s={situacao} virtual={virtual} />}
       {prazo["Observações / alertas"] && (
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           {prazo["Observações / alertas"]}
@@ -704,6 +725,156 @@ function Ciencia({ ciencia }: { ciencia: CienciaRow[] }) {
         {ciencia.length === 0 && <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhuma publicação só de ciência.</p>}
       </div>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Dispensa do prazo (so no painel; a planilha nao muda)
+// ---------------------------------------------------------------------------
+
+// Recursos ordinarios em aberto da mesma decisao, quando o prazo aberto e de embargos:
+// o formulario oferece dispensar os dois juntos.
+function rosLigados(id: string, prazos: LinhaLig[], urg: Urgencia[]): LinhaLig[] {
+  const r = prazos.find((p) => p.ID === id);
+  if (!r || familiaPeca(r["Peça / providência"]) !== "ED") return [];
+  const chave = chaveProcesso(r["Nº do processo"]);
+  const aberto = new Set(urg.filter((u) => u.emAberto).map((u) => u.ID));
+  return prazos.filter(
+    (p) => p.ID !== id && aberto.has(p.ID) && familiaPeca(p["Peça / providência"]) === "RO" && chave && chaveProcesso(p["Nº do processo"]) === chave,
+  );
+}
+
+const fmtDispensa = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Fortaleza", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+function Dispensa({ prazo, dispensa, ligados }: { prazo: LinhaLig; dispensa?: DispensaLig; ligados: LinhaLig[] }) {
+  const router = useRouter();
+  const [aberto, setAberto] = React.useState(false);
+  const [motivo, setMotivo] = React.useState("");
+  // Embargos com RO da mesma decisao: null = ainda nao respondeu a pergunta.
+  const [roJunto, setRoJunto] = React.useState<boolean | null>(null);
+  const precisaResposta = ligados.length > 0 && roJunto === null;
+  const [enviando, setEnviando] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
+
+  const enviar = async (metodo: "POST" | "DELETE", corpo: object) => {
+    setEnviando(true);
+    setErro(null);
+    try {
+      const resp = await fetch("/api/tce/prazos-lig/dispensa", {
+        method: metodo,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corpo),
+      });
+      if (!resp.ok) throw new Error(((await resp.json().catch(() => null)) as { error?: string } | null)?.error ?? `erro ${resp.status}`);
+      setAberto(false);
+      setMotivo("");
+      router.refresh();
+    } catch (e) {
+      setErro((e as Error).message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  if (dispensa) {
+    return (
+      <div className="mt-3 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+        <p>
+          <b>Dispensado no painel</b> por {dispensa.usuarioNome} em {fmtDispensa.format(new Date(dispensa.createdAt)).replace(",", "")}:{" "}
+          {dispensa.motivo}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          A planilha não muda. Se a triagem alterar o prazo fatal deste item, a dispensa deixa de valer e ele volta a aparecer.
+        </p>
+        <button
+          type="button"
+          disabled={enviando}
+          onClick={() => enviar("DELETE", { id: dispensa.id })}
+          className="mt-2 rounded-md border bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+        >
+          {enviando ? "Desfazendo…" : "Desfazer dispensa"}
+        </button>
+        {erro && <p className="mt-1 text-xs text-red-700">{erro}</p>}
+      </div>
+    );
+  }
+
+  if (/protocolado|sem provid/i.test(prazo.Status || "")) return null;
+
+  if (!aberto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        className="mt-3 rounded-md border px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      >
+        Dispensar este prazo…
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="mt-3 space-y-2 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (precisaResposta) return;
+        enviar("POST", { ids: [prazo.ID, ...(roJunto ? ligados.map((l) => l.ID) : [])], motivo });
+      }}
+    >
+      <label htmlFor="motivo-dispensa" className="block font-medium text-slate-900">
+        Por que este prazo não será cumprido?
+      </label>
+      <Textarea
+        id="motivo-dispensa"
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+        rows={2}
+        placeholder="Ex.: só determinações, sem penalidade; não vale recorrer."
+        required
+        minLength={3}
+      />
+      {ligados.length > 0 && (
+        // Pergunta obrigatoria: dispensar so os embargos deixa o RO como prazo real.
+        <fieldset className="rounded-md border border-violet-300 bg-violet-50 px-3 py-2 text-slate-800">
+          <legend className="px-1 font-medium text-violet-900">Dispensar o recurso ordinário virtual também?</legend>
+          <p className="text-xs text-slate-600">
+            {ligados.map((l) => `${l.ID} · ${l["Peça / providência"]} · fatal ${l["Prazo fatal"]}`).join("; ")}. Se só os embargos
+            forem dispensados, o recurso ordinário passa a contar como prazo real.
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1">
+            <label className="inline-flex cursor-pointer items-center gap-2">
+              <input type="radio" name="ro-junto" checked={roJunto === true} onChange={() => setRoJunto(true)} required />
+              Sim, dispensar os dois
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2">
+              <input type="radio" name="ro-junto" checked={roJunto === false} onChange={() => setRoJunto(false)} />
+              Não, só os embargos
+            </label>
+          </div>
+        </fieldset>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Fica registrado no painel com seu nome e a data; a planilha não muda. Pode ser desfeito.
+      </p>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={enviando || motivo.trim().length < 3 || precisaResposta}
+          className="rounded-md bg-brand-navy px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {enviando ? "Gravando…" : roJunto ? "Dispensar os dois" : "Dispensar"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setAberto(false)}
+          className="rounded-md border bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+        >
+          Cancelar
+        </button>
+      </div>
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
+    </form>
   );
 }
 

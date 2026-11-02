@@ -8,7 +8,7 @@ import { isUsuarioEleitoral } from "@/lib/eleitoral";
 import { inicioDoDiaBrasilUTC } from "@/lib/eleitoral-labels";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
-import { linhaPrazoMinima, urgentesLig } from "@/lib/prazos-lig";
+import { aplicarDispensas, dispensaLig, linhaPrazoMinima, urgentesLig } from "@/lib/prazos-lig";
 import { prisma } from "@/lib/prisma";
 import { endOfWeekUTC, startOfWeekUTC } from "@/lib/semana";
 
@@ -192,10 +192,17 @@ export default async function AppLayout({
       },
     }),
     // Badge da aba Agendamento de publicações (planilha LIG): so as colunas que a regra de urgencia usa.
-    prisma.prazoLig.findMany({
-      where: { ativoNaPlanilha: true },
-      select: { idPlanilha: true, status: true, prazoInternoTexto: true, prazoFatalTexto: true, peca: true, orgao: true, observacoes: true, lancadoLegalOne: true },
-    }),
+    // Ja com as dispensas feitas no painel aplicadas.
+    Promise.all([
+      prisma.prazoLig.findMany({
+        where: { ativoNaPlanilha: true },
+        select: {
+          idPlanilha: true, status: true, prazoInternoTexto: true, prazoFatalTexto: true, peca: true, orgao: true,
+          observacoes: true, lancadoLegalOne: true, numeroProcesso: true,
+        },
+      }),
+      prisma.dispensaPrazoLig.findMany({ where: { desfeitaEm: null } }),
+    ]).then(([p, d]) => aplicarDispensas(p.map(linhaPrazoMinima), d.map(dispensaLig))),
   ]);
 
   const compromissosHoje =
@@ -209,7 +216,7 @@ export default async function AppLayout({
     <AppShell
       prazosUrgentes={prazosUrgentes}
       prazosTceUrgentes={prazosTceUrgentes}
-      prazosLigUrgentes={urgentesLig(prazosLig.map(linhaPrazoMinima))}
+      prazosLigUrgentes={urgentesLig(prazosLig)}
       processosTceTotal={processosTceTotal}
       pautasJudiciaisTotal={pautasJudiciaisTotal}
       alertasMonitoramento={

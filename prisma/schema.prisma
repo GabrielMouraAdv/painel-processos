@@ -1298,3 +1298,22 @@ model SyncPrazosLig {
 
   @@index([ok, concluidoEm])
 }
+
+// Dispensa feita no painel de um prazo da planilha LIG (a planilha nao e alterada).
+// Vale enquanto a linha continuar a mesma (ID, processo e prazo fatal): se a triagem
+// mudar o prazo, a dispensa deixa de valer e o prazo volta a aparecer.
+model DispensaPrazoLig {
+  id              String    @id @default(cuid())
+  idPlanilha      String
+  numeroProcesso  String
+  peca            String
+  prazoFatalTexto String
+  motivo          String    @db.Text
+  usuarioId       String
+  usuarioNome     String
+  createdAt       DateTime  @default(now())
+  desfeitaEm      DateTime?
+  desfeitaPorNome String?
+
+  @@index([idPlanilha])
+}

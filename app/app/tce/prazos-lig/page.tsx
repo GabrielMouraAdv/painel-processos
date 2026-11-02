@@ -4,6 +4,10 @@ import { ehDiaUtil } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 import {
   LIMITE_HORAS_SYNC,
+  aplicarDispensas,
+  dispensaDaLinha,
+  dispensaLig,
+  type DispensaLig,
   rosVirtuais,
   situacaoAgenda,
   type ItemAgendaL1,
@@ -34,7 +38,7 @@ const fmtSync = new Intl.DateTimeFormat("pt-BR", {
 export default async function PrazosLigPage() {
   // Agenda do Legal One importada (scripts/importar-agenda-legalone.ts), dos ultimos 4 meses em diante.
   const desdeAgenda = new Date(Date.now() - 120 * 864e5);
-  const [prazosDb, confDb, cienciaDb, ultimoSync, agendaDb] = await Promise.all([
+  const [prazosDb, confDb, cienciaDb, ultimoSync, agendaDb, dispensasDb] = await Promise.all([
     prisma.prazoLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { idPlanilha: "asc" } }),
     prisma.conferenciaLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { linhaPlanilha: "asc" } }),
     prisma.cienciaLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { linhaPlanilha: "asc" } }),
@@ -43,13 +47,21 @@ export default async function PrazosLigPage() {
       where: { descricao: { startsWith: "Importado da agenda do Legal One" }, dataInicio: { gte: desdeAgenda } },
       select: { titulo: true, dataInicio: true, createdAt: true, advogado: { select: { nome: true } } },
     }),
+    prisma.dispensaPrazoLig.findMany({ where: { desfeitaEm: null }, orderBy: { createdAt: "desc" } }),
   ]);
   const pubIds = Array.from(new Set(prazosDb.map((p) => p.pubId).filter(Boolean)));
   const pubsDb = pubIds.length
     ? await prisma.publicacaoLig.findMany({ where: { pubId: { in: pubIds } } })
     : [];
 
-  const prazos = prazosDb.map(linhaPrazo);
+  // Dispensas feitas no painel: a linha passa a "Sem providencia" e sai das contagens.
+  const listaDispensas = dispensasDb.map(dispensaLig);
+  const prazos = aplicarDispensas(prazosDb.map(linhaPrazo), listaDispensas);
+  const dispensas: Record<string, DispensaLig> = {};
+  for (const r of prazos) {
+    const d = dispensaDaLinha(r, listaDispensas);
+    if (d) dispensas[r.ID] = d;
+  }
   const conf = confDb.map(linhaConferencia);
   const hoje = hojeFortaleza();
   const urg = urgencia(prazos, hoje);
@@ -125,6 +137,7 @@ export default async function PrazosLigPage() {
         proximo={prox}
         situacoes={situacoes}
         virtuais={virtuais}
+        dispensas={dispensas}
       />
     </div>
   );
