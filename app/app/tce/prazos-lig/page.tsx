@@ -1,7 +1,14 @@
 import { PaginaCabecalho } from "@/components/pagina-cabecalho";
+import { diaDe } from "@/lib/datas";
+import { ehDiaUtil } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 import {
   LIMITE_HORAS_SYNC,
+  rosVirtuais,
+  situacaoAgenda,
+  type ItemAgendaL1,
+  type RoVirtual,
+  type SituacaoAgenda,
   hojeFortaleza,
   horasUteisDesde,
   linhaConferencia,
@@ -25,11 +32,17 @@ const fmtSync = new Intl.DateTimeFormat("pt-BR", {
 });
 
 export default async function PrazosLigPage() {
-  const [prazosDb, confDb, cienciaDb, ultimoSync] = await Promise.all([
+  // Agenda do Legal One importada (scripts/importar-agenda-legalone.ts), dos ultimos 4 meses em diante.
+  const desdeAgenda = new Date(Date.now() - 120 * 864e5);
+  const [prazosDb, confDb, cienciaDb, ultimoSync, agendaDb] = await Promise.all([
     prisma.prazoLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { idPlanilha: "asc" } }),
     prisma.conferenciaLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { linhaPlanilha: "asc" } }),
     prisma.cienciaLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { linhaPlanilha: "asc" } }),
     prisma.syncPrazosLig.findFirst({ where: { ok: true }, orderBy: { concluidoEm: "desc" } }),
+    prisma.compromisso.findMany({
+      where: { descricao: { startsWith: "Importado da agenda do Legal One" }, dataInicio: { gte: desdeAgenda } },
+      select: { titulo: true, dataInicio: true, createdAt: true, advogado: { select: { nome: true } } },
+    }),
   ]);
   const pubIds = Array.from(new Set(prazosDb.map((p) => p.pubId).filter(Boolean)));
   const pubsDb = pubIds.length
@@ -42,6 +55,14 @@ export default async function PrazosLigPage() {
   const urg = urgencia(prazos, hoje);
   const res = resumo(urg, prazos);
   const prox = proximo(urg, prazos);
+
+  const agenda: ItemAgendaL1[] = agendaDb.map((c) => ({ titulo: c.titulo, dia: diaDe(c.dataInicio), advogado: c.advogado.nome }));
+  const agendaLidaEm = agendaDb.reduce<Date | null>((m, c) => (!m || c.createdAt > m ? c.createdAt : m), null);
+  const situacoes: Record<string, SituacaoAgenda> = {};
+  for (const r of prazos) situacoes[r.ID] = situacaoAgenda(r, agenda);
+  const virtuais: Record<string, RoVirtual> = Object.fromEntries(
+    rosVirtuais(prazos, urg, (iso, tce) => ehDiaUtil(iso, tce ? "TCE_PE" : "TRF1")),
+  );
 
   // Texto da publicacao: aba Publicacoes; se faltar, a coluna V da aba Prazos.
   const publicacoes: Record<string, PublicacaoRow> = {};
@@ -77,7 +98,8 @@ export default async function PrazosLigPage() {
             Lido da planilha de controle da triagem LIG. {res.ativos} providências em aberto, {res.ateAmanha} com prazo
             interno até amanhã.{" "}
             <span className="whitespace-nowrap text-white/60">
-              Sincronizado em {sincronizadoEm ? fmtSync.format(sincronizadoEm).replace(",", "") : "—"}
+              Sincronizado em {sincronizadoEm ? fmtSync.format(sincronizadoEm).replace(",", "") : "—"} · agenda do Legal One lida em{" "}
+              {agendaLidaEm ? fmtSync.format(agendaLidaEm).replace(",", "") : "—"}
             </span>
           </>
         }
@@ -101,6 +123,8 @@ export default async function PrazosLigPage() {
         textoColunaV={textoColunaV}
         resumo={res}
         proximo={prox}
+        situacoes={situacoes}
+        virtuais={virtuais}
       />
     </div>
   );

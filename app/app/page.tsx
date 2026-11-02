@@ -6,11 +6,13 @@ import type { CamaraTce } from "@prisma/client";
 import { NumeroProcesso } from "@/components/numero-processo";
 import { authOptions } from "@/lib/auth";
 import { diaDe, formatarDia, hojeDia } from "@/lib/datas";
+import { ehDiaUtil } from "@/lib/dias-uteis";
 import { FONTE_DJEN_OAB, resumoDe } from "@/lib/djen-oab";
 import { datajudParadoHa, datajudUltimaAtualizacao } from "@/lib/monitoramento-verificar";
 import { classeBadgeResultado, classificarResultadoTce } from "@/lib/julgamento-config";
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
 import { CATEGORIA_PRIORITARIO_LABELS, carregarPrioritarios, type CategoriaPrioritario } from "@/lib/prioritarios";
+import { linhaPrazo, rosVirtuais, rotuloRoVirtual, situacaoAgenda, urgencia } from "@/lib/prazos-lig";
 import { prisma } from "@/lib/prisma";
 import { endOfWeekUTC, inicioSemanaAgenda, inicioSemanaPauta } from "@/lib/semana";
 import { SITUACAO_TCE_LABELS, situacaoTce, whereSituacaoTce } from "@/lib/situacao-tce";
@@ -92,6 +94,7 @@ const SOCIOS = [
   { chave: "gabriel", rotulo: "Gabriel", iniciais: "GM", teste: /gabriel/i },
   { chave: "henrique", rotulo: "Henrique", iniciais: "HA", teste: /henrique/i },
   { chave: "heloisa", rotulo: "Heloísa", iniciais: "HC", teste: /helo[ií]sa/i },
+  { chave: "ricardo", rotulo: "Ricardo", iniciais: "RR", teste: /ricardo/i },
 ];
 type LinhaFaixa = { chave: string; rotulo: string; sub?: string; iniciais?: string };
 type ItemFaixa = { texto: string; classe: string; detalhe: DetalheFaixa };
@@ -131,6 +134,7 @@ export default async function HojePage() {
     itensSemana,
     intimacoes, datajudUltima,
     prioritarios,
+    prazosLigDb, agendaL1Db,
   ] = await Promise.all([
     prisma.prazoTce.findMany({
       where: { cumprido: false, dispensado: false, processo: { escritorioId } },
@@ -213,6 +217,12 @@ export default async function HojePage() {
     }),
     datajudUltimaAtualizacao(escritorioId),
     carregarPrioritarios(escritorioId),
+    // Planilha da triagem LIG (aba Agendamento de publicacoes), para o RO virtual na faixa.
+    prisma.prazoLig.findMany({ where: { ativoNaPlanilha: true } }),
+    prisma.compromisso.findMany({
+      where: { escritorioId, descricao: { startsWith: "Importado da agenda do Legal One" }, dataInicio: { gte: new Date(Date.now() - 120 * 864e5) } },
+      select: { titulo: true, dataInicio: true, advogado: { select: { nome: true } } },
+    }),
   ]);
   const datajudParado = datajudParadoHa(datajudUltima);
 
@@ -330,6 +340,49 @@ export default async function HojePage() {
         outroLink: { texto: "Ver na agenda", href: "/app/compromissos" },
       },
     });
+  }
+  // RO virtual (planilha LIG): lembrete antes do fatal do recurso ordinario quando so os embargos
+  // foram agendados. Vai para a linha de quem tem os embargos na agenda do Legal One.
+  {
+    const prazosLig = prazosLigDb.map(linhaPrazo);
+    const agendaL1 = agendaL1Db.map((c) => ({ titulo: c.titulo, dia: diaDe(c.dataInicio), advogado: c.advogado.nome }));
+    const porId = new Map(prazosLig.map((r) => [r.ID, r]));
+    const virtuais = rosVirtuais(prazosLig, urgencia(prazosLig, hoje), (iso, tce) => ehDiaUtil(iso, tce ? "TCE_PE" : "TRF1"));
+    for (const v of Array.from(virtuais.values())) {
+      if (v.situacao === "suspenso") continue;
+      const ro = porId.get(v.ID)!;
+      const ed = porId.get(v.idEmbargos);
+      const sit = ed ? situacaoAgenda(ed, agendaL1) : null;
+      // Quem tem os embargos na agenda; senao, quem tem outro item do mesmo processo (o RO, por exemplo).
+      const doRo = situacaoAgenda(ro, agendaL1);
+      const advogado = sit && sit.tipo !== "nao_agendado" ? sit.item.advogado : doRo.tipo !== "nao_agendado" ? doRo.item.advogado : null;
+      const perdidos = v.situacao === "embargos_perdidos";
+      poeFaixa(linhaDe(advogado), v.dataVirtual, {
+        texto: `RO virtual · ${ro["Nº do processo"]}`,
+        classe: perdidos
+          ? "bg-red-50 text-red-900 ring-1 ring-red-300"
+          : "border border-dashed border-violet-400 bg-violet-50 text-violet-800",
+        detalhe: {
+          titulo: `RO virtual · ${ro["Peça / providência"]}`,
+          tipo: "Lembrete (planilha LIG)",
+          data: br(v.dataVirtual),
+          status: rotuloRoVirtual(v),
+          statusClasse: perdidos ? "bg-red-100 text-red-900" : "bg-violet-100 text-violet-900",
+          advogado: advogado ?? "embargos ainda não encontrados na agenda do Legal One",
+          processo: null,
+          linhas: [
+            { rotulo: "Processo", valor: `${ro["Nº do processo"]} · ${ro["Cliente / ente"]}` },
+            { rotulo: "Fatal do RO", valor: ro["Prazo fatal"] },
+            { rotulo: "Embargos", valor: ed ? `${ed["Peça / providência"]} · fatal ${ed["Prazo fatal"]} · ${ed.Status}` : v.idEmbargos },
+            {
+              rotulo: "Por quê",
+              valor: "O RO não é agendado porque os embargos interrompem o prazo. Se os embargos forem perdidos, o RO continua correndo.",
+            },
+          ],
+          outroLink: { texto: "Ver na aba Agendamento", href: "/app/tce/prazos-lig" },
+        },
+      });
+    }
   }
   const itensLinha = (chave: string) => Array.from(faixa.get(chave)?.values() ?? []).flat();
   const linhasVisiveis = linhasFaixa.filter((l) => l.chave !== "outros" || itensLinha("outros").length > 0);

@@ -20,11 +20,15 @@ import {
   confDia,
   confTotal,
   ordemTabela,
+  RO_VIRTUAL_DIAS_UTEIS,
+  rotuloRoVirtual,
   severidade,
   urgencia,
   type LinhaLig,
   type Proximo,
   type Resumo,
+  type RoVirtual,
+  type SituacaoAgenda,
   type Urgencia,
 } from "@/lib/prazos-lig";
 import { cn } from "@/lib/utils";
@@ -37,6 +41,7 @@ const COR_TIPO: Record<Urgencia["Tipo"], string> = {
   Judicial: "#c2410c",
   Sessão: "#6b21a8",
 };
+const COR_VIRTUAL = "#a78bfa";
 const COR_A = "#1e40af";
 const COR_B = "#0f766e";
 
@@ -51,6 +56,8 @@ export function PrazosLigView({
   textoColunaV,
   resumo,
   proximo,
+  situacoes,
+  virtuais,
 }: {
   hoje: string;
   prazos: LinhaLig[];
@@ -60,8 +67,14 @@ export function PrazosLigView({
   textoColunaV: Record<string, string>;
   resumo: Resumo;
   proximo: Proximo | null;
+  situacoes: Record<string, SituacaoAgenda>;
+  virtuais: Record<string, RoVirtual>;
 }) {
   const urg = React.useMemo(() => urgencia(prazos, hoje), [prazos, hoje]);
+  // Em aberto e fora da agenda do Legal One (o RO virtual e dispensa intencional, nao conta).
+  const semAgenda = urg.filter(
+    (u) => u.emAberto && !virtuais[u.ID] && ["nao_agendado", "outra_peca"].includes(situacoes[u.ID]?.tipo ?? "nao_agendado"),
+  ).length;
   const [tipo, setTipo] = React.useState<FiltroTipo>("todos");
   const [busca, setBusca] = React.useState("");
   const [concluidos, setConcluidos] = React.useState(false);
@@ -75,8 +88,8 @@ export function PrazosLigView({
 
   return (
     <div className="space-y-6">
-      <Destaque proximo={proximo} resumo={resumo} />
-      <Agenda urg={urg} prazos={prazos} hoje={hoje} concluidos={concluidos} />
+      <Destaque proximo={proximo} resumo={resumo} semAgenda={semAgenda} />
+      <Agenda urg={urg} prazos={prazos} hoje={hoje} concluidos={concluidos} virtuais={virtuais} />
 
       <section className="rounded-xl border bg-white p-4 shadow-sm md:p-5">
         <h2 className="text-lg font-semibold text-brand-navy">Todos os prazos</h2>
@@ -95,6 +108,8 @@ export function PrazosLigView({
           setConcluidos={setConcluidos}
           sel={sel}
           abrir={abrir}
+          situacoes={situacoes}
+          virtuais={virtuais}
         />
       </section>
 
@@ -103,6 +118,8 @@ export function PrazosLigView({
           prazo={sel ? prazos.find((p) => p.ID === sel) ?? null : null}
           publicacoes={publicacoes}
           textoColunaV={textoColunaV}
+          situacao={sel ? situacoes[sel] : undefined}
+          virtual={sel ? virtuais[sel] : undefined}
           fechar={() => setSel(null)}
         />
       </div>
@@ -119,12 +136,13 @@ export function PrazosLigView({
 // Destaque do proximo prazo fatal + 4 cartoes
 // ---------------------------------------------------------------------------
 
-function Destaque({ proximo, resumo }: { proximo: Proximo | null; resumo: Resumo }) {
+function Destaque({ proximo, resumo, semAgenda }: { proximo: Proximo | null; resumo: Resumo; semAgenda: number }) {
   const tiles: { n: number; t: string; tom: "bad" | "warn" }[] = [
     { n: resumo.vencidos, t: "Prazo fatal passou sem baixa", tom: "bad" },
     { n: resumo.ateAmanha, t: "Prazo interno até amanhã ou já passou", tom: "bad" },
     { n: resumo.proximos7, t: "Prazo interno em 2 a 7 dias", tom: "warn" },
-    { n: resumo.semLegalOne, t: "Ainda não lançados no Legal One", tom: "warn" },
+    // Conferido na agenda do Legal One importada, nao na coluna da planilha.
+    { n: semAgenda, t: "Sem agenda no Legal One", tom: "warn" },
   ];
   return (
     <section className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
@@ -190,10 +208,23 @@ type DiaAgenda = {
   dataLonga: string;
   fimDeSemana: boolean;
   segunda: boolean;
-  itens: { tipo: Urgencia["Tipo"]; texto: string }[];
+  itens: { tipo: Urgencia["Tipo"] | "RO virtual"; texto: string }[];
+  virtual?: number;
 } & Partial<Record<Urgencia["Tipo"], number>>;
 
-function Agenda({ urg, prazos, hoje, concluidos }: { urg: Urgencia[]; prazos: LinhaLig[]; hoje: string; concluidos: boolean }) {
+function Agenda({
+  urg,
+  prazos,
+  hoje,
+  concluidos,
+  virtuais,
+}: {
+  urg: Urgencia[];
+  prazos: LinhaLig[];
+  hoje: string;
+  concluidos: boolean;
+  virtuais: Record<string, RoVirtual>;
+}) {
   const dados = React.useMemo(() => {
     const by = new Map(prazos.map((r) => [r.ID, r]));
     const base = Date.parse(hoje + "T00:00:00Z");
@@ -201,7 +232,12 @@ function Agenda({ urg, prazos, hoje, concluidos }: { urg: Urgencia[]; prazos: Li
       .filter((u) => (concluidos || u.emAberto) && u.diasFatal !== null)
       .map((u) => ({ u, r: by.get(u.ID), d: u.diasFatal! }))
       .filter((x) => x.r);
-    const ds = itens.map((i) => i.d);
+    // RO virtual (so o lembrete): barra propria no dia do lembrete.
+    const lembretes = Object.values(virtuais)
+      .filter((v) => v.situacao === "lembrete")
+      .map((v) => ({ r: by.get(v.ID), d: Math.round((Date.parse(v.dataVirtual + "T00:00:00Z") - base) / 864e5) }))
+      .filter((x) => x.r);
+    const ds = [...itens.map((i) => i.d), ...lembretes.map((i) => i.d)];
     const minD = Math.max(-14, Math.min(-5, ds.length ? Math.min(...ds) : -5));
     const maxD = Math.min(120, Math.max(30, (ds.length ? Math.max(...ds) : 30) + 3));
     const out: DiaAgenda[] = [];
@@ -210,6 +246,7 @@ function Agenda({ urg, prazos, hoje, concluidos }: { urg: Urgencia[]; prazos: Li
       const dd = String(dt.getUTCDate()).padStart(2, "0");
       const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
       const doDia = itens.filter((i) => i.d === d);
+      const virtDia = lembretes.filter((i) => i.d === d);
       const linha: DiaAgenda = {
         d,
         rotulo: `${dd}/${mm}`,
@@ -221,6 +258,10 @@ function Agenda({ urg, prazos, hoje, concluidos }: { urg: Urgencia[]; prazos: Li
           texto: `${i.r!["Peça / providência"].replace(/^SESSÃO: /, "Sessão: ")} · ${i.r!["Nº do processo"]} (${i.r!["Cliente / ente"]})`,
         })),
       };
+      for (const v of virtDia) {
+        linha.itens.push({ tipo: "RO virtual", texto: `RO virtual · ${v.r!["Nº do processo"]} (${v.r!["Cliente / ente"]}) · fatal ${v.r!["Prazo fatal"]}` });
+      }
+      if (virtDia.length) linha.virtual = virtDia.length;
       for (const t of ["TCE-PE", "Judicial", "Sessão"] as const) {
         const n = doDia.filter((i) => i.u.Tipo === t).length;
         if (n) linha[t] = n;
@@ -228,11 +269,12 @@ function Agenda({ urg, prazos, hoje, concluidos }: { urg: Urgencia[]; prazos: Li
       out.push(linha);
     }
     return out;
-  }, [urg, prazos, hoje, concluidos]);
+  }, [urg, prazos, hoje, concluidos, virtuais]);
 
   const maxN = Math.max(3, ...dados.map((d) => d.itens.length));
   const segundas = dados.filter((d) => d.segunda).map((d) => d.d);
   const temSessao = dados.some((d) => d.Sessão);
+  const temVirtual = dados.some((d) => d.virtual);
 
   return (
     <section className="rounded-xl border bg-white p-4 shadow-sm md:p-5">
@@ -240,8 +282,16 @@ function Agenda({ urg, prazos, hoje, concluidos }: { urg: Urgencia[]; prazos: Li
       <p className="mt-1 text-sm text-muted-foreground">
         Prazos fatais por dia, da semana passada às próximas semanas. Passe o mouse (ou toque) num dia para ver os
         processos. A linha marca hoje.
+        {temVirtual && " A barra lilás é o RO virtual: lembrete antes do fatal do recurso ordinário, caso os embargos sejam perdidos."}
       </p>
-      <Legenda itens={[["TCE-PE", COR_TIPO["TCE-PE"]], ["Judicial", COR_TIPO.Judicial], ...(temSessao ? [["Sessão", COR_TIPO.Sessão] as [string, string]] : [])]} />
+      <Legenda
+        itens={[
+          ["TCE-PE", COR_TIPO["TCE-PE"]],
+          ["Judicial", COR_TIPO.Judicial],
+          ...(temSessao ? [["Sessão", COR_TIPO.Sessão] as [string, string]] : []),
+          ...(temVirtual ? [["RO virtual", COR_VIRTUAL] as [string, string]] : []),
+        ]}
+      />
       <div className="mt-2 h-52 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={dados} margin={{ top: 16, right: 8, bottom: 0, left: -24 }} barCategoryGap="20%">
@@ -266,6 +316,7 @@ function Agenda({ urg, prazos, hoje, concluidos }: { urg: Urgencia[]; prazos: Li
             {(["TCE-PE", "Judicial", "Sessão"] as const).map((t) => (
               <Bar key={t} dataKey={t} stackId="tipo" fill={COR_TIPO[t]} maxBarSize={28} isAnimationActive={false} />
             ))}
+            <Bar dataKey="virtual" stackId="tipo" fill={COR_VIRTUAL} stroke="#6d28d9" strokeDasharray="3 2" maxBarSize={28} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -284,7 +335,7 @@ function TooltipAgenda({ active, payload }: { active?: boolean; payload?: { payl
       </p>
       {dia.itens.map((i, k) => (
         <p key={k} className="mt-1 flex gap-1.5 text-slate-700">
-          <i className="mt-1 inline-block h-2 w-2 shrink-0 rounded-sm" style={{ background: COR_TIPO[i.tipo] }} />
+          <i className="mt-1 inline-block h-2 w-2 shrink-0 rounded-sm" style={{ background: i.tipo === "RO virtual" ? COR_VIRTUAL : COR_TIPO[i.tipo] }} />
           <span>{i.texto}</span>
         </p>
       ))}
@@ -320,6 +371,8 @@ function Tabela({
   setConcluidos,
   sel,
   abrir,
+  situacoes,
+  virtuais,
 }: {
   urg: Urgencia[];
   prazos: LinhaLig[];
@@ -331,6 +384,8 @@ function Tabela({
   setConcluidos: (v: boolean) => void;
   sel: string | null;
   abrir: (id: string) => void;
+  situacoes: Record<string, SituacaoAgenda>;
+  virtuais: Record<string, RoVirtual>;
 }) {
   const u = React.useMemo(() => new Map(urg.map((r) => [r.ID, r])), [urg]);
   const q = busca.toLowerCase().trim();
@@ -406,7 +461,9 @@ function Tabela({
           <tbody>
             {linhas.map((r) => {
               const x = u.get(r.ID)!;
-              const sev = severidade(x);
+              const v = virtuais[r.ID];
+              // Embargos perdidos: o RO volta a ser o prazo que importa.
+              const sev = v?.situacao === "embargos_perdidos" ? "bad" : severidade(x);
               return (
                 <tr
                   key={r.ID}
@@ -434,6 +491,7 @@ function Tabela({
                     )}
                   >
                     {x.Faltam}
+                    {v && <ChipVirtual v={v} />}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r["Prazo interno"]}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r["Prazo fatal"]}</td>
@@ -445,15 +503,8 @@ function Tabela({
                   <td className="min-w-[140px] px-3 py-2">{r["Cliente / ente"]}</td>
                   <td className="hidden min-w-[110px] px-3 py-2 md:table-cell">{r["Órgão / tribunal"]}</td>
                   <td className="hidden whitespace-nowrap px-3 py-2 md:table-cell">{r.Status}</td>
-                  <td className="hidden px-3 py-2 md:table-cell">
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-xs font-medium",
-                        r["Lançado no Legal One?"] === "Sim" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900",
-                      )}
-                    >
-                      {r["Lançado no Legal One?"] || "—"}
-                    </span>
+                  <td className="hidden min-w-[150px] px-3 py-2 md:table-cell">
+                    <ChipAgenda s={situacoes[r.ID]} virtual={!!v} emAberto={x.emAberto} />
                   </td>
                   <td className="hidden min-w-[220px] max-w-[300px] px-3 py-2 text-xs text-slate-600 md:table-cell">
                     <span className="line-clamp-2">{r["Observações / alertas"]}</span>
@@ -477,11 +528,15 @@ function Leitor({
   prazo,
   publicacoes,
   textoColunaV,
+  situacao,
+  virtual,
   fechar,
 }: {
   prazo: LinhaLig | null;
   publicacoes: Record<string, PublicacaoRow>;
   textoColunaV: Record<string, string>;
+  situacao?: SituacaoAgenda;
+  virtual?: RoVirtual;
   fechar: () => void;
 }) {
   if (!prazo) {
@@ -523,6 +578,7 @@ function Leitor({
           </span>
         ))}
       </div>
+      <AgendaNoLeitor s={situacao} virtual={virtual} />
       {prazo["Observações / alertas"] && (
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           {prazo["Observações / alertas"]}
@@ -648,5 +704,96 @@ function Ciencia({ ciencia }: { ciencia: CienciaRow[] }) {
         {ciencia.length === 0 && <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhuma publicação só de ciência.</p>}
       </div>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Agenda do Legal One e RO virtual
+// ---------------------------------------------------------------------------
+
+const primeiroNome = (n: string) => n.split(" ")[0];
+const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+
+function ChipVirtual({ v }: { v: RoVirtual }) {
+  return (
+    <span
+      className={cn(
+        "mt-1 block w-fit whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium",
+        v.situacao === "lembrete" && "border-dashed border-violet-400 bg-violet-50 text-violet-800",
+        v.situacao === "embargos_perdidos" && "border-red-300 bg-red-100 text-red-800",
+        v.situacao === "suspenso" && "border-slate-300 bg-slate-100 text-slate-600",
+      )}
+    >
+      {rotuloRoVirtual(v)}
+    </span>
+  );
+}
+
+function ChipAgenda({ s, virtual, emAberto }: { s?: SituacaoAgenda; virtual: boolean; emAberto: boolean }) {
+  const base = "inline-block rounded-full px-2 py-0.5 text-xs font-medium";
+  if (!s) return <span className="text-xs text-muted-foreground">—</span>;
+  if (s.tipo === "agendado")
+    return (
+      <span className={cn(base, "bg-emerald-100 text-emerald-800")} title={s.item.titulo}>
+        {primeiroNome(s.item.advogado)} · {ddmm(s.item.dia)}
+      </span>
+    );
+  if (s.tipo === "data_diferente")
+    return (
+      <span className={cn(base, "bg-amber-100 text-amber-900")} title={s.item.titulo}>
+        {primeiroNome(s.item.advogado)} · {ddmm(s.item.dia)} · data diferente
+      </span>
+    );
+  if (virtual)
+    return <span className={cn(base, "border border-dashed border-violet-400 bg-violet-50 text-violet-800")}>Dispensado (RO virtual)</span>;
+  if (s.tipo === "outra_peca")
+    return (
+      <span className={cn(base, "bg-slate-100 text-slate-700")} title={s.item.titulo}>
+        Outra peça na agenda
+      </span>
+    );
+  return <span className={cn(base, emAberto ? "bg-red-100 text-red-800" : "bg-slate-100 text-slate-600")}>Não agendado</span>;
+}
+
+function AgendaNoLeitor({ s, virtual }: { s?: SituacaoAgenda; virtual?: RoVirtual }) {
+  if (!s && !virtual) return null;
+  return (
+    <div className="mt-3 space-y-2 text-sm">
+      {s && s.tipo !== "nao_agendado" && (
+        <p
+          className={cn(
+            "rounded-lg border px-3 py-2",
+            s.tipo === "agendado" && "border-emerald-200 bg-emerald-50 text-emerald-900",
+            s.tipo === "data_diferente" && "border-amber-200 bg-amber-50 text-amber-900",
+            s.tipo === "outra_peca" && "border-slate-200 bg-slate-50 text-slate-700",
+          )}
+        >
+          <b>
+            {s.tipo === "agendado"
+              ? "Agendado no Legal One"
+              : s.tipo === "data_diferente"
+                ? "No Legal One com data diferente da planilha"
+                : "No Legal One há outra peça deste processo"}
+          </b>
+          : {s.item.titulo} · {primeiroNome(s.item.advogado)} · {ddmm(s.item.dia)}
+        </p>
+      )}
+      {s?.tipo === "nao_agendado" && !virtual && (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-900">
+          <b>Não encontrado na agenda do Legal One</b> (pela última leitura da agenda).
+        </p>
+      )}
+      {virtual && (
+        <p className="rounded-lg border border-dashed border-violet-300 bg-violet-50 px-3 py-2 text-violet-900">
+          <b>{rotuloRoVirtual(virtual)}.</b>{" "}
+          {virtual.situacao === "lembrete" &&
+            `O recurso ordinário não é agendado porque os embargos (${virtual.idEmbargos}) interrompem o prazo. Se os embargos forem perdidos, o RO ainda vence em ${virtual.fatalRo}; o lembrete fica em ${ddmm(virtual.dataVirtual)}, ${RO_VIRTUAL_DIAS_UTEIS} dias úteis antes.`}
+          {virtual.situacao === "suspenso" &&
+            `Os embargos (${virtual.idEmbargos}) foram protocolados: o prazo do RO volta a correr só depois do julgamento deles.`}
+          {virtual.situacao === "embargos_perdidos" &&
+            `O prazo dos embargos (${virtual.idEmbargos}) passou sem protocolo, então não houve interrupção: o recurso ordinário vence em ${virtual.fatalRo}.`}
+        </p>
+      )}
+    </div>
   );
 }

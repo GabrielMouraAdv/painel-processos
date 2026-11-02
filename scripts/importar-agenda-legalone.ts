@@ -54,6 +54,7 @@ const SIGLAS: Record<string, RegExp> = {
   GM: /gabriel/i,
   HC: /helo[ií]sa/i,
   HA: /henrique/i,
+  RR: /ricardo/i,
   FC: /filipe/i,
   PM: /paulo roberto/i,
   JT: /julio tiago/i,

@@ -242,3 +242,127 @@ export function linhaConferencia(c: {
     "Excluídas (aposentadoria/pensão/reforma)": c.excluidas,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Alem da referencia: cruzamento com a agenda do Legal One e o "RO virtual".
+// Nao mexem nas regras acima (contagens, badge); so acrescentam informacao.
+// ---------------------------------------------------------------------------
+
+// Familia da peca, para casar a planilha com o titulo do Legal One ("ED - 2321763-7 - Brejo - PF: 06/11").
+export type FamiliaPeca =
+  | "ED" | "RO" | "AGRAVO" | "APELACAO" | "CONTRARRAZOES" | "DEFESA" | "AUDIENCIA" | "SESSAO" | "OUTRA";
+
+export function familiaPeca(texto: string): FamiliaPeca {
+  // Tira os numeros de processo antes ("25101086-7ED001" nao e embargos).
+  const t = (texto || "").replace(/\d[\d.\-]*[A-Z]{0,3}\d*/g, " ");
+  // Antes dos embargos: "Cr ao Edcl" sao contrarrazoes.
+  if (/contrarraz|\bcr\b|\bcrr\b/i.test(t)) return "CONTRARRAZOES";
+  if (/\bED\b|\bedcl\b|embargos?\s+de\s+declara/i.test(t)) return "ED";
+  if (/\bRO\b|recurso\s+ordin/i.test(t)) return "RO";
+  if (/agravo|\bagtr\b/i.test(t)) return "AGRAVO";
+  if (/apela[çc][ãa]o|\bapl\b/i.test(t)) return "APELACAO";
+  if (/audi[êe]ncia/i.test(t)) return "AUDIENCIA";
+  if (/sess[ãa]o/i.test(t)) return "SESSAO";
+  if (/defesa|manifesta/i.test(t)) return "DEFESA";
+  return "OUTRA";
+}
+
+const RE_NUM_TCE = /\b\d{7,8}-\d(?:[A-Z]{2,3}\d{3})?\b/;
+const RE_NUM_CNJ = /\b\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}\b/;
+
+// Numero do processo so com digitos ("25101086-7ED001" -> "251010867001"); "" se nao houver.
+export function chaveProcesso(texto: string): string {
+  const m = RE_NUM_CNJ.exec(texto || "") ?? RE_NUM_TCE.exec(texto || "");
+  return m ? m[0].replace(/\D/g, "") : "";
+}
+
+const isoBR = (s: string) => {
+  const t = parseBR(s);
+  return t === null ? null : new Date(t).toISOString().slice(0, 10);
+};
+const br = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+
+// Item da agenda do Legal One ja importado como Compromisso (dia em aaaa-mm-dd).
+export type ItemAgendaL1 = { titulo: string; dia: string; advogado: string };
+
+export type SituacaoAgenda =
+  | { tipo: "agendado"; item: ItemAgendaL1 }
+  | { tipo: "data_diferente"; item: ItemAgendaL1 }
+  | { tipo: "outra_peca"; item: ItemAgendaL1 }
+  | { tipo: "nao_agendado" };
+
+// Mesmo processo e mesma peca na agenda = agendado; se o dia nao bate com o prazo
+// interno nem com o fatal da planilha, avisa a diferenca. Mesmo processo com outra
+// peca so informa.
+export function situacaoAgenda(r: LinhaLig, agenda: ItemAgendaL1[]): SituacaoAgenda {
+  const chave = chaveProcesso(r["Nº do processo"]);
+  if (!chave) return { tipo: "nao_agendado" };
+  const doProcesso = agenda.filter((a) => chaveProcesso(a.titulo) === chave);
+  if (!doProcesso.length) return { tipo: "nao_agendado" };
+  const fam = familiaPeca(r["Peça / providência"]);
+  const mesmaPeca = fam === "OUTRA" ? [] : doProcesso.filter((a) => familiaPeca(a.titulo) === fam);
+  if (!mesmaPeca.length) return { tipo: "outra_peca", item: doProcesso[0] };
+  const datas = [isoBR(r["Prazo interno"]), isoBR(r["Prazo fatal"])].filter(Boolean);
+  const bate = mesmaPeca.find((a) => datas.includes(a.dia));
+  if (bate) return { tipo: "agendado", item: bate };
+  const fatal = isoBR(r["Prazo fatal"]) ?? "";
+  const perto = [...mesmaPeca].sort(
+    (a, b) => Math.abs(Date.parse(a.dia) - Date.parse(fatal)) - Math.abs(Date.parse(b.dia) - Date.parse(fatal)),
+  )[0];
+  return { tipo: "data_diferente", item: perto };
+}
+
+// RO virtual: quando a mesma decisao abre embargos e recurso ordinario, o escritorio
+// agenda so os embargos (que interrompem o prazo do RO). Se os embargos forem perdidos,
+// o RO continua correndo; o RO virtual e um lembrete N dias uteis antes do fatal do RO.
+export const RO_VIRTUAL_DIAS_UTEIS = 3;
+
+export type RoVirtual = {
+  ID: string; // linha do RO na planilha
+  idEmbargos: string;
+  dataVirtual: string; // aaaa-mm-dd
+  fatalRo: string; // dd/mm/aaaa
+  situacao: "lembrete" | "suspenso" | "embargos_perdidos";
+};
+
+export function rosVirtuais(
+  prazos: LinhaLig[],
+  urg: Urgencia[],
+  ehDiaUtil: (iso: string, tce: boolean) => boolean,
+): Map<string, RoVirtual> {
+  const u = new Map(urg.map((x) => [x.ID, x]));
+  const out = new Map<string, RoVirtual>();
+  for (const r of prazos) {
+    const x = u.get(r.ID);
+    if (!x?.emAberto || familiaPeca(r["Peça / providência"]) !== "RO") continue;
+    const chave = chaveProcesso(r["Nº do processo"]);
+    const fatal = isoBR(r["Prazo fatal"]);
+    if (!chave || !fatal) continue;
+    const embargos = prazos.filter(
+      (e) => e.ID !== r.ID && familiaPeca(e["Peça / providência"]) === "ED" && chaveProcesso(e["Nº do processo"]) === chave,
+    );
+    // Decidiram nao opor embargos: o RO e o prazo real, sem lembrete.
+    const vivos = embargos.filter((e) => !/sem provid/i.test(e.Status || ""));
+    if (!vivos.length) continue;
+    const ed = vivos.find((e) => u.get(e.ID)?.emAberto) ?? vivos[0];
+    const tce = /^TCE/i.test(r["Órgão / tribunal"] || "");
+    let dia = fatal;
+    for (let n = 0; n < RO_VIRTUAL_DIAS_UTEIS; ) {
+      dia = new Date(Date.parse(dia + "T12:00:00Z") - 864e5).toISOString().slice(0, 10);
+      if (ehDiaUtil(dia, tce)) n++;
+    }
+    const situacao = /protocolado/i.test(ed.Status || "")
+      ? "suspenso"
+      : u.get(ed.ID)?.Faltam === "Vencido"
+        ? "embargos_perdidos"
+        : "lembrete";
+    out.set(r.ID, { ID: r.ID, idEmbargos: ed.ID, dataVirtual: dia, fatalRo: r["Prazo fatal"], situacao });
+  }
+  return out;
+}
+
+export function rotuloRoVirtual(v: RoVirtual): string {
+  if (v.situacao === "suspenso") return "Suspenso pelos embargos protocolados";
+  if (v.situacao === "embargos_perdidos") return `Embargos perdidos · RO vence ${v.fatalRo.slice(0, 5)}`;
+  return `RO virtual · ${br(v.dataVirtual)}`;
+}
