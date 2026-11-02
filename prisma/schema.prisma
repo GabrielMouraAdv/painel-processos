@@ -1179,3 +1179,122 @@ model DeteccaoEleitoral {
   @@index([status])
   @@index([createdAt])
 }
+
+// ---------------------------------------------------------------------------
+// Prazos TCE/Improbidade vindos da planilha "Controle de Prazos" (triagem LIG).
+// A planilha e a fonte da verdade; scripts/sync-prazos-lig.ts copia as 4 abas
+// para ca. Datas: texto original da planilha + data convertida (meio-dia UTC).
+// ---------------------------------------------------------------------------
+
+model PrazoLig {
+  idPlanilha          String    @id
+  status              String    @default("")
+  lancadoLegalOne     String    @default("")
+  prazoInternoTexto   String    @default("")
+  prazoInterno        DateTime?
+  prazoFatalTexto     String    @default("")
+  prazoFatal          DateTime?
+  peca                String    @default("") @db.Text
+  prazoContagem       String    @default("") @db.Text
+  fundamento          String    @default("") @db.Text
+  numeroProcesso      String    @default("")
+  orgao               String    @default("")
+  cliente             String    @default("") @db.Text
+  parteInteressada    String    @default("") @db.Text
+  atoPublicado        String    @default("") @db.Text
+  diarioEdicao        String    @default("") @db.Text
+  dataPublicacaoTexto String    @default("")
+  dataPublicacao      DateTime?
+  primeiroDiaTexto    String    @default("")
+  primeiroDia         DateTime?
+  origemLig           String    @default("")
+  nomePesquisado      String    @default("") @db.Text
+  observacoes         String    @default("") @db.Text
+  linkEmail           String    @default("") @db.Text
+  pubId               String    @default("")
+  textoPublicacao     String    @default("") @db.Text
+  linhaPlanilha       Int       @default(0)
+  ativoNaPlanilha     Boolean   @default(true)
+  sincronizadoEm      DateTime
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([ativoNaPlanilha])
+  @@index([pubId])
+}
+
+model PublicacaoLig {
+  pubId               String    @id
+  numeroProcesso      String    @default("")
+  diarioEdicao        String    @default("") @db.Text
+  dataPublicacaoTexto String    @default("")
+  dataPublicacao      DateTime?
+  origemLig           String    @default("")
+  prazosLigados       String    @default("") @db.Text
+  texto               String    @default("") @db.Text
+  inteiroTeorUrl      String    @default("") @db.Text
+  linhaPlanilha       Int       @default(0)
+  ativoNaPlanilha     Boolean   @default(true)
+  sincronizadoEm      DateTime
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model ConferenciaLig {
+  idMensagem           String    @id
+  dataDiarioTexto      String    @default("")
+  dataDiario           DateTime?
+  diario               String    @default("")
+  assinatura           String    @default("")
+  totalInformado       String    @default("")
+  publicacoesExtraidas String    @default("")
+  bate                 String    @default("")
+  excluidas            String    @default("")
+  noEscopo             String    @default("")
+  prazosGerados        String    @default("")
+  conferidoEm          String    @default("")
+  linhaPlanilha        Int       @default(0)
+  ativoNaPlanilha      Boolean   @default(true)
+  sincronizadoEm       DateTime
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([ativoNaPlanilha])
+}
+
+model CienciaLig {
+  numeroProcesso      String
+  dataPublicacaoTexto String
+  dataPublicacao      DateTime?
+  orgao               String    @default("")
+  cliente             String    @default("") @db.Text
+  atoPublicado        String    @default("") @db.Text
+  motivo              String    @default("") @db.Text
+  origemLig           String    @default("")
+  nomePesquisado      String    @default("") @db.Text
+  linkEmail           String    @default("") @db.Text
+  linhaPlanilha       Int       @default(0)
+  ativoNaPlanilha     Boolean   @default(true)
+  sincronizadoEm      DateTime
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@id([numeroProcesso, dataPublicacaoTexto])
+  @@index([ativoNaPlanilha])
+}
+
+model SyncPrazosLig {
+  id                String    @id @default(cuid())
+  iniciadoEm        DateTime  @default(now())
+  concluidoEm       DateTime?
+  arquivo           String?
+  ok                Boolean   @default(false)
+  erro              String?   @db.Text
+  linhasPrazos      Int       @default(0)
+  linhasPublicacoes Int       @default(0)
+  linhasConferencia Int       @default(0)
+  linhasCiencia     Int       @default(0)
+  inativados        Int       @default(0)
+
+  @@index([ok, concluidoEm])
+}

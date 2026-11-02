@@ -17,6 +17,7 @@ type Props = {
   children: React.ReactNode;
   prazosUrgentes: number;
   prazosTceUrgentes: number;
+  prazosLigUrgentes?: number;
   processosTceTotal: number;
   pautasJudiciaisTotal: number;
   alertasMonitoramento: number;
@@ -34,6 +35,7 @@ export function AppShell({
   children,
   prazosUrgentes,
   prazosTceUrgentes,
+  prazosLigUrgentes = 0,
   processosTceTotal,
   pautasJudiciaisTotal,
   alertasMonitoramento,
@@ -100,6 +102,7 @@ export function AppShell({
         <Sidebar
           prazosUrgentes={prazosUrgentes}
           prazosTceUrgentes={prazosTceUrgentes}
+          prazosLigUrgentes={prazosLigUrgentes}
           processosTceTotal={processosTceTotal}
           pautasJudiciaisTotal={pautasJudiciaisTotal}
           alertasMonitoramento={alertasMonitoramento}

@@ -8,6 +8,7 @@ import { isUsuarioEleitoral } from "@/lib/eleitoral";
 import { inicioDoDiaBrasilUTC } from "@/lib/eleitoral-labels";
 import { podeAcessarFinanceiro } from "@/lib/financeiro";
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
+import { linhaPrazoMinima, urgentesLig } from "@/lib/prazos-lig";
 import { prisma } from "@/lib/prisma";
 import { endOfWeekUTC, startOfWeekUTC } from "@/lib/semana";
 
@@ -98,6 +99,7 @@ export default async function AppLayout({
     compromissosHojeCount,
     prazosJudHojeCount,
     prazosTceHojeCount,
+    prazosLig,
   ] = await Promise.all([
     prisma.prazo.count({
       where: {
@@ -189,6 +191,11 @@ export default async function AppLayout({
         processo: { escritorioId },
       },
     }),
+    // Badge da aba Prazos TCE/Improbidade: so as colunas que a regra de urgencia usa.
+    prisma.prazoLig.findMany({
+      where: { ativoNaPlanilha: true },
+      select: { idPlanilha: true, status: true, prazoInternoTexto: true, prazoFatalTexto: true, peca: true, orgao: true, observacoes: true, lancadoLegalOne: true },
+    }),
   ]);
 
   const compromissosHoje =
@@ -202,6 +209,7 @@ export default async function AppLayout({
     <AppShell
       prazosUrgentes={prazosUrgentes}
       prazosTceUrgentes={prazosTceUrgentes}
+      prazosLigUrgentes={urgentesLig(prazosLig.map(linhaPrazoMinima))}
       processosTceTotal={processosTceTotal}
       pautasJudiciaisTotal={pautasJudiciaisTotal}
       alertasMonitoramento={

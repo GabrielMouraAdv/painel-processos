@@ -48,6 +48,7 @@ type NavGroup = {
 type Props = {
   prazosUrgentes?: number;
   prazosTceUrgentes?: number;
+  prazosLigUrgentes?: number;
   processosTceTotal?: number;
   pautasJudiciaisTotal?: number;
   alertasMonitoramento?: number;
@@ -67,6 +68,7 @@ const n = (v: number) => (v > 0 ? v : undefined);
 export function Sidebar({
   prazosUrgentes = 0,
   prazosTceUrgentes = 0,
+  prazosLigUrgentes = 0,
   processosTceTotal = 0,
   pautasJudiciaisTotal = 0,
   alertasMonitoramento = 0,
@@ -111,6 +113,7 @@ export function Sidebar({
         { label: "Painel TCE", href: "/app/tce", icon: LayoutDashboard, exato: true },
         { label: "Pauta", href: "/app/tce/pauta", icon: CalendarRange },
         { label: "Prazos", href: "/app/tce/prazos", icon: CalendarClock, badge: n(prazosTceUrgentes), badgeTone: "red" },
+        { label: "Prazos TCE/Improbidade", href: "/app/tce/prazos-lig", icon: CalendarClock, badge: n(prazosLigUrgentes), badgeTone: "red" },
         { label: "Pendências", href: "/app/tce/pendencias", icon: ListChecks },
         { label: "Despachos", href: "/app/tce/despachos", icon: ClipboardCheck, badge: n(despachosTcePendentes), badgeTone: "navy" },
         { label: "Órgãos e entidades", href: "/app/tce/municipios", icon: Building2 },
