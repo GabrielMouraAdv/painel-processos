@@ -2,13 +2,18 @@
  * Sincroniza a planilha "Controle de Prazos TCE-Improbidade" (triagem LIG) com o banco
  * (PrazoLig, PublicacaoLig, ConferenciaLig, CienciaLig) e registra a execucao em SyncPrazosLig.
  *
- * A planilha e a fonte da verdade. A rotina do Claude Code le as 4 abas pelo conector
- * Google Sheets (get_values) e grava um JSON com a 1a linha de cada aba como cabecalho:
- *   { "prazos": [[...cabecalho], [...linha], ...], "publicacoes": [...], "conf": [...], "ciencia": [...] }
- * Cada aba tambem pode vir como a resposta crua do get_values: { "values": [[...], ...] }.
+ * A planilha e a fonte da verdade. Duas entradas possiveis:
+ *   --google   le as 4 abas direto da API do Google Sheets com a conta de servico (sem copia
+ *              intermediaria). A chave fica fora do repositorio; o .env do repo aponta para ela:
+ *                GOOGLE_SA_KEY_FILE=C:\Users\gabri\.secrets\painel-sheets.json
+ *              A planilha precisa estar compartilhada (leitor) com o e-mail da conta de servico.
+ *   <arquivo>  JSON com a 1a linha de cada aba como cabecalho (teste ou leitura manual):
+ *                { "prazos": [[...cabecalho], [...linha], ...], "publicacoes": [...], "conf": [...], "ciencia": [...] }
+ *              Cada aba tambem pode vir como a resposta crua do get_values: { "values": [[...], ...] }.
  *
  * Regras:
- *   - Cabecalho diferente do esperado, aba ausente, Prazos ou Conferencia sem linhas, ou chave
+ *   - Cabecalho diferente do esperado (aceita so complemento entre parenteses no fim, ex.:
+ *     "No escopo (TCE/improbidade)"), aba ausente, Prazos ou Conferencia sem linhas, ou chave
  *     repetida: aborta sem gravar nada (com --gravar, registra o erro no log).
  *   - Upsert pela chave (ID; Pub ID; ID da mensagem; Nº do processo + Data de publicacao).
  *     So reescreve a linha que mudou; rodar de novo com o mesmo JSON nao duplica nada.
@@ -19,14 +24,31 @@
  *   - Sem --gravar so simula (le o banco e mostra o que mudaria).
  *
  * Uso (na pasta do repo):
- *   npx tsx scripts/sync-prazos-lig.ts <planilha.json>
- *   npx tsx scripts/sync-prazos-lig.ts <planilha.json> --gravar
+ *   npx tsx scripts/sync-prazos-lig.ts --google                  (simula)
+ *   npx tsx scripts/sync-prazos-lig.ts --google --gravar
+ *   npx tsx scripts/sync-prazos-lig.ts --google --salvar <copia.json>   (guarda o que foi lido)
+ *   npx tsx scripts/sync-prazos-lig.ts <planilha.json> [--gravar]
  */
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { Prisma, PrismaClient } from "@prisma/client";
 
+try {
+  process.loadEnvFile(".env");
+} catch {
+  // sem .env: variaveis ja no ambiente
+}
+
 const prisma = new PrismaClient();
+
+const PLANILHA_ID = "1gmngWNbTmbaBSsfCroWuWPcH2ThQvNLpqaiucSDbLzY";
+const FAIXAS = {
+  prazos: "Prazos!A1:V1000",
+  publicacoes: "'Publicações'!A1:H1000",
+  conf: "'Conferência LIG'!A1:K3000",
+  ciencia: "'Sem prazo (ciência)'!A1:I1000",
+} as const;
 
 // ---------------------------------------------------------------------------
 // Cabecalhos esperados (ordem das colunas da planilha)
@@ -49,6 +71,7 @@ const CAB_PUBLICACOES = [
 
 const CAB_CONF = [
   "Data do diário", "Diário", "Assinatura", "ID da mensagem", "Total informado pela LIG",
+  // "No escopo": a planilha usa "No escopo (TCE/improbidade)"
   "Publicações extraídas", "Bate?", "Excluídas (aposentadoria/pensão/reforma)", "No escopo",
   "Prazos gerados", "Conferido em",
 ];
@@ -81,14 +104,16 @@ function lerAba(bruto: unknown, nome: string, esperado: string[], opcional: stri
   const cab = (valores[0] as unknown[]).map(limpa);
   while (cab.length && cab[cab.length - 1] === "") cab.pop();
 
-  const okBase = esperado.every((c, i) => cab[i] === c);
-  // Coluna opcional aceita sufixo no titulo, ex.: "Texto da publicação (clique na célula para ler tudo)".
+  // Igual ao esperado, ou o esperado seguido de complemento entre parenteses:
+  // "No escopo (TCE/improbidade)", "Texto da publicação (clique na célula para ler tudo)".
+  const bate = (real: string | undefined, c: string) => real === c || (real ?? "").startsWith(c + " (");
+  const okBase = esperado.every((c, i) => bate(cab[i], c));
   const extra = cab.slice(esperado.length);
-  const okExtra = extra.length <= opcional.length && extra.every((c, i) => c.startsWith(opcional[i]));
-  if (okExtra) extra.forEach((_, i) => (cab[esperado.length + i] = opcional[i]));
+  const okExtra = extra.length <= opcional.length && extra.every((c, i) => bate(c, opcional[i]));
+  if (okBase && okExtra) [...esperado, ...opcional].forEach((c, i) => i < cab.length && (cab[i] = c));
   if (!okBase || !okExtra) {
     const dif = esperado
-      .map((c, i) => (cab[i] === c ? null : `col ${i + 1}: esperado "${c}", veio "${cab[i] ?? ""}"`))
+      .map((c, i) => (bate(cab[i], c) ? null : `col ${i + 1}: esperado "${c}", veio "${cab[i] ?? ""}"`))
       .filter(Boolean);
     if (!okExtra) dif.push(`colunas a mais: ${extra.map((c) => `"${c}"`).join(", ")}`);
     throw new ErroValidacao(`cabeçalho diferente na aba "${nome}": ${dif.join("; ")}`);
@@ -99,6 +124,50 @@ function lerAba(bruto: unknown, nome: string, esperado: string[], opcional: stri
     .filter(({ r }) => r.some((c) => limpa(c) !== ""))
     .map(({ n, r }) => ({ n, r: Object.fromEntries(cab.map((c, i) => [c, limpa(r[i])])) as Linha }));
   return { linhas, cabecalho: cab };
+}
+
+// Leitura direta da API do Google Sheets com a conta de servico (JWT assinado aqui mesmo,
+// sem biblioteca do Google). So escopo de leitura.
+async function lerGoogle(): Promise<Record<string, unknown>> {
+  const arq = process.env.GOOGLE_SA_KEY_FILE;
+  if (!arq) throw new ErroValidacao("GOOGLE_SA_KEY_FILE não definido no .env (caminho da chave da conta de serviço)");
+  let chave: { client_email?: string; private_key?: string };
+  try {
+    chave = JSON.parse(fs.readFileSync(arq, "utf8"));
+  } catch (e) {
+    throw new ErroValidacao(`não consegui ler a chave da conta de serviço em GOOGLE_SA_KEY_FILE: ${(e as Error).message}`);
+  }
+  if (!chave.client_email || !chave.private_key) throw new ErroValidacao("a chave da conta de serviço não tem client_email/private_key");
+
+  const b64 = (o: object) => (Buffer.isBuffer(o) ? o : Buffer.from(JSON.stringify(o))).toString("base64url");
+  const agora = Math.floor(Date.now() / 1000);
+  const corpo = `${b64({ alg: "RS256", typ: "JWT" })}.${b64({
+    iss: chave.client_email,
+    scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: agora,
+    exp: agora + 600,
+  })}`;
+  const assinatura = crypto.createSign("RSA-SHA256").update(corpo).sign(chave.private_key);
+  const tok = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: `${corpo}.${b64(assinatura)}` }),
+  });
+  const tokJson = (await tok.json()) as { access_token?: string; error?: string; error_description?: string };
+  if (!tokJson.access_token) throw new Error(`Google recusou a conta de serviço: ${tokJson.error ?? tok.status} ${tokJson.error_description ?? ""}`.trim());
+
+  const nomes = Object.keys(FAIXAS) as (keyof typeof FAIXAS)[];
+  const url = new URL(`https://sheets.googleapis.com/v4/spreadsheets/${PLANILHA_ID}/values:batchGet`);
+  for (const n of nomes) url.searchParams.append("ranges", FAIXAS[n]);
+  url.searchParams.set("valueRenderOption", "FORMATTED_VALUE");
+  const resp = await fetch(url, { headers: { Authorization: `Bearer ${tokJson.access_token}` } });
+  const json = (await resp.json()) as { valueRanges?: { values?: unknown[][] }[]; error?: { message?: string } };
+  if (!resp.ok || !json.valueRanges) {
+    const dica = resp.status === 403 ? " (a planilha foi compartilhada com o e-mail da conta de serviço?)" : "";
+    throw new Error(`erro ao ler a planilha: ${resp.status} ${json.error?.message ?? ""}${dica}`);
+  }
+  return Object.fromEntries(nomes.map((n, i) => [n, json.valueRanges![i]?.values ?? []]));
 }
 
 // "3/11/2026" ou "03/11/2026" -> 2026-11-03T12:00Z; qualquer outra coisa -> null.
@@ -261,24 +330,35 @@ function resumo(nome: string, p: Plano<Registro>) {
 
 async function main() {
   const args = process.argv.slice(2);
-  const arquivo = args.find((a) => !a.startsWith("--"));
+  const google = args.includes("--google");
+  const iSalvar = args.indexOf("--salvar");
+  const salvar = iSalvar >= 0 ? args[iSalvar + 1] : undefined;
+  const arquivo = args.find((a, i) => !a.startsWith("--") && (iSalvar < 0 || i !== iSalvar + 1));
   const gravar = args.includes("--gravar");
-  if (!arquivo) {
-    console.error("Uso: npx tsx scripts/sync-prazos-lig.ts <planilha.json> [--gravar]");
+  if (!google && !arquivo) {
+    console.error("Uso: npx tsx scripts/sync-prazos-lig.ts --google [--gravar] [--salvar copia.json]");
+    console.error("     npx tsx scripts/sync-prazos-lig.ts <planilha.json> [--gravar]");
     process.exit(2);
   }
 
   const iniciadoEm = new Date();
   const log = gravar
-    ? await prisma.syncPrazosLig.create({ data: { iniciadoEm, arquivo: path.basename(arquivo) } })
+    ? await prisma.syncPrazosLig.create({
+        data: { iniciadoEm, arquivo: google ? `google:${PLANILHA_ID}` : path.basename(arquivo!) },
+      })
     : null;
 
   try {
     let json: Record<string, unknown>;
-    try {
-      json = JSON.parse(fs.readFileSync(arquivo, "utf8"));
-    } catch (e) {
-      throw new ErroValidacao(`não consegui ler o JSON: ${(e as Error).message}`);
+    if (google) {
+      json = await lerGoogle();
+      if (salvar) fs.writeFileSync(salvar, JSON.stringify(json));
+    } else {
+      try {
+        json = JSON.parse(fs.readFileSync(arquivo!, "utf8"));
+      } catch (e) {
+        throw new ErroValidacao(`não consegui ler o JSON: ${(e as Error).message}`);
+      }
     }
 
     const abaPrazos = lerAba(json.prazos, "Prazos", CAB_PRAZOS, CAB_PRAZOS_OPCIONAL);
