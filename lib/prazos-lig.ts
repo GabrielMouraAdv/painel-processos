@@ -1,4 +1,4 @@
-// Regras da aba "Prazos TCE/Improbidade" (planilha da triagem LIG).
+// Regras da aba "Agendamento de publicações" (planilha da triagem LIG).
 //
 // Copia fiel dos dash.calc da referencia (docs/referencia-painel-prazos.html):
 // urgencia, resumo, proximo, conf_dia e conf_total. As funcoes trabalham com as

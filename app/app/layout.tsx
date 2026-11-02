@@ -191,7 +191,7 @@ export default async function AppLayout({
         processo: { escritorioId },
       },
     }),
-    // Badge da aba Prazos TCE/Improbidade: so as colunas que a regra de urgencia usa.
+    // Badge da aba Agendamento de publicações (planilha LIG): so as colunas que a regra de urgencia usa.
     prisma.prazoLig.findMany({
       where: { ativoNaPlanilha: true },
       select: { idPlanilha: true, status: true, prazoInternoTexto: true, prazoFatalTexto: true, peca: true, orgao: true, observacoes: true, lancadoLegalOne: true },

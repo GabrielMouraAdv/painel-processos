@@ -113,7 +113,7 @@ export function Sidebar({
         { label: "Painel TCE", href: "/app/tce", icon: LayoutDashboard, exato: true },
         { label: "Pauta", href: "/app/tce/pauta", icon: CalendarRange },
         { label: "Prazos", href: "/app/tce/prazos", icon: CalendarClock, badge: n(prazosTceUrgentes), badgeTone: "red" },
-        { label: "Prazos TCE/Improbidade", href: "/app/tce/prazos-lig", icon: CalendarClock, badge: n(prazosLigUrgentes), badgeTone: "red" },
+        { label: "Agendamento de publicações", href: "/app/tce/prazos-lig", icon: CalendarClock, badge: n(prazosLigUrgentes), badgeTone: "red" },
         { label: "Pendências", href: "/app/tce/pendencias", icon: ListChecks },
         { label: "Despachos", href: "/app/tce/despachos", icon: ClipboardCheck, badge: n(despachosTcePendentes), badgeTone: "navy" },
         { label: "Órgãos e entidades", href: "/app/tce/municipios", icon: Building2 },

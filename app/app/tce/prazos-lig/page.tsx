@@ -71,7 +71,7 @@ export default async function PrazosLigPage() {
     <div className="space-y-6">
       <PaginaCabecalho
         secao="Tribunal de Contas · cobertura das férias da Heloísa"
-        titulo="Prazos TCE-PE e improbidade"
+        titulo="Agendamento de publicações"
         descricao={
           <>
             Lido da planilha de controle da triagem LIG. {res.ativos} providências em aberto, {res.ateAmanha} com prazo
