@@ -816,14 +816,17 @@ function Dispensa({ prazo, dispensa, ligados }: { prazo: LinhaLig; dispensa?: Di
   return (
     <form
       className="mt-3 space-y-2 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
-        if (precisaResposta) return;
+        // Botao sempre clicavel: no celular, botao cinza sem explicacao parecia defeito.
+        if (motivo.trim().length < 3) return setErro("Escreva o motivo no campo acima para poder dispensar.");
+        if (precisaResposta) return setErro("Responda se o recurso ordinário virtual também será dispensado.");
         enviar("POST", { ids: [prazo.ID, ...(roJunto ? ligados.map((l) => l.ID) : [])], motivo });
       }}
     >
       <label htmlFor="motivo-dispensa" className="block font-medium text-slate-900">
-        Por que este prazo não será cumprido?
+        Por que este prazo não será cumprido? <span className="font-normal text-red-700">(obrigatório)</span>
       </label>
       <Textarea
         id="motivo-dispensa"
@@ -860,7 +863,7 @@ function Dispensa({ prazo, dispensa, ligados }: { prazo: LinhaLig; dispensa?: Di
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={enviando || motivo.trim().length < 3 || precisaResposta}
+          disabled={enviando}
           className="rounded-md bg-brand-navy px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {enviando ? "Gravando…" : roJunto ? "Dispensar os dois" : "Dispensar"}
@@ -873,7 +876,7 @@ function Dispensa({ prazo, dispensa, ligados }: { prazo: LinhaLig; dispensa?: Di
           Cancelar
         </button>
       </div>
-      {erro && <p className="text-xs text-red-700">{erro}</p>}
+      {erro && <p className="text-sm font-medium text-red-700">{erro}</p>}
     </form>
   );
 }
