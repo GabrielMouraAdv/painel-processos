@@ -11,7 +11,7 @@ import { FONTE_DJEN_OAB, resumoDe } from "@/lib/djen-oab";
 import { datajudParadoHa, datajudUltimaAtualizacao } from "@/lib/monitoramento-verificar";
 import { classeBadgeResultado, classificarResultadoTce } from "@/lib/julgamento-config";
 import { filtroVisibilidadeCompromissos } from "@/lib/permissoes";
-import { CATEGORIA_PRIORITARIO_LABELS, carregarPrioritarios, type CategoriaPrioritario } from "@/lib/prioritarios";
+import { CATEGORIA_PRIORITARIO_LABELS, DIAS_CHECAGEM, carregarPrioritarios, type CategoriaPrioritario } from "@/lib/prioritarios";
 import { aplicarDispensas, dispensaLig, linhaPrazo, rosVirtuais, rotuloRoVirtual, situacaoAgenda, urgencia } from "@/lib/prazos-lig";
 import { prisma } from "@/lib/prisma";
 import { endOfWeekUTC, inicioSemanaAgenda, inicioSemanaPauta } from "@/lib/semana";
@@ -777,6 +777,19 @@ export default async function HojePage() {
                             {p.tipo === "CRIMINAL" && <span className="rounded bg-red-100 px-1 text-[11px] font-semibold text-red-800">criminal</span>}
                           </div>
                           {p.objeto && <div className="mt-1 line-clamp-2 text-[12px] leading-snug text-muted-foreground" title={p.objeto}>{p.objeto}</div>}
+                          <div
+                            className={cn("mt-1 text-[11px]", !p.checagem || p.checagem.atrasada ? "font-semibold text-red-700" : "text-muted-foreground")}
+                            title={`Última checagem do processo: a base do DataJud ou a checagem forçada no PJe (TecJustiça), a mais recente. Fica vermelha com mais de ${DIAS_CHECAGEM} dias.`}
+                          >
+                            {p.checagem ? (
+                              <>
+                                Checado em <span className="font-mono">{br(p.checagem.dia)}</span> · {p.checagem.fonte}
+                                {p.checagem.atrasada && <span className="ml-1 font-bold" aria-label="checagem atrasada">!</span>}
+                              </>
+                            ) : (
+                              <>Nunca checado <span className="ml-1 font-bold" aria-label="checagem atrasada">!</span></>
+                            )}
+                          </div>
                         </td>
                         <td className="px-2 py-2.5 align-top">{p.cliente}</td>
                         <td className="px-2 py-2.5 align-top text-[13px]">

@@ -15,6 +15,9 @@
  * (de qualquer fonte). Quando o DataJud alcancar, gravarMovimentacoesDatajud pula os
  * movimentos que ja vieram pelo PDPJ (mesmo dia e nome).
  *
+ * Com --gravar, marca MonitoramentoConfig.pdpjVerificadoEm de cada processo do JSON
+ * (inclusive os de lista vazia): e a "ultima checagem" mostrada nos prioritarios.
+ *
  * Uso: npx tsx scripts/importar-movimentos-pdpj.ts <movimentos.json> [--gravar]
  */
 import fs from "node:fs";
@@ -69,6 +72,14 @@ async function main() {
     }
     if (linhas.length) console.log(`  ${numero}: +${linhas.length} (${linhas.map((l) => `${diaRecife(l.dataMovimento).slice(5)} ${l.nomeMovimento}`).join("; ")})`);
     if (gravar && linhas.length) await prisma.movimentacaoAutomatica.createMany({ data: linhas, skipDuplicates: true });
+    // Registra a checagem mesmo sem movimento novo (lista vazia no JSON = checado, nada novo).
+    if (gravar) {
+      await prisma.monitoramentoConfig.upsert({
+        where: { processoId: p.id },
+        create: { processoId: p.id, pdpjVerificadoEm: new Date() },
+        update: { pdpjVerificadoEm: new Date() },
+      });
+    }
     novos += linhas.length;
   }
   console.log(`\n${gravar ? "Gravados" : "A gravar"}: ${novos} · ja existiam: ${repetidos} · sem processo: ${semProcesso}`);

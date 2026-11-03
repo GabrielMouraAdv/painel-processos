@@ -836,6 +836,8 @@ model MonitoramentoConfig {
   // dataHoraUltimaAtualizacao devolvida pelo Datajud na ultima consulta:
   // mostra na tela quando a base do CNJ esta congelada.
   datajudAtualizadoEm DateTime?
+  // Ultima checagem forcada no PJe pelo conector TecJustica (scripts/importar-movimentos-pdpj.ts).
+  pdpjVerificadoEm   DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }

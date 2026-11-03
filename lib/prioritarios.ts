@@ -15,6 +15,8 @@ export type CategoriaPrioritario = "em_pauta" | "prazo_aberto" | "concluso" | "e
 
 // Dias sem movimento a partir dos quais o processo conta como parado.
 export const DIAS_PARADO = 60;
+// Dias desde a ultima checagem a partir dos quais a data fica em vermelho.
+export const DIAS_CHECAGEM = 5;
 
 export const CATEGORIA_PRIORITARIO_LABELS: Record<CategoriaPrioritario, string> = {
   em_pauta: "Em pauta de julgamento",
@@ -44,6 +46,9 @@ export type Prioritario = {
   // contraminuta, embargos...). O DataJud nao diz quem protocolou: pode ser de corréu.
   ultimaPeca: { dia: string; texto: string } | null;
   naoLidos: number;
+  // Ultima checagem: a mais recente entre a base do DataJud (dataHoraUltimaAtualizacao)
+  // e a checagem forcada no PJe via TecJustica. atrasada = mais de DIAS_CHECAGEM dias.
+  checagem: { dia: string; fonte: "DataJud" | "PJe"; atrasada: boolean } | null;
   destaque: boolean; // em pauta esta semana ou prazo vencendo em ate 3 dias
 };
 
@@ -96,6 +101,18 @@ function resumirObjeto(objeto: string | null | undefined): string {
   return `${corte.slice(0, Math.max(40, corte.lastIndexOf(" ")))}…`;
 }
 
+function checagemDe(
+  m: { datajudAtualizadoEm: Date | null; pdpjVerificadoEm: Date | null } | null,
+  hoje: string,
+): Prioritario["checagem"] {
+  const dj = m?.datajudAtualizadoEm ?? null;
+  const pj = m?.pdpjVerificadoEm ?? null;
+  const [data, fonte] = pj && (!dj || pj > dj) ? [pj, "PJe" as const] : [dj, "DataJud" as const];
+  if (!data) return null;
+  const dia = diaDe(data);
+  return { dia, fonte, atrasada: diasEntre(dia, hoje) > DIAS_CHECAGEM };
+}
+
 function pesoConclusao(complementos: string | null): number {
   const c = (complementos ?? "").toLowerCase();
   if (c.includes("julgamento") || c.includes("sentença") || c.includes("sentenca")) return 0;
@@ -137,6 +154,7 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
         select: { dataPublicacao: true, tipoComunicacao: true },
       },
       _count: { select: { movimentacoesAuto: { where: { lida: false } } } },
+      monitoramento: { select: { datajudAtualizadoEm: true, pdpjVerificadoEm: true } },
     },
   });
 
@@ -164,6 +182,7 @@ export async function carregarPrioritarios(escritorioId: string): Promise<Priori
       cliente: p.gestor?.nome ?? "—", advogado: p.advogado?.nome ?? "—",
       objeto: resumirObjeto(p.objeto),
       ultimoMovimento: ultimo, ultimaPeca, naoLidos: p._count.movimentacoesAuto,
+      checagem: checagemDe(p.monitoramento, hoje),
     };
 
     const pauta = p.itensPautaJudicial[0];
