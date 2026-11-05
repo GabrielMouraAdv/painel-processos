@@ -504,6 +504,7 @@ function Tabela({
                   >
                     {dispensas[r.ID] ? "Dispensado" : x.Faltam}
                     {v && <ChipVirtual v={v} />}
+                    {!dispensas[r.ID] && !v && x.emAberto && <LinhaAgenda s={situacoes[r.ID]} />}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r["Prazo interno"]}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r["Prazo fatal"]}</td>
@@ -901,6 +902,19 @@ function ChipVirtual({ v }: { v: RoVirtual }) {
       {rotuloRoVirtual(v)}
     </span>
   );
+}
+
+// Na coluna Situacao (a que aparece no celular sem rolar): quem agendou e para quando.
+function LinhaAgenda({ s }: { s?: SituacaoAgenda }) {
+  if (!s) return null;
+  if (s.tipo === "agendado" || s.tipo === "data_diferente")
+    return (
+      <span className="mt-1 block text-xs font-medium text-emerald-700" title={s.item.titulo}>
+        Agendado · {primeiroNome(s.item.advogado)} · {ddmm(s.item.dia)}
+        {s.tipo === "data_diferente" && <span className="font-normal text-amber-800"> (data diferente)</span>}
+      </span>
+    );
+  return <span className="mt-1 block text-xs font-medium text-red-700">Sem agendamento</span>;
 }
 
 function ChipAgenda({ s, virtual, emAberto }: { s?: SituacaoAgenda; virtual: boolean; emAberto: boolean }) {
