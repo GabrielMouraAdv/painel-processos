@@ -61,19 +61,47 @@ def vazio(s):
     return None if s in ("", "-", "—") else s
 
 
+def celulas(r):
+    cells, prev = [], None
+    for c in r.cells:
+        if c._tc is prev:
+            continue
+        prev = c._tc
+        cells.append(c.text.strip())
+    return cells
+
+
+# Colunas localizadas pelo cabecalho (a ordem mudou entre as semanas: em 09/11/2026
+# "Objeto" passou para depois de "Responsavel"). Sem cabecalho reconhecivel, usa a
+# ordem antiga: Numero | Objeto | Relator | Camara/Data | Municipio | Ano | Responsavel | Situacao | Providencia.
+COLUNAS = {
+    "objeto": r"^objeto", "relator": r"^relator", "camdata": r"^c[âa]mara", "municipio": r"^munic",
+    "ano": r"^(ano|exerc)", "resp": r"^respons", "situacao": r"^situa", "prov": r"^provid",
+}
+ORDEM_ANTIGA = ["objeto", "relator", "camdata", "municipio", "ano", "resp", "situacao", "prov"]
+
+
+def indices(cabecalho):
+    idx = {}
+    for nome, padrao in COLUNAS.items():
+        for i, h in enumerate(cabecalho):
+            if i > 0 and re.match(padrao, h.strip().lower()):
+                idx[nome] = i
+                break
+    if len(idx) == len(COLUNAS):
+        return idx
+    return {nome: i + 1 for i, nome in enumerate(ORDEM_ANTIGA)}
+
+
 def linhas_da_tabela(tab):
     itens, coluna_data = [], []
+    idx = indices(celulas(tab.rows[0])) if tab.rows else {}
     for r in tab.rows[1:]:
-        cells, prev = [], None
-        for c in r.cells:
-            if c._tc is prev:
-                continue
-            prev = c._tc
-            cells.append(c.text.strip())
+        cells = celulas(r)
         if len(cells) < 9 or not cells[0]:
             continue
         num_bruto, _, titulo = cells[0].partition(" - ")
-        objeto, relator, camdata, municipio, ano, resp, situacao, prov = cells[1:9]
+        objeto, relator, camdata, municipio, ano, resp, situacao, prov = (cells[idx[k]] for k in ORDEM_ANTIGA)
         coluna_data.append(camdata)
         itens.append({
             "numeroDocumento": num_bruto.strip(),

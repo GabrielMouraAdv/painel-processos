@@ -122,7 +122,8 @@ const CADASTROS: Cadastro[] = [
     recurso: { tipo: "EMBARGOS_DECLARACAO" },
     objetoExtra:
       "Origem: processo 25101276-1, não cadastrado no painel e sem deliberação no banco de julgados; o tipo do processo de origem (registrado como auditoria especial) está A CONFIRMAR.",
-  },
+  },  // Pauta de 09 a 13/11/2026
+  { numero: "24101085-8", tipo: "AUDITORIA_ESPECIAL", camara: "SEGUNDA", relator: "Valdecir Pascoal", orgao: "Goiana", exercicio: "2024", bancas: [FC] },
 ];
 
 const NOME_RECURSO: Record<string, string> = {
