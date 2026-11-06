@@ -12,6 +12,8 @@ import {
   linhaPrazo,
   rosVirtuais,
   situacaoAgenda,
+  sugestaoDaLinha,
+  sugestaoLig,
   urgencia,
   type ItemAgendaL1,
   type SituacaoAgenda,
@@ -41,13 +43,14 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const desdeAgenda = new Date(Date.now() - 120 * 864e5);
-  const [prazosDb, agendaDb, dispensasDb] = await Promise.all([
+  const [prazosDb, agendaDb, dispensasDb, sugestoesDb] = await Promise.all([
     prisma.prazoLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { idPlanilha: "asc" } }),
     prisma.compromisso.findMany({
       where: { descricao: { startsWith: "Importado da agenda do Legal One" }, dataInicio: { gte: desdeAgenda } },
       select: { titulo: true, dataInicio: true, advogado: { select: { nome: true } } },
     }),
     prisma.dispensaPrazoLig.findMany({ where: { desfeitaEm: null } }),
+    prisma.sugestaoAgendamentoLig.findMany({ where: { substituidaEm: null }, orderBy: { createdAt: "desc" } }),
   ]);
 
   const prazos = aplicarDispensas(prazosDb.map(linhaPrazo), dispensasDb.map(dispensaLig));
@@ -68,11 +71,26 @@ export async function GET() {
   const colunaV = new Map(prazosDb.map((p) => [p.idPlanilha, p.textoPublicacao]));
 
   const colunas = Object.keys(linhaPrazo(prazosDb[0] ?? ({} as (typeof prazosDb)[number])));
-  const cabecalho = [...colunas, "Situação no Legal One", "Texto da publicação"];
+  const sugestoes = sugestoesDb.map(sugestaoLig);
+  // Agendamento: o escolhido no painel ou, sem escolha, o sugerido pela triagem (peca, prazo, prazo interno).
+  const cabecalho = [
+    ...colunas,
+    "Situação no Legal One",
+    "Agendamento",
+    "Prazo do agendamento",
+    "Data para a agenda",
+    "Origem do agendamento",
+    "Texto da publicação",
+  ];
   const linhas = pendentes.map(({ r, s }) => {
     const texto = textoPub.get(r["Publicação"]) || colunaV.get(r.ID) || "";
     const legalOne = s.tipo === "outra_peca" ? `${SITUACAO[s.tipo]}: ${s.item.titulo}` : SITUACAO[s.tipo];
-    return [...colunas.map((c) => r[c] ?? ""), legalOne, texto];
+    const sug = sugestaoDaLinha(r, sugestoes);
+    const quando = sug ? new Date(sug.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Fortaleza" }) : "";
+    const agendamento = sug
+      ? [sug.agendamento, sug.prazo, sug.dataAgenda, `Escolhido no painel por ${sug.usuarioNome} em ${quando}`]
+      : [r["Peça / providência"] ?? "", r["Prazo (dias) e contagem"] ?? "", r["Prazo interno"] || r["Prazo fatal"] || "", "Sugestão da triagem (não confirmada)"];
+    return [...colunas.map((c) => r[c] ?? ""), legalOne, ...agendamento, texto];
   });
 
   // CSV com ";" e BOM: o Excel em portugues abre direto, com acentos e quebras de linha.

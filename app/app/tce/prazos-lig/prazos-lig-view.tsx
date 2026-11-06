@@ -31,6 +31,9 @@ import {
   type LinhaLig,
   type Proximo,
   type DispensaLig,
+  PECAS_AGENDAMENTO,
+  PRAZOS_AGENDAMENTO,
+  type SugestaoLig,
   type Resumo,
   type RoVirtual,
   type SituacaoAgenda,
@@ -64,6 +67,7 @@ export function PrazosLigView({
   situacoes,
   virtuais,
   dispensas,
+  sugestoes,
 }: {
   hoje: string;
   prazos: LinhaLig[];
@@ -76,6 +80,7 @@ export function PrazosLigView({
   situacoes: Record<string, SituacaoAgenda>;
   virtuais: Record<string, RoVirtual>;
   dispensas: Record<string, DispensaLig>;
+  sugestoes: Record<string, SugestaoLig>;
 }) {
   const urg = React.useMemo(() => urgencia(prazos, hoje), [prazos, hoje]);
   // Em aberto e fora da agenda do Legal One (o RO virtual e dispensa intencional, nao conta).
@@ -129,6 +134,7 @@ export function PrazosLigView({
           situacoes={situacoes}
           virtuais={virtuais}
           dispensas={dispensas}
+          sugestoes={sugestoes}
         />
       </section>
 
@@ -140,6 +146,7 @@ export function PrazosLigView({
           situacao={sel ? situacoes[sel] : undefined}
           virtual={sel ? virtuais[sel] : undefined}
           dispensa={sel ? dispensas[sel] : undefined}
+          sugestao={sel ? sugestoes[sel] : undefined}
           ligados={sel ? rosLigados(sel, prazos, urg) : []}
           fechar={() => setSel(null)}
         />
@@ -395,6 +402,7 @@ function Tabela({
   situacoes,
   virtuais,
   dispensas,
+  sugestoes,
 }: {
   urg: Urgencia[];
   prazos: LinhaLig[];
@@ -409,6 +417,7 @@ function Tabela({
   situacoes: Record<string, SituacaoAgenda>;
   virtuais: Record<string, RoVirtual>;
   dispensas: Record<string, DispensaLig>;
+  sugestoes: Record<string, SugestaoLig>;
 }) {
   const u = React.useMemo(() => new Map(urg.map((r) => [r.ID, r])), [urg]);
   const q = busca.toLowerCase().trim();
@@ -516,6 +525,7 @@ function Tabela({
                     {dispensas[r.ID] ? "Dispensado" : x.Faltam}
                     {v && <ChipVirtual v={v} />}
                     {!dispensas[r.ID] && !v && x.emAberto && <LinhaAgenda s={situacoes[r.ID]} />}
+                    {!dispensas[r.ID] && x.emAberto && sugestoes[r.ID] && <ChipSugestao s={sugestoes[r.ID]} />}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r["Prazo interno"]}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r["Prazo fatal"]}</td>
@@ -559,6 +569,7 @@ function Leitor({
   situacao,
   virtual,
   dispensa,
+  sugestao,
   ligados,
   fechar,
 }: {
@@ -568,6 +579,7 @@ function Leitor({
   situacao?: SituacaoAgenda;
   virtual?: RoVirtual;
   dispensa?: DispensaLig;
+  sugestao?: SugestaoLig;
   ligados: LinhaLig[];
   fechar: () => void;
 }) {
@@ -610,6 +622,7 @@ function Leitor({
           </span>
         ))}
       </div>
+      {!dispensa && <Sugestao key={`s-${prazo.ID}`} prazo={prazo} sugestao={sugestao} />}
       <Dispensa key={prazo.ID} prazo={prazo} dispensa={dispensa} ligados={ligados} />
       {!dispensa && <AgendaNoLeitor s={situacao} virtual={virtual} />}
       {prazo["Observações / alertas"] && (
@@ -753,6 +766,217 @@ function rosLigados(id: string, prazos: LinhaLig[], urg: Urgencia[]): LinhaLig[]
   const aberto = new Set(urg.filter((u) => u.emAberto).map((u) => u.ID));
   return prazos.filter(
     (p) => p.ID !== id && aberto.has(p.ID) && familiaPeca(p["Peça / providência"]) === "RO" && chave && chaveProcesso(p["Nº do processo"]) === chave,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sugestao de agendamento: listas de escolha (a primeira opcao e a da triagem) e
+// "Outro" para digitar. Sai na exportacao dos pendentes de agendamento.
+// ---------------------------------------------------------------------------
+
+const OUTRO = "__outro__";
+const brCurto = (dataBR: string) => dataBR.slice(0, 5);
+const isoParaBR = (iso: string) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : "");
+const brParaIso = (br: string) => {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((br || "").trim());
+  return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : "";
+};
+const dataBRValida = (br: string) => (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test((br || "").trim()) ? isoParaBR(brParaIso(br)) : "");
+
+function ChipSugestao({ s }: { s: SugestaoLig }) {
+  return (
+    <span className="mt-1 block max-w-[220px] whitespace-normal text-xs font-medium text-blue-800">
+      Sugerido: {s.agendamento} · {s.prazo} · {brCurto(s.dataAgenda)}
+    </span>
+  );
+}
+
+function Escolha({
+  rotulo,
+  valor,
+  setValor,
+  opcoes,
+  outro,
+  setOutro,
+  tipoOutro = "text",
+  placeholder,
+}: {
+  rotulo: string;
+  valor: string;
+  setValor: (v: string) => void;
+  opcoes: { v: string; t: string }[];
+  outro: string;
+  setOutro: (v: string) => void;
+  tipoOutro?: "text" | "date";
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-medium text-slate-700">{rotulo}</span>
+      <select
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        className="mt-1 block w-full rounded-md border bg-white px-2 py-1.5 text-sm"
+      >
+        {opcoes.map((o) => (
+          <option key={o.v} value={o.v}>
+            {o.t}
+          </option>
+        ))}
+        <option value={OUTRO}>Outro…</option>
+      </select>
+      {valor === OUTRO && (
+        <Input
+          type={tipoOutro}
+          value={outro}
+          onChange={(e) => setOutro(e.target.value)}
+          placeholder={placeholder}
+          className="mt-1 h-9 bg-white"
+          autoFocus
+        />
+      )}
+    </label>
+  );
+}
+
+function Sugestao({ prazo, sugestao }: { prazo: LinhaLig; sugestao?: SugestaoLig }) {
+  const router = useRouter();
+  const [aberto, setAberto] = React.useState(false);
+  const [enviando, setEnviando] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
+
+  // Opcoes: a sugestao da triagem primeiro (e a escolha anterior, se for outra), depois a lista.
+  const pecaTriagem = (prazo["Peça / providência"] || "").trim();
+  const prazoTriagem = (prazo["Prazo (dias) e contagem"] || "").trim();
+  const interno = dataBRValida(prazo["Prazo interno"]);
+  const fatal = dataBRValida(prazo["Prazo fatal"]);
+
+  const opcoesPeca = React.useMemo(() => {
+    const l: { v: string; t: string }[] = [];
+    if (pecaTriagem) l.push({ v: pecaTriagem, t: `${pecaTriagem} (sugestão da triagem)` });
+    if (sugestao && !l.some((o) => o.v === sugestao.agendamento) && !PECAS_AGENDAMENTO.includes(sugestao.agendamento))
+      l.push({ v: sugestao.agendamento, t: `${sugestao.agendamento} (escolha anterior)` });
+    for (const p of PECAS_AGENDAMENTO) if (!l.some((o) => o.v === p)) l.push({ v: p, t: p });
+    return l;
+  }, [pecaTriagem, sugestao]);
+  const opcoesPrazo = React.useMemo(() => {
+    const l: { v: string; t: string }[] = [];
+    if (prazoTriagem) l.push({ v: prazoTriagem, t: `${prazoTriagem} (sugestão da triagem)` });
+    if (sugestao && !l.some((o) => o.v === sugestao.prazo) && !PRAZOS_AGENDAMENTO.includes(sugestao.prazo))
+      l.push({ v: sugestao.prazo, t: `${sugestao.prazo} (escolha anterior)` });
+    for (const p of PRAZOS_AGENDAMENTO) if (!l.some((o) => o.v === p)) l.push({ v: p, t: p });
+    return l;
+  }, [prazoTriagem, sugestao]);
+  const opcoesData = React.useMemo(() => {
+    const l: { v: string; t: string }[] = [];
+    if (interno) l.push({ v: interno, t: `${interno} · prazo interno (sugestão da triagem)` });
+    if (fatal && fatal !== interno) l.push({ v: fatal, t: `${fatal} · prazo fatal` });
+    if (sugestao && !l.some((o) => o.v === sugestao.dataAgenda))
+      l.push({ v: sugestao.dataAgenda, t: `${sugestao.dataAgenda} · escolha anterior` });
+    return l;
+  }, [interno, fatal, sugestao]);
+
+  const inicial = (opcoes: { v: string }[], anterior?: string) =>
+    anterior && opcoes.some((o) => o.v === anterior) ? anterior : opcoes[0]?.v ?? OUTRO;
+  const [peca, setPeca] = React.useState(() => inicial(opcoesPeca, sugestao?.agendamento));
+  const [pecaOutro, setPecaOutro] = React.useState("");
+  const [przo, setPrzo] = React.useState(() => inicial(opcoesPrazo, sugestao?.prazo));
+  const [prazoOutro, setPrazoOutro] = React.useState("");
+  const [data, setData] = React.useState(() => inicial(opcoesData, sugestao?.dataAgenda));
+  const [dataOutra, setDataOutra] = React.useState("");
+
+  const enviar = async (metodo: "POST" | "DELETE", corpo: object) => {
+    setEnviando(true);
+    setErro(null);
+    try {
+      const resp = await fetch("/api/tce/prazos-lig/sugestao", {
+        method: metodo,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corpo),
+      });
+      if (!resp.ok) throw new Error(((await resp.json().catch(() => null)) as { error?: string } | null)?.error ?? `erro ${resp.status}`);
+      setAberto(false);
+      router.refresh();
+    } catch (e) {
+      setErro((e as Error).message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  if (/protocolado|sem provid/i.test(prazo.Status || "")) return null;
+
+  if (!aberto) {
+    return (
+      <div className="mt-3">
+        {sugestao && (
+          <div className="mb-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+            <p>
+              <b>Agendamento sugerido:</b> {sugestao.agendamento} · {sugestao.prazo} · agenda em {sugestao.dataAgenda}
+            </p>
+            <p className="mt-0.5 text-xs text-blue-800/80">
+              por {sugestao.usuarioNome} em {fmtDispensa.format(new Date(sugestao.createdAt)).replace(",", "")}. Sai na exportação dos
+              pendentes de agendamento.
+            </p>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setAberto(true)}
+            className="rounded-md bg-brand-navy px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+          >
+            {sugestao ? "Alterar sugestão de agendamento…" : "Sugerir agendamento…"}
+          </button>
+          {sugestao && (
+            <button
+              type="button"
+              disabled={enviando}
+              onClick={() => enviar("DELETE", { id: sugestao.id })}
+              className="rounded-md border px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {enviando ? "Desfazendo…" : "Desfazer sugestão"}
+            </button>
+          )}
+        </div>
+        {erro && <p className="mt-1 text-xs text-red-700">{erro}</p>}
+      </div>
+    );
+  }
+
+  const valorPeca = peca === OUTRO ? pecaOutro.trim() : peca;
+  const valorPrazo = przo === OUTRO ? prazoOutro.trim() : przo;
+  const valorData = data === OUTRO ? isoParaBR(dataOutra) : data;
+  const pronto = valorPeca.length >= 2 && valorPrazo.length >= 1 && /^\d{2}\/\d{2}\/\d{4}$/.test(valorData);
+
+  return (
+    <form
+      className="mt-3 space-y-3 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-sm"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (pronto) enviar("POST", { id: prazo.ID, agendamento: valorPeca, prazo: valorPrazo, dataAgenda: valorData });
+      }}
+    >
+      <p className="font-medium text-blue-950">Sugerir agendamento</p>
+      <div className="grid gap-3 md:grid-cols-3">
+        <Escolha rotulo="Agendamento" valor={peca} setValor={setPeca} opcoes={opcoesPeca} outro={pecaOutro} setOutro={setPecaOutro} placeholder="Descreva a peça ou providência" />
+        <Escolha rotulo="Prazo" valor={przo} setValor={setPrzo} opcoes={opcoesPrazo} outro={prazoOutro} setOutro={setPrazoOutro} placeholder="Ex.: 20 dias úteis" />
+        <Escolha rotulo="Data na agenda" valor={data} setValor={setData} opcoes={opcoesData} outro={dataOutra} setOutro={setDataOutra} tipoOutro="date" />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="submit"
+          disabled={!pronto || enviando}
+          className="rounded-md bg-brand-navy px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {enviando ? "Gravando…" : "Confirmar sugestão"}
+        </button>
+        <button type="button" onClick={() => setAberto(false)} className="rounded-md border bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
+          Cancelar
+        </button>
+      </div>
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
+    </form>
   );
 }
 

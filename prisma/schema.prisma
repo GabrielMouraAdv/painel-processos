@@ -1372,3 +1372,23 @@ model EventoEtce {
   @@index([numeroBase, categoria])
   @@index([tipo, analisadoEm])
 }
+
+// Sugestao de agendamento feita no painel para um prazo da planilha LIG (aba
+// "Agendamento de publicacoes"): peca, prazo em dias e data para a agenda do Legal
+// One, escolhidos de uma lista (a primeira opcao e a da triagem). Vale enquanto ID,
+// processo e prazo fatal da linha forem os mesmos; a sugestao nova substitui a anterior.
+model SugestaoAgendamentoLig {
+  id              String    @id @default(cuid())
+  idPlanilha      String
+  numeroProcesso  String
+  prazoFatalTexto String
+  agendamento     String    @db.Text
+  prazo           String
+  dataAgenda      String
+  usuarioId       String
+  usuarioNome     String
+  createdAt       DateTime  @default(now())
+  substituidaEm   DateTime?
+
+  @@index([idPlanilha])
+}

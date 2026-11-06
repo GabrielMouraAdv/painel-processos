@@ -413,3 +413,67 @@ export function dispensaLig(d: {
     createdAt: d.createdAt.toISOString(),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Sugestao de agendamento feita no painel (peca, prazo em dias e data na agenda).
+// Vale enquanto ID, processo e prazo fatal da linha forem os mesmos (igual a dispensa).
+// ---------------------------------------------------------------------------
+
+export type SugestaoLig = {
+  id: string;
+  idPlanilha: string;
+  numeroProcesso: string;
+  prazoFatalTexto: string;
+  agendamento: string;
+  prazo: string;
+  dataAgenda: string; // dd/mm/aaaa
+  usuarioNome: string;
+  createdAt: string; // ISO
+};
+
+export function sugestaoLig(s: {
+  id: string; idPlanilha: string; numeroProcesso: string; prazoFatalTexto: string; agendamento: string;
+  prazo: string; dataAgenda: string; usuarioNome: string; createdAt: Date;
+}): SugestaoLig {
+  return { ...s, createdAt: s.createdAt.toISOString() };
+}
+
+export function sugestaoDaLinha(r: LinhaLig, sugestoes: SugestaoLig[]): SugestaoLig | null {
+  return (
+    sugestoes.find(
+      (s) =>
+        s.idPlanilha === r.ID &&
+        s.numeroProcesso === (r["Nº do processo"] ?? "") &&
+        s.prazoFatalTexto === (r["Prazo fatal"] ?? ""),
+    ) ?? null
+  );
+}
+
+// Opcoes das listas do formulario. A primeira opcao de cada lista e a da triagem
+// (coluna da planilha); "Outro" abre um campo para digitar.
+export const PECAS_AGENDAMENTO = [
+  "Embargos de declaração",
+  "Recurso ordinário",
+  "Defesa prévia",
+  "Manifestação prévia",
+  "Manifestação em cautelar",
+  "Contrarrazões",
+  "Agravo regimental",
+  "Agravo interno",
+  "Agravo de instrumento",
+  "Apelação",
+  "Recurso especial",
+  "Memoriais",
+  "Acompanhar / conferir nos autos",
+];
+
+export const PRAZOS_AGENDAMENTO = [
+  "5 dias úteis",
+  "10 dias úteis",
+  "15 dias úteis",
+  "30 dias úteis",
+  "5 dias corridos",
+  "10 dias corridos",
+  "15 dias corridos",
+  "30 dias corridos",
+];
