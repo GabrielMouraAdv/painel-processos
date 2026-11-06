@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Search, Star, X } from "lucide-react";
+import { Download, Search, Star, X } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -99,7 +99,18 @@ export function PrazosLigView({
       <Agenda urg={urg} prazos={prazos} hoje={hoje} concluidos={concluidos} virtuais={virtuais} />
 
       <section className="rounded-xl border bg-white p-4 shadow-sm md:p-5">
-        <h2 className="text-lg font-semibold text-brand-navy">Todos os prazos</h2>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h2 className="text-lg font-semibold text-brand-navy">Todos os prazos</h2>
+          <a
+            href="/api/tce/prazos-lig/exportar"
+            download
+            className="inline-flex items-center gap-1.5 rounded-md border bg-white px-3 py-1.5 text-sm font-medium text-brand-navy hover:bg-accent"
+            title="Baixa uma planilha só com os prazos em aberto que ainda não estão na agenda do Legal One, com o texto da publicação"
+          >
+            <Download className="h-4 w-4" aria-hidden />
+            Exportar pendentes de agendamento{semAgenda > 0 && ` (${semAgenda})`}
+          </a>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Ordenados pelo prazo interno. Clique num prazo para ler a publicação logo abaixo da lista.{" "}
           <Star className="inline h-3.5 w-3.5 fill-amber-400 text-amber-500" aria-hidden /> marca processo da tabela de prioritários.
