@@ -248,6 +248,8 @@ export default async function TceProcessosPage({
     select: { id: true, nome: true, uf: true },
   });
 
+  // Processos com nota tecnica ou parecer do MPCO primeiro (a ordem por atualizacao se mantem dentro de cada grupo).
+  processos.sort((a, b) => Number(b.notaTecnica || b.parecerMpco) - Number(a.notaTecnica || a.parecerMpco));
   const rows: ProcessoTceRow[] = processos.map((p) => {
     const primeiroPrazo = p.prazos[0];
     return {

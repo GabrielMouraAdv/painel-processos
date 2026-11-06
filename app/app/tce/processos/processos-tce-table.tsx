@@ -232,6 +232,17 @@ export function ProcessosTceTable({ processos }: { processos: ProcessoTceRow[] }
                   )}
                 >
                   <NumeroProcesso numero={p.numero} sufixoAbaixo />
+                  {/* No celular as colunas NT e MPCO ficam ocultas: etiquetas abaixo do numero. */}
+                  {(p.notaTecnica || p.parecerMpco) && (
+                    <div className="mt-1 flex gap-1 md:hidden">
+                      {p.notaTecnica && (
+                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900">NT</span>
+                      )}
+                      {p.parecerMpco && (
+                        <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[11px] font-semibold text-violet-900">MPCO</span>
+                      )}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className={cellBase}>
                   {p.municipio?.nome ?? (
