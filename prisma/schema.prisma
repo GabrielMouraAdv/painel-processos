@@ -1319,3 +1319,56 @@ model DispensaPrazoLig {
 
   @@index([idPlanilha])
 }
+
+// ---------------------------------------------------------------------------
+// Coletor do e-TCEPE (consulta publica, sem login). Em comparacao com a planilha
+// do Cowork ate jan/2027: grava so nestas tabelas, nunca em AndamentoTce.
+// numeroBase = "NNNNNNNN-D" (sem sufixo de recurso), casa com ProcessoTce.numero
+// pelo prefixo.
+// ---------------------------------------------------------------------------
+model ColetaEtce {
+  id             String    @id @default(cuid())
+  numeroBase     String    @unique
+  verificadoEm   DateTime?
+  ok             Boolean   @default(false)
+  erro           String?   @db.Text
+  falhasSeguidas Int       @default(0)
+  cabecalho      String?   @db.Text
+  tarefasAbertas String[]  @default([])
+  // Ultima leitura completa de cada aba (linhas brutas), para conferencia.
+  deliberacoes   Json?
+  documentos     Json?
+  movimentacoes  Json?
+  recursos       Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([verificadoEm])
+}
+
+model EventoEtce {
+  id          String    @id @default(cuid())
+  numeroBase  String
+  // DELIBERACAO | DOCUMENTO | MOVIMENTACAO | RECURSO
+  tipo        String
+  // Classificacao do coletor (lib/etce.ts): NOTA_TECNICA, PARECER_MPCO, COTA_MPCO, PEDIDO_NT,
+  // PEDIDO_MPCO, DEFESA, DELIBERACAO_MERITO, DELIBERACAO, NOTIFICACAO, PAUTA,
+  // VISTA, PRAZO_RECURSAL, RECURSO, OUTRO, RUIDO
+  categoria   String    @default("OUTRO")
+  // Identidade estavel do evento dentro do processo (dedupe entre semanas).
+  chave       String
+  data        DateTime?
+  descricao   String    @db.Text
+  // true = ja existia na primeira leitura do processo (nao e novidade).
+  linhaDeBase Boolean   @default(false)
+  detectadoEm DateTime  @default(now())
+  // Leitura do inteiro teor por IA (so deliberacoes de merito).
+  analiseIa   Json?
+  analisadoEm DateTime?
+  analiseErro String?   @db.Text
+
+  @@unique([numeroBase, tipo, chave])
+  @@index([detectadoEm])
+  @@index([numeroBase, categoria])
+  @@index([tipo, analisadoEm])
+}
