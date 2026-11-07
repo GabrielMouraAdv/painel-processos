@@ -22,6 +22,7 @@ import { readFileSync, writeFileSync } from "fs";
 
 import { PENALIDADES_TCE, RESULTADOS_POR_TIPO_TCE, rotuloCanonico, semAcento } from "../lib/julgamento-config";
 import { todasFasesTce } from "../lib/tce-config";
+import { camposMarcas } from "../lib/tce-marcas-andamento";
 
 const prisma = new PrismaClient();
 const [ENTRADA, RELATORIO] = process.argv.slice(2);
@@ -118,7 +119,7 @@ async function main() {
   const processos = await prisma.processoTce.findMany({
     where: { numero: { in: numeros } },
     select: {
-      id: true, numero: true, tipo: true, julgado: true, ehRecurso: true,
+      id: true, numero: true, tipo: true, julgado: true, ehRecurso: true, notaTecnica: true, parecerMpco: true,
       resultadoRecurso: true, numeroAcordao: true, orgaoJulgador: true, dataSessao: true, dataTransito: true,
       dataJulgamento: true, resultadoJulgamento: true, penalidade: true,
       valorMulta: true, valorDevolucao: true, observacoesJulgamento: true,
@@ -149,6 +150,7 @@ async function main() {
   };
 
   // ---------------------------------------------------------------- Andamentos
+  const jaMarcado = new Set<string>(); // processo|nt e processo|mpco ja ligados nesta carga
   for (const l of entrada.andamentos) {
     const p = processoOuErro("Andamentos", l);
     if (!p) continue;
@@ -161,6 +163,15 @@ async function main() {
     chaves.add(chave);
     ops.push({ kind: "andamento", processoId: p.id, data: meioDia(l.data!), fase: l.fase, descricao: l.descricao });
     add("Andamentos", l, "gravar", `andamento '${l.fase}' em ${br(l.data!)}`);
+    // Parecer da DEX/nota tecnica ou parecer do MPCO no andamento liga a marca do processo
+    // (lib/tce-marcas-andamento.ts; cota e pedido de parecer nao contam). So liga, nunca desliga.
+    const marcas = camposMarcas({ notaTecnica: p.notaTecnica || jaMarcado.has(`${p.id}|nt`), parecerMpco: p.parecerMpco || jaMarcado.has(`${p.id}|mpco`) }, [l.descricao]);
+    if (Object.keys(marcas).length) {
+      if (marcas.notaTecnica) jaMarcado.add(`${p.id}|nt`);
+      if (marcas.parecerMpco) jaMarcado.add(`${p.id}|mpco`);
+      ops.push({ kind: "update", processoId: p.id, campos: marcas });
+      add("Andamentos", l, "gravar", `marca ${[marcas.notaTecnica && "Nota técnica", marcas.parecerMpco && "Parecer MPCO"].filter(Boolean).join(" e ")} no processo`);
+    }
   }
 
   // ---------------------------------------------------------------- Julgamentos

@@ -7,6 +7,7 @@ import { calcularDataVencimento } from "@/lib/dias-uteis";
 import { prisma } from "@/lib/prisma";
 import { andamentoTceInputSchema } from "@/lib/schemas";
 import { prazoAutomaticoDaFase } from "@/lib/tce-config";
+import { camposMarcas } from "@/lib/tce-marcas-andamento";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -81,6 +82,19 @@ export async function POST(req: Request) {
       where: { id: data.processoId },
       data: { faseAtual: data.fase },
     });
+  }
+
+  // Parecer da DEX/nota tecnica ou parecer do MPCO no texto liga a marca do processo
+  // (cota e pedido de parecer nao contam; so liga, nunca desliga).
+  const atualMarcas = await prisma.processoTce.findUnique({
+    where: { id: data.processoId },
+    select: { notaTecnica: true, parecerMpco: true },
+  });
+  if (atualMarcas) {
+    const marcas = camposMarcas(atualMarcas, [data.descricao]);
+    if (Object.keys(marcas).length) {
+      await prisma.processoTce.update({ where: { id: data.processoId }, data: marcas });
+    }
   }
 
   let prazoId: string | null = null;
