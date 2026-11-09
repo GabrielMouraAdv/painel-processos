@@ -43,7 +43,7 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const desdeAgenda = new Date(Date.now() - 120 * 864e5);
-  const [prazosDb, agendaDb, dispensasDb, sugestoesDb] = await Promise.all([
+  const [prazosDb, agendaDb, dispensasDb, sugestoesDb, avulsosDb] = await Promise.all([
     prisma.prazoLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { idPlanilha: "asc" } }),
     prisma.compromisso.findMany({
       where: { descricao: { startsWith: "Importado da agenda do Legal One" }, dataInicio: { gte: desdeAgenda } },
@@ -51,6 +51,7 @@ export async function GET() {
     }),
     prisma.dispensaPrazoLig.findMany({ where: { desfeitaEm: null } }),
     prisma.sugestaoAgendamentoLig.findMany({ where: { substituidaEm: null }, orderBy: { createdAt: "desc" } }),
+    prisma.agendamentoAvulsoLig.findMany({ where: { concluidoEm: null }, orderBy: { createdAt: "asc" } }),
   ]);
 
   const prazos = aplicarDispensas(prazosDb.map(linhaPrazo), dispensasDb.map(dispensaLig));
@@ -92,6 +93,38 @@ export async function GET() {
       : [r["Peça / providência"] ?? "", r["Prazo (dias) e contagem"] ?? "", r["Prazo interno"] || r["Prazo fatal"] || "", "Sugestão da triagem (não confirmada)"];
     return [...colunas.map((c) => r[c] ?? ""), legalOne, ...agendamento, texto];
   });
+
+  // Agendamentos avulsos (fora da triagem LIG): mesmas colunas; saem quando a mesma
+  // peca do processo ja esta na agenda do Legal One.
+  for (const a of avulsosDb) {
+    const r: Record<string, string> = Object.fromEntries(colunas.map((c) => [c, ""]));
+    Object.assign(r, {
+      ID: `AV-${a.id.slice(-5).toUpperCase()}`,
+      Status: "A fazer",
+      "Lançado no Legal One?": "Não",
+      "Prazo interno": a.dataAgenda,
+      "Prazo fatal": a.prazoFatalTexto,
+      "Peça / providência": a.peca,
+      "Prazo (dias) e contagem": a.prazo,
+      "Nº do processo": a.numeroProcesso,
+      "Órgão / tribunal": a.orgao,
+      "Cliente / ente": a.cliente,
+      "Observações / alertas": a.observacoes,
+    });
+    const s = situacaoAgenda(r, agenda);
+    if (s.tipo === "agendado" || s.tipo === "data_diferente") continue;
+    const quando = a.createdAt.toLocaleDateString("pt-BR", { timeZone: "America/Fortaleza" });
+    const legalOne = s.tipo === "outra_peca" ? `${SITUACAO[s.tipo]}: ${s.item.titulo}` : SITUACAO[s.tipo];
+    linhas.push([
+      ...colunas.map((c) => r[c] ?? ""),
+      legalOne,
+      a.peca,
+      a.prazo,
+      a.dataAgenda,
+      `Agendamento avulso incluído no painel por ${a.usuarioNome} em ${quando} (fora da triagem LIG)`,
+      a.textoPublicacao,
+    ]);
+  }
 
   // CSV com ";" e BOM: o Excel em portugues abre direto, com acentos e quebras de linha.
   const csv = "﻿" + [cabecalho, ...linhas].map((l) => l.map(celula).join(";")).join("\r\n");

@@ -41,7 +41,7 @@ const fmtSync = new Intl.DateTimeFormat("pt-BR", {
 export default async function PrazosLigPage() {
   // Agenda do Legal One importada (scripts/importar-agenda-legalone.ts), dos ultimos 4 meses em diante.
   const desdeAgenda = new Date(Date.now() - 120 * 864e5);
-  const [prazosDb, confDb, cienciaDb, ultimoSync, agendaDb, dispensasDb, sugestoesDb] = await Promise.all([
+  const [prazosDb, confDb, cienciaDb, ultimoSync, agendaDb, dispensasDb, sugestoesDb, avulsosDb] = await Promise.all([
     prisma.prazoLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { idPlanilha: "asc" } }),
     prisma.conferenciaLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { linhaPlanilha: "asc" } }),
     prisma.cienciaLig.findMany({ where: { ativoNaPlanilha: true }, orderBy: { linhaPlanilha: "asc" } }),
@@ -52,6 +52,7 @@ export default async function PrazosLigPage() {
     }),
     prisma.dispensaPrazoLig.findMany({ where: { desfeitaEm: null }, orderBy: { createdAt: "desc" } }),
     prisma.sugestaoAgendamentoLig.findMany({ where: { substituidaEm: null }, orderBy: { createdAt: "desc" } }),
+    prisma.agendamentoAvulsoLig.findMany({ where: { concluidoEm: null }, orderBy: { createdAt: "asc" } }),
   ]);
   const pubIds = Array.from(new Set(prazosDb.map((p) => p.pubId).filter(Boolean)));
   const pubsDb = pubIds.length
@@ -150,6 +151,11 @@ export default async function PrazosLigPage() {
         virtuais={virtuais}
         dispensas={dispensas}
         sugestoes={sugestoes}
+        avulsos={avulsosDb.map((a) => ({
+          id: a.id, numeroProcesso: a.numeroProcesso, cliente: a.cliente, orgao: a.orgao, peca: a.peca,
+          prazo: a.prazo, dataAgenda: a.dataAgenda, prazoFatalTexto: a.prazoFatalTexto, observacoes: a.observacoes,
+          usuarioNome: a.usuarioNome,
+        }))}
       />
     </div>
   );

@@ -1392,3 +1392,27 @@ model SugestaoAgendamentoLig {
 
   @@index([idPlanilha])
 }
+
+// Agendamento avulso da aba "Agendamento de publicacoes": providencia que nao veio da
+// triagem LIG (ex.: memorial de processo em pauta), incluida no painel para sair na
+// exportacao dos pendentes de agendamento. Sai da lista quando concluida ou quando o
+// mesmo processo e peca aparecem na agenda do Legal One.
+model AgendamentoAvulsoLig {
+  id              String    @id @default(cuid())
+  numeroProcesso  String
+  cliente         String    @default("")
+  orgao           String    @default("")
+  peca            String    @db.Text
+  prazo           String    @default("")
+  dataAgenda      String
+  prazoFatalTexto String    @default("")
+  observacoes     String    @default("") @db.Text
+  textoPublicacao String    @default("") @db.Text
+  usuarioId       String
+  usuarioNome     String
+  createdAt       DateTime  @default(now())
+  concluidoEm     DateTime?
+  concluidoPor    String?
+
+  @@index([concluidoEm])
+}

@@ -68,6 +68,7 @@ export function PrazosLigView({
   virtuais,
   dispensas,
   sugestoes,
+  avulsos,
 }: {
   hoje: string;
   prazos: LinhaLig[];
@@ -81,6 +82,7 @@ export function PrazosLigView({
   virtuais: Record<string, RoVirtual>;
   dispensas: Record<string, DispensaLig>;
   sugestoes: Record<string, SugestaoLig>;
+  avulsos: AvulsoRow[];
 }) {
   const urg = React.useMemo(() => urgencia(prazos, hoje), [prazos, hoje]);
   // Em aberto e fora da agenda do Legal One (o RO virtual e dispensa intencional, nao conta).
@@ -103,6 +105,8 @@ export function PrazosLigView({
       <Destaque proximo={proximo} resumo={resumo} semAgenda={semAgenda} />
       <Agenda urg={urg} prazos={prazos} hoje={hoje} concluidos={concluidos} virtuais={virtuais} />
 
+      {avulsos.length > 0 && <Avulsos avulsos={avulsos} />}
+
       <section className="rounded-xl border bg-white p-4 shadow-sm md:p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h2 className="text-lg font-semibold text-brand-navy">Todos os prazos</h2>
@@ -113,7 +117,7 @@ export function PrazosLigView({
             title="Baixa uma planilha só com os prazos em aberto que ainda não estão na agenda do Legal One, com o texto da publicação"
           >
             <Download className="h-4 w-4" aria-hidden />
-            Exportar pendentes de agendamento{semAgenda > 0 && ` (${semAgenda})`}
+            Exportar pendentes de agendamento{semAgenda + avulsos.length > 0 && ` (${semAgenda + avulsos.length})`}
           </a>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -773,6 +777,70 @@ function rosLigados(id: string, prazos: LinhaLig[], urg: Urgencia[]): LinhaLig[]
 // Sugestao de agendamento: listas de escolha (a primeira opcao e a da triagem) e
 // "Outro" para digitar. Sai na exportacao dos pendentes de agendamento.
 // ---------------------------------------------------------------------------
+
+export type AvulsoRow = {
+  id: string; numeroProcesso: string; cliente: string; orgao: string; peca: string; prazo: string;
+  dataAgenda: string; prazoFatalTexto: string; observacoes: string; usuarioNome: string;
+};
+
+// Agendamentos avulsos: providencias fora da triagem LIG (ex.: memorial de processo em
+// pauta), incluidas no painel para irem na exportacao dos pendentes de agendamento.
+function Avulsos({ avulsos }: { avulsos: AvulsoRow[] }) {
+  const router = useRouter();
+  const [enviando, setEnviando] = React.useState<string | null>(null);
+  const [erro, setErro] = React.useState<string | null>(null);
+  const concluir = async (id: string) => {
+    setEnviando(id);
+    setErro(null);
+    try {
+      const resp = await fetch("/api/tce/prazos-lig/avulso", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!resp.ok) throw new Error(((await resp.json().catch(() => null)) as { error?: string } | null)?.error ?? `erro ${resp.status}`);
+      router.refresh();
+    } catch (e) {
+      setErro((e as Error).message);
+    } finally {
+      setEnviando(null);
+    }
+  };
+  return (
+    <section className="rounded-xl border border-l-4 border-l-blue-700 bg-white p-4 shadow-sm md:p-5">
+      <h2 className="text-lg font-semibold text-brand-navy">Agendamentos avulsos</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Fora da triagem LIG. Saem na exportação dos pendentes de agendamento até serem concluídos aqui ou aparecerem na agenda do Legal One.
+      </p>
+      <ul className="mt-3 divide-y rounded-lg border">
+        {avulsos.map((a) => (
+          <li key={a.id} className="flex flex-wrap items-start justify-between gap-3 px-3 py-2.5 text-sm">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-slate-900">
+                {a.peca} <span className="font-mono text-xs text-brand-navy">{a.numeroProcesso}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {[a.cliente, a.orgao].filter(Boolean).join(" · ")} · agendar em <b className="text-slate-800">{a.dataAgenda}</b>
+                {a.prazoFatalTexto && <> · fatal {a.prazoFatalTexto}</>}
+                {a.prazo && <> · {a.prazo}</>}
+              </p>
+              {a.observacoes && <p className="mt-1 text-xs text-amber-900">{a.observacoes}</p>}
+            </div>
+            <button
+              type="button"
+              disabled={enviando === a.id}
+              onClick={() => concluir(a.id)}
+              className="rounded-md border px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {enviando === a.id ? "Concluindo…" : "Concluir"}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {erro && <p className="mt-1 text-xs text-red-700">{erro}</p>}
+    </section>
+  );
+}
 
 const OUTRO = "__outro__";
 const brCurto = (dataBR: string) => dataBR.slice(0, 5);
