@@ -124,6 +124,19 @@ const CADASTROS: Cadastro[] = [
       "Origem: processo 25101276-1, não cadastrado no painel e sem deliberação no banco de julgados; o tipo do processo de origem (registrado como auditoria especial) está A CONFIRMAR.",
   },  // Pauta de 09 a 13/11/2026
   { numero: "24101085-8", tipo: "AUDITORIA_ESPECIAL", camara: "SEGUNDA", relator: "Valdecir Pascoal", orgao: "Goiana", exercicio: "2024", bancas: [FC] },
+  // Pauta de 16 a 20/11/2026
+  {
+    numero: "23100067-4RO001", tipo: "DENUNCIA", camara: "PLENO", relator: "Eduardo Porto",
+    orgao: "Vitória de Santo Antão", exercicio: "2022", bancas: [PR],
+    recurso: { tipo: "RECURSO_ORDINARIO" },
+    objetoExtra:
+      "Origem: Denúncia nº 23100067-4 (Prefeitura de Vitória de Santo Antão, exercício 2022), acórdão de 30/09/2026 (não cadastrada no painel). Tema da denúncia e razões do recurso a conferir no e-TCEPE.",
+  },
+  {
+    numero: "26101270-8", tipo: "MEDIDA_CAUTELAR", camara: "SEGUNDA", relator: "Eduardo Porto",
+    orgao: "Autarquia Municipal de Trânsito e Transportes de Ipojuca", exercicio: "2026", bancas: [FC],
+    objetoExtra: "Cautelar NÃO concedida por decisão interlocutória de 10/11/2026 (Cons. Eduardo Lyra Porto); mérito em pauta da 2ª Câmara em 19/11/2026.",
+  },
 ];
 
 const NOME_RECURSO: Record<string, string> = {
