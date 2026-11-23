@@ -268,6 +268,20 @@ export function familiaPeca(texto: string): FamiliaPeca {
   return "OUTRA";
 }
 
+// Familias da peca da triagem para casar com a agenda. Olha so o trecho antes do
+// primeiro parentese e aceita alternativas: "Agravo regimental ao Pleno ou novos ED (...)"
+// vale como agravo e como ED; "Recurso ordinario contra o acordao embargado (...)" so RO.
+export function familiasDaProvidencia(texto: string): FamiliaPeca[] {
+  const cabeca = (texto || "").split("(")[0];
+  const fams = cabeca
+    .split(/\s+ou\s+|\s*\/\s*/i)
+    .map((parte) => familiaPeca(parte))
+    .filter((f, i, l) => f !== "OUTRA" && l.indexOf(f) === i);
+  if (fams.length) return fams;
+  const f = familiaPeca(texto);
+  return f === "OUTRA" ? [] : [f];
+}
+
 const RE_NUM_TCE = /\b\d{7,8}-\d(?:[A-Z]{2,3}\d{3})?\b/;
 const RE_NUM_CNJ = /\b\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}\b/;
 
@@ -300,8 +314,8 @@ export function situacaoAgenda(r: LinhaLig, agenda: ItemAgendaL1[]): SituacaoAge
   if (!chave) return { tipo: "nao_agendado" };
   const doProcesso = agenda.filter((a) => chaveProcesso(a.titulo) === chave);
   if (!doProcesso.length) return { tipo: "nao_agendado" };
-  const fam = familiaPeca(r["Peça / providência"]);
-  const mesmaPeca = fam === "OUTRA" ? [] : doProcesso.filter((a) => familiaPeca(a.titulo) === fam);
+  const fams = familiasDaProvidencia(r["Peça / providência"]);
+  const mesmaPeca = doProcesso.filter((a) => fams.includes(familiaPeca(a.titulo)));
   if (!mesmaPeca.length) return { tipo: "outra_peca", item: doProcesso[0] };
   const datas = [isoBR(r["Prazo interno"]), isoBR(r["Prazo fatal"])].filter(Boolean);
   const bate = mesmaPeca.find((a) => datas.includes(a.dia));
