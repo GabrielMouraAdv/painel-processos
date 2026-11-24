@@ -171,7 +171,7 @@ export async function GET() {
   wb.creator = "Painel de Processos";
 
   const COLS: { titulo: string; largura: number; valor: (l: Linha) => string | Date }[] = [
-    { titulo: "Agendar em", largura: 12, valor: (l) => data(l.agendar) },
+    { titulo: "Prazo interno (data na agenda)", largura: 14, valor: (l) => data(l.agendar) },
     { titulo: "Prazo fatal", largura: 12, valor: (l) => data(l.fatal) },
     { titulo: "Peça / providência", largura: 38, valor: (l) => l.peca },
     { titulo: "Prazo e contagem", largura: 26, valor: (l) => l.prazo },
@@ -223,8 +223,8 @@ export async function GET() {
   montarAba(
     "Agendar",
     `Prazos pendentes de agendamento no Legal One — ${dataHoje}`,
-    `${aAgendar.length} prazo(s) · conferidos na agenda do Legal One importada no painel (lida em ${lidaEm}) · ordenados pela data de agendamento · ` +
-      "vermelho = hoje ou já passou · amarelo = amanhã · texto integral na aba Publicações",
+    `${aAgendar.length} prazo(s) · lançar todos no Legal One assim que possível; a primeira coluna é o prazo interno, a data que vai na agenda · conferidos na agenda importada no painel (lida em ${lidaEm}) · ` +
+      "vermelho = prazo interno hoje ou vencido · amarelo = amanhã · texto integral na aba Publicações",
     aAgendar,
     true,
   );
